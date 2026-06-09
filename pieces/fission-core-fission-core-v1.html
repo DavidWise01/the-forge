@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fission Core Simulator - System-1</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #030712; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  input[type="range"] { accent-color: #22d3ee; }
+  .glow-text { text-shadow: 0 0 20px rgba(34,211,238,0.6), 0 0 40px rgba(34,211,238,0.3); }
+  .panel { background: linear-gradient(180deg, rgba(15,23,42,0.8) 0%, rgba(2,6,23,0.9) 100%); backdrop-filter: blur(12px); }
+  .grid-pattern { background-image: radial-gradient(rgba(34,211,238,0.08) 1px, transparent 1px); background-size: 20px 20px; }
+</style>
+</head>
+<body class="bg-[#030712] text-slate-200 min-h-screen grid-pattern">
+<div class="max-w-[1400px] mx-auto p-3 md:p-6">
+  <!-- HEADER -->
+  <header class="panel border border-cyan-900/30 rounded-2xl px-5 py-4 mb-4 shadow-[0_0_80px_rgba(6,182,212,0.08)]">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Fission Core Simulator <span class="text-cyan-400">System-1</span></h1>
+        <p class="text-sm text-slate-400 mt-1">Node 16 Reactor | 17.5 Heat Exchanger | Box-1 Turbine</p>
+      </div>
+      <div class="flex items-center gap-3 text-xs">
+        <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-slate-300">SIMULATION ACTIVE</span></div>
+        <div class="text-slate-500">v1.16.4-stable</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOP THREE PANELS -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+    <div class="panel border border-slate-800/80 rounded-xl p-3">
+      <div class="text-[11px] uppercase tracking-widest text-cyan-400 font-medium mb-2">PROC CONTROL</div>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div><span class="text-slate-500">Rod Depth:</span> <span id="procRods" class="mono text-slate-100">50%</span></div>
+        <div><span class="text-slate-500">k-eff:</span> <span id="procK" class="mono text-slate-100">1.000</span></div>
+        <div><span class="text-slate-500">Mode:</span> <span class="mono text-amber-300">AUTO</span></div>
+        <div><span class="text-slate-500">Interlocks:</span> <span class="mono text-emerald-400">ARMED</span></div>
+      </div>
+    </div>
+    <div class="panel border border-slate-800/80 rounded-xl p-3">
+      <div class="text-[11px] uppercase tracking-widest text-violet-400 font-medium mb-2">HBM MODERATOR</div>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div><span class="text-slate-500">Temp:</span> <span id="hbmTemp" class="mono text-slate-100">311°C</span></div>
+        <div><span class="text-slate-500">Flow:</span> <span id="hbmFlow" class="mono text-slate-100">94%</span></div>
+        <div><span class="text-slate-500">Pressure:</span> <span class="mono text-slate-100">15.7 MPa</span></div>
+        <div><span class="text-slate-500">Boron:</span> <span class="mono text-slate-100">850 ppm</span></div>
+      </div>
+    </div>
+    <div class="panel border border-slate-800/80 rounded-xl p-3">
+      <div class="text-[11px] uppercase tracking-widest text-fuchsia-400 font-medium mb-2">GRAPHICS HEAT SINK</div>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div><span class="text-slate-500">Turbine:</span> <span id="gfxRpm" class="mono text-slate-100">3600 RPM</span></div>
+        <div><span class="text-slate-500">Output:</span> <span id="gfxOut" class="mono text-slate-100">98%</span></div>
+        <div><span class="text-slate-500">Coolant:</span> <span class="mono text-cyan-300">NOMINAL</span></div>
+        <div><span class="text-slate-500">Sink ΔT:</span> <span class="mono text-slate-100">42°C</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <!-- LEFT: CORE CONTROL -->
+    <div class="xl:col-span-2 panel border border-slate-800 rounded-2xl p-5 shadow-2xl">
+      <!-- NEUTRON POPULATION -->
+      <div class="mb-6">
+        <div class="flex items-baseline justify-between mb-2">
+          <div class="text-xs uppercase tracking-[0.2em] text-slate-400">Neutron Population</div>
+          <div class="text-[10px] text-slate-500">live core count</div>
+        </div>
+        <div id="neutronCount" class="mono text-7xl md:text-8xl font-semibold glow-text text-cyan-300 leading-none tracking-tight">256</div>
+        
+        <!-- HORIZONTAL BAR -->
+        <div class="mt-6 relative">
+          <div class="relative h-10 bg-[#020617] rounded-lg border border-slate-800 overflow-hidden">
+            <div class="absolute inset-0" style="background: repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(100,116,139,0.15) 20px);"></div>
+            <div id="neutronBar" class="absolute left-0 top-0 h-full w-[50%] transition-all duration-200 ease-out" style="background: linear-gradient(90deg, rgba(37,99,235,0.8), rgba(34,211,238,0.9)); box-shadow: 0 0 20px rgba(34,211,238,0.4) inset;"></div>
+            <div class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/80 z-10">
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 border border-white/20 text-white/80">Invariant Center | 256</span>
+              </div>
+            </div>
+            <div class="absolute inset-0 flex items-center justify-between px-3 text-[10px] font-mono text-slate-500 pointer-events-none">
+              <span>0</span><span>128</span><span>384</span><span>512</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="grid md:grid-cols-3 gap-4 items-end mb-6 pt-5 border-t border-slate-800/60">
+        <div class="md:col-span-1">
+          <label for="rods" class="flex justify-between text-xs mb-2">
+            <span class="uppercase tracking-wider text-slate-400">Control Rods 0-100%</span>
+            <span class="mono text-cyan-300" id="rodsValue">50%</span>
+          </label>
+          <input id="rods" type="range" min="0" max="100" value="50" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          <div class="flex justify-between text-[10px] text-slate-600 mt-1"><span>OUT</span><span>IN</span></div>
+        </div>
+        <div class="flex gap-2">
+          <button id="doubleBtn" class="flex-1 relative group">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg blur opacity-40 group-hover:opacity-70 transition"></div>
+            <div class="relative bg-slate-900 border border-amber-500/50 rounded-lg px-4 py-3 font-medium text-amber-200 hover:bg-slate-800 transition">
+              +1 BIT <span class="text-xs opacity-70">(Double)</span>
+            </div>
+          </button>
+          <button id="scramBtn" class="flex-1 relative group">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-red-500 rounded-lg blur opacity-50 group-hover:opacity-80 transition"></div>
+            <div class="relative bg-red-950/80 border border-red-500/70 rounded-lg px-4 py-3 font-semibold text-red-200 hover:bg-red-900/80 transition tracking-wider">SCRAM</div>
+          </button>
+        </div>
+        <div class="text-[11px] text-slate-500 leading-snug">Rod insertion reduces k-eff. +1 BIT injects a prompt neutron burst. SCRAM fully inserts rods.</div>
+      </div>
+
+      <!-- METRICS -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div class="bg-[#020617]/70 border border-slate-800 rounded-lg p-3">
+          <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Power (MW)</div>
+          <div class="text-lg mono text-slate-100"><span id="power">25.6</span></div>
+        </div>
+        <div class="bg-[#020617]/70 border border-slate-800 rounded-lg p-3">
+          <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Flux</div>
+          <div class="text-lg mono text-slate-100"><span id="flux">100.0%</span></div>
+        </div>
+        <div class="bg-[#020617]/70 border border-slate-800 rounded-lg p-3">
+          <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Status</div>
+          <div class="text-lg mono font-medium"><span id="status" class="text-emerald-400">CRITICAL</span></div>
+        </div>
+        <div class="bg-[#020617]/70 border border-slate-800 rounded-lg p-3">
+          <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Bits/sec</div>
+          <div class="text-lg mono text-slate-100"><span id="bits">422.00 T</span></div>
+        </div>
+        <div class="bg-[#020617]/70 border border-slate-800 rounded-lg p-3 col-span-2 sm:col-span-1">
+          <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Progress to 422T</div>
+          <div class="text-lg mono text-cyan-300"><span id="progress">100.0%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: NEUTRON VISUALIZATION -->
+    <div class="panel border border-slate-800 rounded-2xl p-4 flex flex-col">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs uppercase tracking-widest text-slate-400">Core Visualization</div>
+        <div class="text-[10px] text-slate-500">400×300</div>
+      </div>
+      <div class="relative bg-[#020617] rounded-xl border border-slate-800 overflow-hidden flex-1 grid place-items-center">
+        <canvas id="neutronCanvas" width="400" height="300" class="w-full h-auto max-w-[400px] aspect-[4/3]"></canvas>
+        <div class="absolute bottom-2 left-2 text-[10px] px-2 py-1 rounded bg-black/60 border border-cyan-900/50 text-cyan-300/80 mono">NEUTRON FIELD</div>
+      </div>
+      <div class="mt-3 text-[11px] text-slate-500">Each dot = thermal neutron. Density scales with population. Color shifts with supercriticality.</div>
+    </div>
+  </div>
+
+  <!-- POWER HISTORY GRAPH -->
+  <div class="panel border border-slate-800 rounded-2xl p-4 mt-4">
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-xs uppercase tracking-widest text-slate-400">Power History</div>
+      <div class="text-[10px] text-slate-500 mono">last 20 seconds • MW</div>
+    </div>
+    <div class="bg-[#020617] rounded-lg border border-slate-800 p-2">
+      <canvas id="powerGraph" class="w-full h-[150px]"></canvas>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="mt-6 text-center text-[11px] text-slate-500 pb-6">
+    <p>This is a real-time educational simulation only. No actual fission occurs. All values are approximated for visualization purposes. System-1 models a theoretical compute-reactor with invariant neutron population targeting 256.</p>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const neutronCountEl = $('neutronCount');
+const neutronBar = $('neutronBar');
+const rodsSlider = $('rods');
+const rodsValue = $('rodsValue');
+const powerEl = $('power');
+const fluxEl = $('flux');
+const statusEl = $('status');
+const bitsEl = $('bits');
+const progressEl = $('progress');
+const doubleBtn = $('doubleBtn');
+const scramBtn = $('scramBtn');
+const procRods = $('procRods');
+const procK = $('procK');
+const hbmTemp = $('hbmTemp');
+const hbmFlow = $('hbmFlow');
+const gfxRpm = $('gfxRpm');
+const gfxOut = $('gfxOut');
+
+let neutrons = 256;
+let rods = 50;
+let power = 25.6;
+let scramActive = false;
+let scramTimer = 0;
+let powerHistory = Array(200).fill(25.6);
+
+function formatTera(v){ return (v/1e12).toFixed(2) + ' T'; }
+
+function updateSim(){
+  if(!scramActive){ rods = parseInt(rodsSlider.value); }
+  rodsValue.textContent = rods + '%';
+  procRods.textContent = rods + '%';
+  
+  const kBase = 1 + (50 - rods) * 0.002;
+  const k = scramActive ? 0.92 : kBase + (Math.random()-0.5)*0.004;
+  procK.textContent = k.toFixed(3);
+  
+  // Target-seeking dynamics toward invariant 256
+  const target = 256 * (1 + (50 - rods)/100 * 0.6);
+  let delta = (target - neutrons) * 0.04;
+  
+  if(scramActive){
+    delta = -neutrons * 0.12;
+    scramTimer--;
+    if(scramTimer <= 0) scramActive = false;
+  }
+  
+  neutrons += delta + (Math.random()-0.5)*1.8;
+  neutrons = Math.max(1, Math.min(neutrons, 8192));
+  
+  power = neutrons * 0.1;
+  const flux = neutrons / 256 * 100;
+  const bitsPerSec = neutrons * 1648437500000; // 256 -> 422T
+  const progress = Math.min(999.9, bitsPerSec / 422e12 * 100);
+  
+  // Update neutron display
+  neutronCountEl.textContent = Math.round(neutrons);
+  const barPct = Math.min(100, (neutrons / 512) * 100);
+  neutronBar.style.width = barPct + '%';
+  
+  // Status colors
+  let status = 'CRITICAL', statusColor = 'text-emerald-400', barGradient = 'linear-gradient(90deg, rgba(16,185,129,0.9), rgba(34,211,238,0.95))';
+  if(neutrons < 250){
+    status = 'SUBCRITICAL'; statusColor = 'text-sky-400';
+    barGradient = 'linear-gradient(90deg, rgba(37,99,235,0.8), rgba(56,189,248,0.9))';
+    neutronBar.style.boxShadow = '0 0 20px rgba(56,189,248,0.3) inset';
+  } else if(neutrons > 260){
+    status = 'SUPERCRITICAL'; statusColor = 'text-red-400';
+    barGradient = 'linear-gradient(90deg, rgba(239,68,68,0.9), rgba(249,115,22,0.95))';
+    neutronBar.style.boxShadow = '0 0 25px rgba(239,68,68,0.5) inset';
+  } else {
+    neutronBar.style.boxShadow = '0 0 20px rgba(34,211,238,0.4) inset';
+  }
+  neutronBar.style.background = barGradient;
+  statusEl.textContent = status;
+  statusEl.className = 'mono ' + statusColor;
+  
+  powerEl.textContent = power.toFixed(1);
+  fluxEl.textContent = flux.toFixed(1) + '%';
+  bitsEl.textContent = formatTera(bitsPerSec);
+  progressEl.textContent = progress.toFixed(1) + '%';
+  
+  // Update top panels
+  hbmTemp.textContent = Math.round(280 + power*1.15) + '°C';
+  hbmFlow.textContent = (92 + Math.sin(Date.now()/2000)*3).toFixed(0) + '%';
+  gfxRpm.textContent = Math.round(3200 + power*15) + ' RPM';
+  gfxOut.textContent = Math.min(100, power/0.35).toFixed(0) + '%';
+  
+  // History
+  powerHistory.push(power);
+  if(powerHistory.length > 200) powerHistory.shift();
+}
+
+doubleBtn.onclick = () => {
+  neutrons = Math.min(neutrons * 2, 8192);
+  neutronCountEl.classList.add('text-amber-300');
+  setTimeout(()=> neutronCountEl.classList.remove('text-amber-300'), 180);
+  // visual pulse on bar
+  neutronBar.style.filter = 'brightness(1.5)';
+  setTimeout(()=> neutronBar.style.filter = '', 150);
+};
+
+scramBtn.onclick = () => {
+  scramActive = true;
+  scramTimer = 50;
+  rods = 100;
+  rodsSlider.value = 100;
+  rodsValue.textContent = '100%';
+};
+
+rodsSlider.addEventListener('input', () => { if(scramActive) scramActive = false; });
+
+// Neutron canvas animation
+const nCanvas = $('neutronCanvas');
+const nCtx = nCanvas.getContext('2d');
+let particles = [];
+
+function updateParticles(){
+  const targetCount = Math.max(12, Math.min(320, Math.floor(neutrons * 0.9)));
+  while(particles.length < targetCount){
+    particles.push({ x: Math.random()*400, y: Math.random()*300, vx: (Math.random()-0.5)*1.6, vy: (Math.random()-0.5)*1.6, life: Math.random()*100 });
+  }
+  while(particles.length > targetCount) particles.pop();
+}
+
+function animateNeutrons(){
+  updateParticles();
+  nCtx.fillStyle = 'rgba(2,6,23,0.25)';
+  nCtx.fillRect(0,0,400,300);
+  
+  // core rings
+  nCtx.strokeStyle = 'rgba(34,211,238,0.08)';
+  nCtx.lineWidth = 1;
+  for(let r=40; r<=140; r+=30){
+    nCtx.beginPath(); nCtx.arc(200,150,r,0,Math.PI*2); nCtx.stroke();
+  }
+  
+  const speed = 0.5 + (neutrons/256)*0.7;
+  const hue = neutrons>260 ? 0 : neutrons<250 ? 200 : 185;
+  
+  particles.forEach(p=>{
+    p.x += p.vx * speed;
+    p.y += p.vy * speed;
+    p.life++;
+    if(p.x<2||p.x>398){ p.vx*=-1; p.x=Math.max(2,Math.min(398,p.x)); }
+    if(p.y<2||p.y>298){ p.vy*=-1; p.y=Math.max(2,Math.min(298,p.y)); }
+    
+    const dist = Math.hypot(p.x-200, p.y-150);
+    const alpha = Math.max(0.2, 1 - dist/180);
+    
+    nCtx.shadowBlur = neutrons>260 ? 18 : 12;
+    nCtx.shadowColor = `hsla(${hue}, 100%, 65%, ${alpha})`;
+    nCtx.fillStyle = `hsla(${hue}, 90%, 70%, ${alpha})`;
+    nCtx.beginPath();
+    nCtx.arc(p.x, p.y, neutrons>280 ? 2.4 : 1.8, 0, Math.PI*2);
+    nCtx.fill();
+  });
+  nCtx.shadowBlur = 0;
+  requestAnimationFrame(animateNeutrons);
+}
+animateNeutrons();
+
+// Power graph
+const gCanvas = $('powerGraph');
+const gCtx = gCanvas.getContext('2d');
+
+function drawGraph(){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = gCanvas.getBoundingClientRect();
+  gCanvas.width = rect.width * dpr;
+  gCanvas.height = rect.height * dpr;
+  gCtx.setTransform(1,0,0,1,0,0);
+  gCtx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+  
+  gCtx.clearRect(0,0,w,h);
+  
+  // grid
+  gCtx.strokeStyle = 'rgba(100,116,139,0.15)';
+  gCtx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = (h/4)*i;
+    gCtx.beginPath(); gCtx.moveTo(0,y); gCtx.lineTo(w,y); gCtx.stroke();
+  }
+  for(let i=0;i<=10;i++){
+    const x = (w/10)*i;
+    gCtx.beginPath(); gCtx.moveTo(x,0); gCtx.lineTo(x,h); gCtx.stroke();
+  }
+  
+  // baseline at 25.6 MW (256 neutrons)
+  const baseY = h - (25.6/60)*h;
+  gCtx.strokeStyle = 'rgba(34,211,238,0.3)';
+  gCtx.setLineDash([4,4]);
+  gCtx.beginPath(); gCtx.moveTo(0,baseY); gCtx.lineTo(w,baseY); gCtx.stroke();
+  gCtx.setLineDash([]);
+  
+  // power line
+  gCtx.beginPath();
+  gCtx.lineWidth = 2;
+  gCtx.strokeStyle = '#22d3ee';
+  gCtx.shadowColor = 'rgba(34,211,238,0.5)';
+  gCtx.shadowBlur = 8;
+  powerHistory.forEach((p,i)=>{
+    const x = (i/(powerHistory.length-1))*w;
+    const y = h - Math.min(60, Math.max(0,p))/60*h;
+    if(i===0) gCtx.moveTo(x,y); else gCtx.lineTo(x,y);
+  });
+  gCtx.stroke();
+  gCtx.shadowBlur = 0;
+  
+  // fill under
+  gCtx.lineTo(w,h); gCtx.lineTo(0,h); gCtx.closePath();
+  const grad = gCtx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0,'rgba(34,211,238,0.25)');
+  grad.addColorStop(1,'rgba(34,211,238,0)');
+  gCtx.fillStyle = grad;
+  gCtx.fill();
+}
+setInterval(drawGraph, 100);
+window.addEventListener('resize', drawGraph);
+
+// Main loop
+setInterval(updateSim, 100);
+updateSim();
+drawGraph();
+</script>
+</body>
+</html>

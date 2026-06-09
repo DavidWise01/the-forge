@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>NanoFactory — Nanoscale Production Line</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0a0e14;
+    --panel:rgba(15,23,42,.65);
+    --glass:rgba(255,255,255,.04);
+    --cyan:#00e5ff;
+    --mag:#ff00aa;
+    --text:#cbd5e1;
+    --muted:#64748b;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100vh}
+  .topbar{display:flex;align-items:center;gap:18px;padding:10px 16px;background:rgba(255,255,255,.03);backdrop-filter:blur(14px);border-bottom:1px solid rgba(0,229,255,.15);z-index:5}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .brand-dot{width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan),0 0 24px var(--cyan)}
+  .stat{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--glass);border:1px solid rgba(148,163,184,.12);border-radius:10px;font-weight:600}
+  .stat b{color:#e2e8f0}
+  .atoms{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
+  .atom{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--glass);border:1px solid rgba(148,163,184,.1);border-radius:10px;font-size:12px}
+  .atom i{width:10px;height:10px;border-radius:50%;box-shadow:0 0 8px currentColor}
+  .atom b{min-width:18px;text-align:right}
+  
+  main{flex:1;display:grid;grid-template-columns:230px 1fr 300px;gap:14px;padding:14px;min-height:0}
+  .panel{background:var(--panel);border:1px solid rgba(148,163,184,.12);border-radius:18px;padding:14px;backdrop-filter:blur(18px);overflow:auto;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.4)}
+  .panel h3{margin:4px 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#7dd3fc}
+  .tool-btn{width:100%;display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid transparent;color:var(--text);cursor:pointer;transition:.18s;margin-bottom:8px;text-align:left}
+  .tool-btn:hover{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.25);box-shadow:0 0 0 1px rgba(0,229,255,.15) inset}
+  .tool-btn.active{background:rgba(0,229,255,.14);border-color:var(--cyan);box-shadow:0 0 16px rgba(0,229,255,.25), inset 0 0 20px rgba(0,229,255,.08)}
+  .tool-btn .ic{font-size:18px;width:24px;text-align:center;filter:drop-shadow(0 0 6px rgba(0,229,255,.5))}
+  .tool-btn small{display:block;color:var(--muted);font-size:11px}
+  .mine-btn{width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin:6px 0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:var(--text);cursor:pointer;transition:.15s}
+  .mine-btn:hover{background:rgba(255,255,255,.07);transform:translateY(-1px)}
+  .mine-btn:active{transform:translateY(0)}
+  
+  .game-area{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
+  #gridWrap{position:relative;padding:10px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(148,163,184,.15);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5), inset 0 0 40px rgba(0,229,255,.03)}
+  canvas{display:block;width:min(960px, calc(100vw - 580px));height:auto;border-radius:12px;background:#05080c;cursor:crosshair;touch-action:none;image-rendering:optimizeSpeed}
+  
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .btn{padding:8px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#e2e8f0;cursor:pointer;font-weight:600;transition:.15s}
+  .btn:hover{background:rgba(255,255,255,.1)}
+  .btn.active{background:rgba(0,229,255,.2);border-color:var(--cyan);color:#fff;box-shadow:0 0 12px rgba(0,229,255,.3)}
+  .hint{font-size:11px;color:var(--muted);text-align:center}
+  
+  .recipe{padding:10px;margin:8px 0;background:rgba(255,255,255,.02);border-radius:12px;border-left:3px solid #334155;transition:.2s}
+  .recipe.unlocked{border-left-color:var(--cyan);background:rgba(0,229,255,.05)}
+  .recipe.locked{opacity:.45}
+  .recipe .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .recipe .name{font-weight:700}
+  .recipe .val{font-size:12px;color:#a5f3fc}
+  .recipe .io{font-size:12px;color:#94a3b8}
+  
+  .research-item{padding:12px;margin:8px 0;background:linear-gradient(180deg,rgba(217,70,239,.10),rgba(217,70,239,.04));border:1px solid rgba(217,70,239,.25);border-radius:12px;cursor:pointer;transition:.18s}
+  .research-item:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(217,70,239,.15);background:linear-gradient(180deg,rgba(217,70,239,.16),rgba(217,70,239,.06))}
+  .research-item.bought{background:linear-gradient(180deg,rgba(34,197,94,.18),rgba(34,197,94,.06));border-color:rgba(34,197,94,.4);cursor:default;transform:none;box-shadow:none}
+  .research-item b{display:block}
+  .research-item small{color:#c4b5fd}
+  .research-item .cost{margin-top:6px;font-weight:700;color:#f0abfc}
+  
+  .modal{position:fixed;inset:0;background:rgba(2,6,12,.85);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal-card{background:#0b1220;border:1px solid rgba(0,229,255,.3);border-radius:22px;padding:26px;max-width:520px;width:100%;box-shadow:0 0 60px rgba(0,229,255,.18), inset 0 0 30px rgba(255,0,170,.06)}
+  .modal-card h2{margin:0 0 10px;color:var(--cyan);letter-spacing:.02em}
+  .modal-card ol{line-height:1.7;margin:12px 0 18px;padding-left:18px}
+  .modal-card li{margin:6px 0}
+  .modal-card .start{width:100%;padding:12px;background:linear-gradient(90deg,var(--cyan),var(--mag));border:none;border-radius:12px;color:#001016;font-weight:800;cursor:pointer;font-size:15px;box-shadow:0 10px 30px rgba(0,229,255,.25)}
+  
+  /* hexagonal lattice background for canvas container */
+  #gridWrap::before{
+    content:"";position:absolute;inset:0;border-radius:18px;pointer-events:none;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(0,229,255,.08), transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(255,0,170,.06), transparent 40%);
+    mix-blend-mode:screen;
+  }
+  
+  @media (max-width:1150px){
+    main{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+    .panel{max-height:220px}
+    canvas{width:calc(100vw - 48px)}
+    .atoms{margin-left:0}
+    .topbar{flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-dot"></span> NANOFACTORY</div>
+    <div class="stat">⚡ <b id="energy">100</b></div>
+    <div class="stat">$ <b id="credits">0</b></div>
+    <div class="stat">⟡ <b id="ips">0.0</b>/s</div>
+    <div class="atoms">
+      <div class="atom"><i style="background:#222;color:#222"></i>C <b id="cC">0</b></div>
+      <div class="atom"><i style="background:#fff;color:#fff"></i>H <b id="cH">0</b></div>
+      <div class="atom"><i style="background:#ff3b30;color:#ff3b30"></i>O <b id="cO">0</b></div>
+      <div class="atom"><i style="background:#3b82f6;color:#3b82f6"></i>Si <b id="cSi">0</b></div>
+      <div class="atom"><i style="background:#f97316;color:#f97316"></i>Fe <b id="cFe">0</b></div>
+    </div>
+  </header>
+
+  <main>
+    <aside class="panel">
+      <h3>Build</h3>
+      <div id="tools"></div>
+      <h3>Manual Synthesis (–1⚡)</h3>
+      <div id="mineButtons"></div>
+      <h3>Energy Market</h3>
+      <button id="buyEnergy" class="mine-btn"><span>Buy 50 ⚡</span><b>$10</b></button>
+      <div class="hint" style="margin-top:8px">Tip: Press R to rotate. Right-click to demolish.</div>
+    </aside>
+
+    <div class="game-area">
+      <div id="gridWrap">
+        <canvas id="grid" width="960" height="640"></canvas>
+      </div>
+      <div class="controls">
+        <button id="pause" class="btn">⏸ Pause</button>
+        <button id="reset" class="btn">↺ Reset</button>
+        <div>
+          <button data-speed="1" class="btn speed-btn active">1×</button>
+          <button data-speed="2" class="btn speed-btn">2×</button>
+          <button data-speed="4" class="btn speed-btn">4×</button>
+        </div>
+      </div>
+      <div class="hint">Build: Miner on node → Conveyors → Assembler → Storage. Start with Water (2H+1O).</div>
+    </div>
+
+    <aside class="panel">
+      <h3>Recipes</h3>
+      <div id="recipes"></div>
+      <h3>Research</h3>
+      <div id="research"></div>
+    </aside>
+  </main>
+</div>
+
+<div id="tutorial" class="modal">
+  <div class="modal-card">
+    <h2>Welcome to NanoFactory</h2>
+    <p style="color:#94a3b8;margin-top:0">Assemble molecules atom by atom. A calm, Factorio-inspired nanoscale puzzle.</p>
+    <ol>
+      <li><b>Mine</b> H and O manually (left panel). Costs 1⚡ each.</li>
+      <li>Place a <b>Miner</b> on a colored node, then <b>Conveyors</b> (R to rotate).</li>
+      <li>Route atoms into an <b>Assembler</b> to craft <b>Water</b> (2H + 1O).</li>
+      <li>Send output to <b>Storage</b> — it sells automatically for credits.</li>
+      <li>Buy energy, research faster belts, and scale to <b>Nanobots</b>.</li>
+    </ol>
+    <button class="start" onclick="closeTutorial()">Start Building</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const GRID_W=24, GRID_H=16, CELL=40;
+  const dx=[1,0,-1,0], dy=[0,1,0,-1];
+  const ATOMS={
+    C:{color:'#1f2937',label:'C'},
+    H:{color:'#ffffff',label:'H'},
+    O:{color:'#ff3b30',label:'O'},
+    Si:{color:'#3b82f6',label:'Si'},
+    Fe:{color:'#f97316',label:'Fe'}
+  };
+  const PRODUCTS={
+    H2O:{name:'Water',inputs:{H:2,O:1},value:5,color:'#00e5ff',unlocked:true,key:'H2O',tier:1},
+    CH4:{name:'Methane',inputs:{C:1,H:4},value:8,color:'#a3e635',unlocked:true,key:'CH4',tier:1},
+    Graphene:{name:'Graphene',inputs:{C:6},value:25,color:'#9ca3af',unlocked:true,key:'Graphene',tier:1},
+    Nanotube:{name:'Nanotube',inputs:{Graphene:1,C:4},value:80,color:'#38bdf8',unlocked:true,key:'Nanotube',tier:2},
+    QuantumDot:{name:'Quantum Dot',inputs:{Si:3,C:2},value:150,color:'#d946ef',unlocked:false,key:'QuantumDot',tier:2},
+    Nanobot:{name:'Nanobot',inputs:{Nanotube:1,QuantumDot:1,Fe:2},value:500,color:'#ff00aa',unlocked:false,key:'Nanobot',tier:2}
+  };
+
+  let canvas,ctx,hoverCell=null,accumulator=0,lastTime=0;
+  const state={
+    energy:100, credits:0,
+    machines:[], items:[], nodes:[], particles:[],
+    research:{fast:false,auto:false,quantum:false,nanobot:false},
+    selectedTool:'conveyor', rotation:0,
+    productionTotal:0, productionLast:0, itemsPerSec:0, lastProdTime:0,
+    gameSpeed:1, paused:false
+  };
+
+  function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  function inBounds(x,y){return x>=0&&y>=0&&x<GRID_W&&y<GRID_H}
+  function getMachine(x,y){return state.machines.find(m=>m.x===x&&m.y===y)}
+  function findItemAt(x,y){return state.items.find(it=>Math.floor(it.x)===x && Math.floor(it.y)===y)}
+  function createItem(type,x,y){return {id:Math.random().toString(36).slice(2),type,x,y,prevX:x,prevY:y,moving:false,moveProgress:0,color:ATOMS[type]?.color||PRODUCTS[type]?.color||'#fff'}}
+
+  function spawnParticles(gx,gy,color,count=8){
+    const cx=gx*CELL+CELL/2, cy=gy*CELL+CELL/2;
+    for(let i=0;i<count;i++){
+      const a=Math.random()*Math.PI*2, s=0.5+Math.random()*1.5;
+      state.particles.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:400+Math.random()*400,max:800,color})
+    }
+  }
+
+  function generateNodes(){
+    state.nodes=[];
+    const types=['C','H','O','Si','Fe'];
+    let attempts=0;
+    while(state.nodes.length<5 && attempts<500){
+      attempts++;
+      const x=rand(3,GRID_W-4), y=rand(3,GRID_H-4);
+      if(state.nodes.some(n=>Math.abs(n.x-x)+Math.abs(n.y-y)<4)) continue;
+      state.nodes.push({x,y,type:types[state.nodes.length]})
+    }
+  }
+
+  function canCraft(buffer, recipe){
+    for(const [k,v] of Object.entries(recipe.inputs)){
+      if((buffer[k]||0)<v) return false;
+    }
+    return true;
+  }
+
+  function selectRecipeFor(m){
+    const list = m.type==='assembler' ? ['H2O','CH4','Graphene'] : ['Nanotube','QuantumDot','Nanobot'];
+    for(const k of list){
+      const r=PRODUCTS[k];
+      if(!r.unlocked) continue;
+      if(canCraft(m.buffer||{}, r)) return r;
+    }
+    return null;
+  }
+
+  function updateLogic(dt){
+    // miners
+    for(const m of state.machines){
+      if(m.type!=='miner') continue;
+      m.timer=(m.timer||0)+dt;
+      const interval = state.research.auto?1200:2000;
+      if(m.timer>=interval){
+        m.timer=0;
+        const cost=state.research.auto?0:1;
+        if(state.energy>=cost){
+          const nx=m.x+dx[m.dir], ny=m.y+dy[m.dir];
+          if(inBounds(nx,ny) && !getMachine(nx,ny) && !findItemAt(nx,ny)){
+            state.energy-=cost;
+            state.items.push(createItem(m.nodeType, nx+0.5, ny+0.5));
+            spawnParticles(m.x,m.y, ATOMS[m.nodeType].color,5);
+          }
+        }
+      }
+    }
+    // conveyors
+    const convInt = state.research.fast?300:600;
+    for(const m of state.machines){
+      if(m.type!=='conveyor') continue;
+      m.timer=(m.timer||0)+dt;
+      if(m.timer>=convInt){
+        m.timer=0;
+        const it=findItemAt(m.x,m.y);
+        if(it && !it.moving){
+          const nx=m.x+dx[m.dir], ny=m.y+dy[m.dir];
+          if(inBounds(nx,ny) && !findItemAt(nx,ny)){
+            const target=getMachine(nx,ny);
+            if(!target || ['conveyor','assembler','fabricator','storage'].includes(target.type)){
+              it.prevX=it.x; it.prevY=it.y; it.x=nx+0.5; it.y=ny+0.5; it.moving=true; it.moveProgress=0;
+            }
+          }
+        }
+      }
+    }
+    // assemblers & fabricators
+    for(const m of state.machines){
+      if(m.type!=='assembler' && m.type!=='fabricator') continue;
+      m.buffer=m.buffer||{};
+      const it=findItemAt(m.x,m.y);
+      if(it && !it.moving){
+        state.items=state.items.filter(i=>i!==it);
+        m.buffer[it.type]=(m.buffer[it.type]||0)+1;
+        spawnParticles(m.x,m.y, it.color, 3);
+      }
+      if(!m.crafting){
+        const rec=selectRecipeFor(m);
+        if(rec){
+          for(const [k,v] of Object.entries(rec.inputs)) m.buffer[k]-=v;
+          m.crafting=rec; m.craftTime=0;
+        }
+      }else{
+        m.craftTime+=dt;
+        const dur=m.type==='assembler'?1000:1500;
+        if(m.craftTime>=dur){
+          const nx=m.x+dx[m.dir], ny=m.y+dy[m.dir];
+          if(inBounds(nx,ny) && !getMachine(nx,ny) && !findItemAt(nx,ny)){
+            state.items.push(createItem(m.crafting.key, nx+0.5, ny+0.5));
+            spawnParticles(m.x,m.y, m.crafting.color, 12);
+            m.crafting=null;
+          }
+        }
+      }
+    }
+    // storage
+    for(const m of state.machines){
+      if(m.type!=='storage') continue;
+      m.buffer=m.buffer||[];
+      const it=findItemAt(m.x,m.y);
+      if(it && !it.moving){
+        state.items=state.items.filter(i=>i!==it);
+        m.buffer.push(it.type);
+        spawnParticles(m.x,m.y,'#22d3ee',4);
+      }
+      m.sellTimer=(m.sellTimer||0)+dt;
+      if(m.sellTimer>=1000){
+        m.sellTimer=0;
+        let sold=0;
+        for(const t of m.buffer){
+          const val=PRODUCTS[t]?.value||0;
+          if(val>0){ state.credits+=val; sold++; }
+        }
+        state.productionTotal+=sold;
+        m.buffer=[];
+      }
+    }
+    // particles
+    state.particles = state.particles.filter(p=>{p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.life-=dt;return p.life>0});
+    // counts
+    updateHUD();
+    if(performance.now()-state.lastProdTime>1000){
+      state.itemsPerSec = state.productionTotal - state.productionLast;
+      state.productionLast = state.productionTotal;
+      state.lastProdTime = performance.now();
+      document.getElementById('ips').textContent = state.itemsPerSec.toFixed(1);
+    }
+  }
+
+  function updateHUD(){
+    document.getElementById('energy').textContent=Math.floor(state.energy);
+    document.getElementById('credits').textContent=Math.floor(state.credits);
+    const cnt={C:0,H:0,O:0,Si:0,Fe:0};
+    for(const it of state.items){ if(cnt[it.type]!==undefined) cnt[it.type]++; }
+    for(const m of state.machines){ if(m.buffer){ for(const k in m.buffer){ if(cnt[k]!==undefined) cnt[k]+=m.buffer[k]; } } }
+    document.getElementById('cC').textContent=cnt.C;
+    document.getElementById('cH').textContent=cnt.H;
+    document.getElementById('cO').textContent=cnt.O;
+    document.getElementById('cSi').textContent=cnt.Si;
+    document.getElementById('cFe').textContent=cnt.Fe;
+  }
+
+  function roundRect(x,y,w,h,r){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+    ctx.closePath();
+  }
+
+  function drawMachine(m){
+    const x=m.x*CELL+CELL/2, y=m.y*CELL+CELL/2;
+    ctx.save(); ctx.translate(x,y);
+    const active = (m.crafting || m.type==='miner' || m.type==='conveyor');
+    ctx.shadowColor = active ? '#00e5ff' : 'transparent';
+    ctx.shadowBlur = active ? 12+ Math.sin(performance.now()/300+m.x)*4 : 0;
+    ctx.fillStyle='rgba(10,16,28,0.9)';
+    ctx.strokeStyle='rgba(0,229,255,0.28)';
+    ctx.lineWidth=2;
+    roundRect(-19,-19,38,38,9); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+
+    ctx.fillStyle='#e2e8f0'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='18px system-ui';
+    let icon='?';
+    if(m.type==='miner') icon='⛏';
+    else if(m.type==='conveyor'){ icon='➤'; ctx.save(); ctx.rotate(m.dir*Math.PI/2); }
+    else if(m.type==='assembler') icon='⚗';
+    else if(m.type==='fabricator') icon='⬢';
+    else if(m.type==='storage') icon='⬇';
+    ctx.fillText(icon,0,1);
+    if(m.type==='conveyor') ctx.restore();
+
+    // direction pip
+    if(m.dir!==undefined && m.type!=='conveyor'){
+      ctx.strokeStyle='#ff00aa'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(0,0);
+      ctx.lineTo(dx[m.dir]*14, dy[m.dir]*14); ctx.stroke();
+    }
+    if(m.type==='miner'){
+      ctx.fillStyle=ATOMS[m.nodeType].color; ctx.shadowColor=ATOMS[m.nodeType].color; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.arc(0,-14,4,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+    }
+    if(m.crafting){
+      const p=Math.min(1,m.craftTime/(m.type==='assembler'?1000:1500));
+      ctx.strokeStyle=m.crafting.color; ctx.globalAlpha=.9; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(0,0,22,-Math.PI/2,-Math.PI/2+Math.PI*2*p); ctx.stroke(); ctx.globalAlpha=1;
+    }
+    ctx.restore();
+  }
+
+  function render(dt){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // faint grid
+    ctx.save(); ctx.globalAlpha=.06; ctx.strokeStyle='#00e5ff'; ctx.lineWidth=1;
+    for(let x=0;x<=GRID_W;x++){ ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,GRID_H*CELL); ctx.stroke(); }
+    for(let y=0;y<=GRID_H;y++){ ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(GRID_W*CELL,y*CELL); ctx.stroke(); }
+    ctx.restore();
+    // hex lattice subtle
+    ctx.save(); ctx.globalAlpha=.035; ctx.strokeStyle='#7dd3fc';
+    for(let y=0;y<GRID_H;y+=2){ for(let x=0;x<GRID_W;x++){ const cx=x*CELL+CELL/2, cy=y*CELL+CELL/2+ (x%2?CELL/2:0); ctx.beginPath(); for(let i=0;i<6;i++){ const a=Math.PI/3*i; const px=cx+Math.cos(a)*14, py=cy+Math.sin(a)*14; if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);} ctx.closePath(); ctx.stroke(); } }
+    ctx.restore();
+
+    // nodes
+    for(const n of state.nodes){
+      const cx=n.x*CELL+CELL/2, cy=n.y*CELL+CELL/2;
+      ctx.save();
+      ctx.shadowColor=ATOMS[n.type].color; ctx.shadowBlur=24; ctx.globalAlpha=.25; ctx.fillStyle=ATOMS[n.type].color;
+      ctx.beginPath(); ctx.arc(cx,cy,20,0,Math.PI*2); ctx.fill(); ctx.restore();
+      ctx.fillStyle='#020617'; ctx.font='bold 13px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(n.type,cx,cy+1);
+      ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.beginPath(); ctx.arc(cx,cy,26,0,Math.PI*2); ctx.stroke();
+    }
+    // machines
+    for(const m of state.machines) drawMachine(m);
+    // items
+    for(const it of state.items){
+      let px=it.x*CELL, py=it.y*CELL;
+      if(it.moving){
+        it.moveProgress=Math.min(1, it.moveProgress + dt/180);
+        px = (it.prevX + (it.x-it.prevX)*it.moveProgress)*CELL;
+        py = (it.prevY + (it.y-it.prevY)*it.moveProgress)*CELL;
+        if(it.moveProgress>=1){ it.moving=false; it.prevX=it.x; it.prevY=it.y; }
+      }
+      // trail
+      ctx.globalAlpha=.18; ctx.strokeStyle=it.color; ctx.lineWidth=3; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(it.prevX*CELL, it.prevY*CELL); ctx.lineTo(px,py); ctx.stroke(); ctx.globalAlpha=1;
+      ctx.shadowColor=it.color; ctx.shadowBlur=14; ctx.fillStyle=it.color;
+      ctx.beginPath(); ctx.arc(px,py,6.5,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='rgba(0,0,0,.75)'; ctx.font='700 9px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(it.type,px,py+0.5);
+    }
+    // particles
+    for(const p of state.particles){
+      ctx.globalAlpha=Math.max(0,p.life/p.max)*.85;
+      ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=10;
+      ctx.beginPath(); ctx.arc(p.x,p.y,2.2,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1; ctx.shadowBlur=0;
+
+    // hover preview
+    if(hoverCell && state.selectedTool && state.selectedTool!=='remove'){
+      const x=hoverCell.x, y=hoverCell.y;
+      if(inBounds(x,y) && !getMachine(x,y)){
+        ctx.save(); ctx.globalAlpha=.45; ctx.translate(x*CELL+CELL/2,y*CELL+CELL/2);
+        ctx.strokeStyle='#00e5ff'; ctx.lineWidth=2; ctx.setLineDash([5,5]);
+        roundRect(-19,-19,38,38,9); ctx.stroke();
+        ctx.fillStyle='#e2e8f0'; ctx.font='18px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        const ic = {miner:'⛏',conveyor:'➤',assembler:'⚗',fabricator:'⬢',storage:'⬇'}[state.selectedTool]||'?';
+        if(state.selectedTool==='conveyor'){ ctx.save(); ctx.rotate(state.rotation*Math.PI/2); }
+        ctx.fillText(ic,0,1);
+        if(state.selectedTool==='conveyor') ctx.restore();
+        ctx.restore();
+      }
+    }
+  }
+
+  function loop(now){
+    const dt = Math.min(50, now - lastTime) * state.gameSpeed;
+    lastTime = now;
+    if(!state.paused){
+      accumulator += dt;
+      const step=100;
+      while(accumulator>=step){ updateLogic(step); accumulator-=step; }
+      render(dt);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function placeMachine(x,y){
+    if(!inBounds(x,y) || getMachine(x,y)) return false;
+    const t=state.selectedTool;
+    if(t==='miner'){
+      const node=state.nodes.find(n=>n.x===x&&n.y===y);
+      if(!node){ flash('Miner must be placed on a colored node'); return false; }
+      state.machines.push({type:'miner',x,y,dir:state.rotation,nodeType:node.type,timer:0});
+    }else if(t==='conveyor'){
+      state.machines.push({type:'conveyor',x,y,dir:state.rotation,timer:0});
+    }else if(t==='assembler'){
+      state.machines.push({type:'assembler',x,y,dir:state.rotation,buffer:{}});
+    }else if(t==='fabricator'){
+      state.machines.push({type:'fabricator',x,y,dir:state.rotation,buffer:{}});
+    }else if(t==='storage'){
+      state.machines.push({type:'storage',x,y,dir:state.rotation,buffer:[]});
+    }else return false;
+    spawnParticles(x,y,'#00e5ff',10);
+    save();
+    return true;
+  }
+  function removeMachine(x,y){
+    const idx=state.machines.findIndex(m=>m.x===x&&m.y===y);
+    if(idx>=0){ const m=state.machines[idx]; state.machines.splice(idx,1); spawnParticles(x,y,'#ff3b30',8); save(); }
+    // also clear items on cell
+    state.items = state.items.filter(it=>Math.floor(it.x)!==x || Math.floor(it.y)!==y);
+  }
+  function flash(msg){ console.log(msg); }
+
+  function manualMine(type){
+    if(state.energy<1){flash('Not enough energy');return}
+    const map={C:[2,2],H:[2,3],O:[2,4],Si:[2,5],Fe:[2,6]};
+    const [sx,sy]=map[type];
+    if(findItemAt(sx,sy)||getMachine(sx,sy)){flash('Clear the spawn cell');return}
+    state.energy-=1;
+    state.items.push(createItem(type,sx+0.5,sy+0.5));
+    spawnParticles(sx,sy,ATOMS[type].color,6);
+  }
+
+  function setupEvents(){
+    const rectOf=()=>canvas.getBoundingClientRect();
+    const toCell=(cx,cy)=>{ const r=rectOf(); const sx=canvas.width/r.width, sy=canvas.height/r.height; return {x:Math.floor((cx-r.left)*sx/CELL), y:Math.floor((cy-r.top)*sy/CELL)}; };
+    canvas.addEventListener('mousemove',e=>{ hoverCell=toCell(e.clientX,e.clientY); });
+    canvas.addEventListener('mouseleave',()=>hoverCell=null);
+    canvas.addEventListener('mousedown',e=>{
+      const c=toCell(e.clientX,e.clientY);
+      if(e.button===2){ removeMachine(c.x,c.y); return; }
+      if(state.selectedTool==='remove') removeMachine(c.x,c.y); else placeMachine(c.x,c.y);
+    });
+    canvas.addEventListener('contextmenu',e=>e.preventDefault());
+    canvas.addEventListener('touchstart',e=>{ e.preventDefault(); const t=e.touches[0]; const c=toCell(t.clientX,t.clientY); if(state.selectedTool==='remove') removeMachine(c.x,c.y); else placeMachine(c.x,c.y); },{passive:false});
+
+    window.addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='r'){ state.rotation=(state.rotation+1)%4; } if(e.key===' '){ state.paused=!state.paused; updatePauseBtn(); } });
+
+    document.getElementById('pause').onclick=()=>{ state.paused=!state.paused; updatePauseBtn(); };
+    document.getElementById('reset').onclick=()=>{ if(confirm('Reset factory?')){ localStorage.removeItem('nanofactory'); location.reload(); } };
+    document.querySelectorAll('.speed-btn').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.speed-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.gameSpeed=parseInt(b.dataset.speed); });
+    document.getElementById('buyEnergy').onclick=()=>{ if(state.credits>=10){ state.credits-=10; state.energy+=50; spawnParticles(2,2,'#fde047',12); } };
+  }
+  function updatePauseBtn(){ document.getElementById('pause').textContent = state.paused ? '▶ Resume' : '⏸ Pause'; }
+
+  function renderTools(){
+    const tools=[
+      {id:'miner',name:'Miner',ic:'⛏',desc:'Extracts from nodes'},
+      {id:'conveyor',name:'Conveyor',ic:'➤',desc:'Moves atoms (R rotate)'},
+      {id:'assembler',name:'Assembler',ic:'⚗',desc:'Crafts basic molecules'},
+      {id:'fabricator',name:'Fabricator',ic:'⬢',desc:'Advanced nano-structures'},
+      {id:'storage',name:'Storage',ic:'⬇',desc:'Auto-sells output'},
+      {id:'remove',name:'Demolish',ic:'✕',desc:'Right-click also works'}
+    ];
+    const el=document.getElementById('tools'); el.innerHTML='';
+    tools.forEach(t=>{
+      const b=document.createElement('button'); b.className='tool-btn'+(state.selectedTool===t.id?' active':'');
+      b.innerHTML=`<span class="ic">${t.ic}</span><div><div>${t.name}</div><small>${t.desc}</small></div>`;
+      b.onclick=()=>{ state.selectedTool=t.id; document.querySelectorAll('.tool-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); };
+      el.appendChild(b);
+    });
+  }
+
+  function renderRecipes(){
+    const el=document.getElementById('recipes'); el.innerHTML='';
+    Object.values(PRODUCTS).forEach(r=>{
+      const div=document.createElement('div'); div.className='recipe '+(r.unlocked?'unlocked':'locked');
+      const inputs=Object.entries(r.inputs).map(([k,v])=>`${v} ${k}`).join(' + ');
+      div.innerHTML=`<div class="row"><span class="name" style="color:${r.color}">${r.name}</span><span class="val">$${r.value}</span></div><div class="io">${inputs} → ${r.key}</div>`;
+      el.appendChild(div);
+    });
+  }
+
+  function renderResearch(){
+    const data=[
+      {id:'fast',name:'Faster Conveyors',cost:100,desc:'Belts move 2× faster'},
+      {id:'auto',name:'Auto-Miners',cost:250,desc:'Miners use 0 ⚡'},
+      {id:'quantum',name:'Quantum Assembly',cost:500,desc:'Unlock Quantum Dots'},
+      {id:'nanobot',name:'Nanobot Factory',cost:1200,desc:'Unlock Nanobots'}
+    ];
+    const el=document.getElementById('research'); el.innerHTML='';
+    data.forEach(d=>{
+      const bought=state.research[d.id];
+      const div=document.createElement('div'); div.className='research-item'+(bought?' bought':'');
+      div.innerHTML=`<b>${d.name}</b><small>${d.desc}</small><div class="cost">${bought?'✓ Purchased':'$'+d.cost}</div>`;
+      if(!bought) div.onclick=()=>{ if(state.credits>=d.cost){ state.credits-=d.cost; state.research[d.id]=true; if(d.id==='quantum') PRODUCTS.QuantumDot.unlocked=true; if(d.id==='nanobot') PRODUCTS.Nanobot.unlocked=true; renderResearch(); renderRecipes(); spawnParticles(10,8,'#d946ef',20); save(); } };
+      el.appendChild(div);
+    });
+  }
+
+  function save(){
+    const data={energy:state.energy,credits:state.credits,machines:state.machines,nodes:state.nodes,research:state.research,productionTotal:state.productionTotal};
+    localStorage.setItem('nanofactory',JSON.stringify(data));
+  }
+  function load(){
+    const raw=localStorage.getItem('nanofactory');
+    if(!raw) return;
+    try{
+      const d=JSON.parse(raw);
+      state.energy=d.energy??100; state.credits=d.credits??0; state.machines=d.machines??[]; state.nodes=d.nodes??[]; state.research=d.research??state.research; state.productionTotal=d.productionTotal??0;
+      if(state.research.quantum) PRODUCTS.QuantumDot.unlocked=true;
+      if(state.research.nanobot) PRODUCTS.Nanobot.unlocked=true;
+    }catch{}
+  }
+
+  window.closeTutorial=()=>{ document.getElementById('tutorial').style.display='none'; localStorage.setItem('nano-tutorial','1'); };
+
+  function init(){
+    canvas=document.getElementById('grid'); ctx=canvas.getContext('2d');
+    load();
+    if(state.nodes.length===0) generateNodes();
+    renderTools(); renderRecipes(); renderResearch();
+    // mine buttons
+    const mb=document.getElementById('mineButtons'); mb.innerHTML='';
+    Object.entries(ATOMS).forEach(([k,v])=>{
+      const b=document.createElement('button'); b.className='mine-btn';
+      b.innerHTML=`<span><i style="display:inline-block;width:10px;height:10px;background:${v.color};border-radius:50%;margin-right:6px;box-shadow:0 0 6px ${v.color}"></i>Mine ${k}</span><span>⚡1</span>`;
+      b.onclick=()=>manualMine(k); mb.appendChild(b);
+    });
+    setupEvents(); updateHUD(); updatePauseBtn();
+    if(!localStorage.getItem('nano-tutorial')) document.getElementById('tutorial').style.display='flex';
+    lastTime=performance.now(); requestAnimationFrame(loop);
+    setInterval(save,4000);
+  }
+
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
+})();
+</script>
+</body>
+</html>

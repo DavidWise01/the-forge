@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FULL NANO FACTORY — Wexler Hands</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui; background:#030305; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  *::-webkit-scrollbar { width:6px; height:6px }
+  *::-webkit-scrollbar-thumb { background:#27272a; border-radius:3px }
+  input[type=range] { -webkit-appearance:none; height:4px; background:#27272a; border-radius:2px }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; background:#fff; border-radius:50%; border:2px solid #000; box-shadow:0 0 8px currentColor; cursor:pointer }
+  .glow-blue { filter: drop-shadow(0 0 12px #3b82f6) drop-shadow(0 0 24px #3b82f660); }
+  .glow-red { filter: drop-shadow(0 0 12px #ef4444) drop-shadow(0 0 24px #ef444460); }
+  .grid-dot { background-image: radial-gradient(#ffffff08 1px, transparent 1px); background-size: 16px 16px; }
+</style>
+</head>
+<body class="overflow-hidden select-none text-zinc-200">
+<div class="h-screen w-screen flex flex-col bg-[#030305] grid-dot">
+  <!-- TOP BAR -->
+  <header class="h-[68px] shrink-0 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl px-4 flex items-center gap-4 z-40">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-900/30">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v4 M12 18v4 M4.93 4.93l2.83 2.83 M16.24 16.24l2.83 2.83 M2 12h4 M18 12h4 M6.34 17.66l-2.83 2.83 M19.07 4.93l-2.83 2.83"/></svg>
+      </div>
+      <div>
+        <div class="text-[11px] uppercase tracking-[0.18em] text-zinc-500 -mb-1">Fusion Tripod</div>
+        <div class="font-semibold tracking-wide">NANO FACTORY v3</div>
+      </div>
+    </div>
+    
+    <div class="h-8 w-px bg-zinc-800 mx-2 hidden md:block"></div>
+    
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+      <span class="mono text-[10px] text-zinc-500 hidden sm:block">ROOT0</span>
+      <code id="rootHash" class="mono text-[11px] px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-emerald-300">0xf7a9341b2e8c5d09</code>
+    </div>
+
+    <div class="flex-1 min-w-0 hidden lg:flex items-center gap-2.5 pl-4">
+      <span class="text-[10px] uppercase tracking-widest text-zinc-600 mr-1">10-Layer Core</span>
+      <div id="coreSliders" class="flex items-center gap-1.5 flex-1"></div>
+    </div>
+
+    <div class="flex items-center gap-2 ml-auto">
+      <button id="crisprToggle" class="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium transition">DNA Mode</button>
+      <div class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] mono"><span class="text-zinc-500">LATTICE</span> <span class="text-cyan-400">12³</span></div>
+    </div>
+  </header>
+
+  <div class="flex flex-1 min-h-0">
+    <!-- LEFT -->
+    <aside class="w-[300px] shrink-0 border-r border-zinc-900 bg-zinc-950/60 backdrop-blur-xl p-3 flex flex-col gap-3 overflow-hidden max-[1280px]:w-[260px] max-[1024px]:hidden">
+      <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-[11px] uppercase tracking-widest font-semibold text-zinc-400">Periodic Selector</h3>
+          <div class="flex items-center gap-1.5">
+            <div id="selectedElement" class="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold border" style="background:#909090; color:black; border-color:#909090">C</div>
+            <span id="selectedName" class="mono text-[11px] text-zinc-500">Carbon</span>
+          </div>
+        </div>
+        <div id="periodic" class="grid grid-cols-5 gap-1.5"></div>
+      </div>
+
+      <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+        <h3 class="text-[11px] uppercase tracking-widest font-semibold text-zinc-400 mb-2.5">Compounds Quick-Build</h3>
+        <div class="grid grid-cols-2 gap-1.5" id="compounds"></div>
+      </div>
+
+      <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 mt-auto">
+        <h3 class="text-[11px] uppercase tracking-widest font-semibold text-zinc-400 mb-2">System Telemetry</h3>
+        <div class="space-y-1.5 mono text-[11px]">
+          <div class="flex justify-between"><span class="text-zinc-600">Attraction L1-3</span><span id="t-attract" class="text-violet-400">75%</span></div>
+          <div class="flex justify-between"><span class="text-zinc-600">Grip L4-6</span><span id="t-grip" class="text-cyan-400">62%</span></div>
+          <div class="flex justify-between"><span class="text-zinc-600">Precision L7-8</span><span id="t-precision" class="text-emerald-400">88%</span></div>
+          <div class="flex justify-between"><span class="text-zinc-600">Speed L9-10</span><span id="t-speed" class="text-amber-400">70%</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER -->
+    <main class="flex-1 relative min-w-0 bg-[#020208]">
+      <canvas id="canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- HUD -->
+      <div class="absolute top-3 left-3 right-3 flex justify-between pointer-events-none z-10">
+        <div class="flex gap-2">
+          <div class="px-3 py-1.5 rounded-lg bg-black/70 backdrop-blur-md border border-zinc-800 text-[11px] mono">
+            <span class="text-zinc-500">ACTIVE</span> <span id="hudHand" class="text-sky-400 ml-1.5">LEFT</span>
+          </div>
+          <div class="px-3 py-1.5 rounded-lg bg-black/70 backdrop-blur-md border border-zinc-800 text-[11px] mono">
+            <span class="text-zinc-500">HOLD</span> <span id="hudHold" class="ml-1.5">—</span>
+          </div>
+        <div class="px-3 py-1.5 rounded-lg bg-black/70 backdrop-blur-md border border-zinc-800 text-[11px] mono hidden md:block">
+          <span class="text-zinc-500">FPS</span> <span id="hudFps" class="text-emerald-400 ml-1.5">60</span>
+        </div>
+      </div>
+
+      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+        <button id="btnHome" class="pointer-events-auto px-3 py-1.5 rounded-lg bg-zinc-900/90 backdrop-blur border border-zinc-800 hover:bg-zinc-800 text-xs">Home Hands</button>
+        <button id="btnClear" class="pointer-events-auto px-3 py-1.5 rounded-lg bg-zinc-900/90 backdrop-blur border border-zinc-800 hover:bg-zinc-800 text-xs">Clear Lattice</button>
+        <div class="px-3 py-1.5 rounded-lg bg-black/70 backdrop-blur border border-zinc-800 text-[11px] text-zinc-500 hidden sm:block">Click lattice to move • Scroll to zoom</div>
+      </div>
+
+      <!-- Center crosshair -->
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-20">
+        <div class="w-6 h-6 border border-white rounded-full"></div>
+      </div>
+    </main>
+
+    <!-- RIGHT -->
+    <aside class="w-[340px] shrink-0 border-l border-zinc-900 bg-zinc-950/60 backdrop-blur-xl flex flex-col max-[1280px]:w-[310px] max-[900px]:absolute max-[900px]:right-0 max-[900px]:top-[68px] max-[900px]:bottom-0 max-[900px]:translate-x-full max-[900px]:z-30 max-[900px]:transition-transform" id="rightPanel">
+      <div class="flex border-b border-zinc-900">
+        <button data-hand="left" class="handtab flex-1 px-4 py-2.5 text-xs font-medium border-b-2 border-sky-500 text-sky-300 bg-zinc-900/50">LEFT HAND <span class="text-sky-500">●</span></button>
+        <button data-hand="right" class="handtab flex-1 px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-zinc-500 hover:text-zinc-300">RIGHT HAND <span class="text-red-500">●</span></button>
+      </div>
+
+      <div class="p-3 overflow-y-auto flex-1 space-y-3">
+        <!-- Hand Controls -->
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+          <div class="grid grid-cols-3 gap-3 mb-3">
+            <div><label class="text-[10px] text-zinc-500 uppercase tracking-wide">X</label><input id="hx" type="range" min="0" max="11" value="3" class="w-full mt-1 accent-sky-500"><div class="text-center mono text-[11px] mt-0.5" id="hxv">3</div></div>
+            <div><label class="text-[10px] text-zinc-500 uppercase tracking-wide">Y</label><input id="hy" type="range" min="0" max="11" value="5" class="w-full mt-1 accent-sky-500"><div class="text-center mono text-[11px] mt-0.5" id="hyv">5</div></div>
+            <div><label class="text-[10px] text-zinc-500 uppercase tracking-wide">Z</label><input id="hz" type="range" min="0" max="11" value="5" class="w-full mt-1 accent-sky-500"><div class="text-center mono text-[11px] mt-0.5" id="hzv">5</div></div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div><label class="text-[10px] text-zinc-500 uppercase tracking-wide">Grip</label><input id="hg" type="range" min="0" max="100" value="20" class="w-full mt-1"><div class="text-center mono text-[11px] mt-0.5" id="hgv">20%</div></div>
+            <div><label class="text-[10px] text-zinc-500 uppercase tracking-wide">Rot</label><input id="hr" type="range" min="0" max="360" value="0" class="w-full mt-1"><div class="text-center mono text-[11px] mt-0.5" id="hrv">0°</div></div>
+            <div><label class="text-[10px] text-zinc-500 uppercase tracking-wide">Wrist</label><input id="hw" type="range" min="0" max="90" value="15" class="w-full mt-1"><div class="text-center mono text-[11px] mt-0.5" id="hwv">15°</div></div>
+          </div>
+          <div class="flex gap-1.5 mt-3">
+            <button id="btnPick" class="flex-1 py-1.5 rounded-md bg-sky-600/20 hover:bg-sky-600/30 border border-sky-900 text-[11px] font-medium text-sky-300">PICK</button>
+            <button id="btnPlace" class="flex-1 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-[11px] font-medium">PLACE</button>
+          </div>
+        </div>
+
+        <!-- Wexler Hands Status -->
+        <div class="rounded-xl border border-zinc-800 bg-gradient-to-b from-zinc-900/60 to-zinc-900/20 p-3">
+          <h4 class="text-[11px] uppercase tracking-widest font-semibold text-zinc-400 mb-2.5 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> WEXLER HANDS
+          </h4>
+          <div class="space-y-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1"><span class="text-sky-400">Left</span><span class="mono text-zinc-500" id="leftPos">[3,5,5]</span></div>
+              <div class="h-1.5 bg-zinc-900 rounded-full overflow-hidden"><div id="leftGripBar" class="h-full w-[20%] bg-sky-500 transition-all"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1"><span class="text-red-400">Right</span><span class="mono text-zinc-500" id="rightPos">[8,5,5]</span></div>
+              <div class="h-1.5 bg-zinc-900 rounded-full overflow-hidden"><div id="rightGripBar" class="h-full w-[20%] bg-red-500 transition-all"></div></div>
+            </div>
+          <div class="mt-3 pt-3 border-t border-zinc-800/60 grid grid-cols-3 gap-2">
+            <div class="text-center"><div class="text-[10px] text-zinc-600">Distance</div><div id="handDist" class="mono text-sm text-amber-400">5.0</div></div>
+            <div class="text-center"><div class="text-[10px] text-zinc-600">Bond Ready</div><div id="bondReady" class="mono text-sm">NO</div></div>
+            <div class="text-center"><div class="text-[10px] text-zinc-600">Force</div><div id="hapticForce" class="mono text-sm text-violet-400">0.0</div></div>
+          </div>
+        </div>
+
+        <!-- Coordination -->
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium">Mirror Mode</span>
+            <button id="mirrorToggle" class="w-10 h-5 rounded-full bg-zinc-800 relative transition"><span class="absolute w-4 h-4 bg-zinc-400 rounded-full top-0.5 left-0.5 transition"></span></button>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium">Dual-Bond Assist</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-900">AUTO</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 pt-1">
+            <button id="btnAuto" class="py-1.5 rounded-md bg-violet-600/20 hover:bg-violet-600/30 border border-violet-900 text-[11px] font-medium text-violet-300">Auto-Build</button>
+            <button id="btnCenter" class="py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-[11px] font-medium">Center Both</button>
+          </div>
+        </div>
+
+        <!-- Record -->
+        <div class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-[11px] uppercase tracking-widest font-semibold text-zinc-400">Recipe Recorder</h4>
+            <span id="recStatus" class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500">IDLE</span>
+          </div>
+          <div class="flex gap-1.5">
+            <button id="recBtn" class="flex-1 py-1.5 rounded-md bg-red-600/20 hover:bg-red-600/30 border border-red-900 text-[11px] font-medium text-red-300">● REC</button>
+            <button id="playBtn" class="flex-1 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-[11px] font-medium">PLAY</button>
+            <button id="clearRecBtn" class="px-2.5 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-[11px]">↺</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Merkle Toast Container -->
+<div id="toasts" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+<button id="panelToggle" class="fixed bottom-4 left-4 z-40 lg:hidden w-10 h-10 rounded-full bg-zinc-900 border-zinc-800 flex items-center justify-center">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ===== CORE STATE =====
+const coreLayers = [78,82,71, 65,58,62, 85,91, 68,73];
+let selectedElement = { symbol:'C', name:'Carbon', number:6, color:0x909090 };
+let dnaMode = false;
+const elements = [
+  {s:'H',n:'Hydrogen',z:1,c:0xffffff},{s:'He',n:'Helium',z:2,c:0xd9ffff},
+  {s:'Li',n:'Lithium',z:3,c:0xcc80ff},{s:'Be',n:'Beryllium',z:4,c:0xc2ff00},
+  {s:'B',n:'Boron',z:5,c:0xffb5b5},{s:'C',n:'Carbon',z:6,c:0x909090},
+  {s:'N',n:'Nitrogen',z:7,c:0x3050f8},{s:'O',n:'Oxygen',z:8,c:0xff0d0d},
+  {s:'F',n:'Fluorine',z:9,c:0x90e050},{s:'Ne',n:'Neon',z:10,c:0xb3e3f5},
+  {s:'Na',n:'Sodium',z:11,c:0xab5cf2},{s:'Mg',n:'Magnesium',z:12,c:0x8aff00},
+  {s:'Al',n:'Aluminum',z:13,c:0xbfa6a6},{s:'Si',n:'Silicon',z:14,c:0xf0c8a0},
+  {s:'P',n:'Phosphorus',z:15,c:0xff8000},{s:'S',n:'Sulfur',z:16,c:0xffff30},
+  {s:'Cl',n:'Chlorine',z:17,c:0x1ff01f},{s:'Ar',n:'Argon',z:18,c:0x80d1e3},
+  {s:'K',n:'Potassium',z:19,c:0x8f40d4},{s:'Ca',n:'Calcium',z:20,c:0x3dff00},
+];
+const nucleotides = [
+  {s:'A',n:'Adenine',c:0x10b981},{s:'T',n:'Thymine',c:0xef4444},
+  {s:'C',n:'Cytosine',c:0x3b82f6},{s:'G',n:'Guanine',c:0xf59e0b},
+  {s:'U',n:'Uracil',c:0x8b5cf6},
+];
+const compounds = [
+  {name:'Water', formula:'H₂O', atoms:[{e:'O',x:6,y:6,z:6},{e:'H',x:5,y:6,z:6},{e:'H',x:7,y:7,z:6}]},
+  {name:'Methane', formula:'CH₄', atoms:[{e:'C',x:6,y:6,z:6},{e:'H',x:5,y:5,z:5},{e:'H',x:7,y:5,z:7},{e:'H',x:5,y:7,z:7},{e:'H',x:7,y:7,z:5}]},
+  {name:'Ammonia', formula:'NH₃', atoms:[{e:'N',x:6,y:6,z:6},{e:'H',x:5,y:6,z:6},{e:'H',x:7,y:6,z:5},{e:'H',x:6,y:7,z:7}]},
+  {name:'CO₂', formula:'CO₂', atoms:[{e:'C',x:6,y:6,z:6},{e:'O',x:4,y:6,z:6},{e:'O',x:8,y:6,z:6}]},
+  {name:'Benzene', formula:'C₆H₆', atoms:[...Array(6)].map((_,i)=>{const a=i*Math.PI/3;return {e:'C',x:6+Math.cos(a)*2.5, y:6+Math.sin(a)*2.5, z:6}})},
+  {name:'DNA base', formula:'AT', atoms:[{e:'A',x:5,y:6,z:6},{e:'T',x:7,y:6,z:6}]},
+];
+
+// ===== THREE SETUP =====
+const canvas = document.getElementById('canvas');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x020208);
+scene.fog = new THREE.FogExp2(0x020208, 0.022);
+
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+camera.position.set(14, 12, 14);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.07;
+controls.minDistance = 6; controls.maxDistance = 40;
+controls.target.set(0,0,0);
+
+// Lights
+scene.add(new THREE.AmbientLight(0x404060, 0.9));
+const dir = new THREE.DirectionalLight(0xffffff, 1.2); dir.position.set(8,15,10); scene.add(dir);
+const hemi = new THREE.HemisphereLight(0x3344aa, 0x110511, 0.3); scene.add(hemi);
+
+// Lattice
+const latticeGroup = new THREE.Group(); scene.add(latticeGroup);
+const gridMat = new THREE.LineBasicMaterial({ color:0x1e293b, transparent:true, opacity:0.25 });
+for(let i=0;i<=12;i++){
+  const o = i-6;
+  const pts = [[-6,o,-6],[6,o,-6],[6,o,6],[-6,o,6],[-6,o,-6]];
+  const geo = new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(...p)));
+  latticeGroup.add(new THREE.Line(geo, gridMat));
+}
+const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(12,12,12)), new THREE.LineBasicMaterial({color:0x334155, transparent:true, opacity:0.4}));
+scene.add(box);
+
+// Lattice dots
+const dotGeo = new THREE.SphereGeometry(0.03, 6,6);
+const dotMat = new THREE.MeshBasicMaterial({color:0x475569, transparent:true, opacity:0.15});
+for(let x=0;x<12;x++)for(let y=0;y<12;y++)for(let z=0;z<12;z++){
+  const d = new THREE.Mesh(dotGeo, dotMat); d.position.set(x-5.5, y-5.5, z-5.5); latticeGroup.add(d);
+}
+
+// Atoms & bonds storage
+const lattice = Array.from({length:12},()=>Array.from({length:12},()=>Array(12).fill(null)));
+const atoms = []; const bonds = [];
+
+// ===== WEXLER HANDS =====
+function createHand(color, side){
+  const g = new THREE.Group(); g.name = side;
+  const mat = new THREE.MeshStandardMaterial({ color, emissive:color, emissiveIntensity:0.65, metalness:0.85, roughness:0.2 });
+  
+  // Arm (3 segments)
+  const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.15,2.2,12), mat); arm1.position.y=1.1; g.add(arm1);
+  const joint1 = new THREE.Mesh(new THREE.SphereGeometry(0.18,16,16), mat); joint1.position.y=2.2; g.add(joint1);
+  const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.13,1.8,12), mat); arm2.position.y=3.1; arm2.rotation.z=0.2; g.add(arm2);
+  const wrist = new THREE.Mesh(new THREE.SphereGeometry(0.16,16,16), mat); wrist.position.y=4.0; g.add(wrist);
+  
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.26,0.28,16), mat); base.position.y=4.18; g.add(base);
+  
+  const fingers = new THREE.Group(); fingers.position.y=4.33; g.add(fingers);
+  for(let i=0;i<3;i++){
+    const fg = new THREE.Group(); fg.rotation.y = i*2.094;
+    const p = new THREE.Mesh(new THREE.CapsuleGeometry(0.055,0.22,4,8), mat); p.position.set(0,0.12,0.16); p.rotation.x=-0.4;
+    const d = new THREE.Mesh(new THREE.CapsuleGeometry(0.042,0.16,4,8), mat); d.position.y=0.18; d.rotation.x=-0.3; p.add(d);
+    fg.add(p); fg.userData = {prox:p, dist:d};
+    fingers.add(fg);
+  }
+  
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06,0.18,8), new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.8}));
+  tip.position.y=4.55; tip.rotation.x=Math.PI; g.add(tip);
+  
+  const light = new THREE.PointLight(color, 1.2, 6, 2); light.position.y=4.2; g.add(light);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.4,0.018,8,32), new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.45}));
+  ring.position.y=4.35; ring.rotation.x=Math.PI/2; g.add(ring);
+  
+  g.userData = { fingers, ring, light, mat, side, holding:null, target:new THREE.Vector3(), grip:20, rot:0, wrist:15, x:0,y:0,z:0 };
+  g.position.set(side==='left'?-7:7, -3, side==='left'?-2:2);
+  g.userData.target.copy(g.position);
+  return g;
+}
+const leftHand = createHand(0x3b82f6, 'left'); scene.add(leftHand);
+const rightHand = createHand(0xef4444, 'right'); scene.add(rightHand);
+leftHand.userData.x=3; leftHand.userData.y=5; leftHand.userData.z=5; rightHand.userData.x=8; rightHand.userData.y=5; rightHand.userData.z=5;
+
+function gridToWorld(x,y,z){ return new THREE.Vector3(x-5.5, y-5.5, z-5.5); }
+function updateHandTarget(hand){ hand.userData.target.copy(gridToWorld(hand.userData.x, hand.userData.y, hand.userData.z).add(new THREE.Vector3(0,4.5,0))); }
+
+// ===== ATOMS =====
+function createAtom(el, x,y,z){
+  const X=Math.round(x),Y=Math.round(y),Z=Math.round(z);
+  if(X<0||X>=12||Y<0||Y>=12||Z<0||Z>=12) return null;
+  if(lattice[X][Y][Z]) return lattice[X][Y][Z];
+  const geo = new THREE.SphereGeometry(el.s==='H'?0.28: el.s==='C'||el.s==='N'||el.s==='O'?0.36:0.32, 24,18);
+  const mat = new THREE.MeshStandardMaterial({ color:el.color||el.c||0xffffff, metalness:0.1, roughness:0.3, emissive:el.color||el.c||0xffffff, emissiveIntensity:0.08 });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.copy(gridToWorld(X,Y,Z));
+  m.userData = { element:el, gx:X,gy:Y,gz:Z };
+  scene.add(m); atoms.push(m); lattice[X][Y][Z]=m;
+  // glow
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ color:el.color||0xffffff, transparent:true, opacity:0.15, blending:THREE.AdditiveBlending }));
+  glow.scale.setScalar(1.2); m.add(glow);
+  return m;
+}
+function removeAtom(a){ if(!a) return; const {gx,gy,gz}=a.userData; lattice[gx][gy][gz]=null; scene.remove(a); atoms.splice(atoms.indexOf(a),1); }
+
+// Bonds
+const bondMat = new THREE.MeshStandardMaterial({ color:0x94a3b8, metalness:0.6, roughness:0.25, emissive:0x334155, emissiveIntensity:0.3 });
+function createBond(a,b){
+  const start=a.position, end=b.position;
+  const dir = new THREE.Vector3().subVectors(end,start);
+  const len = dir.length();
+  const geo = new THREE.CylinderGeometry(0.06,0.06,len,8);
+  const m = new THREE.Mesh(geo, bondMat);
+  m.position.copy(start).add(end).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  scene.add(m); bonds.push({mesh:m, a,b}); return m;
+}
+function clearBonds(){ bonds.forEach(b=>scene.remove(b.mesh)); bonds.length=0; }
+
+// ===== HAND LOGIC =====
+let activeHand = leftHand;
+function setActiveHand(h){ activeHand=h; document.getElementById('hudHand').textContent = h.userData.side.toUpperCase(); document.getElementById('hudHand').className = h===leftHand?'text-sky-400 ml-1.5':'text-red-400 ml-1.5'; document.querySelectorAll('.handtab').forEach(b=>b.classList.toggle('border-sky-500', b.dataset.hand===h.userData.side)); document.querySelectorAll('.handtab').forEach(b=>b.classList.toggle('text-sky-300', b.dataset.hand===h.userData.side)); syncSliders(); }
+
+function syncSliders(){
+  const h = activeHand.userData;
+  hx.value=h.x; hy.value=h.y; hz.value=h.z; hg.value=h.grip; hr.value=h.rot; hw.value=h.wrist;
+  hxv.textContent=h.x; hyv.textContent=h.y; hzv.textContent=h.z; hgv.textContent=h.grip+'%'; hrv.textContent=h.rot+'°'; hwv.textContent=h.wrist+'°';
+  hx.className = `w-full mt-1 ${activeHand===leftHand?'accent-sky-500':'accent-red-500'}`;
+}
+
+function tryPick(hand){
+  if(hand.userData.holding) return;
+  const pos = gridToWorld(hand.userData.x, hand.userData.y, hand.userData.z);
+  let nearest=null, dist=9;
+  atoms.forEach(a=>{ const d=a.position.distanceTo(pos); if(d<dist){dist=d; nearest=a;} });
+  if(nearest && dist<0.75){
+    const gripStrength = (coreLayers[3]+coreLayers[4]+coreLayers[5])/3;
+    if(gripStrength < 25 && Math.random()<0.4){ haptic(0.8); toast('GRIP SLIP — Layer 4-6 low','warn'); return; }
+    removeAtom(nearest); hand.add(nearest); nearest.position.set(0,-0.45,0); hand.userData.holding=nearest;
+    document.getElementById('hudHold').textContent = nearest.userData.element.s; document.getElementById('hudHold').style.color = '#'+nearest.material.color.getHexString();
+    witness('PICK', nearest.userData.element.s, hand.userData.x, hand.userData.y, hand.userData.z);
+    haptic(0.3);
+  }
+}
+function tryPlace(hand){
+  const h = hand.userData; if(!h.holding) return;
+  const X=h.x, Y=h.y, Z=h.z;
+  if(lattice[X][Y][Z]){ haptic(1.2); toast('OCCUPIED VOXEL','error'); showForce(hand); return; }
+  const atom = h.holding; hand.remove(atom); scene.add(atom);
+  atom.position.copy(gridToWorld(X,Y,Z)); atom.userData.gx=X; atom.userData.gy=Y; atom.userData.gz=Z;
+  lattice[X][Y][Z]=atom; h.holding=null;
+  document.getElementById('hudHold').textContent='—'; document.getElementById('hudHold').style.color='';
+  witness('PLACE', atom.userData.element.s, X,Y,Z);
+  // auto-bond
+  const attract = (coreLayers[0]+coreLayers[1]+coreLayers[2])/3;
+  if(attract>55){
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(let dz=-1;dz<=1;dz++){
+      if(dx===0&&dy===0&&dz===0) continue;
+      const nx=X+dx, ny=Y+dy, nz=Z+dz;
+      if(nx<0||ny<0||nz<0||nx>=12||ny>=12||nz>=12) continue;
+      const nb=lattice[nx][ny][nz]; if(nb){ const d=atom.position.distanceTo(nb.position); if(d<1.6){ createBond(atom,nb);} }
+    }
+  }
+  haptic(0.2);
+}
+
+// Haptic & force
+let forceArrow=null;
+function showForce(hand){
+  if(forceArrow) scene.remove(forceArrow);
+  const dir = new THREE.Vector3().subVectors(hand.position, controls.target).normalize();
+  forceArrow = new THREE.ArrowHelper(dir, hand.position, 1.2, 0xff3344, 0.25, 0.15);
+  scene.add(forceArrow); setTimeout(()=>{ if(forceArrow) scene.remove(forceArrow); forceArrow=null; }, 350);
+  document.getElementById('hapticForce').textContent = (1.2).toFixed(1);
+  setTimeout(()=>document.getElementById('hapticForce').textContent='0.0', 400);
+}
+function haptic(v){ if(navigator.vibrate) navigator.vibrate(Math.floor(v*40)); }
+
+// Merkle witness
+function witness(op, el, x,y,z){
+  const hash = '0x'+crypto.getRandomValues(new Uint8Array(4)).reduce((s,b)=>s+b.toString(16).padStart(2,'0'),'');
+  const root = document.getElementById('rootHash'); root.textContent = '0x'+crypto.getRandomValues(new Uint8Array(8)).reduce((s,b)=>s+b.toString(16).padStart(2,'0'),'');
+  toast(`${op} ${el} @[${x},${y},${z}] ✓ ${hash}`, 'ok');
+}
+function toast(msg,type='ok'){
+  const el = document.createElement('div');
+  el.className = `pointer-events-none px-3 py-2 rounded-lg backdrop-blur-xl border text-xs mono shadow-2xl translate-x-4 opacity-0 transition-all duration-300 ${type==='ok'?'bg-zinc-950/90 border-emerald-900/50 text-emerald-300':type==='warn'?'bg-zinc-950/90 border-amber-900/50 text-amber-300':'bg-zinc-950/90 border-red-900/50 text-red-300'}`;
+  el.textContent = msg; document.getElementById('toasts').appendChild(el);
+  requestAnimationFrame(()=>{el.style.transform='translateX(0)'; el.style.opacity='1';});
+  setTimeout(()=>{el.style.opacity='0'; el.style.transform='translateX(1rem)';}, 2000);
+  setTimeout(()=>el.remove(), 2400);
+}
+
+// ===== UI BUILD =====
+const periodicEl = document.getElementById('periodic');
+function renderPeriodic(){
+  periodicEl.innerHTML=''; const list = dnaMode? nucleotides : elements;
+  list.forEach(el=>{
+    const b=document.createElement('button');
+    b.className='aspect-square rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-[11px] font-bold transition flex items-center justify-center';
+    b.style.background = '#'+(el.c).toString(16).padStart(6,'0')+'22'; b.style.borderColor='#'+(el.c).toString(16).padStart(6,'0')+'44'; b.style.color='#'+(el.c).toString(16).padStart(6,'0');
+    b.textContent = el.s; b.title = el.n;
+    b.onclick=()=>{ selectedElement = {...el, symbol:el.s, color:el.c}; document.getElementById('selectedElement').textContent=el.s; document.getElementById('selectedElement').style.background='#'+el.c.toString(16).padStart(6,'0'); document.getElementById('selectedName').textContent=el.n; };
+    periodicEl.appendChild(b);
+  });
+}
+renderPeriodic();
+
+const compoundsEl = document.getElementById('compounds');
+compounds.forEach(c=>{
+  const b=document.createElement('button');
+  b.className='px-2.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left transition group';
+  b.innerHTML=`<div class="text-[11px] font-medium group-hover:text-white">${c.name}</div><div class="mono text-[10px] text-zinc-500">${c.formula}</div>`;
+  b.onclick=()=>autoBuild(c); compoundsEl.appendChild(b);
+});
+
+// Core sliders
+const coreWrap = document.getElementById('coreSliders');
+coreLayers.forEach((v,i)=>{
+  const wrap=document.createElement('div'); wrap.className='flex flex-col items-center gap-0.5';
+  const s=document.createElement('input'); s.type='range'; s.min=0; s.max=100; s.value=v; s.className='w-12 h-1';
+  s.style.accentColor = i<3?'#8b5cf6':i<6?'#06b6d4':i<8?'#10b981':'#f59e0b';
+  const l=document.createElement('div'); l.className='text-[9px] mono text-zinc-600'; l.textContent='L'+(i+1);
+  s.oninput=()=>{coreLayers[i]=+s.value; updateTelemetry();}; wrap.append(s,l); coreWrap.append(wrap);
+});
+function updateTelemetry(){
+  const a=Math.round((coreLayers[0]+coreLayers[1]+coreLayers[2])/3);
+  const g=Math.round((coreLayers[3]+coreLayers[4]+coreLayers[5])/3);
+  const p=Math.round((coreLayers[6]+coreLayers[7])/2);
+  const s=Math.round((coreLayers[8]+coreLayers[9])/2);
+  document.getElementById('t-attract').textContent=a+'%'; document.getElementById('t-grip').textContent=g+'%'; document.getElementById('t-precision').textContent=p+'%'; document.getElementById('t-speed').textContent=s+'%';
+}
+updateTelemetry();
+
+// Hand sliders
+const hx=document.getElementById('hx'), hy=document.getElementById('hy'), hz=document.getElementById('hz'), hg=document.getElementById('hg'), hr=document.getElementById('hr'), hw=document.getElementById('hw');
+const hxv=document.getElementById('hxv'), hyv=document.getElementById('hyv'), hzv=document.getElementById('hzv'), hgv=document.getElementById('hgv'), hrv=document.getElementById('hrv'), hwv=document.getElementById('hwv');
+[hx,hy,hz,hg,hr,hw].forEach(inp=>inp.oninput=()=>{
+  const h=activeHand.userData;
+  h.x=+hx.value; h.y=+hy.value; h.z=+hz.value; h.grip=+hg.value; h.rot=+hr.value; h.wrist=+hw.value;
+  hxv.textContent=h.x; hyv.textContent=h.y; hzv.textContent=h.z; hgv.textContent=h.grip+'%'; hrv.textContent=h.rot+'°'; hwv.textContent=h.wrist+'°';
+  updateHandTarget(activeHand);
+  if(document.getElementById('mirrorToggle').dataset.on==='1' && activeHand===leftHand){
+    rightHand.userData.x = 11-h.x; rightHand.userData.y = h.y; rightHand.userData.z = h.z;
+    rightHand.userData.rot = (360-h.rot)%360; rightHand.userData.wrist = h.wrist;
+    updateHandTarget(rightHand);
+  }
+  // auto pick/place thresholds
+  if(h.grip>78 && !h.holding) tryPick(activeHand);
+  if(h.grip<22 && h.holding) tryPlace(activeHand);
+});
+
+document.getElementById('btnPick').onclick=()=>{ activeHand.userData.grip=85; hg.value=85; hgv.textContent='85%'; tryPick(activeHand); };
+document.getElementById('btnPlace').onclick=()=>{ activeHand.userData.grip=15; hg.value=15; hgv.textContent='15%'; tryPlace(activeHand); };
+
+document.querySelectorAll('.handtab').forEach(b=>b.onclick=()=>setActiveHand(b.dataset.hand==='left'?leftHand:rightHand));
+
+// Mirror
+const mirrorToggle=document.getElementById('mirrorToggle');
+mirrorToggle.onclick=()=>{ const on=mirrorToggle.dataset.on!=='1'; mirrorToggle.dataset.on=on?'1':'0'; mirrorToggle.querySelector('span').style.left=on?'1.25rem':'0.125rem'; mirrorToggle.classList.toggle('bg-sky-600',on); };
+
+// Buttons
+document.getElementById('btnHome').onclick=()=>{ leftHand.userData.x=3; leftHand.userData.y=5; leftHand.userData.z=5; rightHand.userData.x=8; rightHand.userData.y=5; rightHand.userData.z=5; updateHandTarget(leftHand); updateHandTarget(rightHand); syncSliders(); };
+document.getElementById('btnCenter').onclick=()=>{ activeHand.userData.x=6; activeHand.userData.y=6; activeHand.userData.z=6; updateHandTarget(activeHand); syncSliders(); };
+document.getElementById('btnClear').onclick=()=>{ atoms.slice().forEach(removeAtom); clearBonds(); toast('Lattice cleared','warn'); };
+
+document.getElementById('crisprToggle').onclick=(e)=>{ dnaMode=!dnaMode; e.target.classList.toggle('bg-emerald-600/20'); e.target.classList.toggle('border-emerald-800'); renderPeriodic(); toast(dnaMode?'CRISPR DNA MODE':'ATOMIC MODE','ok'); };
+
+// Auto build
+async function autoBuild(comp){
+  toast(`Auto-assembling ${comp.name}…`,'ok');
+  // clear around center
+  for(let x=3;x<9;x++)for(let y=3;y<9;y++)for(let z=3;z<9;z++) if(lattice[x][y][z]) removeAtom(lattice[x][y][z]);
+  clearBonds();
+  // Use hands to place sequentially
+  for(let i=0;i<comp.atoms.length;i++){
+    const a=comp.atoms[i]; const el = (dnaMode? nucleotides: elements).find(e=>e.s===a.e) || elements.find(e=>e.s===a.e) || selectedElement;
+    const hand = i%2===0 ? leftHand : rightHand;
+    setActiveHand(hand);
+    // pick from source
+    hand.userData.x=1; hand.userData.y=1; hand.userData.z=1; updateHandTarget(hand); await wait(180);
+    const tmp = createAtom({...el, color:el.c},1,1,1); hand.add(tmp); tmp.position.set(0,-0.45,0); hand.userData.holding=tmp; removeAtom(lattice[1][1][1]);
+    // move to target
+    hand.userData.x=Math.round(a.x); hand.userData.y=Math.round(a.y); hand.userData.z=Math.round(a.z); updateHandTarget(hand); await wait(320);
+    tryPlace(hand); await wait(120);
+  }
+  toast(`${comp.name} assembled • ${comp.atoms.length} atoms`,'ok');
+}
+function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+// Recorder
+let recording=false, recData=[], recStart=0;
+document.getElementById('recBtn').onclick=()=>{
+  recording=!recording;
+  document.getElementById('recStatus').textContent = recording?'REC ●':'IDLE';
+  document.getElementById('recStatus').className = recording?'text-[10px] px-1.5 py-0.5 rounded bg-red-950 text-red-400':'text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500';
+  if(recording){ recData=[]; recStart=performance.now(); toast('Recording started','warn'); } else { toast(`Recorded ${recData.length} frames`,'ok'); }
+};
+document.getElementById('playBtn').onclick=async()=>{
+  if(!recData.length) return toast('No recipe','error');
+  toast('Playing recipe…','ok');
+  for(const f of recData){
+    leftHand.userData.x=f.lx; leftHand.userData.y=f.ly; leftHand.userData.z=f.lz; leftHand.userData.grip=f.lg;
+    rightHand.userData.x=f.rx; rightHand.userData.y=f.ry; rightHand.userData.z=f.rz; rightHand.userData.grip=f.rg;
+    updateHandTarget(leftHand); updateHandTarget(rightHand); await wait(40);
+  }
+};
+document.getElementById('clearRecBtn').onclick=()=>{ recData=[]; toast('Recipe cleared','warn'); };
+
+// Click to move
+const ray = new THREE.Raycaster(); const mouse = new THREE.Vector2();
+canvas.addEventListener('click', e=>{
+  const rect=canvas.getBoundingClientRect(); mouse.x=((e.clientX-rect.left)/rect.width)*2-1; mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  ray.setFromCamera(mouse, camera);
+  const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+  const hit = new THREE.Vector3(); ray.ray.intersectPlane(plane, hit);
+  const gx = Math.max(0,Math.min(11,Math.round(hit.x+5.5)));
+  const gy = Math.max(0,Math.min(11,Math.round(hit.y+5.5)));
+  const gz = Math.max(0,Math.min(11,Math.round(hit.z+5.5)));
+  activeHand.userData.x=gx; activeHand.userData.y=gy; activeHand.userData.z=gz; updateHandTarget(activeHand); syncSliders(); haptic(0.1);
+});
+canvas.addEventListener('contextmenu', e=>{ e.preventDefault(); setActiveHand(activeHand===leftHand?rightHand:leftHand); });
+
+// Resize
+function resize(){ const w=canvas.clientWidth, h=canvas.clientHeight; if(canvas.width!==w||canvas.height!==h){ renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); } }
+window.addEventListener('resize', resize); resize();
+
+// Animation
+let last=performance.now(), frames=0, fps=60;
+function animate(){
+  requestAnimationFrame(animate); const now=performance.now(); frames++; if(now-last>500){ fps=Math.round(frames*1000/(now-last)); frames=0; last=now; document.getElementById('hudFps').textContent=fps; }
+  
+  const speed = (coreLayers[8]+coreLayers[9])/200 * 0.18 + 0.04;
+  const jitter = (200 - (coreLayers[6]+coreLayers[7]))/200 * 0.06;
+  
+  [leftHand, rightHand].forEach(hand=>{
+    const t = hand.userData.target;
+    hand.position.lerp(t, speed);
+    hand.position.x += (Math.random()-0.5)*jitter;
+    hand.position.y += (Math.random()-0.5)*jitter;
+    hand.position.z += (Math.random()-0.5)*jitter;
+    hand.rotation.y = THREE.MathUtils.lerp(hand.rotation.y, hand.userData.rot*Math.PI/180, 0.08);
+    hand.children[3].rotation.x = THREE.MathUtils.lerp(hand.children[3].rotation.x, hand.userData.wrist*Math.PI/180 *0.3, 0.1);
+    // fingers
+    const g = hand.userData.grip/100;
+    hand.userData.fingers.children.forEach(f=>{ f.children[0].rotation.x = -0.2 - g*0.9; f.children[0].children[0].rotation.x = -0.15 - g*0.7; });
+    // ring pulse
+    hand.userData.ring.material.opacity = 0.3 + Math.sin(now*0.003 + (hand===leftHand?0:2))*0.15;
+    hand.userData.ring.scale.setScalar(1 + g*0.15);
+  });
+  
+  // Dual-hand bond assist
+  const lh = leftHand.userData.holding, rh = rightHand.userData.holding;
+  const dist = leftHand.position.distanceTo(rightHand.position);
+  document.getElementById('handDist').textContent = dist.toFixed(1);
+  document.getElementById('leftPos').textContent = `[${leftHand.userData.x},${leftHand.userData.y},${leftHand.userData.z}]`;
+  document.getElementById('rightPos').textContent = `[${rightHand.userData.x},${rightHand.userData.y},${rightHand.userData.z}]`;
+  document.getElementById('leftGripBar').style.width = leftHand.userData.grip+'%';
+  document.getElementById('rightGripBar').style.width = rightHand.userData.grip+'%';
+  
+  const attract = (coreLayers[0]+coreLayers[1]+coreLayers[2])/3;
+  const bondReady = lh && rh && dist<2.2 && attract>60;
+  document.getElementById('bondReady').textContent = bondReady?'YES':'NO';
+  document.getElementById('bondReady').style.color = bondReady?'#10b981':'#71717a';
+  if(bondReady && !lh.parent.isBonded){ createBond(lh, rh); lh.parent.isBonded=true; rh.parent.isBonded=true; haptic(0.5); toast('Dual-hand bond formed','ok'); }
+  
+  // Record
+  if(recording && now - recStart > 80){ recData.push({ lx:leftHand.userData.x, ly:leftHand.userData.y, lz:leftHand.userData.z, lg:leftHand.userData.grip, rx:rightHand.userData.x, ry:rightHand.userData.y, rz:rightHand.userData.z, rg:rightHand.userData.grip }); recStart=now; }
+  
+  controls.update(); renderer.render(scene, camera);
+}
+animate();
+
+// Init positions
+updateHandTarget(leftHand); updateHandTarget(rightHand); setActiveHand(leftHand);
+
+// Demo seed: place a carbon lattice base
+for(let i=0;i<4;i++) createAtom(elements[5], 4+i,5,5);
+createAtom(elements[7],6,6,5); createAtom(elements[7],6,4,5);
+
+// Panel toggle mobile
+document.getElementById('panelToggle').onclick=()=>{ const p=document.getElementById('rightPanel'); p.classList.toggle('max-[900px]:translate-x-full'); };
+
+// Initial toast
+setTimeout(()=>toast('WEXLER HANDS online • Fusion Tripod ROOT0 verified','ok'), 600);
+</script>
+</body>
+</html>

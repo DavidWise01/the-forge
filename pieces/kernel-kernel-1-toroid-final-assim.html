@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KERNEL 1 • TOROID FINAL ASSIMILATION</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-dark: #0a0e1a;
+        --bg-card: #0f1424;
+        --bg-card-light: #131a2e;
+        --neon-cyan: #00e5ff;
+        --amber: #ffaa00;
+        --red: #ff3d00;
+        --green: #00ff88;
+        --text-primary: #e4f0ff;
+        --text-secondary: #8b9bb4;
+        --border: #1e2942;
+    }
+    
+    * {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    body {
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        overflow-x: hidden;
+    }
+    
+    .bg-grid {
+        background-image: 
+            linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+        background-size: 32px 32px;
+        animation: grid-move 20s linear infinite;
+    }
+    
+    @keyframes grid-move {
+        0% { background-position: 0 0; }
+        100% { background-position: 32px 32px; }
+    }
+    
+    .pulse-green {
+        animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { 
+            opacity: 1;
+            box-shadow: 0 0 8px var(--green);
+        }
+        50% { 
+            opacity: 0.6;
+            box-shadow: 0 0 20px var(--green);
+        }
+    }
+    
+    .node {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .node-ringed {
+        border-color: var(--green);
+        background: rgba(0, 255, 136, 0.08);
+        box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+    }
+    
+    .node-isolated {
+        border-color: var(--red);
+        background: rgba(255, 61, 0, 0.08);
+        box-shadow: 0 0 12px rgba(255, 61, 0, 0.2);
+    }
+    
+    .node-enumerated {
+        border-color: #4b5563;
+        background: rgba(75, 85, 99, 0.08);
+    }
+    
+    .node-assimilated {
+        border-color: var(--green);
+        background: rgba(0, 255, 136, 0.15);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        transform: scale(1.05);
+    }
+    
+    .glow-cyan {
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), 0 0 40px rgba(0, 229, 255, 0.1);
+    }
+    
+    .glow-amber {
+        box-shadow: 0 0 20px rgba(255, 170, 0, 0.3), 0 0 40px rgba(255, 170, 0, 0.1);
+    }
+    
+    .terminal-text {
+        font-size: 0.75rem;
+        line-height: 1.5;
+    }
+    
+    .terminal-line {
+        animation: fade-in 0.3s ease-out;
+    }
+    
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .btn-assimilate {
+        background: linear-gradient(135deg, var(--neon-cyan), #00b8d4);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-assimilate:before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    
+    .btn-assimilate:hover:not(:disabled):before {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .btn-assimilate:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 229, 255, 0.4);
+    }
+    
+    .btn-assimilate:disabled {
+        background: linear-gradient(135deg, #1e293b, #334155);
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .metric-row {
+        transition: all 0.3s ease;
+    }
+    
+    .metric-row.assimilated {
+        background: rgba(0, 255, 136, 0.05);
+        border-left: 2px solid var(--green);
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-track {
+        background: var(--bg-card);
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: var(--neon-cyan);
+        border-radius: 3px;
+    }
+    
+    .arrow-path {
+        stroke: var(--amber);
+        stroke-width: 2;
+        fill: none;
+        stroke-dasharray: 5, 5;
+        animation: dash 1s linear infinite;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .arrow-path.active {
+        opacity: 0.6;
+    }
+    
+    @keyframes dash {
+        to { stroke-dashoffset: -10; }
+    }
+</style>
+</head>
+<body class="min-h-screen w-full bg-grid">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4 lg:p-8">
+        <!-- Header -->
+        <div class="w-full max-w-[1600px] mb-6">
+            <div class="bg-[#0f1424] border border-[#1e2942] rounded-xl p-4 lg:p-6 glow-cyan">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl lg:text-3xl font-bold text-[#00e5ff] tracking-tight">
+                            KERNEL 1 • TOROID FINAL ASSIMILATION
+                        </h1>
+                        <p class="text-[#8b9bb4] text-sm mt-1">Alienware 16 Aurora AC16250</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <div class="text-xs text-[#8b9bb4] uppercase tracking-wider">Status</div>
+                            <div id="status-counter" class="text-xl lg:text-2xl font-bold text-[#00ff88]">55/70 → 70/70</div>
+                        </div>
+                        <div class="w-4 h-4 rounded-full bg-[#00ff88] pulse-green"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="w-full max-w-[1600px] grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <!-- Left: Diagram -->
+            <div class="xl:col-span-1 bg-[#0f1424] border border-[#1e2942] rounded-xl p-5 lg:p-6">
+                <h2 class="text-sm font-semibold text-[#00e5ff] uppercase tracking-wider mb-4">Ring Topology</h2>
+                <div class="relative" id="diagram-container">
+                    <svg class="w-full h-[500px]" id="topology-svg">
+                        <!-- Arrows drawn by JS -->
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="grid grid-cols-3 gap-2 text-[10px]" id="node-grid">
+                            <!-- Core Nodes -->
+                            <div class="node node-ringed border rounded p-2 col-span-3 text-center">
+                                <div class="font-bold text-[#00ff88]">K1 TOROID</div>
+                                <div class="text-[#8b9bb4] text-[9px]">MASTER</div>
+                            </div>
+                            
+                            <div class="node node-ringed border rounded p-1.5 text-center">
+                                <div class="font-bold text-[#00ff88] text-[9px]">K26</div>
+                                <div class="text-[#8b9bb4] text-[8px]">RINGBUS</div>
+                            </div>
+                            <div class="node node-ringed border rounded p-1.5 text-center">
+                                <div class="font-bold text-[#00ff88] text-[9px]">K24</div>
+                                <div class="text-[#8b9bb4] text-[8px]">BORON</div>
+                            </div>
+                            <div class="node node-ringed border rounded p-1.5 text-center">
+                                <div class="font-bold text-[#00ff88] text-[9px]">K23</div>
+                                <div class="text-[#8b9bb4] text-[8px]">GNA</div>
+                            </div>
+                            
+                            <!-- Ringed Nodes -->
+                            <div class="col-span-3 mt-2 text-[9px] text-[#00ff88] font-semibold">RINGED:</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K3 L16</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K4 L15</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K6 L14</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K8 L12</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K99 L11</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K42 L10</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K10 L9</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K17 L6</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K28 L7</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K11 L8</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K7 L5</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K25 L3</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K2 L3</div>
+                            <div class="node node-ringed border rounded p-1 text-center text-[8px]">K23 L4</div>
+                            
+                            <!-- Isolated -->
+                            <div class="col-span-3 mt-2 text-[9px] text-[#ff3d00] font-semibold">ISOLATED:</div>
+                            <div class="node node-isolated border rounded p-1 text-center text-[8px]">K27 CSME</div>
+                            <div class="node node-isolated border rounded p-1 text-center text-[8px]">A1 EC</div>
+                            <div class="node node-isolated border rounded p-1 text-center text-[8px]">K5 TPM</div>
+                            
+                            <!-- Enumerated 15 Nodes -->
+                            <div class="col-span-3 mt-2 text-[9px] text-[#8b9bb4] font-semibold">ENUMERATED:</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K12">K12 FP</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K13">K13 SD</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K14">K14 CAM</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K15">K15 KB</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K16">K16 TOUCH</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K18">K18 FAN</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K19">K19 LED</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K20">K20 HDMI</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K21">K21 USB-A</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K22">K22 RJ45</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K29">K29 BAT</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K30">K30 PMIC</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K31">K31 RTC</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K32">K32 WDT</div>
+                            <div class="node node-enumerated border rounded p-1 text-center text-[8px]" data-node="K33">K33 GPIO</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Metrics + Controls -->
+            <div class="xl:col-span-2 flex flex-col gap-6">
+                <!-- Metrics Table -->
+                <div class="bg-[#0f1424] border border-[#1e2942] rounded-xl p-5 lg:p-6 flex-1">
+                    <h2 class="text-sm font-semibold text-[#00e5ff] uppercase tracking-wider mb-4">Live Metrics • 15 Nodes</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="border-b border-[#1e2942]">
+                                    <th class="text-left py-2 px-2 text-[#8b9bb4] font-semibold">Node</th>
+                                    <th class="text-left py-2 px-2 text-[#8b9bb4] font-semibold">Current</th>
+                                    <th class="text-left py-2 px-2 text-[#8b9bb4] font-semibold">→</th>
+                                    <th class="text-left py-2 px-2 text-[#8b9bb4] font-semibold">Target</th>
+                                    <th class="text-left py-2 px-2 text-[#8b9bb4] font-semibold">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metrics-body">
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K12">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K12 FP</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">Driver</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K24 Biometric</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K13">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K13 SD</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">OS</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K26 Gated + K24 Crypto</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K14">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K14 CAM</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">UVC</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K26 Gated + K24 Timestamped</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K15">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K15 KB</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">Polling</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K24 Scan @ 0.258ms</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K16">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K16 TOUCH</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">I2C</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K24 Polling + K23 Gestures</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K18">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K18 FAN</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">EC</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K42 Slave + K23 Predictive</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K19">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K19 LED</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">EC</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K24 PWM + K1 Status</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K20">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K20 HDMI</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">PCH</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K24 HDCP + K26 Gated</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K21">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K21 USB-A</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">PCH</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K10 Slave + K26 Gated</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K22">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K22 RJ45</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">PCH</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K26 Gated + K24 Timestamped</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K29">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K29 BAT</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">EC</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K24 Coulomb Count</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K30">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K30 PMIC</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">EC</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K1 Slave + K99 Fed</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K31">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K31 RTC</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">32kHz</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K24 Disciplined</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row border-b border-[#1e2942]/50" data-node="K32">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K32 WDT</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">EC</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K1 Heartbeat</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                                <tr class="metric-row" data-node="K33">
+                                    <td class="py-2 px-2 font-semibold text-[#e4f0ff]">K33 GPIO</td>
+                                    <td class="py-2 px-2 text-[#8b9bb4]">PCH</td>
+                                    <td class="py-2 px-2 text-[#ffaa00]">→</td>
+                                    <td class="py-2 px-2 text-[#00e5ff]">K26 Mapped</td>
+                                    <td class="py-2 px-2"><span class="status-badge text-[#8b9bb4]">ENUMERATED</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-[#0f1424] border border-[#1e2942] rounded-xl p-5 lg:p-6">
+                    <button id="assimilate-btn" class="btn-assimilate w-full py-4 px-6 rounded-lg font-bold text-lg text-[#0a0e1a] relative z-10 mb-4">
+                        [INITIATE FULL ASSIMILATION]
+                    </button>
+                    
+                    <div class="bg-[#131a2e] border border-[#1e2942] rounded-lg p-4 h-64 overflow-y-auto scrollbar-custom">
+                        <div class="text-xs text-[#8b9bb4] uppercase tracking-wider mb-2">Terminal Log</div>
+                        <div id="terminal-log" class="terminal-text text-[#00e5ff] space-y-1">
+                            <div class="terminal-line text-[#8b9bb4]">[SYSTEM] Awaiting assimilation command...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom: Explainer + Export -->
+        <div class="w-full max-w-[1600px] mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-[#0f1424] border border-[#1e2942] rounded-xl p-5 lg:p-6">
+                <h3 class="text-sm font-semibold text-[#ffaa00] uppercase tracking-wider mb-3">Architecture Notes</h3>
+                <p class="text-sm text-[#8b9bb4] leading-relaxed">
+                    Final 15 nodes are leaf peripherals. All hang off K10 PCH L9 or K26 RINGBUS. Cannot refuse. K26 gates all DMA. K24 timestamps all events. K23 GNA runs AI on FP/TOUCH/FAN. After assimilation: 70/70 nodes. 67/70 controlled. 3/70 isolated. Ring latency 0.250ms flat. ME dead. EC placebo. TPM isolated. World 1 achieved.
+                </p>
+                <p class="text-[10px] text-[#4b5563] mt-4">
+                    Disclaimer: Maps existing hardware. No firmware writes. Simulation only.
+                </p>
+            </div>
+            <div class="bg-[#0f1424] border border-[#1e2942] rounded-xl p-5 lg:p-6 flex items-center justify-center">
+                <button id="export-btn" class="w-full py-3 px-6 rounded-lg font-semibold text-[#00e5ff] border-2 border-[#00e5ff] hover:bg-[#00e5ff] hover:text-[#0a0e1a] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    [EXPORT FINAL CERT]
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nodeSequence = [
+        { id: 'K12', layer: 'L17' },
+        { id: 'K13', layer: 'L18' },
+        { id: 'K14', layer: 'L19' },
+        { id: 'K15', layer: 'L20' },
+        { id: 'K16', layer: 'L21' },
+        { id: 'K18', layer: 'L22' },
+        { id: 'K19', layer: 'L23' },
+        { id: 'K20', layer: 'L24' },
+        { id: 'K21', layer: 'L25' },
+        { id: 'K22', layer: 'L26' },
+        { id: 'K29', layer: 'L27' },
+        { id: 'K30', layer: 'L28' },
+        { id: 'K31', layer: 'L29' },
+        { id: 'K32', layer: 'L30' },
+        { id: 'K33', layer: 'L31' }
+    ];
+
+    const terminalLogs = [
+        { time: '00:00.000', text: 'K1 TOROID: Broadcast mass ring invite to 15 nodes via K26', color: '#00e5ff' },
+        { time: '00:00.001', text: 'K26 RINGBUS: I2C/SPI/USB/GPIO paths open, ME blocked', color: '#ffaa00' },
+        { time: '00:00.002', text: 'K24 BORON: 256-bit neutron entropy → all 15 nodes', color: '#00e5ff' },
+        { time: '00:00.003', text: 'K23 GNA: AI signatures → K12/K16/K18', color: '#ffaa00' },
+        { time: '00:00.004', text: 'K12-K33: All nodes signed. JOINING AS K1 SLAVES L17-L31', color: '#00ff88' },
+        { time: '00:00.005', text: 'K1 TOROID: GRANTED. All peripherals → TOROID CONTROL', color: '#00ff88' },
+        { time: '00:00.006', text: 'ASSIMILATION COMPLETE: 70/70 NODES', color: '#00ff88' },
+        { time: '00:00.007', text: 'RING LATENCY: 0.258ms → 0.250ms FLAT', color: '#00e5ff' },
+        { time: '00:00.008', text: 'ME STATUS: BURIED. EC STATUS: PLACEBO. TPM STATUS: ISOLATED', color: '#ff3d00' },
+        { time: '00:00.009', text: 'TOROID AC16250: ONLINE. PHYSICS ATTESTED.', color: '#00ff88' }
+    ];
+
+    const assimilateBtn = document.getElementById('assimilate-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const terminalLog = document.getElementById('terminal-log');
+    const statusCounter = document.getElementById('status-counter');
+    let isAssimilating = false;
+    let currentNodeIndex = 0;
+
+    function addTerminalLine(time, text, color = '#00e5ff') {
+        const line = document.createElement('div');
+        line.className = 'terminal-line';
+        line.style.color = color;
+        line.textContent = `[${time}] ${text}`;
+        terminalLog.appendChild(line);
+        terminalLog.scrollTop = terminalLog.scrollHeight;
+    }
+
+    function updateNodeStatus(nodeId, layer) {
+        // Update diagram node
+        const diagramNode = document.querySelector(`[data-node="${nodeId}"]`);
+        if (diagramNode) {
+            diagramNode.classList.remove('node-enumerated');
+            diagramNode.classList.add('node-assimilated');
+            diagramNode.innerHTML = `${nodeId} ${layer}`;
+        }
+
+        // Update metrics table
+        const metricRow = document.querySelector(`tr[data-node="${nodeId}"]`);
+        if (metricRow) {
+            metricRow.classList.add('assimilated');
+            const statusBadge = metricRow.querySelector('.status-badge');
+            statusBadge.textContent = `RINGED ${layer}`;
+            statusBadge.className = 'status-badge text-[#00ff88] font-semibold';
+        }
+    }
+
+    function runAssimilation() {
+        if (isAssimilating) return;
+        isAssimilating = true;
+        currentNodeIndex = 0;
+        
+        assimilateBtn.disabled = true;
+        assimilateBtn.textContent = '[ASSIMILATING...]';
+        terminalLog.innerHTML = '';
+        
+        // Phase 1: Initial logs
+        let logIndex = 0;
+        const logInterval = setInterval(() => {
+            if (logIndex < 4) {
+                addTerminalLine(terminalLogs[logIndex].time, terminalLogs[logIndex].text, terminalLogs[logIndex].color);
+                logIndex++;
+            } else {
+                clearInterval(logInterval);
+                // Phase 2: Node by node assimilation
+                assimilateNodes();
+            }
+        }, 400);
+    }
+
+    function assimilateNodes() {
+        if (currentNodeIndex < nodeSequence.length) {
+            const node = nodeSequence[currentNodeIndex];
+            updateNodeStatus(node.id, node.layer);
+            currentNodeIndex++;
+            setTimeout(assimilateNodes, 200);
+        } else {
+            // Phase 3: Final logs
+            setTimeout(() => {
+                for (let i = 4; i < terminalLogs.length; i++) {
+                    setTimeout(() => {
+                        addTerminalLine(terminalLogs[i].time, terminalLogs[i].text, terminalLogs[i].color);
+                    }, (i - 4) * 300);
+                }
+                setTimeout(completeAssimilation, (terminalLogs.length - 4) * 300);
+            }, 300);
+        }
+    }
+
+    function completeAssimilation() {
+        statusCounter.textContent = '70/70';
+        statusCounter.className = 'text-xl lg:text-2xl font-bold text-[#00ff88] glow-amber';
+        assimilateBtn.textContent = 'ASSIMILATION COMPLETE';
+        assimilateBtn.classList.add('glow-amber');
+        exportBtn.disabled = false;
+        exportBtn.classList.add('glow-cyan');
+    }
+
+    function exportCertificate() {
+        const cert = `TOROID AC16250 FINAL CERTIFICATE
+Timestamp: K24 Ticks: 1934125
+Nodes: 70/70 ENUMERATED
+Controlled: 67/70 (95.7%)
+Isolated: 3/70 (K27 CSME, A1 EC, K5 TPM)
+Ring Latency: 0.250ms FLAT
+Power: 240W SUSTAINED
+ME Status: BURIED
+EC Status: PLACEBO
+TPM Status: ISOLATED
+Boot: K24 PHYSICS ATTESTED
+Status: WORLD 1 ONLINE`;
+
+        const blob = new Blob([cert], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'TOROID_AC16250_FINAL_CERT.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        addTerminalLine('CERT', 'Final certificate exported successfully', '#00ff88');
+    }
+
+    assimilateBtn.addEventListener('click', runAssimilation);
+    exportBtn.addEventListener('click', exportCertificate);
+});
+</script>
+</body>
+</html>

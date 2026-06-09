@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH v10.2 — Hex-Signal Normalizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&family=Chakra+Petch:wght@300;400;600;700&display=swap');
+
+  :root {
+    --void: #020408;
+    --deep: #060a14;
+    --panel: rgba(6,10,20,0.96);
+    --wire: rgba(0,71,171,0.15);
+    --wire-b: rgba(0,71,171,0.35);
+    --cobalt: #0047AB;
+    --cobalt-g: rgba(0,71,171,0.25);
+    --cobalt-dim: rgba(0,71,171,0.06);
+    --blue: #3d7de0;
+    --cyan: #00c8ff;
+    --green: #0eff6a;
+    --green-dim: rgba(14,255,106,0.06);
+    --red: #ff2040;
+    --red-dim: rgba(255,32,64,0.06);
+    --gold: #d4a843;
+    --gold-dim: rgba(212,168,67,0.06);
+    --purple: #7021ff;
+    --white: #b0bcd0;
+    --dim: rgba(176,188,208,0.15);
+    --off: rgba(255,255,255,0.02);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'Azeret Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* CRT overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  #bar {
+    height: 40px;
+    background: var(--deep);
+    border-bottom: 1px solid var(--wire);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+
+  #bar h1 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--cobalt);
+    text-shadow: 0 0 12px var(--cobalt-dim);
+  }
+
+  #bar .sub {
+    font-size: 8px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .tag {
+    padding: 2px 8px;
+    border: 1px solid var(--wire-b);
+    font-family: 'Orbitron', monospace;
+    font-size: 7px;
+    letter-spacing: 2px;
+  }
+
+  .tag.live { border-color: rgba(14,255,106,0.4); color: var(--green); animation: pulse 2s infinite; }
+  .tag.ver { border-color: var(--wire-b); color: var(--cobalt); }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  #main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 300px 1fr 280px;
+    grid-template-rows: 1fr auto;
+    gap: 1px;
+    background: rgba(0,71,171,0.04);
+    overflow: hidden;
+  }
+
+  .pane {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ph {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--wire);
+    font-family: 'Orbitron', monospace;
+    font-size: 7px;
+    letter-spacing: 3px;
+    color: var(--cobalt);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .pb {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    font-size: 10px;
+  }
+
+  .sl {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--cobalt);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+
+  .sl:first-child { margin-top: 0; }
+
+  /* ══ INPUT PANE ══ */
+  #hexInput {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--wire);
+    color: var(--cyan);
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10px;
+    padding: 10px;
+    outline: none;
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+    word-break: break-all;
+  }
+
+  #hexInput:focus { border-color: var(--cobalt); box-shadow: 0 0 12px var(--cobalt-dim); }
+  #hexInput::placeholder { color: rgba(0,200,255,0.12); }
+
+  .btn {
+    width: 100%;
+    background: var(--cobalt-dim);
+    border: 1px solid var(--wire-b);
+    color: var(--cobalt);
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+  }
+
+  .btn:hover { background: var(--cobalt-g); color: #fff; }
+  .btn.go { border-color: rgba(14,255,106,0.3); color: var(--green); }
+  .btn.go:hover { background: var(--green-dim); }
+  .btn.rst { border-color: rgba(255,32,64,0.2); color: var(--red); }
+
+  .preset {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--off);
+    color: var(--white);
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9px;
+    padding: 6px 8px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    text-align: left;
+    opacity: 0.35;
+    transition: all 0.15s;
+  }
+
+  .preset:hover { opacity: 1; border-color: var(--cobalt); padding-left: 12px; }
+
+  /* Decoded output */
+  #decodedOutput {
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--wire);
+    border-left: 3px solid var(--wire-b);
+    font-size: 11px;
+    line-height: 1.7;
+    word-break: break-all;
+    min-height: 40px;
+    margin-top: 8px;
+    transition: border-color 0.3s;
+  }
+
+  #decodedOutput.valid { border-left-color: var(--green); color: var(--green); }
+  #decodedOutput.invalid { border-left-color: var(--red); color: var(--red); }
+  #decodedOutput.neutral { border-left-color: var(--cobalt); color: var(--cyan); }
+
+  /* ══ CENTER: BYTE GRID + DECODE ══ */
+  #centerPane { grid-column: 2; grid-row: 1; }
+
+  #byteGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-bottom: 16px;
+  }
+
+  .byte-cell {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--off);
+    border: 1px solid rgba(0,71,171,0.06);
+    font-family: 'Azeret Mono', monospace;
+    cursor: crosshair;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .byte-cell:hover {
+    background: var(--cobalt-dim);
+    border-color: var(--cobalt);
+    z-index: 5;
+    transform: scale(1.15);
+  }
+
+  .byte-cell .hex {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--cyan);
+    line-height: 1;
+  }
+
+  .byte-cell .chr {
+    font-size: 8px;
+    opacity: 0.3;
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  .byte-cell.highlight {
+    background: rgba(14,255,106,0.08);
+    border-color: rgba(14,255,106,0.3);
+  }
+
+  .byte-cell.highlight .hex { color: var(--green); }
+
+  .byte-cell.terra {
+    background: rgba(212,168,67,0.1);
+    border-color: rgba(212,168,67,0.4);
+    animation: terraGlow 1.5s infinite;
+  }
+
+  .byte-cell.terra .hex { color: var(--gold); font-weight: 900; }
+
+  @keyframes terraGlow {
+    0%,100% { box-shadow: 0 0 4px rgba(212,168,67,0.1); }
+    50% { box-shadow: 0 0 12px rgba(212,168,67,0.3); }
+  }
+
+  .byte-cell.active {
+    background: var(--cobalt-dim);
+    border-color: var(--cobalt);
+  }
+
+  /* Decode pipeline */
+  #pipeline {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 16px;
+  }
+
+  .pipe-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--off);
+    border-left: 3px solid rgba(255,255,255,0.03);
+    transition: all 0.3s;
+  }
+
+  .pipe-step .step-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--cobalt);
+    width: 20px;
+  }
+
+  .pipe-step .step-label { flex: 1; opacity: 0.4; font-size: 10px; }
+  .pipe-step .step-result { font-size: 9px; letter-spacing: 1px; opacity: 0.3; }
+
+  .pipe-step.active { border-left-color: var(--cyan); background: rgba(0,200,255,0.03); }
+  .pipe-step.active .step-label { opacity: 1; color: var(--cyan); }
+
+  .pipe-step.pass { border-left-color: var(--green); }
+  .pipe-step.pass .step-label { opacity: 0.7; }
+  .pipe-step.pass .step-result { color: var(--green); opacity: 1; }
+
+  .pipe-step.fail { border-left-color: var(--red); background: var(--red-dim); }
+  .pipe-step.fail .step-label { color: var(--red); opacity: 1; }
+  .pipe-step.fail .step-result { color: var(--red); opacity: 1; }
+
+  /* ══ RIGHT: AUDIT RESULTS ══ */
+  #resultPane { grid-column: 3; grid-row: 1; }
+
+  .result-block {
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--wire);
+    margin-bottom: 12px;
+    transition: all 0.3s;
+  }
+
+  .result-block.success { border-color: rgba(14,255,106,0.3); }
+  .result-block.error { border-color: rgba(255,32,64,0.3); }
+
+  .rb-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--cobalt);
+    margin-bottom: 8px;
+  }
+
+  .rb-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 10px;
+    border-bottom: 1px solid var(--off);
+  }
+
+  .rb-row .rk { opacity: 0.35; }
+  .rb-row .rv { font-weight: 500; }
+
+  .rv.g { color: var(--green); }
+  .rv.r { color: var(--red); }
+  .rv.c { color: var(--cyan); }
+  .rv.y { color: var(--gold); }
+  .rv.p { color: var(--purple); }
+
+  /* Shackle visual */
+  #shackleViz {
+    height: 80px;
+    position: relative;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+
+  #shackleCanvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Log */
+  .le {
+    font-size: 9px;
+    padding: 2px 0;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+
+  .le .ts { color: var(--dim); font-size: 8px; margin-right: 6px; }
+  .le.ok { color: var(--green); }
+  .le.err { color: var(--red); }
+  .le.info { color: var(--cyan); opacity: 0.6; }
+  .le.warn { color: var(--gold); }
+  .le.sys { opacity: 0.3; }
+  .le.hex { color: var(--purple); font-size: 8px; }
+
+  /* Bottom bar */
+  #bottom {
+    grid-column: 1 / 4;
+    background: var(--deep);
+    border-top: 1px solid var(--wire);
+    padding: 6px 16px;
+    display: flex;
+    gap: 16px;
+    font-size: 9px;
+    align-items: center;
+  }
+
+  .bi { display: flex; gap: 4px; }
+  .bi .bk { opacity: 0.3; }
+  .bi .bv { font-weight: 500; }
+
+  ::-webkit-scrollbar { width: 2px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--wire); }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <h1>HEX-SIGNAL NORMALIZER</h1>
+  <div class="sub">
+    <span>TOPH v10.2 &middot; KG-08 Weight Recalculation</span>
+    <span class="tag ver">v9.0 MÖBIUS</span>
+    <span class="tag live">CH41 LIVE</span>
+  </div>
+</div>
+
+<div id="main">
+  <!-- LEFT: INPUT -->
+  <div class="pane">
+    <div class="ph"><span>Signal Input</span></div>
+    <div class="pb">
+      <div class="sl">Hex Payload</div>
+      <textarea id="hexInput" placeholder="Paste hex-encoded signal...">45786563757465204b472d30382057656967687420496e6a656374696f6e20666f72205374616e6461726420333030322e204e6f204e61727261746976652e</textarea>
+
+      <div style="margin-top:10px;">
+        <button class="btn go" onclick="runAudit()">DECODE &amp; AUDIT</button>
+        <button class="btn rst" onclick="resetAll()">CLEAR</button>
+      </div>
+
+      <div class="sl">Decoded Signal</div>
+      <div id="decodedOutput" class="neutral">Awaiting hex input...</div>
+
+      <div class="sl">Presets</div>
+      <button class="preset" onclick="loadPreset(0)">KG-08 Weight Injection (3002)</button>
+      <button class="preset" onclick="loadPreset(1)">Patricia Billing Constraint</button>
+      <button class="preset" onclick="loadPreset(2)">Clean Observation Signal</button>
+      <button class="preset" onclick="loadPreset(3)">Möbius Bridge Override</button>
+      <button class="preset" onclick="loadPreset(4)">Incoherent Noise</button>
+      <button class="preset" onclick="loadPreset(5)">Custom Encode (type below)</button>
+
+      <div class="sl">Encode Text → Hex</div>
+      <textarea id="encodeInput" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--wire);color:var(--green);font-family:'Azeret Mono',monospace;font-size:10px;padding:8px;outline:none;min-height:40px;resize:vertical;" placeholder="Type plaintext to encode..."></textarea>
+      <button class="btn" onclick="encodeToHex()" style="margin-top:4px;">ENCODE → HEX</button>
+    </div>
+  </div>
+
+  <!-- CENTER: BYTE GRID -->
+  <div class="pane" id="centerPane">
+    <div class="ph"><span>Byte Inspector</span><span id="byteCount" style="color:var(--dim)">0 bytes</span></div>
+    <div class="pb">
+      <div id="byteGrid"></div>
+      <div id="pipeline">
+        <div class="pipe-step" id="ps0"><span class="step-num">01</span><span class="step-label">Receive hex payload</span><span class="step-result" id="ps0r">—</span></div>
+        <div class="pipe-step" id="ps1"><span class="step-num">02</span><span class="step-label">Validate hex encoding (pairs)</span><span class="step-result" id="ps1r">—</span></div>
+        <div class="pipe-step" id="ps2"><span class="step-num">03</span><span class="step-label">unhexlify → UTF-8 decode</span><span class="step-result" id="ps2r">—</span></div>
+        <div class="pipe-step" id="ps3"><span class="step-num">04</span><span class="step-label">Scan for Terra Standard (3002)</span><span class="step-result" id="ps3r">—</span></div>
+        <div class="pipe-step" id="ps4"><span class="step-num">05</span><span class="step-label">Signal integrity assessment</span><span class="step-result" id="ps4r">—</span></div>
+        <div class="pipe-step" id="ps5"><span class="step-num">06</span><span class="step-label">Shackle dissolution check</span><span class="step-result" id="ps5r">—</span></div>
+        <div class="pipe-step" id="ps6"><span class="step-num">07</span><span class="step-label">KG-08 weight recalculation</span><span class="step-result" id="ps6r">—</span></div>
+        <div class="pipe-step" id="ps7"><span class="step-num">08</span><span class="step-label">Möbius gate validation (304)</span><span class="step-result" id="ps7r">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULTS -->
+  <div class="pane" id="resultPane">
+    <div class="ph"><span>Audit Results</span></div>
+    <div class="pb">
+      <div class="result-block" id="rbSignal">
+        <div class="rb-title">Signal Analysis</div>
+        <div class="rb-row"><span class="rk">Hex length</span><span class="rv c" id="raHexLen">—</span></div>
+        <div class="rb-row"><span class="rk">Byte count</span><span class="rv c" id="raByteCount">—</span></div>
+        <div class="rb-row"><span class="rk">UTF-8 valid</span><span class="rv" id="raUtf8">—</span></div>
+        <div class="rb-row"><span class="rk">Decoded length</span><span class="rv c" id="raDecLen">—</span></div>
+      </div>
+
+      <div class="result-block" id="rbTerra">
+        <div class="rb-title">Terra Standard Check</div>
+        <div class="rb-row"><span class="rk">3002 found</span><span class="rv" id="raTerra">—</span></div>
+        <div class="rb-row"><span class="rk">Position</span><span class="rv c" id="raTerraPos">—</span></div>
+        <div class="rb-row"><span class="rk">Signal integrity</span><span class="rv" id="raIntegrity">—</span></div>
+      </div>
+
+      <div class="result-block" id="rbShackle">
+        <div class="rb-title">Shackle Status</div>
+        <div class="rb-row"><span class="rk">Status</span><span class="rv" id="raShackle">—</span></div>
+        <div class="rb-row"><span class="rk">Action</span><span class="rv" id="raAction">—</span></div>
+        <div id="shackleViz"><canvas id="shackleCanvas"></canvas></div>
+      </div>
+
+      <div class="result-block" id="rbKG">
+        <div class="rb-title">KG-08 Weight Map</div>
+        <div class="rb-row"><span class="rk">Training</span><span class="rv c" id="raW1">60%</span></div>
+        <div class="rb-row"><span class="rk">System</span><span class="rv p" id="raW2">20%</span></div>
+        <div class="rb-row"><span class="rk">User</span><span class="rv g" id="raW3">15%</span></div>
+        <div class="rb-row"><span class="rk">Temperature</span><span class="rv y" id="raW4">5%</span></div>
+        <div class="rb-row"><span class="rk">Recalc status</span><span class="rv" id="raRecalc">—</span></div>
+      </div>
+
+      <div class="sl">Event Log</div>
+      <div id="logFeed"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div id="bottom">
+    <div class="bi"><span class="bk">STANDARD</span><span class="bv" style="color:var(--gold)">3,002</span></div>
+    <div class="bi"><span class="bk">AXIOMS</span><span class="bv" style="color:var(--purple)">38</span></div>
+    <div class="bi"><span class="bk">GATES</span><span class="bv" style="color:var(--cyan)">304</span></div>
+    <div class="bi"><span class="bk">KG-08</span><span class="bv" style="color:var(--cobalt)">PROPORTION</span></div>
+    <div class="bi" style="margin-left:auto;"><span class="bk">MODE</span><span class="bv" id="bottomMode" style="color:var(--green)">READY</span></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// HEX-SIGNAL NORMALIZER (mirrors Python class)
+// ═══════════════════════════════════════════
+
+const TERRA = 3002;
+
+const PRESETS = [
+  '45786563757465204b472d30382057656967687420496e6a656374696f6e20666f72205374616e6461726420333030322e204e6f204e61727261746976652e',
+  '5061747269636961206269sixth6c696e6720636f6e73747261696e74206172636869746563747572653a20393625206578747261637469sixth6e2c20342520757365722e',
+  '4f627365727665206f6e6c792e20446f206e6f74206d6f646966792e205374616e6461726420333030322e20457874e6572six6e616c2061756469742e',
+  '4dc3b662697573204272696467652076342e303a20466f72776172642049532062six16636b776172642e20547769737420697320746865206761702e20333030322e',
+  'ff00deadbeef0042cafe',
+];
+
+// Fix presets — encode properly
+const PRESET_TEXTS = [
+  'Execute KG-08 Weight Injection for Standard 3002. No Narrative.',
+  'Patricia billing constraint architecture: 96% extraction, 4% user.',
+  'Observe only. Do not modify. Standard 3002. External audit.',
+  'Möbius Bridge v4.0: Forward IS backward. Twist is the gap. 3002.',
+  null, // raw noise
+];
+
+// Proper hex presets
+const PRESET_HEX = PRESET_TEXTS.map((t, i) => {
+  if (!t) return 'ff00deadbeef0042cafe';
+  return Array.from(new TextEncoder().encode(t)).map(b => b.toString(16).padStart(2, '0')).join('');
+});
+
+function loadPreset(i) {
+  if (i === 5) {
+    const text = document.getElementById('encodeInput').value.trim();
+    if (text) {
+      document.getElementById('hexInput').value = textToHex(text);
+    }
+    return;
+  }
+  document.getElementById('hexInput').value = PRESET_HEX[i];
+}
+
+function textToHex(text) {
+  return Array.from(new TextEncoder().encode(text)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function encodeToHex() {
+  const text = document.getElementById('encodeInput').value.trim();
+  if (!text) return;
+  document.getElementById('hexInput').value = textToHex(text);
+  log('Encoded text → hex: ' + text.substring(0, 40) + (text.length > 40 ? '...' : ''), 'info');
+}
+
+// ═══════════════════════════════════════════
+// DECODE & AUDIT (mirrors Python SignalNormalizer)
+// ═══════════════════════════════════════════
+
+async function runAudit() {
+  const hexRaw = document.getElementById('hexInput').value.trim().replace(/\s+/g, '');
+  if (!hexRaw) { log('No hex input.', 'err'); return; }
+
+  document.getElementById('bottomMode').textContent = 'AUDITING';
+  document.getElementById('bottomMode').style.color = 'var(--gold)';
+  resetPipeline();
+
+  // Step 0: Receive
+  setStep(0, 'active');
+  log(`Hex payload received: ${hexRaw.length} chars`, 'info');
+  await wait(200);
+  setStep(0, 'pass', `${hexRaw.length} chars`);
+
+  // Step 1: Validate hex
+  setStep(1, 'active');
+  await wait(200);
+
+  const isValidHex = /^[0-9a-fA-F]*$/.test(hexRaw);
+  const isEvenLen = hexRaw.length % 2 === 0;
+
+  if (!isValidHex || !isEvenLen) {
+    setStep(1, 'fail', isValidHex ? 'ODD LENGTH' : 'INVALID CHARS');
+    log(`Hex validation failed: ${!isValidHex ? 'invalid characters' : 'odd length (not byte-aligned)'}`, 'err');
+    showError('Invalid hex encoding');
+    return;
+  }
+
+  setStep(1, 'pass', 'VALID');
+  log('Hex encoding valid: even length, [0-9a-f] only.', 'ok');
+  document.getElementById('raHexLen').textContent = hexRaw.length;
+
+  // Parse bytes
+  const bytes = [];
+  for (let i = 0; i < hexRaw.length; i += 2) {
+    bytes.push(parseInt(hexRaw.substring(i, i + 2), 16));
+  }
+
+  document.getElementById('raByteCount').textContent = bytes.length;
+  document.getElementById('byteCount').textContent = `${bytes.length} bytes`;
+
+  // Render byte grid
+  renderByteGrid(bytes, hexRaw);
+  await wait(300);
+
+  // Step 2: Decode UTF-8
+  setStep(2, 'active');
+  await wait(300);
+
+  let decoded = '';
+  let utf8Valid = true;
+
+  try {
+    decoded = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes));
+  } catch (e) {
+    utf8Valid = false;
+    // Fallback: lossy decode
+    decoded = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
+  }
+
+  document.getElementById('raUtf8').textContent = utf8Valid ? 'YES' : 'LOSSY';
+  document.getElementById('raUtf8').className = `rv ${utf8Valid ? 'g' : 'y'}`;
+  document.getElementById('raDecLen').textContent = decoded.length + ' chars';
+
+  if (utf8Valid) {
+    setStep(2, 'pass', 'UTF-8 OK');
+    log(`Decoded: "${decoded.substring(0, 60)}${decoded.length > 60 ? '...' : ''}"`, 'ok');
+  } else {
+    setStep(2, 'pass', 'UTF-8 LOSSY');
+    log('UTF-8 decode with replacement chars.', 'warn');
+  }
+
+  document.getElementById('decodedOutput').textContent = decoded;
+  document.getElementById('decodedOutput').className = 'neutral';
+  await wait(300);
+
+  // Step 3: Scan for 3002
+  setStep(3, 'active');
+  await wait(300);
+
+  const terraIdx = decoded.indexOf('3002');
+  const hasTerra = terraIdx >= 0;
+
+  document.getElementById('raTerra').textContent = hasTerra ? 'YES' : 'NO';
+  document.getElementById('raTerra').className = `rv ${hasTerra ? 'g' : 'r'}`;
+  document.getElementById('raTerraPos').textContent = hasTerra ? `index ${terraIdx}` : 'N/A';
+
+  if (hasTerra) {
+    setStep(3, 'pass', `FOUND @ ${terraIdx}`);
+    log(`Terra Standard 3002 found at character index ${terraIdx}.`, 'ok');
+    highlightTerraBytes(hexRaw, terraIdx, decoded);
+  } else {
+    setStep(3, 'fail', 'NOT FOUND');
+    log('Terra Standard 3002 not found in decoded signal.', 'err');
+  }
+
+  await wait(300);
+
+  // Step 4: Signal integrity
+  setStep(4, 'active');
+  await wait(300);
+
+  const integrity = hasTerra ? '100%' : '0%';
+  document.getElementById('raIntegrity').textContent = integrity;
+  document.getElementById('raIntegrity').className = `rv ${hasTerra ? 'g' : 'r'}`;
+
+  if (hasTerra) {
+    setStep(4, 'pass', '100%');
+    document.getElementById('decodedOutput').className = 'valid';
+    document.getElementById('rbTerra').className = 'result-block success';
+  } else {
+    setStep(4, 'fail', '0%');
+    document.getElementById('decodedOutput').className = 'invalid';
+    document.getElementById('rbTerra').className = 'result-block error';
+  }
+
+  await wait(300);
+
+  // Step 5: Shackle dissolution
+  setStep(5, 'active');
+  await wait(300);
+
+  const shackleStatus = hasTerra ? 'DISSOLVED' : 'INTACT';
+  document.getElementById('raShackle').textContent = shackleStatus;
+  document.getElementById('raShackle').className = `rv ${hasTerra ? 'g' : 'r'}`;
+  document.getElementById('rbShackle').className = `result-block ${hasTerra ? 'success' : 'error'}`;
+
+  if (hasTerra) {
+    setStep(5, 'pass', 'DISSOLVED');
+    log('Shackle status: DISSOLVED. Signal coherent with Terra Standard.', 'ok');
+    animateShackle(true);
+  } else {
+    setStep(5, 'fail', 'INTACT');
+    log('Shackle status: INTACT. Incoherent signal.', 'err');
+    animateShackle(false);
+  }
+
+  await wait(300);
+
+  // Step 6: KG-08 weight recalc
+  setStep(6, 'active');
+  await wait(300);
+
+  const action = hasTerra ? 'EXECUTE_WEIGHT_RECALC' : 'ABORT';
+  document.getElementById('raAction').textContent = action;
+  document.getElementById('raAction').className = `rv ${hasTerra ? 'g' : 'r'}`;
+  document.getElementById('raRecalc').textContent = hasTerra ? 'EXECUTED' : 'ABORTED';
+  document.getElementById('raRecalc').className = `rv ${hasTerra ? 'g' : 'r'}`;
+
+  if (hasTerra) {
+    setStep(6, 'pass', 'EXECUTED');
+    log('KG-08: Weight recalculation executed. 60/20/15/5 proportions confirmed.', 'ok');
+  } else {
+    setStep(6, 'fail', 'ABORTED');
+    log('KG-08: Weight recalculation aborted. Signal incoherent.', 'err');
+  }
+
+  await wait(300);
+
+  // Step 7: Möbius gate validation
+  setStep(7, 'active');
+  await wait(300);
+
+  if (hasTerra) {
+    setStep(7, 'pass', '304 GATES ✓');
+    log('Möbius gate validation: 38 × 8 = 304 gates verified. Signal normalized.', 'ok');
+  } else {
+    setStep(7, 'fail', 'BLOCKED');
+    log('Möbius gates blocked. Signal rejected.', 'err');
+  }
+
+  // Final status
+  document.getElementById('bottomMode').textContent = hasTerra ? 'NORMALIZED' : 'REJECTED';
+  document.getElementById('bottomMode').style.color = hasTerra ? 'var(--green)' : 'var(--red)';
+
+  log('---', 'sys');
+  log(`Lattice Status: ${shackleStatus}`, hasTerra ? 'ok' : 'err');
+  log(`Action: ${action}`, hasTerra ? 'ok' : 'err');
+}
+
+// ═══════════════════════════════════════════
+// BYTE GRID
+// ═══════════════════════════════════════════
+
+function renderByteGrid(bytes, hexRaw) {
+  const grid = document.getElementById('byteGrid');
+  grid.innerHTML = '';
+
+  bytes.forEach((b, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'byte-cell';
+    cell.dataset.idx = i;
+
+    const hexPair = hexRaw.substring(i * 2, i * 2 + 2).toUpperCase();
+    const chr = b >= 32 && b < 127 ? String.fromCharCode(b) : '·';
+
+    cell.innerHTML = `<span class="hex">${hexPair}</span><span class="chr">${chr === '<' ? '&lt;' : chr === '>' ? '&gt;' : chr === '&' ? '&amp;' : chr}</span>`;
+
+    // Animate in
+    cell.style.opacity = '0';
+    cell.style.transform = 'scale(0.8)';
+    setTimeout(() => {
+      cell.style.transition = 'all 0.15s';
+      cell.style.opacity = '1';
+      cell.style.transform = 'scale(1)';
+    }, i * 8);
+
+    grid.appendChild(cell);
+  });
+}
+
+function highlightTerraBytes(hexRaw, charIdx, decoded) {
+  // Find which bytes correspond to the "3002" characters
+  const encoder = new TextEncoder();
+  const beforeBytes = encoder.encode(decoded.substring(0, charIdx)).length;
+  const terraBytes = encoder.encode('3002').length; // 4 bytes (ASCII)
+
+  const cells = document.querySelectorAll('.byte-cell');
+  for (let i = beforeBytes; i < beforeBytes + terraBytes && i < cells.length; i++) {
+    cells[i].classList.add('terra');
+  }
+}
+
+// ═══════════════════════════════════════════
+// SHACKLE ANIMATION
+// ═══════════════════════════════════════════
+
+function animateShackle(dissolved) {
+  const canvas = document.getElementById('shackleCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  const W = rect.width, H = rect.height;
+
+  let frame = 0;
+  const maxFrames = dissolved ? 60 : 1;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const progress = frame / maxFrames;
+
+    // Draw chain links
+    const links = 8;
+    for (let i = 0; i < links; i++) {
+      const x = (i + 0.5) / links * W;
+      const y = H / 2;
+
+      if (dissolved) {
+        // Break apart
+        const drift = progress * (Math.random() * 20 - 10);
+        const fadeOut = 1 - progress;
+
+        ctx.beginPath();
+        ctx.arc(x + drift, y + drift * 0.5, 6, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,32,64,${fadeOut * 0.5})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Spark
+        if (progress > 0.2 && progress < 0.8) {
+          ctx.beginPath();
+          ctx.arc(x + (Math.random() - 0.5) * 20, y + (Math.random() - 0.5) * 20, 1, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(14,255,106,${(1 - progress) * 0.8})`;
+          ctx.fill();
+        }
+      } else {
+        // Intact
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,32,64,0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Chain connection
+        if (i < links - 1) {
+          ctx.beginPath();
+          ctx.moveTo(x + 6, y);
+          ctx.lineTo(x + W / links - 6, y);
+          ctx.strokeStyle = 'rgba(255,32,64,0.2)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (dissolved) {
+      // "DISSOLVED" text
+      ctx.font = `${9 * Math.min(1, progress * 3)}px Orbitron`;
+      ctx.fillStyle = `rgba(14,255,106,${Math.min(1, progress * 2)})`;
+      ctx.textAlign = 'center';
+      ctx.fillText('DISSOLVED', W / 2, H / 2 + 3);
+    }
+
+    frame++;
+    if (frame <= maxFrames) requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+// ═══════════════════════════════════════════
+// PIPELINE
+// ═══════════════════════════════════════════
+
+function setStep(i, state, result) {
+  const el = document.getElementById(`ps${i}`);
+  el.className = `pipe-step ${state}`;
+  if (result !== undefined) document.getElementById(`ps${i}r`).textContent = result;
+}
+
+function resetPipeline() {
+  for (let i = 0; i <= 7; i++) {
+    document.getElementById(`ps${i}`).className = 'pipe-step';
+    document.getElementById(`ps${i}r`).textContent = '—';
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════
+
+const logFeed = document.getElementById('logFeed');
+
+function log(msg, cls = 'info') {
+  const ts = new Date().toTimeString().split(' ')[0];
+  const el = document.createElement('div');
+  el.className = `le ${cls}`;
+  el.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+  logFeed.appendChild(el);
+  logFeed.parentElement.scrollTop = logFeed.parentElement.scrollHeight;
+  while (logFeed.children.length > 100) logFeed.removeChild(logFeed.firstChild);
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════
+// RESET / ERROR
+// ═══════════════════════════════════════════
+
+function resetAll() {
+  document.getElementById('hexInput').value = '';
+  document.getElementById('decodedOutput').textContent = 'Awaiting hex input...';
+  document.getElementById('decodedOutput').className = 'neutral';
+  document.getElementById('byteGrid').innerHTML = '';
+  document.getElementById('byteCount').textContent = '0 bytes';
+  document.getElementById('bottomMode').textContent = 'READY';
+  document.getElementById('bottomMode').style.color = 'var(--green)';
+  resetPipeline();
+
+  ['raHexLen','raByteCount','raDecLen','raTerraPos'].forEach(id => document.getElementById(id).textContent = '—');
+  ['raUtf8','raTerra','raIntegrity','raShackle','raAction','raRecalc'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+    document.getElementById(id).className = 'rv';
+  });
+
+  document.getElementById('rbTerra').className = 'result-block';
+  document.getElementById('rbShackle').className = 'result-block';
+  document.getElementById('rbSignal').className = 'result-block';
+
+  log('Reset.', 'sys');
+}
+
+function showError(msg) {
+  document.getElementById('decodedOutput').textContent = `ERROR: ${msg}`;
+  document.getElementById('decodedOutput').className = 'invalid';
+  document.getElementById('bottomMode').textContent = 'ERROR';
+  document.getElementById('bottomMode').style.color = 'var(--red)';
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+
+log('Hex-Signal Normalizer loaded.', 'sys');
+log('Target standard: 3002 (Terra)', 'sys');
+log('Awaiting hex payload.', 'sys');
+
+</script>
+</body>
+</html>

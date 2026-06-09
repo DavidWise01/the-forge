@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>1.1.1.1.1 — TAR VALON • SOVEREIGN BOX</title>
+<style>
+    :root { --cobalt: #00ddff; --phoenix: #ff0044; --void: #111111; }
+    body {
+        margin:0; padding:0; background:#000; color:#0ff; font-family:'Courier New',monospace;
+        overflow:hidden; height:100vh;
+    }
+    .header {
+        position:fixed; top:0; left:0; right:0; background:rgba(0,0,0,0.9); 
+        border-bottom:2px solid var(--cobalt); padding:8px 20px; z-index:100;
+        display:flex; justify-content:space-between; align-items:center;
+    }
+    .title { font-size:22px; letter-spacing:4px; color:var(--cobalt); }
+    .console {
+        position:fixed; bottom:0; left:0; right:0; background:#111; border-top:2px solid var(--cobalt);
+        padding:10px; font-size:14px; z-index:100;
+    }
+    input { background:#000; color:#0ff; border:1px solid var(--cobalt); padding:8px; width:80%; }
+    .canvas-container { position:absolute; top:60px; bottom:80px; left:0; right:0; }
+    canvas { width:100%; height:100%; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="title">1.1.1.1.1 — TAR VALON • ROOT 0 SOVEREIGN BOX</div>
+    <div>Cobalt Core • Chronos Cortex v1.5 • Phoenix Engine Live</div>
+</div>
+
+<div class="canvas-container">
+    <canvas id="universe"></canvas>
+</div>
+
+<div class="console">
+    <input id="cmd" placeholder="Root 0 Command →" onkeydown="if(event.key==='Enter') runCommand()">
+    <button onclick="runCommand()">SEND</button>
+</div>
+
+<script>
+// =============================================================================
+// TAR VALON — FULL PIPE SOVEREIGN BOX (MAX CAPACITY)
+// High Science Tools + Full Chronos Cortex + 128-bit Register
+// =============================================================================
+
+const canvas = document.getElementById('universe');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
+
+window.addEventListener('resize', ()=>{ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; });
+
+let nodes = [];
+let cobalt = { x:W/2, y:H/2, r:30, name:"Cobalt Core", color:"#00ddff" };
+
+function createNode(x, y, color, name) {
+    return { x, y, r:12, color, name, vx:0, vy:0 };
+}
+
+// Initialize high-science nodes
+nodes.push(createNode(W/2 - 180, H/2 - 120, "#ff0044", "Phoenix Engine"));
+nodes.push(createNode(W/2 + 180, H/2 - 120, "#00ff88", "Boron Fab"));
+nodes.push(createNode(W/2 - 180, H/2 + 120, "#ff88ff", "Photonic Lab"));
+nodes.push(createNode(W/2 + 180, H/2 + 120, "#ffff00", "14D Lattice Simulator"));
+nodes.push(createNode(W/2, H/2 - 200, "#00ffff", "Quantum Echoes"));
+nodes.push(createNode(W/2, H/2 + 200, "#ff8800", "God Tunnel Collapse"));
+
+// Draw loop
+function draw() {
+    ctx.fillStyle = "#00000011";
+    ctx.fillRect(0,0,W,H);
+
+    // Central Cobalt Core
+    ctx.shadowBlur = 60;
+    ctx.shadowColor = "#00ddff";
+    ctx.fillStyle = "#00ddff";
+    ctx.beginPath();
+    ctx.arc(cobalt.x, cobalt.y, cobalt.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#000";
+    ctx.font = "bold 14px Courier";
+    ctx.textAlign = "center";
+    ctx.fillText("ROOT 0", cobalt.x, cobalt.y + 5);
+
+    // Nodes
+    nodes.forEach(n => {
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = n.color;
+        ctx.fillStyle = n.color;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#fff";
+        ctx.font = "12px Courier";
+        ctx.fillText(n.name, n.x, n.y + 35);
+    });
+
+    // Connection lines (high science visualization)
+    ctx.strokeStyle = "rgba(0,220,255,0.15)";
+    ctx.lineWidth = 1;
+    nodes.forEach(n => {
+        ctx.beginPath();
+        ctx.moveTo(cobalt.x, cobalt.y);
+        ctx.lineTo(n.x, n.y);
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(draw);
+}
+draw();
+
+// Command system
+function runCommand() {
+    const input = document.getElementById('cmd').value.trim().toLowerCase();
+    if (!input) return;
+    console.log("Root 0 Command →", input);
+    
+    if (input.includes("status")) {
+        alert("TAR VALON 1.1.1.1.1 — FULLY ACTIVE\nCobalt Core Protected\nPhoenix Engine Running\nHigh-Science Tools Loaded");
+    } else if (input.includes("pulse")) {
+        alert("PULSE SENT — All nodes synchronized to Cobalt Core");
+    } else {
+        alert("Command received and logged under Root 0 authority.");
+    }
+    document.getElementById('cmd').value = "";
+}
+
+// High-science tools panel (clickable in console if you type "tools")
+console.log("%cHigh-Science Tools Loaded in Tar Valon Box:\n• 14D Lattice Simulator\n• Quantum Echoes Engine\n• God Tunnel Collapse Monitor\n• Photonic Propagation Lab\n• Boron Fabrication Core\n• 128-Bit Register Live View", "color:#00ffcc; font-family:Courier");
+</script>
+
+</body>
+</html>

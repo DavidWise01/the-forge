@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hamilton-10 Tritium Water Processor — Technical Spec</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #020617; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .blueprint {
+    background-image: 
+      linear-gradient(rgba(56,189,248,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,189,248,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .corner { position: absolute; width: 18px; height: 18px; border-color: rgba(34,211,238,0.5); }
+  .ring-group { transition: all 0.3s ease; }
+  .ring-group:hover { filter: drop-shadow(0 0 8px rgba(56,189,248,0.8)); }
+  .ring-group.active ellipse { stroke: #22d3ee !important; stroke-opacity: 1 !important; }
+  .core-pulse { animation: corePulse 3s ease-in-out infinite; }
+  @keyframes corePulse { 0%,100% { opacity: 0.85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+  .flow-dot { animation: flowDown 4s linear infinite; }
+  @keyframes flowDown { 0% { transform: translateY(-260px); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(260px); opacity: 0; } }
+  .scanline::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(transparent, transparent 2px, rgba(56,189,248,0.03) 3px, transparent 4px);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body class="text-slate-200 antialiased relative">
+<div class="fixed inset-0 blueprint opacity-40"></div>
+<div class="fixed inset-0 bg-gradient-to-b from-cyan-950/10 via-transparent to-slate-950 pointer-events-none"></div>
+
+<main class="relative z-10 max-w-7xl mx-auto px-4 py-8 md:py-12">
+  <!-- Header -->
+  <header class="relative border border-cyan-900/40 bg-slate-950/80 backdrop-blur-xl rounded-2xl overflow-hidden mb-8 scanline">
+    <div class="corner top-0 left-0 border-t-2 border-l-2 rounded-tl-2xl"></div>
+    <div class="corner top-0 right-0 border-t-2 border-r-2 rounded-tr-2xl"></div>
+    <div class="corner bottom-0 left-0 border-b-2 border-l-2 rounded-bl-2xl"></div>
+    <div class="corner bottom-0 right-0 border-b-2 border-r-2 rounded-br-2xl"></div>
+    
+    <div class="border-b border-cyan-900/30 bg-slate-900/50 px-6 py-3 flex flex-wrap items-center justify-between gap-3 mono text-[11px] uppercase tracking-widest text-cyan-300/70">
+      <div class="flex items-center gap-4">
+        <span>DOC: H10-SPEC-2.1</span>
+        <span class="hidden sm:inline">•</span>
+        <span>CLASS: ENGINEERING BUILD</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-emerald-300/80">SYSTEM NOMINAL</span>
+      </div>
+    </div>
+
+    <div class="px-6 md:px-10 py-8 md:py-10">
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div>
+          <h1 class="text-3xl md:text-5xl font-semibold tracking-tight text-white">HAMILTON-10</h1>
+          <p class="text-xl md:text-2xl text-cyan-200/90 mt-1">Tritium Water Processor</p>
+          <p class="mono text-sm text-sky-300/70 mt-4 tracking-wide">10-Stack Plasma Core System — 5 Upper / 5 Lower Rings</p>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="window.print()" class="mono text-xs uppercase tracking-wider px-4 py-2 border border-cyan-800/50 hover:bg-cyan-950/50 transition rounded-lg">Export Spec</button>
+          <button id="toggleCore" class="mono text-xs uppercase tracking-wider px-4 py-2 bg-cyan-500/15 border border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/25 transition rounded-lg">Activate Core</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Overview & Diagram -->
+  <div class="grid lg:grid-cols-5 gap-6 mb-8">
+    <section class="lg:col-span-3 relative border border-slate-800 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-6 md:p-8">
+      <div class="corner top-0 left-0 border-t-2 border-l-2 rounded-tl-2xl"></div>
+      <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <span class="w-1 h-5 bg-cyan-400"></span> Overview
+      </h2>
+      <p class="text-slate-300 leading-relaxed">
+        The Hamilton-10 is a magnetized low-temperature plasma processor designed specifically for <span class="text-white font-medium">tritiated water (HTO / T₂O)</span> detritiation and isotope recovery. The 10-ring stacked architecture creates a resonant beta-decoupling field tuned to tritium’s 18.6 keV endpoint.
+      </p>
+      <p class="text-slate-400 leading-relaxed mt-4">
+        Feed water passes sequentially through five upper conditioning rings, a central plasma core (C0), then five lower recovery rings. Each ring generates a cryptographic artifact, forming a verifiable Hamiltonian path.
+      </p>
+      
+      <div class="mt-6 p-4 border border-amber-900/50 bg-amber-950/30 rounded-xl">
+        <div class="flex gap-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-400 mt-0.5 shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <div>
+            <p class="mono text-xs uppercase tracking-wider text-amber-300/90 font-medium">Critical Clarification</p>
+            <p class="text-sm text-amber-100/80 mt-1">Processes HTO/T₂O only. <span class="text-white">Does NOT process H₂O₃</span> (trioxidane) — the molecule is metastable and does not exist in bulk water under STP. Any H₂O₃ claims indicate feed contamination or sensor error.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lg:col-span-2 relative border border-slate-800 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-6 md:p-8">
+      <div class="corner top-0 right-0 border-t-2 border-r-2 rounded-tr-2xl"></div>
+      <h3 class="text-sm mono uppercase tracking-widest text-cyan-300/70 mb-4">Stack Diagram</h3>
+      <div id="diagram" class="relative mx-auto w-full max-w-[280px] aspect-[3/4]">
+        <svg viewBox="0 0 300 640" class="w-full h-full overflow-visible">
+          <defs>
+            <linearGradient id="coreGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#22d3ee"/>
+              <stop offset="100%" stop-color="#0ea5e9"/>
+            </linearGradient>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="8" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+            <filter id="coreGlow" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          
+          <!-- Conduit -->
+          <line x1="150" y1="40" x2="150" y2="600" stroke="#0e7490" stroke-opacity="0.2" stroke-width="16" stroke-dasharray="4 8"/>
+          <line x1="150" y1="40" x2="150" y2="600" stroke="#164e63" stroke-opacity="0.5" stroke-width="2"/>
+          
+          <!-- Flow dots -->
+          <g id="flowParticles" opacity="0.7" class="hidden">
+            <circle r="2" fill="#22d3ee" class="flow-dot" style="animation-delay: 0s"><animateMotion dur="4s" repeatCount="indefinite" path="M150,60 L150,580"/></circle>
+            <circle r="2" fill="#22d3ee" class="flow-dot" style="animation-delay: 1.3s"><animateMotion dur="4s" repeatCount="indefinite" path="M150,60 L150,580"/></circle>
+            <circle r="2" fill="#7dd3fc" class="flow-dot" style="animation-delay: 2.6s"><animateMotion dur="4s" repeatCount="indefinite" path="M150,60 L150,580"/></circle>
+          </g>
+
+          <!-- Upper Rings U5-U1 -->
+          <g class="ring-group cursor-pointer" data-target="u5" transform="translate(0,0)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#22d3ee" stroke-opacity="0.9" stroke-width="2"/>
+            <text x="30" y="75" class="mono" font-size="13" fill="#7dd3fc">U5</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="u4" transform="translate(0,60)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#22d3ee" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="30" y="75" class="mono" font-size="13" fill="#7dd3fc">U4</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="u3" transform="translate(0,120)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#22d3ee" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="30" y="75" class="mono" font-size="13" fill="#7dd3fc">U3</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="u2" transform="translate(0,180)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#22d3ee" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="30" y="75" class="mono" font-size="13" fill="#7dd3fc">U2</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="u1" transform="translate(0,240)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#22d3ee" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="30" y="75" class="mono" font-size="13" fill="#7dd3fc">U1</text>
+          </g>
+
+          <!-- Core -->
+          <g id="plasmaCore" class="cursor-pointer" transform="translate(150,350)">
+            <circle r="42" fill="#020617" stroke="#0e7490" stroke-opacity="0.4" stroke-width="2"/>
+            <circle r="32" fill="url(#coreGrad)" opacity="0.15" filter="url(#glow)"/>
+            <circle r="26" fill="url(#coreGrad)" class="core-pulse" filter="url(#coreGlow)"/>
+            <circle r="14" fill="#e0f2fe" opacity="0.9"/>
+            <text x="-55" y="5" class="mono" font-size="13" fill="#7dd3fc">C0</text>
+          </g>
+
+          <!-- Lower Rings L1-L5 -->
+          <g class="ring-group cursor-pointer" data-target="l1" transform="translate(0,360)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#38bdf8" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="215" y="75" class="mono" font-size="13" fill="#7dd3fc">L1</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="l2" transform="translate(0,420)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#38bdf8" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="215" y="75" class="mono" font-size="13" fill="#7dd3fc">L2</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="l3" transform="translate(0,480)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#38bdf8" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="215" y="75" class="mono" font-size="13" fill="#7dd3fc">L3</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="l4" transform="translate(0,540)">
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="70" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="70" rx="75" ry="16" fill="none" stroke="#38bdf8" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="215" y="75" class="mono" font-size="13" fill="#7dd3fc">L4</text>
+          </g>
+          <g class="ring-group cursor-pointer" data-target="l5" transform="translate(0,0)">
+            <ellipse cx="150" cy="610" rx="95" ry="22" fill="none" stroke="#083344" stroke-width="8"/>
+            <ellipse cx="150" cy="610" rx="95" ry="22" fill="none" stroke="#0891b2" stroke-opacity="0.3" stroke-width="1.5"/>
+            <ellipse cx="150" cy="610" rx="75" ry="16" fill="none" stroke="#38bdf8" stroke-opacity="0.85" stroke-width="2"/>
+            <text x="215" y="615" class="mono" font-size="13" fill="#7dd3fc">L5</text>
+          </g>
+        </svg>
+      </div>
+      <p class="text-center mono text-[11px] text-slate-500 mt-2 uppercase tracking-wider">Hover rings to inspect • Click to jump to build step</p>
+    </section>
+  </div>
+
+  <!-- Technical Specifications -->
+  <section class="relative border border-slate-800 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-6 md:p-8 mb-8">
+    <div class="corner top-0 left-0 border-t-2 border-l-2 rounded-tl-2xl"></div>
+    <h2 class="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+      <span class="w-1 h-5 bg-cyan-400"></span> Technical Specifications
+    </h2>
+    <div class="overflow-x-auto">
+      <table class="w-full mono text-[13px]">
+        <tbody class="divide-y divide-slate-800/70">
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80 w-64">Flow Rate</td>
+            <td class="py-3 text-slate-200">12.5 L/hr nominal (HTO/T₂O feed), 8–15 L/hr operational range</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Isotope Separation Efficiency</td>
+            <td class="py-3 text-slate-200">&gt;99.997% tritium removal @ 20°C feed, &lt;10 Bq/L output target</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Plasma Core Type</td>
+            <td class="py-3 text-slate-200">Magnetized low-temp, 18.6 keV beta resonance (E×B drift confinement)</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Power Requirements</td>
+            <td class="py-3 text-slate-200">4.2 kW peak / 2.8 kW steady — 240VAC 3φ + 48VDC control bus</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Dimensions</td>
+            <td class="py-3 text-slate-200">580 mm Ø × 1,240 mm H (stack), 187 kg dry weight</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Materials</td>
+            <td class="py-3 text-slate-200">316L stainless vessel, boron-doped diamond electrodes, YBCO superconductors @77K, sapphire viewports</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Helium-3 Capture Rate</td>
+            <td class="py-3 text-slate-200">0.8 – 1.4 mL STP/day per 100 L feed @ 10 Ci/L (L2 cryo-trap)</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Operating Pressure</td>
+            <td class="py-3 text-slate-200">Core: 1×10⁻⁴ Torr, Rings: 0.8–1.2 bar absolute</td>
+          </tr>
+          <tr class="hover:bg-slate-900/50">
+            <td class="py-3 pr-6 text-cyan-300/80">Coolant</td>
+            <td class="py-3 text-slate-200">Closed-loop LN₂ (77K) for YBCO + He cryocooler (4K stage for L2)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Build Sheet -->
+  <section class="relative border border-slate-800 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-6 md:p-8 mb-8">
+    <div class="corner bottom-0 right-0 border-b-2 border-r-2 rounded-br-2xl"></div>
+    <h2 class="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+      <span class="w-1 h-5 bg-cyan-400"></span> Build Sheet — 10-Stack Assembly
+    </h2>
+    
+    <div class="grid lg:grid-cols-3 gap-8">
+      <!-- Upper Stack -->
+      <div>
+        <h3 class="mono text-xs uppercase tracking-widest text-sky-300/80 mb-4 border-b border-sky-900/50 pb-2">Upper Stack (Intake & Conditioning)</h3>
+        <div class="space-y-4">
+          <article id="step-u5" class="group p-4 rounded-xl border border-slate-800 hover:border-cyan-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-cyan-300 mt-0.5">01</div>
+              <div>
+                <h4 class="font-medium text-white">U5 — Intake Vortex</h4>
+                <p class="text-sm text-slate-400 mt-1">Laminar vortex chamber with 40kHz ultrasonic degasser. Removes dissolved gases, prevents bubble nucleation in core.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">316L, Ra 0.4μm • ±0.5 L/hr</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-u4" class="group p-4 rounded-xl border border-slate-800 hover:border-cyan-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-cyan-300 mt-0.5">02</div>
+              <div>
+                <h4 class="font-medium text-white">U4 — Isotopic Pre-Filter</h4>
+                <p class="text-sm text-slate-400 mt-1">Pd-Ag membrane (100nm). Passes protium preferentially, concentrates HTO/T₂O by 4–6×.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">Pd77Ag23 • 350°C op</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-u3" class="group p-4 rounded-xl border border-slate-800 hover:border-cyan-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-cyan-300 mt-0.5">03</div>
+              <div>
+                <h4 class="font-medium text-white">U3 — Cryogenic Distillation</h4>
+                <p class="text-sm text-slate-400 mt-1">25K cascade column. Separates T₂O (bp 101.5°C) from HTO via vapor pressure difference.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">Cu OFHC • LN₂ cooled</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-u2" class="group p-4 rounded-xl border border-slate-800 hover:border-cyan-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-cyan-300 mt-0.5">04</div>
+              <div>
+                <h4 class="font-medium text-white">U2 — Find-The-Zero Stage</h4>
+                <p class="text-sm text-slate-400 mt-1">Null-field trap tunes E×B to minimize tritium-hydride formation. Locks to 18.6 keV resonance.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">Calibration critical • auto-tune</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-u1" class="group p-4 rounded-xl border border-slate-800 hover:border-cyan-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-cyan-300 mt-0.5">05</div>
+              <div>
+                <h4 class="font-medium text-white">U1 — Phase-Space Buffer</h4>
+                <p class="text-sm text-slate-400 mt-1">4T magneto-optical buffer holds 0.5L, provides uniform density pulse to core.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">YBCO ring • 10ms jitter</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- Core -->
+      <div>
+        <h3 class="mono text-xs uppercase tracking-widest text-cyan-300 mb-4 border-b border-cyan-900/50 pb-2">Central Plasma Core</h3>
+        <article id="step-c0" class="p-5 rounded-xl border border-cyan-900/60 bg-cyan-950/20 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none"></div>
+          <div class="flex items-start gap-3 relative">
+            <div class="mono text-cyan-200 mt-0.5">06</div>
+            <div>
+              <h4 class="font-medium text-white">C0 — Plasma Core</h4>
+              <p class="text-sm text-cyan-100/80 mt-1">Magnetized low-temperature plasma (10⁻⁴ Torr). Resonant beta-decoupling strips T from water via 18.6 keV impact ionization. T⁺ extracted radially.</p>
+              <div class="mt-3 grid grid-cols-2 gap-2 mono text-[11px]">
+                <div class="text-slate-400">Field: <span class="text-slate-200">5.2T axial</span></div>
+                <div class="text-slate-400">Power: <span class="text-slate-200">1.8kW RF</span></div>
+                <div class="text-slate-400">Electrodes: <span class="text-slate-200">BDD</span></div>
+                <div class="text-slate-400">Temp: <span class="text-slate-200">~4,000K e⁻</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <div class="mt-8">
+          <h3 class="mono text-xs uppercase tracking-widest text-slate-500 mb-3">Provenance & Accountability</h3>
+          <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/30">
+            <p class="text-sm text-slate-300">10 artifacts generated — one per ring (U5→L5). C0 requires dual human authorization.</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-cyan-300">ART-01</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-cyan-300">ART-02</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-cyan-300">ART-03</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-cyan-300">ART-04</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-cyan-300">ART-05</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-sky-300">ART-06</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-sky-300">ART-07</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-sky-300">ART-08</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-sky-300">ART-09</span>
+              <span class="px-2 py-1 rounded bg-slate-800/80 mono text-[10px] text-sky-300">ART-10</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-3">Hamiltonian path validation: each artifact hash includes previous, enforcing sequential processing with no bypass.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lower Stack -->
+      <div>
+        <h3 class="mono text-xs uppercase tracking-widest text-sky-300/80 mb-4 border-b border-sky-900/50 pb-2">Lower Stack (Recovery & Output)</h3>
+        <div class="space-y-4">
+          <article id="step-l1" class="group p-4 rounded-xl border border-slate-800 hover:border-sky-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-sky-300 mt-0.5">07</div>
+              <div>
+                <h4 class="font-medium text-white">L1 — Recombination</h4>
+                <p class="text-sm text-slate-400 mt-1">Pt/Al₂O₃ catalytic recombiner reforms detritiated O and H/D into clean water.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">250°C • <0.1% T carryover</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-l2" class="group p-4 rounded-xl border border-slate-800 hover:border-sky-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-sky-300 mt-0.5">08</div>
+              <div>
+                <h4 class="font-medium text-white">L2 — Helium-3 Trap</h4>
+                <p class="text-sm text-slate-400 mt-1">Cryo-adsorption at 4K on zeolite. Captures ³He decay product from tritium.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">0.8–1.4 mL/day @10Ci/L</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-l3" class="group p-4 rounded-xl border border-slate-800 hover:border-sky-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-sky-300 mt-0.5">09</div>
+              <div>
+                <h4 class="font-medium text-white">L3 — Mineral Rebalance</h4>
+                <p class="text-sm text-slate-400 mt-1">Controlled remineralization with Ca/Mg. Ensures output potability.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">Target 80–120 ppm TDS</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-l4" class="group p-4 rounded-xl border border-slate-800 hover:border-sky-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-sky-300 mt-0.5">10</div>
+              <div>
+                <h4 class="font-medium text-white">L4 — Provenance Logger</h4>
+                <p class="text-sm text-slate-400 mt-1">Cryptographic hasher writes ART-06 to ART-10. Seals Hamiltonian path.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">SHA3-512 • TPM 2.0</p>
+              </div>
+            </div>
+          </article>
+          <article id="step-l5" class="group p-4 rounded-xl border border-slate-800 hover:border-sky-800/60 bg-slate-900/40 transition">
+            <div class="flex items-start gap-3">
+              <div class="mono text-sky-300 mt-0.5">11</div>
+              <div>
+                <h4 class="font-medium text-white">L5 — Output Gate</h4>
+                <p class="text-sm text-slate-400 mt-1">Final tritium monitor and fail-safe valve. Requires human release if >10 Bq/L.</p>
+                <p class="mono text-[11px] text-slate-500 mt-2">Dual scintillator • NC valve</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Safety -->
+  <section class="grid md:grid-cols-2 gap-6 mb-10">
+    <div class="relative border border-amber-900/40 bg-amber-950/20 backdrop-blur-xl rounded-2xl p-6">
+      <h3 class="text-base font-semibold text-amber-200 mb-3 flex items-center gap-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        Tritium Safety Notes
+      </h3>
+      <ul class="space-y-2 text-sm text-amber-100/80">
+        <li class="flex gap-2"><span class="text-amber-400">•</span><span>Beta emitter: 18.6 keV max (avg 5.7 keV). No external penetration — internal hazard only.</span></li>
+        <li class="flex gap-2"><span class="text-amber-400">•</span><span>Use double containment, negative pressure (-50 Pa), and continuous air monitors.</span></li>
+        <li class="flex gap-2"><span class="text-amber-400">•</span><span>PPE: nitrile double gloves, tritium-impermeable suit for >1 Ci/L feed.</span></li>
+        <li class="flex gap-2"><span class="text-amber-400">•</span><span>3H exchanges with water — no skin absorption barrier. Prevent ingestion/inhalation.</span></li>
+        <li class="flex gap-2"><span class="text-amber-400">•</span><span>L2 ³He vent is non-radioactive but cryogenic — O₂ deficiency hazard.</span></li>
+      </ul>
+    </div>
+    <div class="relative border border-slate-800 bg-slate-950/70 backdrop-blur-xl rounded-2xl p-6">
+      <h3 class="text-base font-semibold text-white mb-3">Hamiltonian Path Accountability</h3>
+      <p class="text-sm text-slate-300">Each of the 10 rings produces an immutable artifact. The system validates that ART-01 → ART-10 forms a single Hamiltonian path — visiting each stage exactly once, in order. Skipping, reordering, or replaying a ring breaks the hash chain and halts C0 ignition.</p>
+      <p class="text-sm text-slate-400 mt-3">Human-in-the-loop enforced at two checkpoints: C0 plasma strike and L5 release. Both require independent operator keys.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 pt-6 pb-4">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-3 mono text-[11px] uppercase tracking-widest text-slate-500">
+      <div>HAMILTON-10 • 10-Stack Plasma Core System</div>
+      <div class="text-cyan-300/70">Designed for human-in-the-loop accountability</div>
+      <div>Rev 2.1 — 2025-12-19</div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  const rings = document.querySelectorAll('.ring-group');
+  const steps = {
+    u5: document.getElementById('step-u5'),
+    u4: document.getElementById('step-u4'),
+    u3: document.getElementById('step-u3'),
+    u2: document.getElementById('step-u2'),
+    u1: document.getElementById('step-u1'),
+    l1: document.getElementById('step-l1'),
+    l2: document.getElementById('step-l2'),
+    l3: document.getElementById('step-l3'),
+    l4: document.getElementById('step-l4'),
+    l5: document.getElementById('step-l5'),
+  };
+
+  rings.forEach(r => {
+    const target = r.dataset.target;
+    r.addEventListener('mouseenter', () => {
+      r.classList.add('active');
+      steps[target]?.classList.add('ring-1','ring-cyan-500/50','bg-cyan-950/30');
+    });
+    r.addEventListener('mouseleave', () => {
+      r.classList.remove('active');
+      steps[target]?.classList.remove('ring-1','ring-cyan-500/50','bg-cyan-950/30');
+    });
+    r.addEventListener('click', () => {
+      steps[target]?.scrollIntoView({behavior:'smooth', block:'center'});
+      steps[target]?.classList.add('ring-2','ring-cyan-400');
+      setTimeout(()=>steps[target]?.classList.remove('ring-2','ring-cyan-400'), 1500);
+    });
+  });
+
+  const core = document.getElementById('plasmaCore');
+  const toggle = document.getElementById('toggleCore');
+  const particles = document.getElementById('flowParticles');
+  let active = false;
+  
+  function setCore(on) {
+    active = on;
+    if(on) {
+      particles.classList.remove('hidden');
+      core.querySelector('circle:nth-child(3)').setAttribute('filter','url(#coreGlow)');
+      toggle.textContent = 'Deactivate Core';
+      toggle.classList.add('bg-cyan-500/30','text-white');
+    } else {
+      particles.classList.add('hidden');
+      toggle.textContent = 'Activate Core';
+      toggle.classList.remove('bg-cyan-500/30','text-white');
+    }
+  }
+  toggle.addEventListener('click', () => setCore(!active));
+  core.addEventListener('click', () => {
+    document.getElementById('step-c0').scrollIntoView({behavior:'smooth', block:'center'});
+  });
+
+  // init subtle pulse
+  setTimeout(()=>setCore(true), 800);
+</script>
+</body>
+</html>

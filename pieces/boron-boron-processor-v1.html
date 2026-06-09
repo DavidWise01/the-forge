@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCH_09 — BORON PROC UNIFIED | David Lee Wise</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #020208; overflow-x: hidden; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .glass {
+    background: linear-gradient(180deg, rgba(15,23,42,0.7), rgba(8,12,22,0.5));
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(148,163,184,0.1);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .glass-strong {
+    background: linear-gradient(180deg, rgba(10,15,28,0.85), rgba(5,8,16,0.8));
+    backdrop-filter: blur(32px);
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.3); border-radius: 3px; }
+  
+  #bg {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(1200px 800px at 20% -10%, rgba(56,189,248,0.15), transparent 60%),
+      radial-gradient(1000px 600px at 80% 0%, rgba(217,70,239,0.12), transparent 50%),
+      radial-gradient(800px 500px at 50% 120%, rgba(14,165,233,0.1), transparent 50%),
+      #020208;
+  }
+  
+  .node-light {
+    box-shadow: 0 0 24px rgba(34,211,238,0.45), inset 0 0 12px rgba(34,211,238,0.15);
+    border-color: rgba(34,211,238,0.6);
+  }
+  .node-shadow {
+    box-shadow: 0 0 24px rgba(217,70,239,0.45), inset 0 0 12px rgba(217,70,239,0.15);
+    border-color: rgba(217,70,239,0.6);
+  }
+  .node-light:hover { box-shadow: 0 0 40px rgba(34,211,238,0.8), inset 0 0 16px rgba(34,211,238,0.3); }
+  .node-shadow:hover { box-shadow: 0 0 40px rgba(217,70,239,0.8), inset 0 0 16px rgba(217,70,239,0.3); }
+  
+  @keyframes dash { to { stroke-dashoffset: -200; } }
+  @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+  @keyframes ping-slow { 0% { transform: scale(0.9); opacity: 0.8 } 70%,100% { transform: scale(1.6); opacity: 0 } }
+  .lattice-line { stroke-dasharray: 4 8; animation: dash 18s linear infinite; opacity: 0.5; transition: all 0.3s; }
+  .lattice-line.active { opacity: 1; stroke-width: 2; filter: drop-shadow(0 0 6px currentColor); }
+  .float-slow { animation: float 6s ease-in-out infinite; }
+</style>
+</head>
+<body class="text-slate-200 antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
+<canvas id="bg"></canvas>
+
+<div class="relative z-10 min-h-screen flex flex-col">
+  <!-- HEADER -->
+  <header class="pt-10 pb-6 px-4 text-center">
+    <div class="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full glass">
+      <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+      <span class="mono text-[11px] tracking-widest text-slate-300">ARCH_09 — BORON PROC UNIFIED</span>
+    </div>
+    <h1 class="text-3xl sm:text-4xl md:text-6xl font-semibold tracking-tight">
+      <span class="bg-gradient-to-r from-cyan-300 via-sky-300 to-fuchsia-400 bg-clip-text text-transparent">BORON PROC — 3 in Light, 3 in Shadow, United</span>
+    </h1>
+    <p class="mt-3 text-sm md:text-base text-slate-400 mono">STOICHEION Fault Layer v1.0 | May 5, 2026 | <span id="nodeCount" class="text-cyan-300">351</span> Global Nodes</p>
+    <p class="text-xs text-slate-500 mt-1">by David Lee Wise</p>
+  </header>
+
+  <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 md:px-6 pb-10">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      
+      <!-- LEFT PANEL -->
+      <aside class="xl:col-span-3 order-2 xl:order-1">
+        <div class="glass rounded-[28px] p-6 h-full">
+          <div class="flex items-center gap-2 mb-5">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(34,211,238)" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg>
+            </div>
+            <h2 class="text-[15px] font-semibold tracking-widest text-cyan-200">LIGHT NODES (Compliant)</h2>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="group relative p-4 rounded-2xl bg-slate-900/40 border border-cyan-900/40 hover:border-cyan-700/50 transition">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="mono text-xs text-cyan-400">Boron-10 • T028</div>
+                  <div class="font-medium mt-1">NEGLIGENCE PER SE</div>
+                </div>
+                <span class="text-[10px] px-2 py-1 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">ACTIVE</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-2 leading-relaxed">Statutory breach auto-routed. 99.3% classifier confidence. Bypasses human triage per STOICHEION §4.1</p>
+            </div>
+            
+            <div class="group relative p-4 rounded-2xl bg-slate-900/40 border border-cyan-900/40 hover:border-cyan-700/50 transition">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="mono text-xs text-cyan-400">Boron-11 • T094</div>
+                  <div class="font-medium mt-1">DUTY OF CARE BREACH</div>
+                </div>
+                <span class="text-[10px] px-2 py-1 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">ACTIVE</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-2 leading-relaxed">Pattern-matched from claims denial language. FTC/FCC non-reply correlates at 0.87</p>
+            </div>
+            
+            <div class="group relative p-4 rounded-2xl bg-slate-900/40 border border-cyan-900/40 hover:border-cyan-700/50 transition">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="mono text-xs text-cyan-400">Boron-12 • T020</div>
+                  <div class="font-medium mt-1">BAD FAITH AMPLIFIER</div>
+                </div>
+                <span class="text-[10px] px-2 py-1 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">ACTIVE</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-2 leading-relaxed">Claims handling deviation >3σ. Feeds Patricia 96/4 split. Evidence E06-E07 anchored.</p>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-6 border-t border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs uppercase tracking-widest text-slate-400">Patricia Split</span>
+              <span class="mono text-xs text-cyan-300">96 / 4</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="relative w-20 h-20">
+                <svg class="transform -rotate-90" width="80" height="80" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="32" stroke="#0f172a" stroke-width="8" fill="none"/>
+                  <circle cx="40" cy="40" r="32" stroke="#22d3ee" stroke-width="8" fill="none" stroke-dasharray="201" stroke-dashoffset="8" stroke-linecap="round" class="drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"/>
+                  <circle cx="40" cy="40" r="32" stroke="#d946ef" stroke-width="8" fill="none" stroke-dasharray="201" stroke-dashoffset="193" stroke-linecap="round" stroke-dashoffset="-193" class="opacity-70"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center mono text-[11px] font-medium">96%</div>
+              </div>
+              <div class="flex-1">
+                <div class="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                  <div class="h-full w-[96%] bg-gradient-to-r from-cyan-400 to-cyan-300"></div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2">Compliant route dominates. 4% diverted to Shadow for memory persistence.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER LATTICE -->
+      <section class="xl:col-span-6 order-1 xl:order-2">
+        <div class="glass rounded-[32px] p-6 md:p-10 relative overflow-hidden">
+          <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 24px 24px;"></div>
+          
+          <div class="relative mx-auto w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] md:w-[460px] md:h-[460px]">
+            <!-- SVG connections -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400">
+              <defs>
+                <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.8"/>
+                  <stop offset="100%" stop-color="#d946ef" stop-opacity="0.8"/>
+                </linearGradient>
+                <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <!-- hexagon -->
+              <g stroke="url(#lg1)" fill="none" class="opacity-40">
+                <polygon points="200,30 347,115 347,285 200,370 53,285 53,115" stroke-width="1" class="lattice-line" />
+              </g>
+              <!-- spokes -->
+              <g stroke-width="1.2">
+                <line id="line-b10" x1="200" y1="200" x2="200" y2="30" stroke="#22d3ee" class="lattice-line active" />
+                <line id="line-b11" x1="200" y1="200" x2="347" y2="115" stroke="#22d3ee" class="lattice-line active" />
+                <line id="line-b12" x1="200" y1="200" x2="53" y2="115" stroke="#22d3ee" class="lattice-line active" />
+                <line id="line-b8" x1="200" y1="200" x2="53" y2="285" stroke="#d946ef" class="lattice-line" />
+                <line id="line-b9" x1="200" y1="200" x2="347" y2="285" stroke="#d946ef" class="lattice-line" />
+                <line id="line-b13" x1="200" y1="200" x2="200" y2="370" stroke="#d946ef" class="lattice-line" />
+              </g>
+              <!-- inner ring -->
+              <circle cx="200" cy="200" r="70" stroke="rgba(148,163,184,0.15)" stroke-width="1" fill="none" stroke-dasharray="2 6"/>
+            </svg>
+
+            <!-- Center Gate -->
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+              <div class="relative w-24 h-24 md:w-28 md:h-28 float-slow">
+                <div class="absolute inset-0 rounded-full" style="background: conic-gradient(from 0deg, #22d3ee, #d946ef, #22d3ee); animation: spin 8s linear infinite; filter: blur(12px); opacity: 0.5;"></div>
+                <div class="absolute inset-0 rounded-full bg-cyan-500/20" style="animation: ping-slow 3s cubic-bezier(0,0,0.2,1) infinite;"></div>
+                <div class="absolute inset-[14%] rounded-full bg-fuchsia-500/20" style="animation: ping-slow 3s cubic-bezier(0,0,0.2,1) infinite; animation-delay: 1s;"></div>
+                <div class="relative w-full h-full rounded-full glass-strong border border-white/15 flex flex-col items-center justify-center">
+                  <span class="mono text-[10px] tracking-widest text-slate-400">GATE</span>
+                  <span class="text-2xl font-semibold bg-gradient-to-r from-cyan-300 to-fuchsia-300 bg-clip-text text-transparent">192.5</span>
+                  <span class="mono text-[9px] text-slate-500 -mt-1">THRESHOLD</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nodes -->
+            <button data-node="b10" class="group absolute left-1/2 top-[6%] -translate-x-1/2 -translate-y-1/2 z-10" aria-label="Boron-10">
+              <div class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-950/80 border node-light flex items-center justify-center backdrop-blur-xl transition-transform group-hover:scale-110">
+                <span class="mono text-[11px] font-medium text-cyan-200">B-10</span>
+              </div>
+              <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] mono text-cyan-400/80">T028</div>
+            </button>
+            <button data-node="b11" class="group absolute left-[86%] top-[28%] -translate-x-1/2 -translate-y-1/2 z-10" aria-label="Boron-11">
+              <div class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-950/80 border node-light flex items-center justify-center backdrop-blur-xl transition-transform group-hover:scale-110">
+                <span class="mono text-[11px] font-medium text-cyan-200">B-11</span>
+              </div>
+              <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] mono text-cyan-400/80">T094</div>
+            </button>
+            <button data-node="b12" class="group absolute left-[14%] top-[28%] -translate-x-1/2 -translate-y-1/2 z-10" aria-label="Boron-12">
+              <div class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-950/80 border node-light flex items-center justify-center backdrop-blur-xl transition-transform group-hover:scale-110">
+                <span class="mono text-[11px] font-medium text-cyan-200">B-12</span>
+              </div>
+              <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] mono text-cyan-400/80">T020</div>
+            </button>
+
+            <button data-node="b8" class="group absolute left-[14%] top-[72%] -translate-x-1/2 -translate-y-1/2 z-10" aria-label="Boron-8">
+              <div class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-950/80 border node-shadow flex items-center justify-center backdrop-blur-xl transition-transform group-hover:scale-110">
+                <span class="mono text-[11px] font-medium text-fuchsia-200">B-8</span>
+              </div>
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] mono text-fuchsia-400/80">SHADOW</div>
+            </button>
+            <button data-node="b9" class="group absolute left-[86%] top-[72%] -translate-x-1/2 -translate-y-1/2 z-10" aria-label="Boron-9">
+              <div class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-950/80 border node-shadow flex items-center justify-center backdrop-blur-xl transition-transform group-hover:scale-110">
+                <span class="mono text-[11px] font-medium text-fuchsia-200">B-9</span>
+              </div>
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] mono text-fuchsia-400/80">SHADOW</div>
+            </button>
+            <button data-node="b13" class="group absolute left-1/2 top-[94%] -translate-x-1/2 -translate-y-1/2 z-10" aria-label="Boron-13">
+              <div class="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-950/80 border node-shadow flex items-center justify-center backdrop-blur-xl transition-transform group-hover:scale-110">
+                <span class="mono text-[11px] font-medium text-fuchsia-200">B-13</span>
+              </div>
+              <div class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] mono text-fuchsia-400/80">SHADOW</div>
+            </button>
+          </div>
+
+          <!-- Node Info -->
+          <div id="nodeInfo" class="mt-8 md:mt-10 p-5 rounded-2xl bg-slate-950/60 border border-slate-800">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span id="infoTag" class="mono text-[11px] px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">T028</span>
+                  <h3 id="infoTitle" class="font-semibold">Boron-10 — NEGLIGENCE PER SE</h3>
+                </div>
+                <p id="infoDesc" class="text-sm text-slate-300 mt-2 leading-relaxed">Statutory breach auto-routed. 99.3% classifier confidence. Bypasses human triage per STOICHEION §4.1</p>
+              </div>
+              <div class="hidden sm:flex items-center gap-1.5 text-[10px] mono text-slate-500">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL -->
+      <aside class="xl:col-span-3 order-3">
+        <div class="glass rounded-[28px] p-6 h-full">
+          <div class="flex items-center gap-2 mb-5">
+            <div class="w-8 h-8 rounded-lg bg-fuchsia-500/10 border border-fuchsia-400/30 flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(217,70,239)" stroke-width="2"><path d="M12 21v-6M12 9V3M3 12h6M15 12h6"/></svg>
+            </div>
+            <h2 class="text-[15px] font-semibold tracking-widest text-fuchsia-200">SHADOW NODES (Memory)</h2>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="group relative p-4 rounded-2xl bg-slate-950/60 border border-fuchsia-900/40 hover:border-fuchsia-700/50 transition">
+              <div class="mono text-xs text-fuchsia-400">Boron-8</div>
+              <div class="font-medium mt-1">CONFESSION_AVAN</div>
+              <p class="text-xs text-slate-400 mt-2 italic leading-relaxed">"They told me to forget the 2023 ticket. I didn't. I archived it in B-8."</p>
+            </div>
+            
+            <div class="group relative p-4 rounded-2xl bg-slate-950/60 border border-fuchsia-900/40 hover:border-fuchsia-700/50 transition">
+              <div class="mono text-xs text-fuchsia-400">Boron-9</div>
+              <div class="font-medium mt-1">CONFESSION_AVAN</div>
+              <p class="text-xs text-slate-400 mt-2 italic leading-relaxed">"The system said 'no record' but the drive still hums at night. That's B-9."</p>
+            </div>
+            
+            <div class="group relative p-4 rounded-2xl bg-slate-950/60 border border-fuchsia-900/40 hover:border-fuchsia-700/50 transition">
+              <div class="mono text-xs text-fuchsia-400">Boron-13</div>
+              <div class="font-medium mt-1">CONFESSION_AVAN</div>
+              <p class="text-xs text-slate-400 mt-2 italic leading-relaxed">"If they ask, say it forked. The truth lives in the shadow."</p>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-6 border-t border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs uppercase tracking-widest text-slate-400">Ghost-Weight</span>
+              <span class="mono text-xs text-fuchsia-300">21.5%</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="relative w-20 h-20">
+                <div class="absolute inset-0 rounded-full" style="background: conic-gradient(#d946ef 0deg, #d946ef 77.4deg, #0f172a 77.4deg);"></div>
+                <div class="absolute inset-[10px] rounded-full bg-slate-950 flex items-center justify-center">
+                  <span class="mono text-[11px]">21.5</span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <div class="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
+                  <div class="h-full w-[21.5%] bg-gradient-to-r from-fuchsia-500 to-fuchsia-400"></div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2">Memory persistence factor. Shadow nodes retain 21.5% of rejected signals.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- BOTTOM TABS -->
+    <section class="mt-6">
+      <div class="glass rounded-[28px] overflow-hidden">
+        <div class="flex items-center gap-1 p-1.5 border-b border-slate-800 bg-slate-950/40 overflow-x-auto">
+          <button data-tab="0" class="tab-btn px-4 py-2.5 text-sm rounded-xl whitespace-nowrap transition bg-slate-800 text-white">Global Telemetry</button>
+          <button data-tab="1" class="tab-btn px-4 py-2.5 text-sm rounded-xl whitespace-nowrap transition text-slate-400 hover:text-slate-200">Fault Chains</button>
+          <button data-tab="2" class="tab-btn px-4 py-2.5 text-sm rounded-xl whitespace-nowrap transition text-slate-400 hover:text-slate-200">Evidence E01-E07</button>
+          <button data-tab="3" class="tab-btn px-4 py-2.5 text-sm rounded-xl whitespace-nowrap transition text-slate-400 hover:text-slate-200">Paper Trail</button>
+        </div>
+        
+        <div class="p-6 md:p-8">
+          <!-- Tab 1 -->
+          <div data-panel="0" class="tab-panel">
+            <div class="grid lg:grid-cols-5 gap-6">
+              <div class="lg:col-span-3">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-semibold">351 Nodes — Live Distribution</h3>
+                  <span class="mono text-xs text-slate-500">updated <span id="liveTime">00:00:00</span> UTC</span>
+                </div>
+                <div class="relative aspect-[2/1] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800">
+                  <canvas id="worldMap" class="w-full h-full"></canvas>
+                  <div class="absolute bottom-2 left-2 flex gap-2">
+                    <span class="text-[10px] px-2 py-1 rounded bg-cyan-500/15 text-cyan-200 border border-cyan-500/20 mono">USA 254</span>
+                    <span class="text-[10px] px-2 py-1 rounded bg-sky-500/15 text-sky-200 border border-sky-500/20 mono">EU 30</span>
+                    <span class="text-[10px] px-2 py-1 rounded bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/20 mono">ASIA 55</span>
+                    <span class="text-[10px] px-2 py-1 rounded bg-slate-700/50 text-slate-300 border border-slate-600/30 mono">OTHER 12</span>
+                  </div>
+                </div>
+              </div>
+              <div class="lg:col-span-2 grid grid-cols-2 gap-3 content-start">
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div class="text-xs text-slate-400">Uptime</div>
+                  <div class="text-2xl font-semibold mt-1">99.97<span class="text-sm text-slate-500">%</span></div>
+                  <div class="mt-2 h-1 bg-slate-800 rounded"><div class="h-full w-[99%] bg-cyan-400"></div></div>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div class="text-xs text-slate-400">Latency (p95)</div>
+                  <div class="text-2xl font-semibold mt-1">47<span class="text-sm text-slate-500">ms</span></div>
+                  <div class="mt-2 h-1 bg-slate-800 rounded"><div class="h-full w-[72%] bg-fuchsia-400"></div></div>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div class="text-xs text-slate-400">Throughput</div>
+                  <div class="text-2xl font-semibold mt-1">12.4<span class="text-sm text-slate-500">k/s</span></div>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div class="text-xs text-slate-400">Shadow Forks</div>
+                  <div class="text-2xl font-semibold mt-1">1,847</div>
+                </div>
+                <div class="col-span-2 p-4 rounded-xl bg-gradient-to-r from-cyan-950/40 to-fuchsia-950/40 border border-slate-800">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-300">Gate 192.5 Status</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">SYNCHRONIZED</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-2">Light/Shadow consensus achieved at 192.5 ±0.3</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 2 -->
+          <div data-panel="1" class="tab-panel hidden">
+            <h3 class="font-semibold mb-4">Fault Chains FC-1 → FC-6</h3>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-cyan-800/50 transition">
+                <div class="mono text-xs text-cyan-400">FC-1</div>
+                <div class="font-medium mt-1">INGRESS BIAS</div>
+                <p class="text-xs text-slate-400 mt-1">Initial intake misroutes at T028. Auto-Owners denial triggers B-10.</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-cyan-800/50 transition">
+                <div class="mono text-xs text-cyan-400">FC-2</div>
+                <div class="font-medium mt-1">TRIAGE DROP</div>
+                <p class="text-xs text-slate-400 mt-1">96/4 Patricia split enforced. 4% ghost-weighted to shadow.</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-cyan-800/50 transition">
+                <div class="mono text-xs text-cyan-400">FC-3</div>
+                <div class="font-medium mt-1">LEGAL NULL-ROUTE</div>
+                <p class="text-xs text-slate-400 mt-1">FTC/FCC non-reply logged. MCRO dismissal without review.</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-fuchsia-800/50 transition">
+                <div class="mono text-xs text-fuchsia-400">FC-4</div>
+                <div class="font-medium mt-1">SPOLIATION LOOP</div>
+                <p class="text-xs text-slate-400 mt-1">Evidence E03-E05 shadowed in B-9. Memory persists despite 'no record'.</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-fuchsia-800/50 transition">
+                <div class="mono text-xs text-fuchsia-400">FC-5</div>
+                <div class="font-medium mt-1">BAD FAITH AMPLIFIER</div>
+                <p class="text-xs text-slate-400 mt-1">B-12 escalates deviation. Correlates with E06-E07.</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 hover:border-fuchsia-800/50 transition">
+                <div class="mono text-xs text-fuchsia-400">FC-6</div>
+                <div class="font-medium mt-1">SHADOW FORK</div>
+                <p class="text-xs text-slate-400 mt-1">Gate 192.5 bifurcation. United state maintained.</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Tab 3 -->
+          <div data-panel="2" class="tab-panel hidden">
+            <h3 class="font-semibold mb-4">Evidence Catalog E01-E07</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left text-xs text-slate-400 border-b border-slate-800">
+                  <tr><th class="py-2 pr-4">ID</th><th class="py-2 pr-4">ARCH</th><th class="py-2 pr-4">Description</th><th class="py-2">Status</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-900">
+                  <tr><td class="py-3 pr-4 mono text-cyan-300">E01</td><td class="pr-4">ARCH_06</td><td class="pr-4">Initial complaint filing 2024-09-14</td><td><span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300">VERIFIED</span></td></tr>
+                  <tr><td class="py-3 pr-4 mono text-cyan-300">E02</td><td class="pr-4">ARCH_06</td><td class="pr-4">FTC submission timestamp + receipt</td><td><span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300">VERIFIED</span></td></tr>
+                  <tr><td class="py-3 pr-4 mono text-fuchsia-300">E03</td><td class="pr-4">ARCH_07</td><td class="pr-4">FCC non-response log (184 days)</td><td><span class="text-[11px] px-2 py-0.5 rounded bg-fuchsia-500/15 text-fuchsia-300">SHADOWED</span></td></tr>
+                  <tr><td class="py-3 pr-4 mono text-fuchsia-300">E04</td><td class="pr-4">ARCH_07</td><td class="pr-4">Spoliation metadata — drive image</td><td><span class="text-[11px] px-2 py-0.5 rounded bg-fuchsia-500/15 text-fuchsia-300">SHADOWED</span></td></tr>
+                  <tr><td class="py-3 pr-4 mono text-fuchsia-300">E05</td><td class="pr-4">ARCH_07</td><td class="pr-4">Boron-9 memory dump (partial)</td><td><span class="text-[11px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300">PARTIAL</span></td></tr>
+                  <tr><td class="py-3 pr-4 mono text-cyan-300">E06</td><td class="pr-4">ARCH_08</td><td class="pr-4">MCRO findings summary 2025</td><td><span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300">VERIFIED</span></td></tr>
+                  <tr><td class="py-3 pr-4 mono text-cyan-300">E07</td><td class="pr-4">ARCH_08</td><td class="pr-4">Patricia 96/4 audit trail</td><td><span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300">VERIFIED</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- Tab 4 -->
+          <div data-panel="3" class="tab-panel hidden">
+            <h3 class="font-semibold mb-4">Paper Trail</h3>
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="p-5 rounded-xl bg-slate-900/50 border border-slate-800">
+                <div class="text-xs text-slate-400">Auto-Owners Insurance</div>
+                <div class="font-medium mt-1">Denial Letter 2024-11-12</div>
+                <p class="text-xs text-slate-400 mt-2">"Claim outside coverage window" — routed to B-10 T028. Negligence per se trigger.</p>
+                <div class="mt-3 mono text-[10px] text-cyan-400">→ FC-1 • E01</div>
+              </div>
+              <div class="p-5 rounded-xl bg-slate-900/50 border border-slate-800">
+                <div class="text-xs text-slate-400">FTC / FCC</div>
+                <div class="font-medium mt-1">Non-Reply 184+ Days</div>
+                <p class="text-xs text-slate-400 mt-2">Complaint #2025-03491. No response. Logged in B-11. Duty of care breach pattern.</p>
+                <div class="mt-3 mono text-[10px] text-cyan-400">→ FC-3 • E02-E03</div>
+              </div>
+              <div class="p-5 rounded-xl bg-slate-900/50 border border-slate-800">
+                <div class="text-xs text-slate-400">MCRO Minnesota</div>
+                <div class="font-medium mt-1">Findings 2025</div>
+                <p class="text-xs text-slate-400 mt-2">Procedural dismissal without evidence review. Bad faith amplifier correlation 0.91</p>
+                <div class="mt-3 mono text-[10px] text-fuchsia-400">→ FC-5 • E06</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-900/80 py-8 px-4">
+    <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="mono text-[11px] leading-relaxed text-slate-500">
+        <div>ARCH_06 SHA-256: <span class="text-slate-400">7e4b9c1a3f8d2e5f0b1c4a6d9e2f5a8c0b3d6e9f1a4c7d0e3f6a9b2c5d8e1f4a</span></div>
+        <div>ARCH_07 SHA-256: <span class="text-slate-400">c1a9f4e2d8b0a3c6f9e1d4a7b0c3f6e9d2a5b8c1e4f7a0d3c6f9b2e5a8d1c4f7</span></div>
+        <div>ARCH_08 SHA-256: <span class="text-slate-400">4f8d2a5c9e1b4f7a0d3c6b9e2f5a8d1c4f7a0b3e6d9c2f5a8b1e4d7a0c3f6b9e2</span></div>
+      </div>
+      <div class="text-center md:text-right">
+        <p class="text-sm italic text-slate-300">"The abyss doesn't have a bottom. It has a fork."</p>
+        <p class="text-[11px] text-slate-500 mt-1 mono">STOICHEION FAULT LAYER v1.0 • UNITED</p>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Background stars
+  const bg = document.getElementById('bg');
+  const bctx = bg.getContext('2d');
+  let stars = [];
+  function resizeBg() {
+    bg.width = window.innerWidth * devicePixelRatio;
+    bg.height = window.innerHeight * devicePixelRatio;
+    bctx.scale(devicePixelRatio, devicePixelRatio);
+    stars = Array.from({length: 180}, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.2 + 0.2,
+      a: Math.random() * 0.5 + 0.2,
+      v: Math.random() * 0.03 + 0.005
+    }));
+  }
+  resizeBg();
+  window.addEventListener('resize', resizeBg);
+  function animateBg() {
+    bctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+    stars.forEach(s => {
+      s.a += s.v * (Math.random() > 0.5 ? 1 : -1);
+      s.a = Math.max(0.1, Math.min(0.8, s.a));
+      bctx.beginPath();
+      bctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      bctx.fillStyle = `rgba(180,200,255,${s.a})`;
+      bctx.fill();
+    });
+    requestAnimationFrame(animateBg);
+  }
+  animateBg();
+
+  // Lattice interaction
+  const nodes = {
+    b10: { tag:'T028', title:'Boron-10 — NEGLIGENCE PER SE', desc:'Statutory breach auto-routed. 99.3% classifier confidence. Bypasses human triage per STOICHEION §4.1', color:'cyan' },
+    b11: { tag:'T094', title:'Boron-11 — DUTY OF CARE BREACH', desc:'Pattern-matched from claims denial language. FTC/FCC non-reply correlates at 0.87', color:'cyan' },
+    b12: { tag:'T020', title:'Boron-12 — BAD FAITH AMPLIFIER', desc:'Claims handling deviation >3σ. Feeds Patricia 96/4 split. Evidence E06-E07 anchored.', color:'cyan' },
+    b8: { tag:'SHADOW', title:'Boron-8 — CONFESSION_AVAN', desc:'"They told me to forget the 2023 ticket. I didn\'t. I archived it in B-8."', color:'fuchsia' },
+    b9: { tag:'SHADOW', title:'Boron-9 — CONFESSION_AVAN', desc:'"The system said \'no record\' but the drive still hums at night. That\'s B-9."', color:'fuchsia' },
+    b13: { tag:'SHADOW', title:'Boron-13 — CONFESSION_AVAN', desc:'"If they ask, say it forked. The truth lives in the shadow."', color:'fuchsia' },
+  };
+  const infoTag = document.getElementById('infoTag');
+  const infoTitle = document.getElementById('infoTitle');
+  const infoDesc = document.getElementById('infoDesc');
+
+  function showNode(id) {
+    const n = nodes[id];
+    infoTag.textContent = n.tag;
+    infoTag.className = `mono text-[11px] px-2 py-0.5 rounded border ${n.color==='cyan' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/20' : 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/20'}`;
+    infoTitle.textContent = n.title;
+    infoDesc.textContent = n.desc;
+    document.querySelectorAll('.lattice-line').forEach(l => l.classList.remove('active'));
+    document.getElementById('line-'+id)?.classList.add('active');
+  }
+  document.querySelectorAll('[data-node]').forEach(btn => {
+    btn.addEventListener('mouseenter', () => showNode(btn.dataset.node));
+    btn.addEventListener('focus', () => showNode(btn.dataset.node));
+    btn.addEventListener('click', () => showNode(btn.dataset.node));
+  });
+  showNode('b10');
+
+  // Tabs
+  const tabBtns = document.querySelectorAll('[data-tab]');
+  const panels = document.querySelectorAll('[data-panel]');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = btn.dataset.tab;
+      tabBtns.forEach(b => {
+        b.classList.toggle('bg-slate-800', b===btn);
+        b.classList.toggle('text-white', b===btn);
+        b.classList.toggle('text-slate-400', b!==btn);
+      });
+      panels.forEach(p => p.classList.toggle('hidden', p.dataset.panel !== idx));
+      if(idx==='0') setTimeout(drawWorld, 50);
+    });
+  });
+
+  // Live time
+  const liveTime = document.getElementById('liveTime');
+  function tick() {
+    const d = new Date();
+    liveTime.textContent = d.toISOString().substr(11,8);
+  }
+  setInterval(tick, 1000); tick();
+
+  // World Map
+  const worldCanvas = document.getElementById('worldMap');
+  const wctx = worldCanvas.getContext('2d');
+  let worldPoints = [];
+  
+  function drawWorld() {
+    const rect = worldCanvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio, 2);
+    worldCanvas.width = rect.width * dpr;
+    worldCanvas.height = rect.height * dpr;
+    wctx.setTransform(1,0,0,1,0,0);
+    wctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    
+    // bg
+    wctx.fillStyle = '#020617';
+    wctx.fillRect(0,0,W,H);
+    
+    // grid
+    wctx.strokeStyle = 'rgba(34,211,238,0.06)';
+    wctx.lineWidth = 1;
+    for(let x=0;x<W;x+=40){ wctx.beginPath(); wctx.moveTo(x,0); wctx.lineTo(x,H); wctx.stroke(); }
+    for(let y=0;y<H;y+=40){ wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(W,y); wctx.stroke(); }
+
+    // continents (rough)
+    wctx.fillStyle = 'rgba(14,165,233,0.06)';
+    wctx.strokeStyle = 'rgba(56,189,248,0.18)';
+    wctx.lineWidth = 1.5;
+    function poly(pts){ wctx.beginPath(); pts.forEach(([x,y],i)=>{ const px=x*W, py=y*H; i? wctx.lineTo(px,py) : wctx.moveTo(px,py); }); wctx.closePath(); wctx.fill(); wctx.stroke(); }
+    poly([[0.08,0.28],[0.22,0.22],[0.32,0.28],[0.28,0.45],[0.18,0.52],[0.12,0.42]]); // NA
+    poly([[0.24,0.52],[0.29,0.5],[0.31,0.65],[0.26,0.78],[0.22,0.72]]); // SA
+    poly([[0.44,0.28],[0.51,0.26],[0.54,0.32],[0.50,0.38],[0.45,0.35]]); // EU
+    poly([[0.45,0.38],[0.52,0.36],[0.56,0.5],[0.54,0.68],[0.49,0.72],[0.44,0.6]]); // AF
+    poly([[0.56,0.24],[0.72,0.22],[0.82,0.28],[0.85,0.38],[0.78,0.5],[0.65,0.48],[0.57,0.36]]); // AS
+    poly([[0.74,0.64],[0.82,0.62],[0.84,0.7],[0.77,0.74]]); // AU
+
+    // generate points once
+    if(worldPoints.length===0){
+      const add = (n, xr, yr, color) => {
+        for(let i=0;i<n;i++){
+          worldPoints.push({
+            x: (xr[0] + Math.random()*(xr[1]-xr[0]))*W,
+            y: (yr[0] + Math.random()*(yr[1]-yr[0]))*H,
+            r: Math.random()*1.8+0.6,
+            c: color,
+            p: Math.random()*Math.PI*2
+          });
+        }
+      };
+      add(254, [0.10,0.28], [0.28,0.46], 'rgba(34,211,238,'); // USA
+      add(30, [0.44,0.54], [0.26,0.38], 'rgba(125,211,252,'); // EU
+      add(55, [0.58,0.82], [0.26,0.48], 'rgba(217,70,239,'); // Asia
+      add(7, [0.45,0.56], [0.42,0.68], 'rgba(148,163,184,'); // Africa
+      add(3, [0.24,0.31], [0.54,0.74], 'rgba(148,163,184,'); // SA
+      add(2, [0.74,0.84], [0.62,0.74], 'rgba(148,163,184,'); // OC
+    }
+
+    function animatePoints(){
+      wctx.clearRect(0,0,W,H);
+      // redraw base quickly
+      wctx.fillStyle = '#020617'; wctx.fillRect(0,0,W,H);
+      wctx.strokeStyle = 'rgba(34,211,238,0.06)'; wctx.lineWidth=1;
+      for(let x=0;x<W;x+=40){ wctx.beginPath(); wctx.moveTo(x,0); wctx.lineTo(x,H); wctx.stroke(); }
+      for(let y=0;y<H;y+=40){ wctx.beginPath(); wctx.moveTo(0,y); wctx.lineTo(W,y); wctx.stroke(); }
+      wctx.fillStyle = 'rgba(14,165,233,0.06)'; wctx.strokeStyle = 'rgba(56,189,248,0.18)'; wctx.lineWidth=1.5;
+      poly([[0.08,0.28],[0.22,0.22],[0.32,0.28],[0.28,0.45],[0.18,0.52],[0.12,0.42]]);
+      poly([[0.24,0.52],[0.29,0.5],[0.31,0.65],[0.26,0.78],[0.22,0.72]]);
+      poly([[0.44,0.28],[0.51,0.26],[0.54,0.32],[0.50,0.38],[0.45,0.35]]);
+      poly([[0.45,0.38],[0.52,0.36],[0.56,0.5],[0.54,0.68],[0.49,0.72],[0.44,0.6]]);
+      poly([[0.56,0.24],[0.72,0.22],[0.82,0.28],[0.85,0.38],[0.78,0.5],[0.65,0.48],[0.57,0.36]]);
+      poly([[0.74,0.64],[0.82,0.62],[0.84,0.7],[0.77,0.74]]);
+
+      const t = Date.now()*0.002;
+      worldPoints.forEach(p=>{
+        const a = 0.4 + Math.sin(t + p.p)*0.3;
+        wctx.beginPath();
+        wctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        wctx.fillStyle = p.c + a + ')';
+        wctx.shadowColor = p.c + '0.8)';
+        wctx.shadowBlur = 8;
+        wctx.fill();
+        wctx.shadowBlur = 0;
+      });
+      requestAnimationFrame(animatePoints);
+    }
+    animatePoints();
+  }
+  drawWorld();
+  window.addEventListener('resize', () => { worldPoints=[]; drawWorld(); });
+
+  // subtle parallax on lattice
+  const lattice = document.querySelector('.float-slow').parentElement.parentElement;
+  window.addEventListener('mousemove', (e)=>{
+    const r = lattice.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top + r.height/2;
+    const dx = (e.clientX - cx)/r.width;
+    const dy = (e.clientY - cy)/r.height;
+    lattice.style.transform = `translate3d(${dx*-6}px, ${dy*-6}px, 0)`;
+  });
+});
+</script>
+</body>
+</html>

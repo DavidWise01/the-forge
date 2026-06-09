@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUSION_CENTER — Plasma Processor</title>
+<style>
+  :root{
+    --bg-0:#000410;
+    --bg-1:#030b18;
+    --panel: rgba(8,14,28,0.65);
+    --border: rgba(0,234,255,0.18);
+    --text:#d6f6ff;
+    --muted:#7a8fa6;
+    --cyan:#00eaff;
+    --magenta:#ff2a8f;
+    --purple:#8a2be2;
+    --green:#00ff9c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 800px at 50% -10%, #0b1e3a 0%, transparent 60%),
+      radial-gradient(900px 600px at 85% 120%, #1a0b3a 0%, transparent 60%),
+      var(--bg-0);
+    color:var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    letter-spacing:.02em;
+    overflow-x:hidden;
+  }
+  .scanlines{
+    position:fixed; inset:0; pointer-events:none; z-index:5;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,.03) 0px, transparent 2px, transparent 3px, rgba(0,234,255,.04) 3px, transparent 4px);
+    mix-blend-mode:screen; opacity:.28;
+  }
+  .app{position:relative; z-index:1; max-width:1280px; margin:0 auto; padding:24px 24px 40px}
+  header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:8px}
+  .brand{display:flex; align-items:center; gap:14px}
+  .logo{width:36px; height:36px; border-radius:10px; background: conic-gradient(from 0deg, var(--cyan), var(--purple), var(--magenta), var(--cyan)); box-shadow:0 0 18px rgba(0,234,255,.5), inset 0 0 12px rgba(0,0,0,.6); position:relative}
+  .logo:after{content:""; position:absolute; inset:3px; border-radius:8px; background:#02060e; box-shadow:inset 0 0 10px rgba(0,234,255,.2)}
+  .title{font-weight:700; font-size:clamp(16px,2.2vw,21px); letter-spacing:.12em; text-transform:uppercase; text-shadow:0 0 12px rgba(0,234,255,.4)}
+  .status{display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--border); background:rgba(0,0,0,.35); border-radius:999px; font-size:12px; color:var(--muted); backdrop-filter:blur(6px)}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green), 0 0 16px var(--green); animation:pulse 2s infinite}
+  .sub{text-align:center; color:var(--muted); font-size:12px; letter-spacing:.18em; text-transform:uppercase; margin:6px 0 22px}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 300px; gap:22px; align-items:start}
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+    border:1px solid var(--border); border-radius:20px;
+    box-shadow:0 10px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
+    backdrop-filter:blur(12px); position:relative; overflow:hidden;
+  }
+  .panel:before{
+    content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px;
+    background:linear-gradient(180deg, rgba(0,234,255,.5), transparent 30%, transparent 70%, rgba(255,42,143,.4));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; opacity:.35;
+  }
+
+  .gauge-panel{padding:18px; display:grid; gap:18px}
+  .gauge{position:relative; padding:16px; border-radius:16px; background: radial-gradient(200px 120px at 50% 0%, rgba(0,234,255,.08), transparent 70%), rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.06); transition:transform .2s}
+  .gauge:hover{transform:translateY(-2px)}
+  .gauge-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:11px; color:var(--muted); letter-spacing:.14em; text-transform:uppercase}
+  .gauge-svg{width:100%; height:auto; display:block; filter:drop-shadow(0 0 10px rgba(0,234,255,.15))}
+  .gauge .track{stroke:rgba(255,255,255,.06)}
+  .gauge .progress{transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)}
+  .gauge-value{position:absolute; inset:0; display:grid; place-items:center; padding-top:18px; pointer-events:none}
+  .gauge-value .num{font-size:28px; font-weight:700; letter-spacing:.02em; text-shadow:0 0 14px rgba(0,234,255,.5)}
+  .gauge-value .unit{font-size:11px; color:var(--muted); margin-top:2px; text-align:center}
+
+  .core-panel{padding:28px 20px 22px; display:grid; place-items:center}
+  .core-wrap{position:relative; width:min(440px, 86vw); aspect-ratio:1/1; display:grid; place-items:center; cursor:pointer}
+  canvas#plasma{position:absolute; inset:0; width:100%; height:100%; filter:saturate(1.1) contrast(1.05)}
+  .ring{position:absolute; border-radius:50%; border:1px solid rgba(0,234,255,.18); box-shadow:0 0 30px rgba(0,234,255,.08) inset, 0 0 20px rgba(138,43,226,.06)}
+  .ring.r1{inset:6%; animation:spin 24s linear infinite}
+  .ring.r2{inset:14%; border-style:dashed; border-color:rgba(255,42,143,.28); animation:spin 38s linear reverse infinite}
+  .ring.r3{inset:22%; border-color:rgba(138,43,226,.28); animation:spin 18s linear infinite}
+  .core-hud{position:absolute; bottom:6%; left:50%; transform:translateX(-50%); display:flex; gap:14px; padding:8px 12px; border-radius:10px; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.08); backdrop-filter:blur(8px); font-size:11px; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; white-space:nowrap}
+  .core-hud b{color:var(--text); font-weight:600; text-shadow:0 0 8px rgba(0,234,255,.4)}
+  .core-label{margin-top:14px; text-align:center; font-size:11px; color:var(--muted); letter-spacing:.2em; text-transform:uppercase}
+
+  .stats{display:grid; gap:12px; margin-top:4px}
+  .stat{display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.06); font-size:12px}
+  .stat .k{color:var(--muted); letter-spacing:.08em}
+  .stat .v{color:var(--text); text-shadow:0 0 8px rgba(0,234,255,.25)}
+
+  .ticker-bar{margin-top:22px; display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:14px; background:rgba(0,0,0,.35); border:1px solid var(--border); overflow:hidden}
+  .ticker-label{flex:0 0 auto; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:4px 8px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:rgba(255,255,255,.02)}
+  .ticker{position:relative; overflow:hidden; flex:1; mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)}
+  .ticker-track{display:flex; gap:32px; white-space:nowrap; will-change:transform; animation:ticker 40s linear infinite}
+  .ticker span{font-variant-numeric:tabular-nums; color:#9eefff; text-shadow:0 0 10px rgba(0,234,255,.5); opacity:.92}
+  .ticker span:nth-child(4n){color:#ffb3dc; text-shadow:0 0 10px rgba(255,42,143,.5)}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1} 50%{opacity:.45}}
+  @keyframes ticker{from{transform:translateX(0)} to{transform:translateX(-50%)}}
+
+  @media (max-width:1080px){.grid{grid-template-columns:1fr 1fr}.core-panel{grid-column:1 / -1; order:-1}}
+  @media (max-width:680px){.grid{grid-template-columns:1fr; gap:16px}.app{padding:16px}.gauge-panel{grid-template-columns:1fr 1fr; display:grid; padding:14px}.ticker-track{gap:20px}}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div class="app">
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <linearGradient id="gradCyan" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#00eaff"/><stop offset="100%" stop-color="#7b5cff"/></linearGradient>
+      <linearGradient id="gradMag" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff2a8f"/><stop offset="100%" stop-color="#8a2be2"/></linearGradient>
+      <linearGradient id="gradTemp" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#00eaff"/><stop offset="50%" stop-color="#ff2a8f"/><stop offset="100%" stop-color="#ffd400"/></linearGradient>
+    </defs>
+  </svg>
+
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">fusion_center // plasma processor</div>
+    </div>
+    <div class="status"><span class="dot"></span> OPERATIONAL</div>
+  </header>
+
+  <div class="sub">Air-gapped core, double helix stabilized, chaotic homeostasis</div>
+
+  <div class="grid">
+    <div class="panel gauge-panel">
+      <div class="gauge" id="g-confinement">
+        <div class="gauge-head"><span>Confinement</span><span>FIELD η</span></div>
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="44" fill="none" stroke-width="8"/>
+          <circle class="progress" cx="50" cy="50" r="44" fill="none" stroke="url(#gradCyan)" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="276.46" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="gauge-value"><div><div class="num">0.91</div><div class="unit">ratio</div></div></div>
+      </div>
+
+      <div class="gauge" id="g-cycles">
+        <div class="gauge-head"><span>Cycles</span><span>COUNT</span></div>
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="44" fill="none" stroke-width="8"/>
+          <circle class="progress" cx="50" cy="50" r="44" fill="none" stroke="url(#gradMag)" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="276.46" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="gauge-value"><div><div class="num">100</div><div class="unit">%</div></div></div>
+      </div>
+    </div>
+
+    <div class="panel core-panel">
+      <div class="core-wrap" id="coreWrap" title="Click to pulse">
+        <canvas id="plasma" width="600" height="600"></canvas>
+        <div class="ring r1"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+        <div class="core-hud"><span>AIR-GAPPED</span> • <b id="helixState">HELIX LOCK</b> • <span id="tempLive">1.20 MK</span></div>
+      </div>
+      <div class="core-label">PLASMA CORE // STABLE</div>
+    </div>
+
+    <div class="panel gauge-panel">
+      <div class="gauge" id="g-temp">
+        <div class="gauge-head"><span>Temperature</span><span>CORE T</span></div>
+        <svg class="gauge-svg" viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="44" fill="none" stroke-width="8"/>
+          <circle class="progress" cx="50" cy="50" r="44" fill="none" stroke="url(#gradTemp)" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="276.46" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="gauge-value"><div><div class="num">1.2</div><div class="unit">MK</div></div></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span class="k">STABILIZATION</span><span class="v">Double Helix</span></div>
+        <div class="stat"><span class="k">ISOLATION</span><span class="v">Air-Gapped</span></div>
+        <div class="stat"><span class="k">MODE</span><span class="v">Chaotic Homeostasis</span></div>
+        <div class="stat"><span class="k">FLUX</span><span class="v" id="fluxVal">3.42 TW</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ticker-bar">
+    <div class="ticker-label">Chaotic Sequence</div>
+    <div class="ticker">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Chaotic sequence ticker
+  const seq = [1,2,3,5,7,9,13,15,17,'17.1','17.2','17.3','17.4','17.51'];
+  const track = document.getElementById('tickerTrack');
+  const build = () => seq.map(n=>`<span>${n}</span>`).join('<span>•</span>');
+  track.innerHTML = build() + '<span>•</span>' + build() + '<span>•</span>' + build();
+
+  // Gauges
+  const CIRC = 2*Math.PI*44;
+  function setGauge(el, ratio, display){
+    const prog = el.querySelector('.progress');
+    const num = el.querySelector('.num');
+    const r = Math.max(0, Math.min(1, ratio));
+    prog.style.strokeDashoffset = CIRC*(1-r);
+    if(display!==undefined) num.textContent = display;
+  }
+  const gConf = document.getElementById('g-confinement');
+  const gTemp = document.getElementById('g-temp');
+  const gCyc = document.getElementById('g-cycles');
+  setGauge(gConf, 0.91, '0.91');
+  setGauge(gTemp, 1.2/1.5, '1.2');
+  setGauge(gCyc, 1, '100');
+
+  let t=0;
+  function live(){
+    t+=0.016;
+    const conf = 0.91 + Math.sin(t*0.7)*0.003 + Math.sin(t*1.9)*0.0015;
+    setGauge(gConf, conf, conf.toFixed(3));
+    const temp = 1.20 + Math.sin(t*0.5)*0.012 + Math.cos(t*1.17)*0.005;
+    setGauge(gTemp, temp/1.5, temp.toFixed(2));
+    document.getElementById('tempLive').textContent = temp.toFixed(2) + ' MK';
+    const flux = 3.42 + Math.sin(t*1.3)*0.15 + Math.cos(t*0.8)*0.07;
+    document.getElementById('fluxVal').textContent = flux.toFixed(2) + ' TW';
+    requestAnimationFrame(live);
+  }
+  live();
+
+  // Plasma core canvas
+  const canvas = document.getElementById('plasma');
+  const ctx = canvas.getContext('2d');
+  function resize(){
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr,dpr);
+  }
+  resize(); addEventListener('resize', resize);
+
+  let time=0;
+  function draw(){
+    time+=16;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0,0,w,h);
+    ctx.save(); ctx.translate(w/2,h/2);
+
+    // base glow
+    const glow = ctx.createRadialGradient(0,0,0,0,0,w*0.42);
+    glow.addColorStop(0,'rgba(0,234,255,0.22)');
+    glow.addColorStop(0.4,'rgba(138,43,226,0.16)');
+    glow.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(0,0,w*0.42,0,Math.PI*2); ctx.fill();
+
+    // turbulent plasma blobs
+    for(let i=0;i<5;i++){
+      const baseR = 28 + i*13;
+      ctx.beginPath();
+      for(let a=0;a<=Math.PI*2+0.01;a+=0.09){
+        const wob = Math.sin(a*3 + time*0.003 + i)*6 + Math.cos(a*5 - time*0.0022 + i*1.3)*4;
+        const r = baseR + wob + Math.sin(time*0.001 + i)*3;
+        const x = Math.cos(a)*r;
+        const y = Math.sin(a)*r*0.92;
+        if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      const hue = 184 + i*26 + Math.sin(time*0.0012)*12;
+      ctx.fillStyle = `hsla(${hue},100%,60%,0.14)`;
+      ctx.shadowColor = `hsl(${hue},100%,60%)`;
+      ctx.shadowBlur = 28;
+      ctx.fill();
+    }
+
+    // double helix
+    ctx.shadowBlur = 14;
+    for(let strand=0; strand<2; strand++){
+      ctx.beginPath();
+      const points=[];
+      for(let j=0;j<=180;j++){
+        const p=j/180;
+        const ang = p*Math.PI*4 - time*0.0015 + strand*Math.PI;
+        const y = (p-0.5)* w*0.38;
+        const x = Math.sin(ang) * (w*0.135 + Math.sin(p*6+time*0.002)*3);
+        points.push({x,y});
+        if(j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = strand===0 ? '#00eaff' : '#ff2a8f';
+      ctx.lineWidth = 2.2;
+      ctx.globalAlpha = 0.92;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.stroke();
+
+      for(let k=0;k<points.length;k+=9){
+        const pt=points[k];
+        ctx.beginPath(); ctx.arc(pt.x,pt.y,2.1,0,Math.PI*2);
+        ctx.fillStyle = strand===0 ? 'rgba(140,255,255,0.95)' : 'rgba(255,140,210,0.95)';
+        ctx.shadowBlur=12; ctx.shadowColor=ctx.fillStyle; ctx.globalAlpha=0.95; ctx.fill();
+      }
+    }
+
+    // core
+    ctx.globalAlpha=1;
+    ctx.beginPath(); ctx.arc(0,0,11 + Math.sin(time*0.004)*1.6,0,Math.PI*2);
+    const core = ctx.createRadialGradient(0,0,0,0,0,22);
+    core.addColorStop(0,'#ffffff'); core.addColorStop(0.25,'#c8ffff'); core.addColorStop(0.6,'#3ae0ff'); core.addColorStop(1,'rgba(0,234,255,0)');
+    ctx.fillStyle = core; ctx.shadowBlur=36; ctx.shadowColor='#00eaff'; ctx.fill();
+
+    ctx.restore();
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  // interaction
+  const coreWrap = document.getElementById('coreWrap');
+  const helixState = document.getElementById('helixState');
+  coreWrap.addEventListener('click', ()=>{
+    helixState.textContent = 'PULSE';
+    helixState.style.color = '#fff';
+    setTimeout(()=>{ helixState.textContent='HELIX LOCK'; helixState.style.color=''; }, 900);
+  });
+</script>
+</body>
+</html>

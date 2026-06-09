@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transmons: Linear to Swarm — FACTORY WORKBENCH MAX CAPABILITY</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; }
+  body {
+    font-family: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+    background: #000208;
+    background-image: 
+      radial-gradient(ellipse at 50% 0%, rgba(8, 30, 60, 0.4) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 100%, rgba(5, 20, 40, 0.5) 0%, transparent 60%),
+      linear-gradient(180deg, #020617 0%, #000000 100%);
+    color: #cbd5e1;
+    overflow-x: hidden;
+  }
+  .scanlines::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0, 255, 220, 0.015) 3px, transparent 4px);
+    pointer-events: none;
+    z-index: 100;
+  }
+  .panel {
+    position: relative;
+    background: linear-gradient(180deg, rgba(9, 16, 28, 0.92) 0%, rgba(3, 7, 14, 0.96) 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+  }
+  .panel-teal { border: 1px solid rgba(34, 211, 238, 0.28); box-shadow: 0 0 40px rgba(6, 182, 212, 0.09), inset 0 1px 0 rgba(103, 232, 249, 0.08), inset 0 -1px 20px rgba(0,0,0,0.8); }
+  .panel-amber { border: 1px solid rgba(245, 158, 11, 0.28); box-shadow: 0 0 40px rgba(245, 158, 11, 0.09), inset 0 1px 0 rgba(251, 191, 36, 0.08), inset 0 -1px 20px rgba(0,0,0,0.8); }
+  .panel-purple { border: 1px solid rgba(168, 85, 247, 0.28); box-shadow: 0 0 40px rgba(168, 85, 247, 0.09), inset 0 1px 0 rgba(192, 132, 252, 0.08), inset 0 -1px 20px rgba(0,0,0,0.8); }
+  .panel-cyan { border: 1px solid rgba(6, 182, 212, 0.28); box-shadow: 0 0 40px rgba(6, 182, 212, 0.09), inset 0 1px 0 rgba(103, 232, 249, 0.08), inset 0 -1px 20px rgba(0,0,0,0.8); }
+  .panel-header {
+    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%);
+  }
+  .mode-btn {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 5px 10px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(8, 145, 178, 0.25);
+    color: rgba(165, 243, 252, 0.65);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .mode-btn:hover { background: rgba(8,145,178,0.15); color: rgb(207,250,254); border-color: rgba(34,211,238,0.5); }
+  .mode-btn.active { background: rgba(6,182,212,0.2); border-color: rgba(34,211,238,0.9); color: #ecfeff; box-shadow: 0 0 14px rgba(34,211,238,0.3), inset 0 0 10px rgba(34,211,238,0.12); text-shadow: 0 0 8px rgba(103,232,249,0.8); }
+  .bar { transition: height 180ms ease-out; will-change: height; }
+  .core-glow { animation: corePulse 3s ease-in-out infinite; }
+  @keyframes corePulse { 0%,100% { opacity: 0.85; } 50% { opacity: 1; } }
+  .core-ring { animation: spin 24s linear infinite; }
+  .core-ring-2 { animation: spinReverse 36s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spinReverse { to { transform: rotate(-360deg); } }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #020617; }
+  ::-webkit-scrollbar-thumb { background: #0e7490; border-radius: 3px; }
+</style>
+</head>
+<body class="scanlines">
+  <!-- Top Status -->
+  <div class="sticky top-0 z-50 w-full border-b border-emerald-500/15 bg-black/70 backdrop-blur-md">
+    <div class="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between">
+      <div class="text-[11px] sm:text-xs font-medium tracking-[0.25em] text-emerald-400/90" style="text-shadow: 0 0 10px rgba(16,185,129,0.5);">
+        FABRIC ONLINE • PLASMA STABLE • ENTANGLEMENT LOCK
+      </div>
+      <div class="hidden sm:flex items-center gap-3 text-[10px] text-cyan-300/50">
+        <span>TRANSMONS</span>
+        <span class="opacity-40">|</span>
+        <span>LINEAR → SWARM</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="relative max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-4 lg:py-8">
+    <!-- Title -->
+    <div class="text-center mb-4 lg:mb-6">
+      <h1 class="text-[15px] sm:text-[17px] tracking-[0.28em] text-slate-300/80 font-light">FACTORY WORKBENCH <span class="text-cyan-300/90">MAX CAPABILITY</span></h1>
+    </div>
+
+    <!-- Mobile Core -->
+    <div class="lg:hidden flex justify-center mb-6">
+      <div class="relative w-[190px] h-[190px]">
+        <div class="absolute inset-0 rounded-full core-glow" style="background: radial-gradient(circle, rgba(3,18,35,1) 0%, rgba(0,5,14,1) 65%); border: 2px solid #0ea5e9; box-shadow: 0 0 50px rgba(14,165,233,0.45), inset 0 0 30px rgba(14,165,233,0.18);"></div>
+        <div class="absolute inset-[14px] rounded-full border border-cyan-400/20 core-ring"></div>
+        <div class="absolute inset-[24px] rounded-full border border-cyan-400/10 core-ring-2"></div>
+        <canvas id="coreCanvasMobile" class="absolute inset-0 w-full h-full"></canvas>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <div class="text-[9px] text-cyan-300/70 tracking-[0.22em]">PLASMA CORE</div>
+          <div class="text-[10px] text-cyan-300/40 mt-0.5">FLUX</div>
+          <div class="text-[28px] font-light text-cyan-50 tracking-wider font-mono" style="text-shadow: 0 0 20px rgba(56,189,248,0.7);">98.1%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative">
+      <!-- Connections SVG -->
+      <svg id="connections" class="absolute inset-0 w-full h-full pointer-events-none hidden lg:block" style="z-index: 1; top: -20px; height: calc(100% + 40px);"></svg>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-x-24 lg:gap-y-20 relative z-10">
+        <!-- TOP LEFT -->
+        <div id="panel-photonic" class="panel panel-teal h-[340px] sm:h-[370px] lg:h-[360px] flex flex-col">
+          <div class="panel-header px-3.5 pt-2.5 pb-2 border-b border-cyan-900/30">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] tracking-widest text-cyan-200/90 font-medium">PHOTONIC PROCESSOR [LATTICE RUNNER] 9^5 DIM</span>
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" style="box-shadow: 0 0 8px rgba(34,211,238,0.8);"></span>
+            </div>
+          </div>
+          <div class="flex-1 relative overflow-hidden bg-[#020a12]">
+            <div class="absolute inset-0" style="opacity:0.18; background-image: linear-gradient(rgba(0,255,230,0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,230,0.9) 1px, transparent 1px); background-size: 26px 26px;"></div>
+            <div class="absolute inset-0" style="background: radial-gradient(ellipse at center, transparent 40%, rgba(2,8,15,0.9) 100%);"></div>
+            <canvas id="photonicCanvas" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute inset-0 mix-blend-screen opacity-[0.15]" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>');"></div>
+          </div>
+          <div class="flex justify-between px-3.5 py-2 text-[10px] font-mono tracking-wide text-cyan-300/60 border-t border-cyan-950/50 bg-black/50">
+            <span>Running -+nxwyz x5 entangled</span>
+            <span class="text-cyan-200/80">4.15e15 photons/s</span>
+          </div>
+        </div>
+
+        <!-- TOP RIGHT -->
+        <div id="panel-boron" class="panel panel-amber h-[340px] sm:h-[370px] lg:h-[360px] flex flex-col">
+          <div class="panel-header px-3.5 pt-2.5 pb-2 border-b border-amber-900/30">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] tracking-widest text-amber-200/90 font-medium">BORON PROCESSOR [O3 PLASMA SUPPLY] CORE B-11</span>
+              <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" style="box-shadow: 0 0 8px rgba(245,158,11,0.8);"></span>
+            </div>
+          </div>
+          <div class="flex-1 relative overflow-hidden bg-black">
+            <div class="absolute inset-0" style="background: radial-gradient(ellipse at 50% 30%, rgba(120,53,15,0.25) 0%, transparent 60%), radial-gradient(ellipse at 50% 80%, rgba(180,83,9,0.15) 0%, transparent 70%);"></div>
+            <canvas id="boronCanvas" class="absolute inset-0 w-full h-full"></canvas>
+          </div>
+          <div class="flex justify-between px-3.5 py-2 text-[10px] font-mono tracking-wide text-amber-300/60 border-t border-amber-950/50 bg-black/50">
+            <span>O3 supply: 100% | Plasma temp: relativistic</span>
+            <span class="text-amber-200/80">1.39 GeV</span>
+          </div>
+        </div>
+
+        <!-- BOTTOM LEFT -->
+        <div id="panel-threaded" class="panel panel-purple h-[360px] sm:h-[380px] lg:h-[360px] flex flex-col">
+          <div class="panel-header px-3.5 pt-2.5 pb-2 border-b border-purple-900/30">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] tracking-widest text-purple-200/90 font-medium">20-THREADED PROC [4 CORTEXES + GPU] FOLDED</span>
+              <span class="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse" style="box-shadow: 0 0 8px rgba(217,70,239,0.8);"></span>
+            </div>
+          </div>
+          <div class="flex-1 p-3.5 flex flex-col gap-3 bg-[#050410]">
+            <!-- Thread bars -->
+            <div class="relative">
+              <div class="flex items-end gap-[3px] h-[76px] px-1">
+                <div id="threadBars" class="flex items-end gap-[3px] w-full h-full"></div>
+              </div>
+              <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(transparent 0%, rgba(5,4,16,0.8) 90%);"></div>
+            </div>
+            <!-- Cortexes -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div class="bg-black/70 border border-purple-950/60 rounded-md p-2 relative overflow-hidden">
+                <div class="text-[9px] tracking-widest text-fuchsia-300/70 mb-1">ETHOS</div>
+                <canvas id="ethosCanvas" class="w-full h-[32px]"></canvas>
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(transparent 50%, rgba(192,132,252,0.5) 50%); background-size: 100% 4px;"></div>
+              </div>
+              <div class="bg-black/70 border border-purple-950/60 rounded-md p-2 relative overflow-hidden">
+                <div class="text-[9px] tracking-widest text-fuchsia-300/70 mb-1">PATHOS</div>
+                <canvas id="pathosCanvas" class="w-full h-[32px]"></canvas>
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(transparent 50%, rgba(192,132,252,0.5) 50%); background-size: 100% 4px;"></div>
+              </div>
+              <div class="bg-black/70 border border-purple-950/60 rounded-md p-2 relative overflow-hidden">
+                <div class="text-[9px] tracking-widest text-fuchsia-300/70 mb-1">LOGOS</div>
+                <canvas id="logosCanvas" class="w-full h-[32px]"></canvas>
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(transparent 50%, rgba(192,132,252,0.5) 50%); background-size: 100% 4px;"></div>
+              </div>
+              <div class="bg-black/70 border border-purple-950/60 rounded-md p-2 relative overflow-hidden">
+                <div class="text-[9px] tracking-widest text-fuchsia-300/70 mb-1">MYTHOS</div>
+                <canvas id="mythosCanvas" class="w-full h-[32px]"></canvas>
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(transparent 50%, rgba(192,132,252,0.5) 50%); background-size: 100% 4px;"></div>
+              </div>
+            <!-- GPU MEM -->
+            <div class="mt-auto">
+              <div class="flex justify-between text-[10px] text-purple-300/60 mb-1.5 font-mono">
+                <span>GPU MEM</span>
+                <span class="text-purple-200/80">18.7 / 24 GB</span>
+              </div>
+              <div class="h-[8px] bg-black/90 border border-purple-950/80 rounded-full overflow-hidden p-[2px]">
+                <div class="h-full rounded-full relative" style="width: 77.9%; background: linear-gradient(90deg, #6b21a8 0%, #a855f7 50%, #e879f9 100%); box-shadow: 0 0 12px rgba(168,85,247,0.5), inset 0 1px 2px rgba(255,255,255,0.2);">
+                  <div class="absolute inset-0 rounded-full" style="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-between px-3.5 py-2 text-[10px] font-mono tracking-wide text-purple-300/60 border-t border-purple-950/50 bg-black/50">
+            <span>20/20 threads active | 4 cortexes folded</span>
+            <span class="text-purple-200/80">4.97 GHz</span>
+          </div>
+        </div>
+
+        <!-- BOTTOM RIGHT -->
+        <div id="panel-nanite" class="panel panel-cyan h-[380px] sm:h-[400px] lg:h-[360px] flex flex-col">
+          <div class="panel-header px-3.5 pt-2.5 pb-2 border-b border-cyan-900/30">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] tracking-widest text-cyan-200/90 font-medium">NANITE FACTORY [422 TRILLION] FRACTAL FAB</span>
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" style="box-shadow: 0 0 8px rgba(34,211,238,0.8);"></span>
+            </div>
+          </div>
+          <div class="px-3 pt-2.5 pb-2 flex flex-wrap gap-1.5">
+            <button class="mode-btn" data-mode="cube">BUILD CUBE</button>
+            <button class="mode-btn" data-mode="hypercube">BUILD HYPERCUBE</button>
+            <button class="mode-btn active" data-mode="lattice">BUILD LATTICE</button>
+            <button class="mode-btn" data-mode="smash">SMASH</button>
+            <button class="mode-btn" data-mode="bleed">BLEED</button>
+          </div>
+          <div class="flex-1 relative mx-3 mb-3 bg-black/90 border border-cyan-950/60 rounded-lg overflow-hidden">
+            <div class="absolute top-2 left-3 text-[9px] tracking-[0.2em] text-cyan-300/50 z-10 pointer-events-none">FRACTAL VIEW • ZOOM = SELF-SIMILAR</div>
+            <div class="absolute top-2 right-3 text-[9px] tracking-wider text-cyan-400/70 z-10 pointer-events-none font-mono">422T UNITS</div>
+            <canvas id="naniteCanvas" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.8) 100%);"></div>
+            <div class="absolute bottom-0 left-0 right-0 h-[40%] pointer-events-none" style="background: linear-gradient(to top, rgba(6,182,212,0.08), transparent);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Core - Desktop -->
+      <div id="core" class="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[236px] h-[236px] z-20" style="top: calc(50% + 8px);">
+        <div class="absolute inset-0 rounded-full core-glow" style="background: radial-gradient(circle at 50% 45%, rgba(4,22,42,1) 0%, rgba(1,8,18,1) 40%, rgba(0,3,8,1) 70%); border: 2.5px solid #0ea5e9; box-shadow: 0 0 70px rgba(14,165,233,0.55), 0 0 120px rgba(14,165,233,0.25), inset 0 0 40px rgba(56,189,248,0.22), inset 0 0 80px rgba(2,132,199,0.15);"></div>
+        <div class="absolute inset-[10px] rounded-full border border-cyan-400/25 core-ring" style="box-shadow: inset 0 0 20px rgba(14,165,233,0.15);"></div>
+        <div class="absolute inset-[22px] rounded-full border border-sky-400/15 core-ring-2"></div>
+        <div class="absolute inset-[34px] rounded-full" style="background: radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 60%);"></div>
+        <canvas id="coreCanvas" class="absolute inset-0 w-full h-full rounded-full"></canvas>
+        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div class="text-[10px] tracking-[0.28em] text-sky-200/75 font-medium" style="text-shadow: 0 0 10px rgba(125,211,252,0.6);">PLASMA CORE</div>
+          <div class="text-[9px] text-cyan-300/45 mt-1 tracking-widest">FLUX</div>
+          <div id="fluxValue" class="text-[34px] font-light text-white tracking-[0.02em] font-mono mt-0.5" style="text-shadow: 0 0 24px rgba(56,189,248,0.85), 0 0 48px rgba(14,165,233,0.5);">98.1%</div>
+          <div class="flex gap-1 mt-1.5">
+            <span class="w-1 h-1 rounded-full bg-cyan-400/80 animate-pulse"></span>
+            <span class="w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse" style="animation-delay: 0.2s;"></span>
+            <span class="w-1 h-1 rounded-full bg-cyan-400/80 animate-pulse" style="animation-delay: 0.4s;"></span>
+          </div>
+        </div>
+        <!-- Connection nodes -->
+        <div class="absolute -left-[3px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-cyan-400 border-2 border-cyan-200" style="box-shadow: 0 0 12px rgba(34,211,238,1);"></div>
+        <div class="absolute -right-[3px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-amber-400 border-2 border-amber-200" style="box-shadow: 0 0 12px rgba(245,158,11,1);"></div>
+        <div class="absolute left-1/2 -translate-x-1/2 -top-[3px] w-2.5 h-2.5 rounded-full bg-fuchsia-400 border-2 border-fuchsia-200" style="box-shadow: 0 0 12px rgba(217,70,239,1);"></div>
+        <div class="absolute left-1/2 -translate-x-1/2 -bottom-[3px] w-2.5 h-2.5 rounded-full bg-cyan-300 border-2 border-cyan-100" style="box-shadow: 0 0 12px rgba(103,232,249,1);"></div>
+      </div>
+    </div>
+  </main>
+
+  <style>
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+  </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  
+  function setupCanvas(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx, w: rect.width, h: rect.height };
+  }
+
+  // PHOTONIC PROCESSOR
+  (() => {
+    const canvas = document.getElementById('photonicCanvas');
+    if (!canvas) return;
+    let { ctx, w, h } = setupCanvas(canvas);
+    const photons = Array.from({ length: 48 }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 1.4,
+      vy: (Math.random() - 0.5) * 1.4,
+      trail: [],
+      hue: 175 + Math.random() * 20
+    }));
+
+    function animate() {
+      ctx.fillStyle = 'rgba(2, 10, 18, 0.18)';
+      ctx.fillRect(0, 0, w, h);
+      
+      photons.forEach(p => {
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 18) p.trail.shift();
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+        p.vx += (Math.random() - 0.5) * 0.08;
+        p.vy += (Math.random() - 0.5) * 0.08;
+        p.vx = Math.max(-1.8, Math.min(1.8, p.vx));
+        p.vy = Math.max(-1.8, Math.min(1.8, p.vy));
+        
+        // trail
+        ctx.beginPath();
+        ctx.moveTo(p.trail[0].x, p.trail[0].y);
+        for (let i = 1; i < p.trail.length; i++) {
+          ctx.lineTo(p.trail[i].x, p.trail[i].y);
+        }
+        ctx.strokeStyle = `hsla(${p.hue}, 100%, 70%, 0.25)`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        // glow
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 8);
+        grad.addColorStop(0, `hsla(${p.hue}, 100%, 85%, 0.9)`);
+        grad.addColorStop(0.4, `hsla(${p.hue}, 100%, 70%, 0.4)`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#e0ffff';
+        ctx.shadowColor = `hsl(${p.hue}, 100%, 70%)`;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+    window.addEventListener('resize', () => { ({ ctx, w, h } = setupCanvas(canvas)); });
+  })();
+
+  // BORON PROCESSOR
+  (() => {
+    const canvas = document.getElementById('boronCanvas');
+    if (!canvas) return;
+    let { ctx, w, h } = setupCanvas(canvas);
+    let angle = 0;
+    const particles = Array.from({ length: 160 }, () => ({
+      x: w/2, y: h*0.35, vx: (Math.random()-0.5)*0.6, vy: Math.random()*0.8+0.3,
+      life: Math.random(), size: Math.random()*1.8+0.5
+    }));
+
+    function hex(ctx, cx, cy, r, rot) {
+      ctx.beginPath();
+      for (let i=0; i<6; i++) {
+        const a = rot + i * Math.PI/3;
+        const x = cx + Math.cos(a)*r;
+        const y = cy + Math.sin(a)*r;
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+    }
+
+    function animate() {
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fillRect(0,0,w,h);
+      const cx = w/2, cy = h*0.38;
+      angle += 0.002;
+      
+      // hex rings
+      [[90,0.15],[70,0.22],[50,0.3],[32,0.4]].forEach(([r, a], i) => {
+        hex(ctx, cx, cy, r, angle*(i%2?1:-1)*(0.5+i*0.2));
+        ctx.strokeStyle = `rgba(251, 146, 60, ${a})`;
+        ctx.lineWidth = 1.2;
+        ctx.shadowColor = 'rgba(245,158,11,0.8)';
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        hex(ctx, cx, cy, r-6, -angle*0.7);
+        ctx.strokeStyle = `rgba(253, 186, 116, ${a*0.6})`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      });
+
+      // core
+      const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 26);
+      coreGrad.addColorStop(0, 'rgba(255,237,191,1)');
+      coreGrad.addColorStop(0.2, 'rgba(251,146,60,0.9)');
+      coreGrad.addColorStop(0.5, 'rgba(217,119,6,0.6)');
+      coreGrad.addColorStop(1, 'rgba(146,64,14,0)');
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,251,235,0.95)';
+      ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 20;
+      ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+
+      // falling sand
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.015; p.life -= 0.002;
+        if (p.y > h*0.9 || p.life <= 0 || Math.abs(p.x-cx) > 110) {
+          p.x = cx + (Math.random()-0.5)*18; p.y = cy + 8;
+          p.vx = (Math.random()-0.5)*0.5; p.vy = Math.random()*0.4+0.2;
+          p.life = 1;
+        }
+        ctx.fillStyle = `rgba(252,211,77,${0.3 + p.life*0.7})`;
+        ctx.shadowColor = 'rgba(245,158,11,0.8)'; ctx.shadowBlur = 4;
+        ctx.fillRect(p.x, p.y, p.size, p.size*2.2);
+      });
+      ctx.shadowBlur = 0;
+      requestAnimationFrame(animate);
+    }
+    animate();
+    window.addEventListener('resize', () => { ({ ctx, w, h } = setupCanvas(canvas)); });
+  })();
+
+  // THREAD BARS
+  (() => {
+    const container = document.getElementById('threadBars');
+    if (!container) return;
+    const bars = [];
+    for (let i=0; i<20; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar w-full rounded-t-sm';
+      bar.style.background = 'linear-gradient(to top, #4c1d95, #7e22ce, #c026d3)';
+      bar.style.boxShadow = '0 0 8px rgba(168,85,247,0.4), inset 0 1px 0 rgba(255,255,255,0.15)';
+      bar.style.height = `${15 + Math.random()*75}%`;
+      container.appendChild(bar);
+      bars.push(bar);
+    }
+    setInterval(() => {
+      bars.forEach((b,i) => {
+        const target = 12 + Math.pow(Math.random(), 1.4) * 86;
+        b.style.height = `${target}%`;
+        if (Math.random() > 0.7) {
+          b.style.background = 'linear-gradient(to top, #6b21a8, #a855f7, #e879f9)';
+          setTimeout(()=> b.style.background = 'linear-gradient(to top, #4c1d95, #7e22ce, #c026d3)', 120);
+        }
+      });
+    }, 110);
+  })();
+
+  // CORTEX WAVES
+  function makeWave(id, color, speed=0.02) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let { w, h } = (()=>{ const r=canvas.getBoundingClientRect(); canvas.width=r.width*dpr; canvas.height=r.height*dpr; ctx.scale(dpr,dpr); return {w:r.width,h:r.height}; })();
+    let phase = Math.random()*10;
+    function draw() {
+      ctx.clearRect(0,0,w,h);
+      ctx.beginPath();
+      for (let x=0; x<=w; x+=2) {
+        const y = h/2 + Math.sin(x*0.08 + phase) * 6 * Math.sin(x*0.02 + phase*0.5) + Math.cos(x*0.15 - phase*1.3)*2;
+        if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = color; ctx.shadowBlur = 6;
+      ctx.stroke(); ctx.shadowBlur = 0;
+      // second harmonic
+      ctx.beginPath();
+      for (let x=0; x<=w; x+=2) {
+        const y = h/2 + Math.sin(x*0.12 + phase*1.7) * 3;
+        if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = color.replace('0.9','0.35'); ctx.lineWidth=1; ctx.stroke();
+      phase += speed;
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+  makeWave('ethosCanvas', 'rgba(192,132,252,0.9)', 0.025);
+  makeWave('pathosCanvas', 'rgba(217,70,239,0.9)', 0.031);
+  makeWave('logosCanvas', 'rgba(168,85,247,0.9)', 0.022);
+  makeWave('mythosCanvas', 'rgba(147,51,234,0.9)', 0.028);
+
+  // NANITE FACTORY
+  (() => {
+    const canvas = document.getElementById('naniteCanvas');
+    if (!canvas) return;
+    let { ctx, w, h } = setupCanvas(canvas);
+    let mode = 'lattice';
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        mode = btn.dataset.mode;
+        initParticles();
+      });
+    });
+
+    let particles = [];
+    const cols = 84;
+    
+    function initParticles() {
+      particles = [];
+      const count = mode==='smash'? 1200 : mode==='bleed'? 800 : 2400;
+      for (let i=0; i<count; i++) {
+        particles.push({
+          x: Math.random()*w,
+          y: Math.random()*h,
+          vx: 0, vy: 0,
+          col: Math.floor(Math.random()*cols),
+          life: Math.random(),
+          size: Math.random()*1.4 + 0.3
+        });
+      }
+    }
+    initParticles();
+
+    function animate() {
+      ctx.fillStyle = mode==='bleed' ? 'rgba(5,0,0,0.12)' : 'rgba(0,4,8,0.10)';
+      ctx.fillRect(0,0,w,h);
+      
+      if (mode === 'lattice') {
+        particles.forEach(p => {
+          const targetX = (p.col + 0.5) * (w / cols) + Math.sin(p.y*0.02 + p.life*5)*1.5;
+          p.x += (targetX - p.x) * 0.08;
+          p.y += 2.2 + Math.random()*1.5;
+          p.vy = 0;
+          if (p.y > h+10) { p.y = -10; p.x = Math.random()*w; p.col = Math.floor(Math.random()*cols); }
+          
+          const alpha = 0.4 + Math.sin(p.y*0.1)*0.3;
+          ctx.fillStyle = `rgba(103,232,249,${alpha})`;
+          ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = p.size > 1 ? 6 : 3;
+          ctx.fillRect(p.x, p.y, p.size, p.size*3.5);
+        });
+      } else if (mode === 'cube') {
+        const t = Date.now()*0.0003;
+        const cx=w/2, cy=h/2, s= Math.min(w,h)*0.32;
+        ctx.strokeStyle='rgba(34,211,238,0.5)'; ctx.lineWidth=1.5; ctx.shadowColor='#22d3ee'; ctx.shadowBlur=10;
+        // draw cube wireframe
+        const verts = [];
+        for (let i=0;i<8;i++){ const x=(i&1?1:-1), y=(i&2?1:-1), z=(i&4?1:-1); const rx=x*Math.cos(t)-z*Math.sin(t), rz=x*Math.sin(t)+z*Math.cos(t); const ry=y*Math.cos(t*0.7)-rz*Math.sin(t*0.7); verts.push([cx+rx*s, cy+ry*s*0.7]); }
+        const edges=[[0,1],[1,3],[3,2],[2,0],[4,5],[5,7],[7,6],[6,4],[0,4],[1,5],[2,6],[3,7]];
+        ctx.beginPath(); edges.forEach(e=>{ctx.moveTo(...verts[e[0]]); ctx.lineTo(...verts[e[1]]);}); ctx.stroke(); ctx.shadowBlur=0;
+        particles.slice(0,400).forEach((p,i)=>{ const v=verts[i%8]; p.x+=(v[0]-p.x)*0.08; p.y+=(v[1]-p.y)*0.08; ctx.fillStyle='rgba(165,243,252,0.9)'; ctx.fillRect(p.x,p.y,2,2); });
+      } else if (mode === 'hypercube') {
+        const t = Date.now()*0.0004; const cx=w/2, cy=h/2;
+        ctx.strokeStyle='rgba(103,232,249,0.35)'; ctx.lineWidth=1;
+        for(let r=0;r<2;r++){ const s=60+r*45; ctx.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4+t*(r?1:-1); const x=cx+Math.cos(a)*s, y=cy+Math.sin(a)*s*0.6; if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.closePath(); ctx.stroke(); }
+        particles.slice(0,600).forEach(p=>{ p.x+= (Math.random()-0.5)*1.5; p.y+= (Math.random()-0.5)*1.5; ctx.fillStyle='rgba(34,211,238,0.7)'; ctx.fillRect(p.x,p.y,1.2);});
+      } else if (mode === 'smash') {
+        const cx=w/2, cy=h*0.3;
+        particles.forEach(p=>{ if(p.life<0.1){ p.x=cx; p.y=cy; p.vx=(Math.random()-0.5)*8; p.vy=(Math.random()-0.5)*6-1; p.life=1;} p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.vx*=0.99; p.life-=0.008; ctx.fillStyle=`rgba(224,242,254,${p.life})`; ctx.fillRect(p.x,p.y,1.8,1.8); });
+      } else if (mode === 'bleed') {
+        particles.forEach(p=>{ p.y+=0.7+Math.random()*0.9; p.x+=Math.sin(p.y*0.05)*0.3; if(p.y>h){p.y=-5; p.x=Math.random()*w*0.6+w*0.2;} const g=ctx.createLinearGradient(p.x,p.y-8,p.x,p.y); g.addColorStop(0,'rgba(239,68,68,0)'); g.addColorStop(0.5,'rgba(248,113,113,0.8)'); g.addColorStop(1,'rgba(220,38,38,0.9)'); ctx.fillStyle=g; ctx.fillRect(p.x-0.5,p.y-8,1,10); });
+      }
+      ctx.shadowBlur=0;
+      requestAnimationFrame(animate);
+    }
+    animate();
+    window.addEventListener('resize', ()=>{ ({ctx,w,h}=setupCanvas(canvas)); initParticles(); });
+  })();
+
+  // CORE
+  function setupCore(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    let { ctx, w, h } = setupCanvas(canvas);
+    const pts = Array.from({length:14},()=>({x:w/2+(Math.random()-0.5)*80, y:h/2+(Math.random()-0.5)*80, vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3}));
+    function anim(){
+      ctx.clearRect(0,0,w,h);
+      const cx=w/2, cy=h/2;
+      pts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; const dx=p.x-cx, dy=p.y-cy, d=Math.hypot(dx,dy); if(d>78){ p.vx-=dx*0.001; p.vy-=dy*0.001; } p.vx*=0.996; p.vy*=0.996; });
+      // connections
+      ctx.lineWidth=0.5;
+      for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){ const a=pts[i], b=pts[j], d=Math.hypot(a.x-b.x,a.y-b.y); if(d<55){ ctx.strokeStyle=`rgba(56,189,248,${0.18*(1-d/55)})`; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); } }
+      // points
+      pts.forEach(p=>{ const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,5); g.addColorStop(0,'rgba(186,230,253,0.95)'); g.addColorStop(0.4,'rgba(56,189,248,0.6)'); g.addColorStop(1,'transparent'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#e0f2fe'; ctx.shadowColor='#38bdf8'; ctx.shadowBlur=8; ctx.beginPath(); ctx.arc(p.x,p.y,1.1,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; });
+      requestAnimationFrame(anim);
+    }
+    anim();
+    window.addEventListener('resize', ()=>{ ({ctx,w,h}=setupCanvas(canvas)); });
+  }
+  setupCore('coreCanvas');
+  setupCore('coreCanvasMobile');
+
+  // FLUX
+  const fluxEl = document.getElementById('fluxValue');
+  setInterval(()=>{ if(fluxEl){ const v=(98.05+Math.random()*0.3).toFixed(1); fluxEl.textContent=v+'%'; } }, 1800);
+
+  // CONNECTIONS
+  function drawConnections() {
+    const svg = document.getElementById('connections');
+    if (!svg || window.innerWidth < 1024) return;
+    svg.innerHTML = '';
+    const core = document.getElementById('core').getBoundingClientRect();
+    const cont = svg.getBoundingClientRect();
+    const cx = core.left + core.width/2 - cont.left;
+    const cy = core.top + core.height/2 - cont.top;
+    const panels = [
+      {el:'panel-photonic', color:'#22d3ee', side:'right'},
+      {el:'panel-boron', color:'#f59e0b', side:'left'},
+      {el:'panel-threaded', color:'#a855f7', side:'right'},
+      {el:'panel-nanite', color:'#06b6d4', side:'left'},
+    ];
+    panels.forEach((p,i)=>{
+      const el=document.getElementById(p.el); if(!el) return;
+      const r=el.getBoundingClientRect();
+      const x = p.side==='right' ? r.right - cont.left - 8 : r.left - cont.left + 8;
+      const y = i<2 ? r.bottom - cont.top - 18 : r.top - cont.top + 18;
+      const midX = cx + (x-cx)*0.5;
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const d = `M ${cx} ${cy} C ${midX} ${cy}, ${midX} ${y}, ${x} ${y}`;
+      path.setAttribute('d', d);
+      path.setAttribute('fill','none');
+      path.setAttribute('stroke', p.color);
+      path.setAttribute('stroke-width','1.2');
+      path.setAttribute('stroke-dasharray','3 5');
+      path.setAttribute('opacity','0.55');
+      path.style.filter = `drop-shadow(0 0 6px ${p.color})`;
+      svg.appendChild(path);
+      // endpoint glow
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r','2.5');
+      dot.setAttribute('fill', p.color); dot.setAttribute('opacity','0.9');
+      dot.style.filter = `drop-shadow(0 0 8px ${p.color})`;
+      svg.appendChild(dot);
+    });
+    // core glow
+    const coreGlow = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    coreGlow.setAttribute('cx', cx); coreGlow.setAttribute('cy', cy); coreGlow.setAttribute('r','118');
+    coreGlow.setAttribute('fill','none'); coreGlow.setAttribute('stroke','rgba(14,165,233,0.08)'); coreGlow.setAttribute('stroke-width','1');
+    svg.appendChild(coreGlow);
+  }
+  drawConnections();
+  window.addEventListener('resize', drawConnections);
+  setTimeout(drawConnections, 300);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Holographic Storage Simulator - LATTICE 90</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --glass: rgba(255,255,255,0.04);
+    --border: rgba(148,163,184,0.14);
+    --accent: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(1200px 800px at 70% -10%, #1e293b 0%, #0b1020 55%),
+                      radial-gradient(800px 600px at -10% 110%, #0f172a 0%, transparent 60%);
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+  }
+  .app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent);
+    backdrop-filter: blur(8px);
+  }
+  .logo {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border: 1px solid rgba(125,211,252,0.3);
+    display: grid; place-items: center;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+    color: #7dd3fc; box-shadow: 0 0 24px rgba(56,189,248,0.18) inset, 0 0 12px rgba(56,189,248,0.12);
+    flex-shrink: 0;
+  }
+  header h1 {
+    margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.02em;
+  }
+  header .subtitle {
+    color: var(--muted); font-size: 0.8rem; margin-top: 2px;
+  }
+  main {
+    display: grid;
+    grid-template-columns: 300px 1fr 320px;
+    gap: 14px;
+    padding: 14px;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .panel {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    backdrop-filter: blur(16px) saturate(1.15);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .left { padding: 12px; }
+  .search { position: relative; margin-bottom: 10px; }
+  .search input {
+    width: 100%; padding: 9px 12px 9px 32px;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); outline: none; font-size: 0.85rem;
+  }
+  .search input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
+  .search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); opacity: 0.5; }
+  #rootList { flex: 1; overflow-y: auto; padding-right: 6px; margin-right: -6px; }
+  #rootList::-webkit-scrollbar { width: 8px; }
+  #rootList::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.2); border-radius: 8px; }
+  .root-item {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px;
+    padding: 8px 10px; border-radius: 10px; margin-bottom: 4px;
+    cursor: pointer; transition: all 0.18s; border-left: 3px solid transparent;
+    background: rgba(255,255,255,0.015);
+  }
+  .root-item:hover { background: rgba(255,255,255,0.05); transform: translateX(1px); }
+  .root-item.top { border-left-color: #fbbf24; background: linear-gradient(90deg, rgba(251,191,36,0.1), transparent 70%); }
+  .root-item.active { border-left-color: #34d399; background: linear-gradient(90deg, rgba(52,211,153,0.15), transparent 70%); }
+  .root-name { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .root-meta { display: flex; gap: 8px; align-items: center; font-size: 0.68rem; color: var(--muted); grid-column: 1 / -1; }
+  .pill { padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  .root-weight { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #cbd5e1; margin-left: auto; }
+
+  .center { padding: 0; overflow: hidden; position: relative; }
+  .canvas-wrap { flex: 1; position: relative; border-radius: 16px; overflow: hidden; }
+  #sphere { width: 100%; height: 100%; display: block; cursor: default; }
+  .canvas-overlay {
+    position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; pointer-events: none;
+  }
+  .chip {
+    padding: 6px 10px; background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+    border-radius: 999px; font-size: 0.7rem; color: var(--muted); backdrop-filter: blur(6px);
+  }
+  .verification-msg {
+    position: absolute; bottom: 12px; left: 12px; right: 12px;
+    padding: 11px 14px; background: rgba(5,150,105,0.1);
+    border: 1px solid rgba(52,211,153,0.35); border-radius: 12px;
+    color: #a7f3d0; font-size: 0.8rem; line-height: 1.4;
+    opacity: 0; transform: translateY(8px); transition: all 0.4s ease;
+    backdrop-filter: blur(8px); pointer-events: none;
+  }
+  .verification-msg.show { opacity: 1; transform: translateY(0); }
+
+  .right { padding: 14px; gap: 14px; }
+  .control-group label {
+    display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--muted); margin-bottom: 7px; font-weight: 600;
+  }
+  .input-row { display: flex; gap: 8px; }
+  .input-row input {
+    flex: 1; padding: 10px 12px; background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 0.875rem;
+  }
+  .input-row input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); }
+  button {
+    padding: 10px 14px; background: linear-gradient(180deg, #2563eb, #1d4ed8);
+    border: 1px solid rgba(96,165,250,0.3); border-radius: 10px; color: white;
+    font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+  }
+  button:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(37,99,235,0.3); }
+  button:active { transform: translateY(0); }
+  button.secondary {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    box-shadow: none; color: var(--text); font-weight: 500;
+  }
+  button.secondary:hover { background: rgba(255,255,255,0.08); }
+  .slider-wrap { background: rgba(0,0,0,0.28); padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+  #threshold { width: 100%; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.1); border-radius: 999px; outline: none; }
+  #threshold::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #38bdf8; border: 2px solid #0b1020; box-shadow: 0 0 0 3px rgba(56,189,248,0.3); cursor: pointer; }
+  .threshold-display { font-family: ui-monospace, monospace; text-align: right; margin-top: 6px; font-size: 0.8rem; color: #7dd3fc; }
+  .status {
+    padding: 12px; border-radius: 12px; text-align: center; font-weight: 700; letter-spacing: 0.05em;
+    font-size: 0.85rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border); transition: all 0.3s;
+  }
+  .status.pending { color: #fbbf24; border-color: rgba(251,191,36,0.35); background: rgba(251,191,36,0.08); text-shadow: 0 0 10px rgba(251,191,36,0.2); }
+  .status.verified { color: #34d399; border-color: rgba(52,211,153,0.45); background: rgba(52,211,153,0.12); box-shadow: 0 0 24px rgba(52,211,153,0.18), inset 0 0 12px rgba(52,211,153,0.08); }
+  .progress-track { height: 10px; background: rgba(0,0,0,0.45); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); padding: 1px; }
+  #progressBar { height: 100%; width: 0%; background: linear-gradient(90deg,#0ea5e9,#22d3ee,#34d399); border-radius: 999px; transition: width 0.25s ease; box-shadow: 0 0 12px rgba(34,211,238,0.5); }
+  .stats { display: grid; gap: 8px; font-size: 0.8rem; }
+  .stats > div { display: flex; justify-content: space-between; padding: 9px 11px; background: rgba(0,0,0,0.25); border-radius: 9px; border: 1px solid var(--border); }
+  .stats .mono { font-family: ui-monospace, monospace; color: #e2e8f0; }
+  .explanation {
+    margin: 0 14px 14px; padding: 12px 16px; background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border); border-radius: 14px; font-size: 0.78rem; color: var(--muted);
+    line-height: 1.5; backdrop-filter: blur(8px);
+  }
+  #tooltip {
+    position: fixed; pointer-events: none; background: rgba(8,12,24,0.92);
+    border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px;
+    font-size: 0.72rem; backdrop-filter: blur(10px); opacity: 0; transition: opacity 0.12s;
+    z-index: 100; box-shadow: 0 8px 28px rgba(0,0,0,0.55); max-width: 240px;
+  }
+  #tooltip strong { color: white; display: block; margin-bottom: 3px; font-weight: 600; }
+  #tooltip .mono { font-family: ui-monospace, monospace; color: #7dd3fc; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  @media (max-width: 1100px) {
+    main { grid-template-columns: 260px 1fr 300px; }
+  }
+  @media (max-width: 920px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 320px 480px auto; overflow-y: auto; }
+    .app { height: auto; min-height: 100vh; }
+    body { overflow: auto; }
+    #rootList { max-height: 200px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">ROOT0</div>
+    <div>
+      <h1>Holographic Storage Simulator — LATTICE 90</h1>
+      <div class="subtitle">Roots are immutable truths — verified at 49.5000000001%</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel left">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchInput" placeholder="Filter 90 roots…" autocomplete="off">
+      </div>
+      <div id="rootList"></div>
+    </section>
+
+    <section class="panel center">
+      <div class="canvas-wrap">
+        <canvas id="sphere"></canvas>
+        <div class="canvas-overlay">
+          <div class="chip">GOLDEN SPIRAL • 90 NODES</div>
+          <div class="chip">HOLOGRAPHIC PROJECTION</div>
+        </div>
+        <div class="verification-msg" id="verifyMsg">Root verified as immutable truth at 49.5000000001% — below majority, because holographic truth does not require 51%</div>
+      </div>
+    </section>
+
+    <section class="panel right">
+      <div class="control-group">
+        <label>Store Fragment</label>
+        <div class="input-row">
+          <input id="fragmentInput" placeholder="Enter text to shard…" maxlength="240">
+          <button id="storeBtn">Store</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Consensus Threshold</label>
+        <div class="slider-wrap">
+          <input type="range" id="threshold" min="0" max="100" step="0.0000000001" value="49.5000000001">
+          <div class="threshold-display mono" id="thresholdValue">49.5000000001%</div>
+        </div>
+      </div>
+
+      <div id="status" class="status pending">Immutable Truth Status: PENDING</div>
+
+      <button id="simulateBtn" class="secondary">Simulate Retrieval</button>
+      <div class="progress-track"><div id="progressBar"></div></div>
+
+      <div class="stats">
+        <div><span>Active Roots</span><span class="mono">90</span></div>
+        <div><span>Holographic Redundancy</span><span class="mono">3×</span></div>
+        <div><span>Current Consensus</span><span class="mono" id="currentConsensus">0.0000000000%</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="explanation">
+    <strong style="color:#e2e8f0">In this model,</strong> roots are not votes. They are prior-art weights. A truth is 'found' when weighted consensus crosses 49.5000000001%, reflecting the lattice's bias toward preservation over coercion.
+  </footer>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const pillarColors = {
+  CRYPTOGRAPHY:'#60a5fa',
+  CONSENSUS:'#34d399',
+  FOUNDATION:'#fbbf24',
+  PHYSICS:'#a78bfa',
+  MATHEMATICS:'#f472b6',
+  HISTORY:'#fb7185',
+  LAW:'#22d3ee',
+  ETHICS:'#84cc16',
+  NETWORK:'#f97316'
+};
+
+const roots = [
+  {id:1, name:"SHA-256 Genesis", pillar:"CRYPTOGRAPHY", weight:2.52},
+  {id:2, name:"Merkle Tree 1979", pillar:"CRYPTOGRAPHY", weight:2.48},
+  {id:3, name:"Elliptic Curve secp256k1", pillar:"CRYPTOGRAPHY", weight:2.41},
+  {id:4, name:"RSA-2048 Standard", pillar:"CRYPTOGRAPHY", weight:2.35},
+  {id:5, name:"Zero-Knowledge SNARKs", pillar:"CRYPTOGRAPHY", weight:2.29},
+  {id:6, name:"Diffie-Hellman 1976", pillar:"CRYPTOGRAPHY", weight:2.22},
+  {id:7, name:"BLAKE3 Hash", pillar:"CRYPTOGRAPHY", weight:2.15},
+  {id:8, name:"AES-GCM Cipher", pillar:"CRYPTOGRAPHY", weight:2.08},
+  {id:9, name:"Pedersen Commitments", pillar:"CRYPTOGRAPHY", weight:2.01},
+  {id:10, name:"BLS Signature Aggregation", pillar:"CRYPTOGRAPHY", weight:1.95},
+  {id:11, name:"Byzantine Fault Tolerance", pillar:"CONSENSUS", weight:2.46},
+  {id:12, name:"Nakamoto Proof-of-Work", pillar:"CONSENSUS", weight:2.39},
+  {id:13, name:"PBFT Castro-Liskov", pillar:"CONSENSUS", weight:2.32},
+  {id:14, name:"Tendermint BFT", pillar:"CONSENSUS", weight:2.25},
+  {id:15, name:"HotStuff Protocol", pillar:"CONSENSUS", weight:2.18},
+  {id:16, name:"Avalanche Consensus", pillar:"CONSENSUS", weight:2.11},
+  {id:17, name:"Proof-of-Stake v3", pillar:"CONSENSUS", weight:2.04},
+  {id:18, name:"DAG-based Tangle", pillar:"CONSENSUS", weight:1.97},
+  {id:19, name:"Federated Consensus", pillar:"CONSENSUS", weight:1.90},
+  {id:20, name:"Delegated PoS", pillar:"CONSENSUS", weight:1.83},
+  {id:21, name:"Lamport Timestamp", pillar:"FOUNDATION", weight:2.44},
+  {id:22, name:"Paxos Protocol", pillar:"FOUNDATION", weight:2.37},
+  {id:23, name:"Raft Consensus", pillar:"FOUNDATION", weight:2.30},
+  {id:24, name:"CAP Theorem Proof", pillar:"FOUNDATION", weight:2.23},
+  {id:25, name:"FLP Impossibility", pillar:"FOUNDATION", weight:2.16},
+  {id:26, name:"Vector Clocks", pillar:"FOUNDATION", weight:2.09},
+  {id:27, name:"CRDT Principles", pillar:"FOUNDATION", weight:2.02},
+  {id:28, name:"DHT Kademlia", pillar:"FOUNDATION", weight:1.95},
+  {id:29, name:"Gossip Protocol", pillar:"FOUNDATION", weight:1.88},
+  {id:30, name:"State Machine Replication", pillar:"FOUNDATION", weight:1.81},
+  {id:31, name:"Holographic Principle 't Hooft", pillar:"PHYSICS", weight:1.78},
+  {id:32, name:"Quantum Entanglement Storage", pillar:"PHYSICS", weight:1.74},
+  {id:33, name:"Landauer Limit", pillar:"PHYSICS", weight:1.70},
+  {id:34, name:"Bekenstein Bound", pillar:"PHYSICS", weight:1.66},
+  {id:35, name:"No-Cloning Theorem", pillar:"PHYSICS", weight:1.62},
+  {id:36, name:"Quantum Error Correction", pillar:"PHYSICS", weight:1.58},
+  {id:37, name:"Superdense Coding", pillar:"PHYSICS", weight:1.54},
+  {id:38, name:"Decoherence Time Model", pillar:"PHYSICS", weight:1.50},
+  {id:39, name:"Planck Scale Encoding", pillar:"PHYSICS", weight:1.46},
+  {id:40, name:"Shannon Entropy Limit", pillar:"PHYSICS", weight:1.42},
+  {id:41, name:"Galois Field GF(2^8)", pillar:"MATHEMATICS", weight:1.40},
+  {id:42, name:"Reed-Solomon Codes", pillar:"MATHEMATICS", weight:1.37},
+  {id:43, name:"Lattice-Based Crypto", pillar:"MATHEMATICS", weight:1.34},
+  {id:44, name:"Prime Number Theorem", pillar:"MATHEMATICS", weight:1.31},
+  {id:45, name:"Erasure Coding Theory", pillar:"MATHEMATICS", weight:1.28},
+  {id:46, name:"Information Theory 1948", pillar:"MATHEMATICS", weight:1.25},
+  {id:47, name:"Kolmogorov Complexity", pillar:"MATHEMATICS", weight:1.22},
+  {id:48, name:"Graph Isomorphism", pillar:"MATHEMATICS", weight:1.19},
+  {id:49, name:"P vs NP Boundary", pillar:"MATHEMATICS", weight:1.16},
+  {id:50, name:"Topological Data Analysis", pillar:"MATHEMATICS", weight:1.13},
+  {id:51, name:"Library of Alexandria", pillar:"HISTORY", weight:1.11},
+  {id:52, name:"Rosetta Stone Decoding", pillar:"HISTORY", weight:1.08},
+  {id:53, name:"Gutenberg Press 1440", pillar:"HISTORY", weight:1.05},
+  {id:54, name:"ARPANET 1969", pillar:"HISTORY", weight:1.02},
+  {id:55, name:"DNS Root 1983", pillar:"HISTORY", weight:0.99},
+  {id:56, name:"Git Merkle DAG 2005", pillar:"HISTORY", weight:0.96},
+  {id:57, name:"Bitcoin Whitepaper", pillar:"HISTORY", weight:0.93},
+  {id:58, name:"IPFS Protocol 2015", pillar:"HISTORY", weight:0.90},
+  {id:59, name:"Tor Onion Routing", pillar:"HISTORY", weight:0.87},
+  {id:60, name:"Usenet Archive", pillar:"HISTORY", weight:0.84},
+  {id:61, name:"Berne Convention 1886", pillar:"LAW", weight:0.82},
+  {id:62, name:"DMCA Safe Harbor", pillar:"LAW", weight:0.80},
+  {id:63, name:"GDPR Right to be Forgotten", pillar:"LAW", weight:0.78},
+  {id:64, name:"First Amendment Archive", pillar:"LAW", weight:0.76},
+  {id:65, name:"Creative Commons 2002", pillar:"LAW", weight:0.74},
+  {id:66, name:"Open Source Definition", pillar:"LAW", weight:0.72},
+  {id:67, name:"WIPO Copyright Treaty", pillar:"LAW", weight:0.70},
+  {id:68, name:"Public Domain Mark", pillar:"LAW", weight:0.68},
+  {id:69, name:"Fair Use Doctrine", pillar:"LAW", weight:0.66},
+  {id:70, name:"Digital Millennium Archive", pillar:"LAW", weight:0.64},
+  {id:71, name:"Asilomar AI Principles", pillar:"ETHICS", weight:0.63},
+  {id:72, name:"Hippocratic Data Oath", pillar:"ETHICS", weight:0.62},
+  {id:73, name:"Do No Harm Ledger", pillar:"ETHICS", weight:0.61},
+  {id:74, name:"Consentful Storage", pillar:"ETHICS", weight:0.60},
+  {id:75, name:"Right to Repair Data", pillar:"ETHICS", weight:0.59},
+  {id:76, name:"Algorithmic Transparency", pillar:"ETHICS", weight:0.58},
+  {id:77, name:"Moral Over Majority", pillar:"ETHICS", weight:0.57},
+  {id:78, name:"Preservation Bias", pillar:"ETHICS", weight:0.56},
+  {id:79, name:"Censorship Resistance", pillar:"ETHICS", weight:0.55},
+  {id:80, name:"Decentralized Identity", pillar:"ETHICS", weight:0.54},
+  {id:81, name:"TCP/IP RFC 791", pillar:"NETWORK", weight:0.53},
+  {id:82, name:"QUIC Protocol", pillar:"NETWORK", weight:0.52},
+  {id:83, name:"BGP Route Stability", pillar:"NETWORK", weight:0.51},
+  {id:84, name:"WebRTC Mesh", pillar:"NETWORK", weight:0.50},
+  {id:85, name:"libp2p Gossipsub", pillar:"NETWORK", weight:0.49},
+  {id:86, name:"BitTorrent DHT", pillar:"NETWORK", weight:0.48},
+  {id:87, name:"Yggdrasil Routing", pillar:"NETWORK", weight:0.47},
+  {id:88, name:"IPv6 Multicast", pillar:"NETWORK", weight:0.46},
+  {id:89, name:"Delay-Tolerant Network", pillar:"NETWORK", weight:0.45},
+  {id:90, name:"Satellite Lattice Link", pillar:"NETWORK", weight:0.44}
+];
+roots.forEach(r => { r.selected = false; r.pulse = 0; });
+
+const totalWeight = roots.reduce((s,r)=>s+r.weight,0);
+const rootList = document.getElementById('rootList');
+const searchInput = document.getElementById('searchInput');
+const fragmentInput = document.getElementById('fragmentInput');
+const storeBtn = document.getElementById('storeBtn');
+const threshold = document.getElementById('threshold');
+const thresholdValue = document.getElementById('thresholdValue');
+const statusEl = document.getElementById('status');
+const simulateBtn = document.getElementById('simulateBtn');
+const progressBar = document.getElementById('progressBar');
+const currentConsensusEl = document.getElementById('currentConsensus');
+const verifyMsg = document.getElementById('verifyMsg');
+const tooltip = document.getElementById('tooltip');
+
+function renderRoots(filter='') {
+  const f = filter.toLowerCase();
+  rootList.innerHTML = '';
+  roots
+    .filter(r => !f || r.name.toLowerCase().includes(f) || r.pillar.toLowerCase().includes(f))
+    .sort((a,b) => b.weight - a.weight)
+    .forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'root-item' + (r.weight >= 2.0 ? ' top' : '') + (r.selected ? ' active' : '');
+      el.dataset.id = r.id;
+      el.innerHTML = `
+        <div class="root-name">${r.name}</div>
+        <div class="root-weight mono">${r.weight.toFixed(2)}</div>
+        <div class="root-meta">
+          <span class="pill" style="color:${pillarColors[r.pillar]};border-color:${pillarColors[r.pillar]}40">${r.pillar}</span>
+          <span>ROOT-${String(r.id).padStart(2,'0')}</span>
+        </div>`;
+      el.onclick = () => { r.pulse = performance.now(); };
+      rootList.appendChild(el);
+    });
+}
+renderRoots();
+searchInput.oninput = e => renderRoots(e.target.value);
+
+thresholdValue.textContent = Number(threshold.value).toFixed(10) + '%';
+threshold.oninput = e => { thresholdValue.textContent = Number(e.target.value).toFixed(10) + '%'; };
+
+// Canvas sphere
+const canvas = document.getElementById('sphere');
+const ctx = canvas.getContext('2d');
+let lastPoints = [];
+const N = roots.length;
+const points3D = [];
+const golden = Math.PI * (3 - Math.sqrt(5));
+for (let i=0;i<N;i++) {
+  const y = 1 - (i/(N-1))*2;
+  const r = Math.sqrt(1 - y*y);
+  const t = golden * i;
+  points3D.push({x: Math.cos(t)*r, y, z: Math.sin(t)*r});
+}
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr,dpr);
+}
+window.addEventListener('resize', resize);
+resize();
+
+let rotY = 0;
+function draw() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2;
+  const radius = Math.min(w,h) * 0.38;
+  rotY += 0.002;
+  const rotX = 0.28 + Math.sin(performance.now()*0.00007)*0.06;
+
+  const pts = roots.map((root,i) => {
+    const p = points3D[i];
+    let x = p.x * Math.cos(rotY) - p.z * Math.sin(rotY);
+    let z = p.x * Math.sin(rotY) + p.z * Math.cos(rotY);
+    let y = p.y;
+    const y2 = y * Math.cos(rotX) - z * Math.sin(rotX);
+    const z2 = y * Math.sin(rotX) + z * Math.cos(rotX);
+    const s = 2.2/(2.4 - z2);
+    return { root, x: cx + x*s*radius, y: cy + y2*s*radius, z: z2, scale: s };
+  });
+  pts.sort((a,b)=>a.z-b.z);
+  lastPoints = pts;
+
+  // lattice connections
+  ctx.globalAlpha = 0.05;
+  ctx.strokeStyle = '#7dd3fc';
+  ctx.lineWidth = 1;
+  for (let i=0;i<pts.length;i++) {
+    for (let j=i+1;j<pts.length;j++) {
+      const a=pts[i], b=pts[j];
+      const d = Math.hypot(a.x-b.x, a.y-b.y);
+      if (d < radius*0.38) {
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // nodes
+  pts.forEach(p=>{
+    const r = p.root;
+    const base = 2.2 + r.weight * 0.95;
+    const size = base * (0.65 + 0.35*p.scale);
+    const color = pillarColors[r.pillar];
+
+    if (r.pulse) {
+      const t = (performance.now() - r.pulse)/1400;
+      if (t<1) {
+        ctx.beginPath(); ctx.arc(p.x,p.y,size + t*22,0,Math.PI*2);
+        ctx.strokeStyle = color; ctx.globalAlpha = 0.55*(1-t); ctx.lineWidth=2; ctx.stroke(); ctx.globalAlpha=1;
+      } else r.pulse=0;
+    }
+    if (r.selected) {
+      ctx.beginPath(); ctx.arc(p.x,p.y,size+7,0,Math.PI*2);
+      ctx.fillStyle='rgba(52,211,153,0.22)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,size+3.5,0,Math.PI*2);
+      ctx.strokeStyle='#34d399'; ctx.lineWidth=2; ctx.stroke();
+    }
+    const grad = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,size*3.2);
+    grad.addColorStop(0, color+'80'); grad.addColorStop(1, color+'00');
+    ctx.beginPath(); ctx.arc(p.x,p.y,size*3.2,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y,size,0,Math.PI*2);
+    ctx.fillStyle = r.selected ? '#10b981' : color; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.75)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x-size*0.3,p.y-size*0.35,size*0.38,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.22)'; ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+
+canvas.addEventListener('mousemove', e=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  let hover=null, best=14;
+  lastPoints.forEach(p=>{
+    const d = Math.hypot(mx-p.x, my-p.y);
+    if (d < best) { best=d; hover=p; }
+  });
+  if (hover) {
+    tooltip.style.opacity = '1';
+    tooltip.style.left = (e.clientX+12)+'px';
+    tooltip.style.top = (e.clientY+12)+'px';
+    tooltip.innerHTML = `<strong>${hover.root.name}</strong><div class="mono">${hover.root.pillar} • w=${hover.root.weight.toFixed(2)}</div>`;
+    canvas.style.cursor='pointer';
+  } else { tooltip.style.opacity='0'; canvas.style.cursor='default'; }
+});
+canvas.addEventListener('mouseleave', ()=> tooltip.style.opacity='0');
+
+// Store fragment
+storeBtn.onclick = () => {
+  const text = fragmentInput.value.trim();
+  if (!text) return;
+  roots.forEach(r=>r.pulse=0);
+  const picks = [];
+  while (picks.length<3) {
+    const idx = Math.floor(Math.random()*roots.length);
+    if (!picks.includes(idx)) picks.push(idx);
+  }
+  picks.forEach((idx,i)=>{
+    setTimeout(()=>{ roots[idx].pulse = performance.now(); }, i*180);
+  });
+  storeBtn.textContent='Stored ✓';
+  setTimeout(()=>storeBtn.textContent='Store', 1400);
+};
+
+// Simulate retrieval
+let simRunning = false;
+function setStatus(verified) {
+  statusEl.textContent = `Immutable Truth Status: ${verified?'VERIFIED':'PENDING'}`;
+  statusEl.className = 'status ' + (verified?'verified':'pending');
+}
+function resetSimulation() {
+  roots.forEach(r=>r.selected=false);
+  renderRoots(searchInput.value);
+  progressBar.style.width='0%';
+  currentConsensusEl.textContent='0.0000000000%';
+  verifyMsg.classList.remove('show');
+  setStatus(false);
+}
+simulateBtn.onclick = () => {
+  if (simRunning) return;
+  simRunning = true;
+  resetSimulation();
+  const thresholdPct = Number(threshold.value);
+  let consensus = 0;
+  const available = [...roots];
+  simulateBtn.disabled = true;
+  simulateBtn.textContent = 'Retrieving…';
+
+  const timer = setInterval(()=>{
+    if (consensus >= thresholdPct || available.length===0) {
+      clearInterval(timer);
+      simRunning = false;
+      simulateBtn.disabled = false;
+      simulateBtn.textContent = 'Simulate Retrieval';
+      if (consensus >= thresholdPct) {
+        setStatus(true);
+        verifyMsg.classList.add('show');
+      }
+      return;
+    }
+    const totalW = available.reduce((s,r)=>s+r.weight,0);
+    let pick = Math.random()*totalW;
+    let idx = 0;
+    for (let i=0;i<available.length;i++) { pick -= available[i].weight; if (pick<=0){ idx=i; break; } }
+    const root = available.splice(idx,1)[0];
+    root.selected = true;
+    consensus += (root.weight/totalWeight)*100;
+    const shown = Math.min(consensus, 100);
+    currentConsensusEl.textContent = shown.toFixed(10) + '%';
+    progressBar.style.width = Math.min(100, (shown/thresholdPct)*100) + '%';
+    document.querySelector(`.root-item[data-id="${root.id}"]`)?.classList.add('active');
+  }, 95);
+};
+</script>
+</body>
+</html>

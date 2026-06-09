@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magnetic Engine — 1-0-1 Core</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .glass { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #7dd3fc; box-shadow: 0 0 10px rgba(125,211,252,0.8); cursor: pointer; border: 2px solid #0a0a0a; }
+  .toggle { width: 40px; height: 22px; background: rgba(255,255,255,0.15); border-radius: 999px; position: relative; transition: .2s; }
+  .toggle:after { content:''; position: absolute; top:2px; left:2px; width:18px; height:18px; background:white; border-radius:50%; transition:.2s; }
+  input:checked + .toggle { background: rgba(56,189,248,0.6); }
+  input:checked + .toggle:after { transform: translateX(18px); }
+</style>
+<script async src="https://unpkg.com/es-module-shims@1.8.3/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body class="bg-black text-white selection:bg-cyan-400/30">
+<div id="app" class="fixed inset-0"></div>
+
+<!-- UI -->
+<div class="pointer-events-none absolute inset-0">
+  <div class="relative w-full h-full p-3 sm:p-5 lg:p-8">
+    <!-- Top Left -->
+    <div class="pointer-events-auto w-full max-w-[360px] glass bg-black/55 border border-white/10 rounded-2xl p-5 shadow-[0_0_80px_rgba(0,0,0,0.6)]">
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-[22px] sm:text-[26px] font-semibold tracking-wider leading-tight">MAGNETIC ENGINE</h1>
+          <div class="text-[10px] uppercase tracking-[0.35em] text-red-400/90 mt-1 font-mono">1-0-1 • Self-Auditing</div>
+        </div>
+        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_12px_#ef4444] mt-2"></div>
+      </div>
+      <p class="mt-4 text-[13px] leading-relaxed text-zinc-300">Fractal Scaling: Core audits layers, layers audit core. Self-auditing magnetism prevents chaos. Macroscopic quantum event.</p>
+      <div class="mt-4 p-3 rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-cyan-400/15">
+        <div class="text-[11px] uppercase tracking-widest text-zinc-400 mb-1">Fundamental Equation</div>
+        <div class="font-mono text-[12px] sm:text-[13px] text-cyan-200">1/16 light – 0 – 1/16 shadow = 0 = .5+.5=1</div>
+      </div>
+      <div class="mt-4 grid grid-cols-1 gap-2 text-[12px]">
+        <div class="flex items-center gap-2.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444]"></span><span class="text-zinc-200">CORE</span><span class="text-zinc-500">— Foundational Energy</span></div>
+        <div class="flex items-center gap-2.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_10px_#38bdf8]"></span><span class="text-zinc-200">LAYER 1</span><span class="text-zinc-500">— 2× radius</span></div>
+        <div class="flex items-center gap-2.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_#3b82f6]"></span><span class="text-zinc-200">LAYER 2</span><span class="text-zinc-500">— 3.5× radius</span></div>
+        <div class="flex items-center gap-2.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-700 shadow-[0_0_10px_#4338ca]"></span><span class="text-zinc-200">LAYER 3</span><span class="text-zinc-500">— 5× radius</span></div>
+      </div>
+    </div>
+
+    <!-- Top Right -->
+    <div class="pointer-events-auto absolute right-3 sm:right-5 lg:right-8 top-3 sm:top-5 lg:top-8 w-[300px] max-w-[92vw] glass bg-black/55 border border-white/10 rounded-2xl p-4">
+      <h2 class="text-[11px] uppercase tracking-[0.25em] text-zinc-400">Controls</h2>
+      <div class="mt-3 space-y-4">
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="text-sm text-zinc-200">Show Layers</span>
+          <input id="toggleLayers" type="checkbox" class="sr-only" checked>
+          <span class="toggle"></span>
+        </label>
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="text-sm text-zinc-200">Auditing Loop</span>
+          <input id="toggleAudit" type="checkbox" class="sr-only" checked>
+          <span class="toggle"></span>
+        </label>
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-sm text-zinc-200">Energy Level</span>
+            <span id="energyVal" class="text-xs font-mono text-cyan-300">1.00</span>
+          </div>
+          <input id="energy" type="range" min="0.3" max="2" step="0.01" value="1" class="w-full">
+        </div>
+      </div>
+
+      <div class="mt-5 pt-4 border-t border-white/10">
+        <h3 class="text-[11px] uppercase tracking-[0.25em] text-zinc-400 mb-2">Metrics</h3>
+        <div class="grid grid-cols-2 gap-y-2 text-[12px] font-mono">
+          <div class="text-zinc-500">Core Energy</div><div id="coreEnergy" class="text-right text-red-300">0</div>
+          <div class="text-zinc-500">Layer Amp</div><div class="text-right text-sky-300">64↑ / 64↓</div>
+          <div class="text-zinc-500">Phase State</div><div id="phaseState" class="text-right text-amber-300">1-0-1</div>
+          <div class="text-zinc-500">Audit Delay</div><div class="text-right text-violet-300">350ms</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom -->
+    <div class="absolute left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 pointer-events-none">
+      <div class="glass bg-black/50 border border-cyan-500/20 rounded-full px-4 py-2 shadow-[0_0_40px_rgba(6,182,212,0.15)]">
+        <div class="font-mono text-[11px] sm:text-[13px] tracking-[0.25em] text-cyan-200/80 whitespace-nowrap">
+          life <span class="mx-1 text-zinc-500">&lt;</span> <span id="eleven" class="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">=========11==========</span> <span class="mx-1 text-zinc-500">&gt;</span> death
+        </div>
+      </div>
+    </div>
+
+    <!-- Hint -->
+    <div class="absolute left-3 sm:left-5 lg:left-8 bottom-4 sm:bottom-6 pointer-events-none hidden md:block">
+      <div class="text-[10px] uppercase tracking-widest text-zinc-500">Drag to rotate • Scroll to zoom • Double-tap to reset</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const app = document.getElementById('app');
+
+// Scene
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+scene.fog = new THREE.FogExp2(0x000000, 0.012);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 1.8, 12.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+app.appendChild(renderer.domElement);
+
+// Post
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.3, 0.45, 0.75);
+composer.addPass(bloom);
+
+// Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 5;
+controls.maxDistance = 28;
+controls.autoRotate = false;
+
+// Lights
+scene.add(new THREE.AmbientLight(0x0a0a14, 0.6));
+const coreLight = new THREE.PointLight(0xff2a2a, 2.5, 40, 2);
+coreLight.position.set(0,0,0);
+scene.add(coreLight);
+const rim = new THREE.DirectionalLight(0x4ea8ff, 0.4);
+rim.position.set(-5,3,5);
+scene.add(rim);
+
+// Stars
+const starsGeo = new THREE.BufferGeometry();
+const S = 6000;
+const spos = new Float32Array(S*3);
+for(let i=0;i<S;i++){
+  const r=90+Math.random()*60;
+  const th=Math.random()*Math.PI*2;
+  const ph=Math.acos(2*Math.random()-1);
+  spos[i*3]=r*Math.sin(ph)*Math.cos(th);
+  spos[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+  spos[i*3+2]=r*Math.cos(ph);
+}
+starsGeo.setAttribute('position', new THREE.BufferAttribute(spos,3));
+const stars = new THREE.Points(starsGeo, new THREE.PointsMaterial({ size:0.04, transparent:true, opacity:0.8, color:0x9db7ff, blending:THREE.AdditiveBlending, depthWrite:false }));
+scene.add(stars);
+
+// Core
+const coreGroup = new THREE.Group();
+scene.add(coreGroup);
+
+const coreMat = new THREE.MeshStandardMaterial({
+  color: 0x1a0000,
+  emissive: 0xff1a1a,
+  emissiveIntensity: 1.6,
+  metalness: 0.3,
+  roughness: 0.25
+});
+const core = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), coreMat);
+coreGroup.add(core);
+
+const coreHalo = new THREE.Mesh(
+  new THREE.SphereGeometry(1.18, 64, 64),
+  new THREE.MeshBasicMaterial({ color:0xff3b3b, transparent:true, opacity:0.08, side:THREE.BackSide, blending:THREE.AdditiveBlending })
+);
+coreGroup.add(coreHalo);
+
+const coreShell = new THREE.Mesh(
+  new THREE.SphereGeometry(1.35, 64, 64),
+  new THREE.MeshBasicMaterial({ color:0xff1a1a, wireframe:true, transparent:true, opacity:0.04, blending:THREE.AdditiveBlending })
+);
+coreGroup.add(coreShell);
+
+// "11" points
+const elevenMat = new THREE.MeshBasicMaterial({ color:0xffffff });
+const elevenL = new THREE.Mesh(new THREE.SphereGeometry(0.13, 24, 24), elevenMat);
+const elevenR = new THREE.Mesh(new THREE.SphereGeometry(0.13, 24, 24), elevenMat);
+elevenL.position.x = -0.34; elevenR.position.x = 0.34;
+const elevenGlowMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.25, blending:THREE.AdditiveBlending });
+const gl = new THREE.Mesh(new THREE.SphereGeometry(0.26, 24, 24), elevenGlowMat);
+const gr = gl.clone();
+elevenL.add(gl); elevenR.add(gr);
+coreGroup.add(elevenL, elevenR);
+
+// Layers
+const layerConfigs = [
+  { r:2.0,  color:0x7dd3fc, emissive:0x0284c7 },
+  { r:3.5,  color:0x3b82f6, emissive:0x1d4ed8 },
+  { r:5.0,  color:0x1e3a8a, emissive:0x0b1f6b },
+];
+const layers = [];
+layerConfigs.forEach((cfg,i)=>{
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({
+    color: cfg.color, emissive: cfg.emissive, emissiveIntensity: 0.35,
+    wireframe: true, transparent: true, opacity: 0.22, metalness:0, roughness:1
+  });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(cfg.r, 96, 96), mat);
+  const inner = new THREE.Mesh(
+    new THREE.SphereGeometry(cfg.r*0.97, 64, 64),
+    new THREE.MeshStandardMaterial({ color:cfg.color, emissive:cfg.emissive, emissiveIntensity:0.15, transparent:true, opacity:0.05, side:THREE.BackSide, depthWrite:false })
+  );
+  // fractal: tiny icosa inside each layer
+  const ico = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(cfg.r*0.3, 1),
+    new THREE.MeshBasicMaterial({ color:cfg.color, wireframe:true, transparent:true, opacity:0.08 })
+  );
+  g.add(mesh, inner, ico);
+  g.userData.rot = 0.12 - i*0.025;
+  scene.add(g);
+  layers.push({ group:g, mesh, inner, ico, radius:cfg.r, delay:(i+1)*0.35 });
+});
+
+// Beams
+function fibSphere(n){
+  const pts=[];
+  for(let i=0;i<n;i++){
+    const y = 1 - (i/(n-1))*2;
+    const r = Math.sqrt(1-y*y);
+    const th = Math.PI*(1+Math.sqrt(5))*i;
+    pts.push(new THREE.Vector3(Math.cos(th)*r, y, Math.sin(th)*r).normalize());
+  }
+  return pts;
+}
+const dirs = fibSphere(14);
+const outwardBeams=[], inwardBeams=[];
+layers.forEach((L,li)=>{
+  dirs.forEach(d=>{
+    const s = d.clone().multiplyScalar(1.02);
+    const e = d.clone().multiplyScalar(L.radius*0.96);
+    const g = new THREE.BufferGeometry().setFromPoints([s,e]);
+    const mo = new THREE.LineBasicMaterial({ color:0xff3b3b, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false });
+    const lo = new THREE.Line(g, mo); scene.add(lo);
+    outwardBeams.push({ line:lo, material:mo, start:s, end:e, layer:li });
+
+    const mi = new THREE.LineBasicMaterial({ color:0x3b82f6, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false });
+    const li_ = new THREE.Line(g.clone(), mi); scene.add(li_);
+    inwardBeams.push({ line:li_, material:mi, start:e, end:s, layer:li });
+  });
+});
+
+// Particles
+function makeParticles(count, color){
+  const geo = new THREE.BufferGeometry();
+  const arr = new Float32Array(count*3);
+  geo.setAttribute('position', new THREE.BufferAttribute(arr,3));
+  const mat = new THREE.PointsMaterial({ size:0.07, color, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true });
+  const pts = new THREE.Points(geo, mat);
+  scene.add(pts);
+  return { points:pts, pos:arr, data:[] };
+}
+const outP = makeParticles(280, 0xff5a5a);
+const inP = makeParticles(280, 0x5aa8ff);
+outwardBeams.forEach(b=>{}); // ensure arrays ready
+for(let i=0;i<280;i++){
+  const b = outwardBeams[Math.floor(Math.random()*outwardBeams.length)];
+  outP.data.push({ beam:b, t:Math.random(), speed:0.45+Math.random()*0.55 });
+}
+for(let i=0;i<280;i++){
+  const b = inwardBeams[Math.floor(Math.random()*inwardBeams.length)];
+  inP.data.push({ beam:b, t:Math.random(), speed:0.4+Math.random()*0.5 });
+}
+
+// Params
+const params = { showLayers:true, showAudit:true, energyLevel:1.0, pulseSpeed:1.25 };
+const toggleLayers = document.getElementById('toggleLayers');
+const toggleAudit = document.getElementById('toggleAudit');
+const energy = document.getElementById('energy');
+const energyVal = document.getElementById('energyVal');
+toggleLayers.onchange = e=>{ params.showLayers=e.target.checked; layers.forEach(l=>l.group.visible=params.showLayers); [...outwardBeams,...inwardBeams].forEach(b=>b.line.visible=params.showLayers); };
+toggleAudit.onchange = e=> params.showAudit = e.target.checked;
+energy.oninput = e=>{ params.energyLevel = parseFloat(e.target.value); energyVal.textContent = params.energyLevel.toFixed(2); };
+
+// UI refs
+const coreEnergyEl = document.getElementById('coreEnergy');
+const phaseStateEl = document.getElementById('phaseState');
+const elevenEl = document.getElementById('eleven');
+
+const clock = new THREE.Clock();
+let time=0;
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.033);
+  time += dt;
+
+  controls.update();
+
+  // 1-0-1 pulse: bright-dim-bright
+  const base = time * params.pulseSpeed * params.energyLevel;
+  const corePhase = Math.abs(Math.sin(base)); // 0→1→0→1
+
+  // Core
+  coreMat.emissiveIntensity = 0.8 + corePhase * 2.4 * params.energyLevel;
+  coreLight.intensity = 1.2 + corePhase * 3.2 * params.energyLevel;
+  coreHalo.material.opacity = 0.06 + corePhase*0.14;
+  coreHalo.scale.setScalar(1 + corePhase*0.12);
+  coreShell.rotation.y += dt*0.4;
+  coreShell.rotation.x += dt*0.2;
+  coreShell.material.opacity = 0.03 + corePhase*0.05;
+  const s11 = 1 + corePhase*0.5;
+  elevenL.scale.setScalar(s11); elevenR.scale.setScalar(s11);
+  elevenL.material.color.setScalar(0.9 + corePhase*0.1);
+  elevenR.material.color.setScalar(0.9 + corePhase*0.1);
+  coreGroup.rotation.y += dt*0.15;
+  core.position.y = Math.sin(time*9)*0.003;
+
+  // Layers respond with delay
+  layers.forEach((L,i)=>{
+    const lp = Math.abs(Math.sin(base - L.delay));
+    L.mesh.material.emissiveIntensity = 0.18 + lp*0.85*params.energyLevel;
+    L.mesh.material.opacity = 0.16 + lp*0.18;
+    L.inner.material.opacity = 0.04 + lp*0.07;
+    L.ico.rotation.y += dt*(0.5+i*0.1);
+    L.ico.rotation.x += dt*(0.3-i*0.05);
+    L.ico.material.opacity = 0.06 + lp*0.08;
+    L.group.rotation.y += dt * L.group.userData.rot;
+    L.group.rotation.x += dt * 0.04;
+  });
+
+  // Beams
+  const audit = params.showAudit ? 1 : 0;
+  outwardBeams.forEach(b=>{
+    b.material.opacity = audit * corePhase * 0.58 * params.energyLevel;
+  });
+  inwardBeams.forEach(b=>{
+    const L = layers[b.layer];
+    const lp = Math.abs(Math.sin(base - L.delay));
+    b.material.opacity = audit * lp * 0.5 * params.energyLevel;
+  });
+
+  // Particles outward
+  if(audit){
+    for(let i=0;i<outP.data.length;i++){
+      const d=outP.data[i];
+      d.t += dt * d.speed * params.energyLevel * 0.9;
+      if(d.t>1){ d.t=0; d.beam = outwardBeams[(Math.random()*outwardBeams.length)|0]; }
+      const st=d.beam.start, en=d.beam.end;
+      const tt = d.t<0.5 ? 2*d.t*d.t : 1-Math.pow(-2*d.t+2,2)/2; // ease
+      outP.pos[i*3]   = THREE.MathUtils.lerp(st.x,en.x,tt);
+      outP.pos[i*3+1] = THREE.MathUtils.lerp(st.y,en.y,tt);
+      outP.pos[i*3+2] = THREE.MathUtils.lerp(st.z,en.z,tt);
+    }
+    outP.points.geometry.attributes.position.needsUpdate=true;
+    outP.points.material.opacity = 0.85;
+
+    for(let i=0;i<inP.data.length;i++){
+      const d=inP.data[i];
+      d.t += dt * d.speed * params.energyLevel * 0.85;
+      if(d.t>1){ d.t=0; d.beam = inwardBeams[(Math.random()*inwardBeams.length)|0]; }
+      const st=d.beam.start, en=d.beam.end;
+      const tt = d.t;
+      inP.pos[i*3]   = THREE.MathUtils.lerp(st.x,en.x,tt);
+      inP.pos[i*3+1] = THREE.MathUtils.lerp(st.y,en.y,tt);
+      inP.pos[i*3+2] = THREE.MathUtils.lerp(st.z,en.z,tt);
+    }
+    inP.points.geometry.attributes.position.needsUpdate=true;
+    inP.points.material.opacity = 0.85;
+  } else {
+    outP.points.material.opacity = 0;
+    inP.points.material.opacity = 0;
+  }
+
+  // stars twinkle
+  stars.rotation.y += dt*0.005;
+  stars.material.opacity = 0.7 + Math.sin(time*0.7)*0.1;
+
+  // metrics
+  const energyPct = Math.round(corePhase * 100 * params.energyLevel);
+  coreEnergyEl.textContent = energyPct.toString().padStart(3,'0');
+  const phase = corePhase>0.85 ? '1 (PEAK)' : corePhase<0.15 ? '0 (NULL)' : '1→0→1';
+  phaseStateEl.textContent = phase;
+  elevenEl.style.opacity = 0.6 + corePhase*0.4;
+  elevenEl.style.textShadow = `0 0 ${8+corePhase*12}px rgba(255,255,255,${0.5+corePhase*0.5})`;
+
+  // bloom pulse
+  bloom.strength = 1.1 + corePhase*0.5*params.energyLevel;
+
+  composer.render();
+}
+animate();
+
+// Resize
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Double click reset
+renderer.domElement.addEventListener('dblclick', ()=>{
+  camera.position.set(0,1.8,12.5);
+  controls.target.set(0,0,0);
+});
+</script>
+</body>
+</html>

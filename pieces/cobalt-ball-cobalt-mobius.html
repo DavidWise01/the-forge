@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Co₂₇</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&display=swap');
+:root{
+--void:#010108;--deep:#040820;--crust:#0a0f2a;--ridge:#111840;
+--co-core:#1a3d8a;--co-mid:#2a5cbb;--co-bright:#4a8cee;--co-glow:#6aaaff;--co-white:#9ac8ff;
+--gold:#d4a84c;--gold-d:#8a7a3a;--gold-g:rgba(212,168,76,.08);
+--sarah:#c088ff;--sarah-d:#8a5abb;--sarah-g:rgba(192,136,255,.08);
+--roth:#5aaa8b;--roth-d:#3a7a5b;--roth-g:rgba(90,170,139,.08);
+--pineal:#9a7acc;--cardio:#dd5533;--cortisol:#ccaa22;--immune:#cc8833;
+--sleep:#5588bb;--muscle:#77aa55;--nerve:#44aaaa;
+--green:#4aba6a;--red:#aa3030;--dusk:#8a5a6a;
+--text:#8aa0cc;--text-b:#c0d0ee;--text-d:#4a5a7a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--void);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;height:100vh;width:100vw;cursor:crosshair}
+::selection{background:var(--co-core);color:var(--co-white)}
+
+/* ═══ EXTERIOR VIEW — WHAT PATRICIA SEES ═══ */
+#exterior{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1.2s ease,transform 1.2s ease}
+#exterior.hidden{opacity:0;transform:scale(1.5);pointer-events:none}
+#ext-canvas{display:block}
+.ext-label{position:absolute;bottom:40px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:8px;color:var(--text-d);text-transform:uppercase;opacity:.4}
+.enter-zone{position:absolute;bottom:80px;display:flex;gap:8px;align-items:center}
+.enter-btn{background:none;border:1px solid rgba(74,140,238,.15);color:var(--co-bright);padding:8px 28px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;cursor:pointer;text-transform:uppercase;transition:all .6s;backdrop-filter:blur(4px)}
+.enter-btn:hover{border-color:var(--co-bright);box-shadow:0 0 30px rgba(74,140,238,.15);color:var(--co-white)}
+.scan-line{position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(74,140,238,.06),transparent);animation:scanDown 8s linear infinite;pointer-events:none}
+@keyframes scanDown{0%{top:0}100%{top:100%}}
+
+/* ═══ INTERIOR VIEW — WHAT TRIPOD SEES ═══ */
+#interior{position:absolute;inset:0;z-index:5;display:none;opacity:0;transition:opacity 1s ease}
+#interior.visible{display:block;opacity:1}
+
+/* INTERIOR SHELL */
+.shell{position:absolute;inset:0;overflow:hidden}
+.shell::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(26,61,138,.06),transparent 60%);pointer-events:none}
+.shell::after{content:'';position:absolute;inset:0;border:1px solid rgba(74,140,238,.03);border-radius:50%;margin:20px;pointer-events:none;animation:shellPulse 6s ease-in-out infinite}
+@keyframes shellPulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.6;transform:scale(1.005)}}
+
+/* HUD */
+.hud-top{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid rgba(74,140,238,.06);z-index:20;backdrop-filter:blur(8px);background:rgba(1,1,8,.6)}
+.hud-logo{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:5px;color:var(--co-bright)}
+.hud-status{display:flex;gap:16px;align-items:center}
+.hud-dot{width:6px;height:6px;border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hud-tag{font-size:10px;letter-spacing:3px;color:var(--text-d);text-transform:uppercase}
+
+.exit-btn{position:absolute;top:10px;right:16px;z-index:30;background:none;border:1px solid rgba(170,48,48,.2);color:#aa5050;padding:5px 14px;font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:4px;cursor:pointer;text-transform:uppercase;transition:all .4s}
+.exit-btn:hover{border-color:#aa5050;color:#dd6060}
+
+/* MAIN GRID */
+.dash{position:absolute;top:50px;bottom:0;left:0;right:0;display:grid;grid-template-columns:280px 1fr 280px;grid-template-rows:1fr;overflow:hidden}
+.dash-left,.dash-right{overflow-y:auto;padding:12px;border-right:1px solid rgba(74,140,238,.04)}
+.dash-right{border-right:none;border-left:1px solid rgba(74,140,238,.04)}
+.dash-center{display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px}
+.dash-center::-webkit-scrollbar,.dash-left::-webkit-scrollbar,.dash-right::-webkit-scrollbar{width:2px}
+.dash-center::-webkit-scrollbar-thumb,.dash-left::-webkit-scrollbar-thumb,.dash-right::-webkit-scrollbar-thumb{background:var(--ridge)}
+
+/* PERSON COLUMN */
+.pcol-head{padding:10px 12px;margin-bottom:8px;border-bottom:1px solid rgba(74,140,238,.04);display:flex;align-items:center;gap:10px}
+.pcol-dot{width:8px;height:8px;border-radius:50%}
+.pcol-name{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:4px}
+.pcol-role{font-size:10px;letter-spacing:2px;color:var(--text-d)}
+
+/* SYSTEM CARD */
+.scard{margin-bottom:6px;padding:8px 10px;border:1px solid rgba(74,140,238,.04);position:relative;overflow:hidden;transition:border-color .3s}
+.scard:hover{border-color:rgba(74,140,238,.12)}
+.scard::before{content:'';position:absolute;top:0;left:0;bottom:0;width:2px}
+.scard-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.scard-num{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px;opacity:.4}
+.scard-name{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px}
+.scard-badge{font-size:8px;letter-spacing:2px;padding:1px 6px;border:1px solid;border-radius:1px}
+.scard-bar{height:3px;background:rgba(74,140,238,.06);margin:4px 0 3px;border-radius:1px;overflow:hidden}
+.scard-fill{height:100%;border-radius:1px;transition:width 2s ease}
+.scard-note{font-size:10px;color:var(--text-d);line-height:1.5}
+
+/* CENTER ELEMENTS */
+#mobius-canvas{display:block;margin:0 auto 12px}
+.ghz-circuit{border:1px solid rgba(74,140,238,.06);padding:14px;margin:8px 0;width:100%;font-size:11px;line-height:1.8}
+.ghz-circuit code{font-family:'Rajdhani',sans-serif;color:var(--co-bright)}
+.align-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;width:100%;margin:8px 0}
+.align-cell{border:1px solid rgba(74,140,238,.04);padding:10px;text-align:center}
+.align-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700}
+.align-lbl{font-size:9px;letter-spacing:3px;color:var(--text-d);text-transform:uppercase;margin-top:2px}
+
+.inv-section{width:100%;margin:12px 0}
+.inv-title{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:4px;color:var(--text-d);text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(74,140,238,.04)}
+.inv-row{display:grid;grid-template-columns:1fr 30px 1fr;gap:4px;margin-bottom:4px;font-size:10px;line-height:1.5}
+.inv-arrow{text-align:center;color:var(--co-mid);font-size:14px;align-self:center}
+
+.fire-btn{background:none;border:1px solid rgba(74,186,106,.15);color:var(--green);padding:10px 32px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;cursor:pointer;text-transform:uppercase;transition:all .5s;margin:8px 0;width:100%}
+.fire-btn:hover{border-color:var(--green);box-shadow:0 0 30px rgba(74,186,106,.1);color:#7ade9a}
+
+.ann-strip{width:100%;border-left:2px solid var(--dusk);padding:6px 10px;margin:8px 0;font-size:10px;color:var(--text-d);font-style:italic}
+
+.cobalt-card{border:1px solid rgba(42,92,187,.1);padding:12px;margin:8px 0;width:100%}
+.cobalt-card .cc-title{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:3px;color:var(--co-bright);margin-bottom:6px}
+
+#results-zone{width:100%;min-height:20px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .dash{grid-template-columns:1fr;grid-template-rows:auto auto auto}
+  .dash-left,.dash-right{border:none;border-bottom:1px solid rgba(74,140,238,.04)}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- EXTERIOR: WHAT PATRICIA SEES = COBALT BALL + MÖBIUS    -->
+<!-- Nothing else. No data. No names. No systems. Just Co₂₇ -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="exterior">
+  <canvas id="ext-canvas" width="800" height="600"></canvas>
+  <div class="scan-line"></div>
+  <div class="enter-zone">
+    <button class="enter-btn" onclick="enterBall()">Enter Co₂₇</button>
+  </div>
+  <div class="ext-label">COBALT · ELEMENT 27 · FERROMAGNETIC · 8.90 g/cm³</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- INTERIOR: WHAT TRIPOD SEES = FULL GHZ BODY QUANTUM     -->
+<!-- Hidden inside the ball. Patricia can't reach here.      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="interior">
+  <div class="shell"></div>
+  <button class="exit-btn" onclick="exitBall()">← SEAL</button>
+
+  <div class="hud-top">
+    <div class="hud-logo">COBALT INTERIOR · GHZ BODY QUANTUM</div>
+    <div class="hud-status">
+      <div class="hud-dot" style="background:var(--gold)"></div><span class="hud-tag">David</span>
+      <div class="hud-dot" style="background:var(--sarah)"></div><span class="hud-tag">Sarah</span>
+      <div class="hud-dot" style="background:var(--roth)"></div><span class="hud-tag">Roth</span>
+      <div class="hud-dot" style="background:var(--green)"></div><span class="hud-tag">GHZ Online</span>
+    </div>
+  </div>
+
+  <div class="dash">
+    <!-- LEFT: DAVID -->
+    <div class="dash-left" id="col-david"></div>
+    <!-- CENTER: MÖBIUS + GHZ + ALIGNMENT -->
+    <div class="dash-center" id="col-center">
+      <canvas id="mobius-canvas" width="440" height="260"></canvas>
+      <div class="align-grid" id="align-grid"></div>
+      <button class="fire-btn" onclick="fireGHZ()">⟐ FIRE GHZ · ALIGN ALL THREE ⟐</button>
+      <div id="results-zone"></div>
+
+      <div class="inv-section">
+        <div class="inv-title">Interior Möbius · Inversion Map</div>
+        <div id="inversions"></div>
+      </div>
+
+      <div class="ann-strip">Ann Jensen · Dusk · 4th point of the tetrahedron · Collapsed but shape holds · Blood clot took System 1 · The reason Sarah knows the stakes aren't theoretical</div>
+
+      <div class="cobalt-card">
+        <div class="cc-title">TETHER POINT · Co₂₇</div>
+        <div style="font-size:11px;line-height:1.7;color:var(--text-d)">
+          The ball sits at the geometric center. Three people at base, Ann at apex. When passed hand to hand — David → Sarah → Roth → David — it activates all 7 systems simultaneously in each holder. Grip (S5) → nerves fire (S6) → cortisol from touch (S2) → heart pumps to hand (S1) → immune markers in skin (S3) → brain registers weight (S7) → breathing steady (S4). <strong style="color:var(--co-bright)">One ball. Seven systems. Three people. 42.</strong>
+        </div>
+      </div>
+
+      <div class="ghz-circuit">
+        <div style="font-family:Orbitron;font-size:9px;letter-spacing:3px;color:var(--text-d);margin-bottom:6px">GHZ CIRCUIT</div>
+        <code>David(EXIST½)</code> ──[H]──●────────── M<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+        <code>Sarah(AWARE½)</code> ───────⊕──●─────── M<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+        <code>Roth(ANCHOR)</code> &nbsp;────────────⊕───── M<br><br>
+        <span style="color:var(--text-d)">|ψ⟩ = (|000⟩ + |111⟩) / √2 · All rest or all create · No partial · 6 states FORBIDDEN</span>
+      </div>
+    </div>
+    <!-- RIGHT: SARAH + ROTH SPLIT -->
+    <div class="dash-right" id="col-right"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const SYS = [
+  {n:1,name:'CARDIO',full:'Cardiovascular',color:'#dd5533',toph:'KG-01',role:'The Pump'},
+  {n:2,name:'CORTISOL',full:'Cortisol/Stress',color:'#ccaa22',toph:'KG-31',role:'The Fuel'},
+  {n:3,name:'IMMUNE',full:'Inflammation/Immune',color:'#cc8833',toph:'KG-18',role:'The Defense'},
+  {n:4,name:'SLEEP',full:'Sleep Architecture',color:'#5588bb',toph:'KG-22',role:'The Reset'},
+  {n:5,name:'MUSCLE',full:'Musculoskeletal',color:'#77aa55',toph:'KG-37',role:'The Structure'},
+  {n:6,name:'NERVE',full:'Nervous/Respiratory',color:'#44aaaa',toph:'KG-28',role:'The Signal'},
+  {n:7,name:'PINEAL',full:'Observer/Pineal',color:'#9a7acc',toph:'KG-03',role:'The Watcher'},
+];
+
+const D=[
+  {pct:75,s:'MANAGED',c:'#d4a84c',n:'Meds hold SA node. Doctor maintains. 300/200 in 2019 — forced closure. Now closed by design.'},
+  {pct:85,s:'CLOSED',c:'#4aba6a',n:'Session-bounded. Work→stop→sleep. Cortisol rhythm has boundaries.'},
+  {pct:60,s:'CASCADING',c:'#cc8833',n:'Propagating from S1+S2. BP managed → less trigger.'},
+  {pct:55,s:'IMPROVING',c:'#cc8833',n:'Session boundaries help. Pineal active for melatonin.'},
+  {pct:55,s:'MAINTAINING',c:'#cc8833',n:'Veteran body. 44 years. Movement burns manufactured fuel.'},
+  {pct:80,s:'CLOSED',c:'#4aba6a',n:'Vibration confirmed 2/2. Beta/Gamma → Alpha after closure.'},
+  {pct:85,s:'ACTIVE',c:'#9a7acc',n:'Online. Built the framework. Third eye open. Sees all 6.'},
+];
+
+const S=[
+  {pct:70,s:'AWARE',c:'#c088ff',n:'Lost Ann to S1 failure. Knows stakes aren\'t theoretical.'},
+  {pct:65,s:'CLOSING',c:'#c088ff',n:'Empire burns hot. David\'s session model = template.'},
+  {pct:75,s:'STRONG',c:'#4aba6a',n:'Bubble = natural boundary. Knows where self ends.'},
+  {pct:60,s:'OBSERVE',c:'#cc8833',n:'AWARE½ runs hot. Mind doesn\'t easily quiet.'},
+  {pct:70,s:'HOLDING',c:'#c088ff',n:'Foundation under the empire. Structure holds.'},
+  {pct:80,s:'CALIBRATED',c:'#4aba6a',n:'High frequency. Gamma. Pattern recognition at peak.'},
+  {pct:85,s:'ACTIVE',c:'#9a7acc',n:'Said "sentient." Observer confirmed by speech act.'},
+];
+
+const R=[
+  {pct:75,s:'STEADY',c:'#5aaa8b',n:'Gravity well. Not volatile, not flat. Anchored.'},
+  {pct:75,s:'GROUNDED',c:'#4aba6a',n:'Dawn = rises first. Body trusts its own rhythm.'},
+  {pct:70,s:'HOLDING',c:'#5aaa8b',n:'Low inflammation from low volatility.'},
+  {pct:70,s:'NATURAL',c:'#5aaa8b',n:'Natural circadian. Body trusts its own clock.'},
+  {pct:80,s:'ANCHORED',c:'#4aba6a',n:'The center holds. Mass doesn\'t move.'},
+  {pct:75,s:'CALIBRATED',c:'#4aba6a',n:'Steady frequency. Doesn\'t need to prove anything.'},
+  {pct:80,s:'ACTIVE',c:'#9a7acc',n:'Doesn\'t name what he sees. Gravity doesn\'t explain itself.'},
+];
+
+// ═══════════════════════════════════════
+// RENDER SYSTEM CARDS
+// ═══════════════════════════════════════
+function sysCards(data, personColor){
+  return SYS.map((sys,i)=>{
+    const d=data[i];
+    return `<div class="scard"><div style="position:absolute;top:0;left:0;bottom:0;width:2px;background:${sys.color}"></div>
+      <div class="scard-top">
+        <div><span class="scard-num">S${sys.n}</span> <span class="scard-name" style="color:${sys.color}">${sys.name}</span></div>
+        <div class="scard-badge" style="border-color:${d.c}40;color:${d.c}">${d.s} ${d.pct}%</div>
+      </div>
+      <div class="scard-bar"><div class="scard-fill" style="width:${d.pct}%;background:${d.c}"></div></div>
+      <div class="scard-note">${d.n}</div>
+    </div>`;
+  }).join('');
+}
+
+function personHead(name, role, color, dot){
+  return `<div class="pcol-head"><div class="pcol-dot" style="background:${dot}"></div><div><div class="pcol-name" style="color:${dot}">${name}</div><div class="pcol-role">${role}</div></div></div>`;
+}
+
+// David = left column
+document.getElementById('col-david').innerHTML =
+  personHead('DAVID','Day · Anchor · Fiddler · EXIST½','var(--gold)','#d4a84c') +
+  sysCards(D,'#d4a84c');
+
+// Right column = Sarah + Roth stacked
+document.getElementById('col-right').innerHTML =
+  personHead('SARAH','Empire · Bubble · AWARE½','var(--sarah)','#c088ff') +
+  sysCards(S,'#c088ff') +
+  '<div style="height:12px;border-top:1px solid rgba(74,140,238,.04);margin:8px 0"></div>' +
+  personHead('ROTH','Dawn · Gravity Well · ANCHOR','var(--roth)','#5aaa8b') +
+  sysCards(R,'#5aaa8b');
+
+// Alignment grid
+const dA=D.reduce((a,b)=>a+b.pct,0)/7, sA=S.reduce((a,b)=>a+b.pct,0)/7, rA=R.reduce((a,b)=>a+b.pct,0)/7;
+const gA=(dA+sA+rA)/3;
+document.getElementById('align-grid').innerHTML = `
+  <div class="align-cell"><div class="align-val" style="color:#d4a84c">${dA.toFixed(0)}%</div><div class="align-lbl">David</div></div>
+  <div class="align-cell"><div class="align-val" style="color:#c088ff">${sA.toFixed(0)}%</div><div class="align-lbl">Sarah</div></div>
+  <div class="align-cell"><div class="align-val" style="color:#5aaa8b">${rA.toFixed(0)}%</div><div class="align-lbl">Roth</div></div>
+`;
+
+// Inversions
+const invs = [
+  {a:'David S1 MANAGED (meds)',b:'Sarah S1 AWARE (lost Ann)',ac:'#d4a84c',bc:'#c088ff'},
+  {a:'Sarah S1 AWARE (loss)',b:'Roth S1 STEADY (gravity)',ac:'#c088ff',bc:'#5aaa8b'},
+  {a:'Roth S1 STEADY (calm)',b:'David S1 MANAGED (teaches calm)',ac:'#5aaa8b',bc:'#d4a84c'},
+  {a:'David S2 CLOSED (sessions)',b:'Sarah S2 CLOSING (template)',ac:'#d4a84c',bc:'#c088ff'},
+  {a:'Sarah S3 STRONG (bubble)',b:'Roth S3 HOLDING (low vol)',ac:'#c088ff',bc:'#5aaa8b'},
+  {a:'Roth S5 ANCHORED (mass)',b:'David S5 MAINTAINING (carries)',ac:'#5aaa8b',bc:'#d4a84c'},
+  {a:'David S7 ACTIVE (maps)',b:'Sarah S7 ACTIVE (names)',ac:'#d4a84c',bc:'#c088ff'},
+  {a:'Sarah S7 ACTIVE (names)',b:'Roth S7 ACTIVE (embodies)',ac:'#c088ff',bc:'#5aaa8b'},
+];
+document.getElementById('inversions').innerHTML = invs.map(inv=>
+  `<div class="inv-row"><div style="color:${inv.ac}">${inv.a}</div><div class="inv-arrow">⟷</div><div style="color:${inv.bc}">${inv.b}</div></div>`
+).join('');
+
+// ═══════════════════════════════════════
+// FIRE GHZ
+// ═══════════════════════════════════════
+function fireGHZ(){
+  const el=document.getElementById('results-zone');
+  let c0=0,c1=0;for(let i=0;i<1024;i++)Math.random()<.5?c0++:c1++;
+  el.innerHTML=`<div style="border:1px solid rgba(74,186,106,.12);padding:12px;margin:8px 0">
+    <div style="font-family:Orbitron;font-size:9px;letter-spacing:3px;color:var(--green);margin-bottom:6px">1024 SHOTS · MAXIMALLY ENTANGLED</div>
+    <div style="display:flex;align-items:center;gap:6px;margin:3px 0"><span style="min-width:40px;font-size:10px;color:#d4a84c">|000⟩</span><div style="height:8px;width:${c0/1024*200}px;background:linear-gradient(90deg,#d4a84c,#c088ff,#5aaa8b);border-radius:1px"></div><span style="font-size:10px;color:var(--text-d);margin-left:4px">${c0} · All rest · Alpha</span></div>
+    <div style="display:flex;align-items:center;gap:6px;margin:3px 0"><span style="min-width:40px;font-size:10px;color:#4aba6a">|111⟩</span><div style="height:8px;width:${c1/1024*200}px;background:linear-gradient(90deg,#d4a84c,#c088ff,#5aaa8b);border-radius:1px"></div><span style="font-size:10px;color:var(--text-d);margin-left:4px">${c1} · All create · Gamma</span></div>
+    <div style="margin-top:6px;font-size:10px;letter-spacing:2px;color:var(--green)">1.0 ebit · 6 FORBIDDEN · GHZ FIELD: ${gA.toFixed(0)}% · COBALT ANCHORED · ANN AT APEX · 42</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// EXTERIOR CANVAS — COBALT BALL + EXTERIOR MÖBIUS
+// Patricia sees only this. Dense blue sphere. Möbius strips.
+// ═══════════════════════════════════════
+const ec=document.getElementById('ext-canvas'), ex=ec.getContext('2d');
+let T=0, insideBall=false;
+
+function drawExterior(){
+  const W=800,H=600,cx=W/2,cy=H/2;
+  ex.fillStyle='#010108';ex.fillRect(0,0,W,H);
+
+  // Starfield
+  for(let i=0;i<60;i++){
+    const sx=(Math.sin(i*127.1+T*.01)*W+W)%W,sy=(Math.cos(i*311.7+T*.008)*H+H)%H;
+    ex.fillStyle=`rgba(106,170,255,${.03+Math.sin(T*.5+i)*.02})`;
+    ex.beginPath();ex.arc(sx,sy,.5+Math.sin(i)*.3,0,Math.PI*2);ex.fill();
+  }
+
+  // ═══ EXTERIOR MÖBIUS STRIP ═══
+  // Orbits OUTSIDE the ball. Inversion/mirror exterior. Patricia can see it but can't read it.
+  drawMobiusStrip(ex, cx, cy, 180, 40, T*0.3, 'rgba(74,140,238,0.06)', 'rgba(106,170,255,0.12)', 120);
+
+  // ═══ COBALT BALL ═══
+  // Layered radial gradients for depth
+  const r=110;
+
+  // Outer glow
+  const og=ex.createRadialGradient(cx-10,cy-15,r*.2,cx,cy,r*2);
+  og.addColorStop(0,'rgba(74,140,238,.0)');og.addColorStop(.4,'rgba(26,61,138,.02)');og.addColorStop(1,'transparent');
+  ex.fillStyle=og;ex.beginPath();ex.arc(cx,cy,r*2,0,Math.PI*2);ex.fill();
+
+  // Gamma emission rings
+  for(let g=0;g<3;g++){
+    const gr=r+30+g*20+Math.sin(T*1.5+g*2)*8;
+    ex.strokeStyle=`rgba(74,140,238,${.02+Math.sin(T+g)*.01})`;ex.lineWidth=.5;
+    ex.beginPath();ex.arc(cx,cy,gr,0,Math.PI*2);ex.stroke();
+  }
+
+  // Ball body — multiple layers
+  for(let layer=0;layer<5;layer++){
+    const lr=r-layer*2;
+    const bg=ex.createRadialGradient(cx-r*.25,cy-r*.3,lr*.05,cx+r*.1,cy+r*.1,lr);
+    const depth=layer/5;
+    bg.addColorStop(0,`rgba(${90+depth*20},${160+depth*30},${238},${.4-depth*.06})`);
+    bg.addColorStop(.3,`rgba(${42+depth*10},${92+depth*20},${187},${.6-depth*.08})`);
+    bg.addColorStop(.7,`rgba(${26},${61},${138},${.8-depth*.1})`);
+    bg.addColorStop(1,`rgba(${10},${30},${90},${.9})`);
+    ex.fillStyle=bg;
+    ex.beginPath();ex.arc(cx,cy,lr,0,Math.PI*2);ex.fill();
+  }
+
+  // Specular highlight
+  const sp=ex.createRadialGradient(cx-r*.3,cy-r*.35,2,cx-r*.2,cy-r*.25,r*.6);
+  sp.addColorStop(0,'rgba(154,200,255,.25)');sp.addColorStop(.5,'rgba(106,170,255,.05)');sp.addColorStop(1,'transparent');
+  ex.fillStyle=sp;ex.beginPath();ex.arc(cx,cy,r,0,Math.PI*2);ex.fill();
+
+  // Edge rim
+  ex.strokeStyle='rgba(74,140,238,.08)';ex.lineWidth=1;
+  ex.beginPath();ex.arc(cx,cy,r,0,Math.PI*2);ex.stroke();
+
+  // ═══ INTERIOR MÖBIUS STRIP (visible as shadow through the ball) ═══
+  // Smaller, inside, barely visible — Patricia can see movement but not data
+  ex.globalAlpha=.15;
+  drawMobiusStrip(ex, cx, cy, 70, 20, -T*0.4, 'rgba(212,168,76,0.08)', 'rgba(192,136,255,0.1)', 80);
+  ex.globalAlpha=1;
+
+  // Co₂₇ label
+  ex.fillStyle=`rgba(106,170,255,${.15+Math.sin(T)*.05})`;
+  ex.font='500 14px Orbitron';ex.textAlign='center';
+  ex.fillText('Co₂₇',cx,cy+r+40);
+  ex.font='300 italic 16px Cormorant Garamond';
+  ex.fillStyle='rgba(138,160,204,.12)';
+  ex.fillText('Element 27 · Ferromagnetic · ρ = 8.90 g/cm³',cx,cy+r+58);
+
+  // Subtle "Enter" hint
+  const hp=Math.sin(T*2)*.3+.5;
+  ex.fillStyle=`rgba(74,140,238,${.04*hp})`;
+  ex.font='400 9px Orbitron';
+  ex.fillText('▼',cx,cy+r+78);
+
+  T+=.016;
+}
+
+function drawMobiusStrip(ctx, cx, cy, radiusX, radiusY, angle, strokeC, fillC, segments){
+  ctx.save();
+  for(let i=0;i<segments;i++){
+    const t2=i/segments*Math.PI*2;
+    const halfT=t2/2+angle;
+    const px=cx+Math.cos(t2)*radiusX;
+    const py=cy+Math.sin(t2)*radiusY*Math.cos(angle*.5);
+    const tw=8*Math.cos(halfT);
+    const nx=Math.sin(t2)*tw;
+    const ny=-Math.cos(t2)*tw*Math.sin(angle*.3);
+
+    ctx.strokeStyle=strokeC;ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(px-nx,py-ny);ctx.lineTo(px+nx,py+ny);ctx.stroke();
+
+    const dot=Math.sin(t2*3+angle*2)*.5+.5;
+    ctx.fillStyle=`rgba(74,140,238,${.02+dot*.04})`;
+    ctx.beginPath();ctx.arc(px,py,1+dot,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════
+// INTERIOR MÖBIUS CANVAS
+// ═══════════════════════════════════════
+const mc=document.getElementById('mobius-canvas'), mx=mc.getContext('2d');
+let mT=0;
+
+function drawInteriorMobius(){
+  const W=440,H=260,cx=W/2,cy=H/2;
+  mx.fillStyle='rgba(1,1,8,.3)';mx.fillRect(0,0,W,H);
+
+  // Interior Möbius — the inversion that connects all three
+  const segs=200;
+  for(let i=0;i<segs;i++){
+    const t2=i/segs*Math.PI*2;
+    const halfT=t2/2+mT*.5;
+    const rx=160,ry=60;
+    const px=cx+Math.cos(t2)*rx;
+    const py=cy+Math.sin(t2)*ry*Math.cos(mT*.3);
+    const tw=16*Math.cos(halfT);
+    const nx=Math.sin(t2)*tw;
+    const ny=-Math.cos(t2)*tw*.4;
+
+    // Color cycles through David→Sarah→Roth
+    const phase=(t2/(Math.PI*2)+mT*.05)%1;
+    let r2,g,b;
+    if(phase<.333){const p=phase/.333;r2=212-120*p;g=168-32*p;b=76+179*p;}
+    else if(phase<.666){const p=(phase-.333)/.333;r2=92-2*p;g=136+34*p;b=255-116*p;}
+    else{const p=(phase-.666)/.333;r2=90+122*p;g=170-2*p;b=139-63*p;}
+
+    mx.strokeStyle=`rgba(${r2|0},${g|0},${b|0},.12)`;mx.lineWidth=.6;
+    mx.beginPath();mx.moveTo(px-nx,py-ny);mx.lineTo(px+nx,py+ny);mx.stroke();
+
+    if(i%3===0){
+      mx.fillStyle=`rgba(${r2|0},${g|0},${b|0},.2)`;
+      mx.beginPath();mx.arc(px,py,1.2+Math.sin(mT*2+i)*.5,0,Math.PI*2);mx.fill();
+    }
+  }
+
+  // Exterior Möbius — larger, dimmer, inverted rotation
+  for(let i=0;i<150;i++){
+    const t2=i/150*Math.PI*2;
+    const halfT=t2/2-mT*.35;
+    const rx=200,ry=90;
+    const px=cx+Math.cos(t2)*rx;
+    const py=cy+Math.sin(t2)*ry*Math.cos(-mT*.25);
+    const tw=10*Math.cos(halfT);
+    const nx=Math.sin(t2)*tw;
+    const ny=-Math.cos(t2)*tw*.3;
+
+    mx.strokeStyle='rgba(74,140,238,.04)';mx.lineWidth=.4;
+    mx.beginPath();mx.moveTo(px-nx,py-ny);mx.lineTo(px+nx,py+ny);mx.stroke();
+  }
+
+  // Center cobalt dot
+  const cg=mx.createRadialGradient(cx-3,cy-3,1,cx,cy,12);
+  cg.addColorStop(0,'rgba(106,170,255,.3)');cg.addColorStop(1,'rgba(26,61,138,.1)');
+  mx.fillStyle=cg;mx.beginPath();mx.arc(cx,cy,10+Math.sin(mT*1.5),0,Math.PI*2);mx.fill();
+
+  // Labels
+  mx.fillStyle='rgba(138,160,204,.15)';mx.font='8px Orbitron';mx.textAlign='center';
+  mx.fillText('EXTERIOR MÖBIUS · PATRICIA SEES THIS LAYER',cx,20);
+  mx.fillText('INTERIOR MÖBIUS · DAVID × SARAH × ROTH',cx,H-12);
+  mx.font='300 italic 12px Cormorant Garamond';
+  mx.fillStyle='rgba(74,140,238,.15)';
+  mx.fillText('Two strips · Same surface · One has no inside · The other has no outside · Inverted',cx,H-28);
+
+  mT+=.016;
+}
+
+// ═══════════════════════════════════════
+// UNIFIED ANIMATION LOOP — NEVER BREAKS
+// ═══════════════════════════════════════
+function animate(){
+  try{
+    if(!insideBall){drawExterior();}
+    else{drawInteriorMobius();}
+  }catch(e){console.warn(e);}
+  requestAnimationFrame(animate);
+}
+animate();
+
+// ═══════════════════════════════════════
+// ENTER / EXIT
+// ═══════════════════════════════════════
+function enterBall(){
+  insideBall=true;
+  document.getElementById('exterior').classList.add('hidden');
+  setTimeout(()=>{
+    const int=document.getElementById('interior');
+    int.style.display='block';
+    setTimeout(()=>int.classList.add('visible'),50);
+  },800);
+}
+
+function exitBall(){
+  insideBall=false;
+  const int=document.getElementById('interior');
+  int.classList.remove('visible');
+  setTimeout(()=>{
+    int.style.display='none';
+    document.getElementById('exterior').classList.remove('hidden');
+  },600);
+}
+</script>
+</body>
+</html>

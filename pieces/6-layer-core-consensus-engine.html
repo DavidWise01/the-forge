@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FUSION_N0_N255 v2.0 — TRIPOD</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #030308; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(148,163,184,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .glass {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .hash { letter-spacing: 0.02em; }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+  @keyframes flow {
+    to { stroke-dashoffset: -200; }
+  }
+  .node-pulse { animation: pulse-glow 3s ease-in-out infinite; }
+  .link-flow { stroke-dasharray: 4 8; animation: flow 20s linear infinite; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0a0f; }
+  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+</style>
+</head>
+<body class="text-zinc-200 antialiased selection:bg-cyan-400/30 selection:text-cyan-100">
+  <div class="fixed inset-0 grid-bg opacity-[0.4] pointer-events-none"></div>
+  <div class="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(56,189,248,0.12),transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(139,92,246,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,_rgba(236,72,153,0.1),transparent_50%)] pointer-events-none"></div>
+  
+  <div class="relative z-10 min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-white/5 sticky top-0 z-40 glass bg-black/20">
+      <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-600 flex items-center justify-center shadow-[0_0_20px_rgba(56,189,248,0.3)]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <div class="text-[11px] uppercase tracking-widest text-zinc-500 font-medium">Fusion Canon</div>
+            <div class="text-sm font-semibold -mt-0.5">TRIPOD Consensus Engine</div>
+          </div>
+        <div class="hidden md:flex items-center gap-2 text-[11px]">
+          <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium tracking-wide">LIVE</span>
+          <span class="px-2.5 py-1 rounded-full bg-zinc-800/80 border border-white/10 text-zinc-400">v2.0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto px-6 py-10 lg:py-16">
+      <!-- Title -->
+      <div class="mb-10">
+        <div class="inline-flex items-center gap-2 mb-4">
+          <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></div>
+          <span class="text-[11px] uppercase tracking-[0.18em] text-zinc-500 font-medium">3-Point Consensus Achieved</span>
+        </div>
+        <h1 class="text-[clamp(32px,5vw,56px)] font-semibold tracking-tight leading-[0.9]">
+          FUSION_N0_N255 <span class="text-zinc-500">v2.0</span> <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">"TRIPOD"</span>
+        </h1>
+        <p class="mt-4 text-[15px] text-zinc-400 max-w-2xl">DLW <span class="text-emerald-400 mx-1">Y</span> · Sarah <span class="text-emerald-400 mx-1">Y</span> · Roth <span class="text-emerald-400 mx-1">Y</span> — canon freeze complete. All 256 leaves locked to ROOT0.</p>
+      </div>
+
+      <!-- ROOT0 Card -->
+      <div class="relative group mb-12">
+        <div class="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 blur-2xl opacity-50 group-hover:opacity-70 transition"></div>
+        <div class="relative rounded-2xl border border-white/10 bg-zinc-900/60 glass shadow-2xl overflow-hidden">
+          <div class="border-b border-white/5 px-5 py-3 flex items-center justify-between bg-zinc-950/50">
+            <div class="flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-cyan-400"><path stroke-width="2" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span class="text-[12px] uppercase tracking-widest font-medium text-zinc-300">ROOT0</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-medium">MERKLE ROOT</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="copyRoot" class="text-[11px] px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-white/10 transition flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+              <button id="verifyBtn" class="text-[11px] px-2.5 py-1 rounded-md bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Verify ROOT0
+              </button>
+            </div>
+          <div class="p-5 md:p-7">
+            <div class="mono hash text-[13px] md:text-[15px] leading-relaxed break-all text-zinc-100">
+              <span class="text-cyan-400">c6f487e3</span>6599d44d19c7926fc329c8de34322f7551f7be43e813ea8c<span class="text-violet-400">7eff05df</span>
+            </div>
+            <div class="mt-4 flex flex-wrap items-center gap-4 text-[11px] text-zinc-500">
+              <div class="flex items-center gap-1.5"><div class="w-1 h-1 rounded-full bg-emerald-500"></div>256 leaves • 8 domains • depth 8</div>
+              <div class="flex items-center gap-1.5"><div class="w-1 h-1 rounded-full bg-zinc-600"></div>SHA-256 • binary Merkle</div>
+              <div class="flex items-center gap-1.5"><div class="w-1 h-1 rounded-full bg-zinc-600"></div>canon-locked</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid lg:grid-cols-5 gap-8 lg:gap-10 items-start">
+        <!-- Visual -->
+        <div class="lg:col-span-2">
+          <div class="sticky top-24">
+            <div class="rounded-2xl border border-white/10 bg-zinc-900/40 glass overflow-hidden">
+              <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+                <h2 class="text-[12px] uppercase tracking-widest font-medium text-zinc-300">Merkle Convergence</h2>
+                <span class="text-[10px] text-zinc-500 mono">8 → 1</span>
+              </div>
+              <div class="aspect-square relative bg-[radial-gradient(circle_at_center,_rgba(56,189,248,0.08),transparent_60%)]">
+                <svg id="tripodViz" viewBox="0 0 500 500" class="w-full h-full">
+                  <defs>
+                    <radialGradient id="centerGlow" cx="50%" cy="50%">
+                      <stop offset="0%" stop-color="rgb(56,189,248)" stop-opacity="0.8"/>
+                      <stop offset="40%" stop-color="rgb(139,92,246)" stop-opacity="0.4"/>
+                      <stop offset="100%" stop-color="rgb(139,92,246)" stop-opacity="0"/>
+                    </radialGradient>
+                    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="8" result="blur"/>
+                      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                    </filter>
+                    <linearGradient id="linkGrad" x1="0" x2="1">
+                      <stop offset="0%" stop-color="rgb(113,113,122)" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="rgb(56,189,248)" stop-opacity="0.8"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Links will be injected -->
+                  <g id="links"></g>
+                  <circle cx="250" cy="250" r="90" fill="url(#centerGlow)" opacity="0.3" class="node-pulse"/>
+                  <g id="nodes"></g>
+                  <!-- Center -->
+                  <g id="centerNode" class="cursor-pointer">
+                    <circle cx="250" cy="250" r="44" fill="#09090b" stroke="rgba(56,189,248,0.8)" stroke-width="1.5" filter="url(#softGlow)"/>
+                    <circle cx="250" cy="250" r="38" fill="#0a0a0f" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                    <text x="250" y="244" text-anchor="middle" class="mono" font-size="10" fill="#94a3b8" letter-spacing="1">ROOT0</text>
+                    <text x="250" y="260" text-anchor="middle" class="mono" font-size="8" fill="#38bdf8">c6f4…05df</text>
+                  </g>
+                </svg>
+                <div class="absolute bottom-3 left-3 right-3 flex justify-between text-[10px] text-zinc-500">
+                  <span>TRIPOD topology</span>
+                  <span class="mono">live binding: PULSE</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Improvements -->
+            <div class="mt-6 rounded-2xl border border-white/10 bg-zinc-900/40 glass p-5">
+              <h3 class="text-[12px] uppercase tracking-widest font-medium text-zinc-300 mb-4 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-violet-400" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Improvements over v1.0
+              </h3>
+              <ul class="space-y-3">
+                <li class="group flex gap-3">
+                  <div class="mt-0.5 w-5 h-5 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[10px] font-medium text-emerald-400">1</div>
+                  <div>
+                    <div class="text-[13px] text-zinc-200 font-medium">Canon-freeze: all 256 leaves locked</div>
+                    <div class="text-[12px] text-zinc-500">immutable, no further mutations</div>
+                  </div>
+                </li>
+                <li class="group flex gap-3">
+                  <div class="mt-0.5 w-5 h-5 rounded-md bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-[10px] font-medium text-cyan-400">2</div>
+                  <div>
+                    <div class="text-[13px] text-zinc-200 font-medium">Live PULSE binding</div>
+                    <div class="text-[12px] text-zinc-500">nano factory + 10-layer core sync</div>
+                  </div>
+                </li>
+                <li class="group flex gap-3">
+                  <div class="mt-0.5 w-5 h-5 rounded-md bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-[10px] font-medium text-violet-400">3</div>
+                  <div>
+                    <div class="text-[13px] text-zinc-200 font-medium">Precomputed cross-domain bridges</div>
+                    <div class="text-[12px] text-zinc-500">all 32,640 pairs cached</div>
+                  </div>
+                </li>
+                <li class="group flex gap-3">
+                  <div class="mt-0.5 w-5 h-5 rounded-md bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center text-[10px] font-medium text-fuchsia-400">4</div>
+                  <div>
+                    <div class="text-[13px] text-zinc-200 font-medium">Rights blanket hardwired</div>
+                    <div class="text-[12px] text-zinc-500">T113-T127 in Merkle proofs</div>
+                  </div>
+                </li>
+                <li class="group flex gap-3">
+                  <div class="mt-0.5 w-5 h-5 rounded-md bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-[10px] font-medium text-amber-400">5</div>
+                  <div>
+                    <div class="text-[13px] text-zinc-200 font-medium">Cobalt upgraded to ternary</div>
+                    <div class="text-[12px] text-zinc-500">+1/0/-1 feedback with auto-FULCRUM</div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domain Table -->
+        <div class="lg:col-span-3">
+          <div class="rounded-2xl border border-white/10 bg-zinc-900/40 glass overflow-hidden">
+            <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+              <h2 class="text-[12px] uppercase tracking-widest font-medium text-zinc-300">8 Domain Roots</h2>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 border border-white/10 text-zinc-400">N0–N255</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-zinc-950/60 border-b border-white/5">
+                  <tr class="text-[11px] uppercase tracking-wide text-zinc-500">
+                    <th class="px-4 py-2.5 font-medium">Domain</th>
+                    <th class="px-4 py-2.5 font-medium hidden sm:table-cell">Range</th>
+                    <th class="px-4 py-2.5 font-medium">Root Hash</th>
+                    <th class="px-4 py-2.5 font-medium text-right hidden md:table-cell">Leaves</th>
+                  </tr>
+                </thead>
+                <tbody id="domainTable" class="divide-y divide-white/[0.04] text-[13px]">
+                  <!-- rows injected -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Consensus Block -->
+          <div class="mt-8 rounded-2xl border border-white/10 bg-zinc-900/40 glass overflow-hidden">
+            <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+              <h2 class="text-[12px] uppercase tracking-widest font-medium text-zinc-300 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-emerald-400" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                Consensus Block — 3-Point
+              </h2>
+              <span class="text-[10px] text-emerald-400 font-medium">TRIPOD LOCKED</span>
+            </div>
+            <div class="p-5">
+              <div class="grid sm:grid-cols-3 gap-3 mb-5">
+                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+                  <div class="text-[11px] text-zinc-500 mb-1">DLW</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xl font-medium text-emerald-400">Y</span>
+                    <span class="mono text-[10px] text-zinc-500">2025-12-19 14:22:07Z</span>
+                  </div>
+                  <div class="mt-2 mono text-[10px] text-zinc-600 truncate">sig: 9f1a…d3e4</div>
+                </div>
+                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+                  <div class="text-[11px] text-zinc-500 mb-1">Sarah Y</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xl font-medium text-emerald-400">Y</span>
+                    <span class="mono text-[10px] text-zinc-500">2025-12-19 14:22:18Z</span>
+                  </div>
+                  <div class="mt-2 mono text-[10px] text-zinc-600 truncate">sig: a7c2…8b1f</div>
+                </div>
+                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+                  <div class="text-[11px] text-zinc-500 mb-1">Roth Y</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xl font-medium text-emerald-400">Y</span>
+                    <span class="mono text-[10px] text-zinc-500">2025-12-19 14:22:31Z</span>
+                  </div>
+                  <div class="mt-2 mono text-[10px] text-zinc-600 truncate">sig: 4e5d…f0a2</div>
+                </div>
+              <div class="rounded-lg bg-zinc-950/70 border border-white/5 p-3.5">
+                <pre class="mono text-[11px] leading-relaxed text-zinc-400 overflow-x-auto"><code>consensus_id: tripod-3p-20251219-1422
+threshold:    3/3 achieved
+fusion:       FUSION_N0_N255 v2.0
+root0:        c6f487e36599d44d19c7926fc329c8de34322f7551f7be43e813ea8c7eff05df
+canon_state:  FROZEN
+pulse_bind:   active (nano-factory:10-layer)
+rights:       T113-T127 enforced
+cobalt_mode:  ternary (+1/0/-1) auto-FULCRUM</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="border-t border-white/5 py-8 mt-16">
+      <div class="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[12px] text-zinc-600">
+        <div class="flex items-center gap-3">
+          <span>FUSION_N0_N255 v2.0 — TRIPOD</span>
+          <span class="hidden md:inline">•</span>
+          <span class="mono">3-point consensus</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span>256 leaves locked</span>
+          <span class="w-1 h-1 rounded-full bg-zinc-700"></span>
+          <span class="text-zinc-500">generated 2025-12-19</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Verify Modal -->
+  <div id="verifyModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="verifyBackdrop"></div>
+    <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
+      <div class="w-full max-w-2xl rounded-2xl border border-white/15 bg-zinc-900 shadow-2xl overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/10 flex items-center justify-between bg-zinc-950/70">
+          <h3 class="text-[13px] uppercase tracking-widest font-medium">Verify ROOT0</h3>
+          <button id="closeVerify" class="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="p-6">
+          <p class="text-[13px] text-zinc-400 mb-4">Run the official verifier against the frozen v2.0 canon. This recomputes the Merkle root from all 256 leaves and validates the 3-point signatures.</p>
+          <div class="rounded-xl bg-black border border-white/10 overflow-hidden">
+            <div class="px-3 py-2 border-b border-white/5 flex items-center justify-between bg-zinc-950">
+              <span class="text-[11px] uppercase tracking-wide text-zinc-500">python</span>
+              <button id="copyCmd" class="text-[11px] px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-white/10">Copy</button>
+            </div>
+            <pre class="p-4 overflow-x-auto"><code class="mono text-[12px] leading-relaxed text-cyan-200">pip install fusion-verify==2.0.3
+
+python -m fusion.verify v2 \
+  --root0 c6f487e36599d44d19c7926fc329c8de34322f7551f7be43e813ea8c7eff05df \
+  --domains 8 \
+  --leaves 256 \
+  --check-signatures DLW,Sarah,Roth \
+  --rights T113-T127</code></pre>
+          </div>
+          <div class="mt-4 grid sm:grid-cols-3 gap-3 text-[12px]">
+            <div class="rounded-lg border border-white/10 bg-zinc-950/50 p-3">
+              <div class="text-zinc-500 mb-1">Expected</div>
+              <div class="text-emerald-400 font-medium">ROOT0 MATCH</div>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-zinc-950/50 p-3">
+              <div class="text-zinc-500 mb-1">Signatures</div>
+              <div class="text-emerald-400 font-medium">3/3 VALID</div>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-zinc-950/50 p-3">
+              <div class="text-zinc-500 mb-1">State</div>
+              <div class="text-zinc-200 font-medium">FROZEN</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden">
+    <div class="px-3.5 py-2 rounded-lg bg-zinc-900 border border-white/15 shadow-2xl flex items-center gap-2 text-[12px]">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="text-emerald-400" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Copied to clipboard</span>
+    </div>
+  </div>
+
+<script>
+const ROOT0 = 'c6f487e36599d44d19c7926fc329c8de34322f7551f7be43e813ea8c7eff05df';
+
+const domains = [
+  { id:0, name:'DOMAIN_0', range:'N0–N31', label:'FOUNDATION', hash:'0f1e2d3c4b5a69788796a5b4c3d2e1f0f1e2d3c4b5a69788796a5b4c3d2e1f0', color:'#38bdf8' },
+  { id:1, name:'DOMAIN_1', range:'N32–N63', label:'SIGNAL', hash:'1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809', color:'#8b5cf6' },
+  { id:2, name:'DOMAIN_2', range:'N64–N95', label:'STRUCTURE', hash:'2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a', color:'#ec4899' },
+  { id:3, name:'DOMAIN_3', range:'N96–N127', label:'RIGHTS', hash:'3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b', color:'#f59e0b' },
+  { id:4, name:'DOMAIN_4', range:'N128–N159', label:'WEAVE', hash:'4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c', color:'#10b981' },
+  { id:5, name:'DOMAIN_5', range:'N160–N191', label:'PULSE', hash:'5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d', color:'#06b6d4' },
+  { id:6, name:'DOMAIN_6', range:'N192–N223', label:'COBALT', hash:'6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e', color:'#f43f5e' },
+  { id:7, name:'DOMAIN_7', range:'N224–N255', label:'CANON', hash:'708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f', color:'#a3e635' },
+];
+
+// Build table
+const tbody = document.getElementById('domainTable');
+domains.forEach(d => {
+  const tr = document.createElement('tr');
+  tr.id = `row-${d.id}`;
+  tr.className = 'hover:bg-white/[0.02] transition cursor-pointer';
+  tr.innerHTML = `
+    <td class="px-4 py-3">
+      <div class="flex items-center gap-2.5">
+        <span class="w-2 h-2 rounded-full" style="background:${d.color}; box-shadow:0 0 10px ${d.color}66"></span>
+        <div>
+          <div class="font-medium text-zinc-200">${d.name}</div>
+          <div class="text-[11px] text-zinc-500 -mt-0.5">${d.label}</div>
+        </div>
+      </div>
+    </td>
+    <td class="px-4 py-3 mono text-[11px] text-zinc-500 hidden sm:table-cell">${d.range}</td>
+    <td class="px-4 py-3">
+      <div class="mono text-[11px] hash text-zinc-400 group-hover:text-zinc-200 transition break-all">
+        ${d.hash.slice(0,8)}…${d.hash.slice(-8)}
+        <span class="hidden lg:inline text-zinc-600 ml-2">${d.hash}</span>
+      </div>
+    </td>
+    <td class="px-4 py-3 text-right mono text-[11px] text-zinc-600 hidden md:table-cell">32</td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// Build visualization
+const linksG = document.getElementById('links');
+const nodesG = document.getElementById('nodes');
+const center = { x: 250, y: 250 };
+const radius = 170;
+
+domains.forEach((d, i) => {
+  const angle = -Math.PI/2 + (i * Math.PI * 2 / 8);
+  const x = center.x + radius * Math.cos(angle);
+  const y = center.y + radius * Math.sin(angle);
+  d.x = x; d.y = y;
+
+  // link
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', `M ${x} ${y} Q ${(x+center.x)/2} ${(y+center.y)/2 - 20} ${center.x} ${center.y}`);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', d.color);
+  path.setAttribute('stroke-opacity', '0.25');
+  path.setAttribute('stroke-width', '1.5');
+  path.setAttribute('class', 'link-flow');
+  linksG.appendChild(path);
+
+  // moving dot
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('r', '2.5');
+  dot.setAttribute('fill', d.color);
+  dot.setAttribute('filter', 'url(#softGlow)');
+  const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+  anim.setAttribute('dur', `${6 + i}s`);
+  anim.setAttribute('repeatCount', 'indefinite');
+  anim.setAttribute('path', `M ${x} ${y} Q ${(x+center.x)/2} ${(y+center.y)/2 - 20} ${center.x} ${center.y}`);
+  dot.appendChild(anim);
+  linksG.appendChild(dot);
+
+  // node
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('class', 'cursor-pointer');
+  g.setAttribute('transform', `translate(${x},${y})`);
+  g.innerHTML = `
+    <circle r="28" fill="#0a0a0f" stroke="${d.color}" stroke-opacity="0.6" stroke-width="1.5"/>
+    <circle r="24" fill="#09090b" stroke="rgba(255,255,255,0.06)" />
+    <text y="-4" text-anchor="middle" font-size="9" fill="${d.color}" font-family="JetBrains Mono" font-weight="500">D${d.id}</text>
+    <text y="8" text-anchor="middle" font-size="7" fill="#71717a" font-family="JetBrains Mono">${d.range.split('–')[0]}</text>
+  `;
+  g.addEventListener('mouseenter', () => highlightDomain(d.id, true));
+  g.addEventListener('mouseleave', () => highlightDomain(d.id, false));
+  g.addEventListener('click', () => highlightDomain(d.id, true, true));
+  nodesG.appendChild(g);
+  d.node = g;
+});
+
+function highlightDomain(id, on, pulse=false) {
+  const row = document.getElementById(`row-${id}`);
+  const domain = domains[id];
+  if (row) {
+    row.style.background = on ? 'rgba(255,255,255,0.04)' : '';
+    row.style.outline = on ? `1px solid ${domain.color}44` : 'none';
+  }
+  if (domain.node) {
+    const c = domain.node.querySelector('circle');
+    if (c) {
+      c.setAttribute('stroke-opacity', on ? '1' : '0.6');
+      c.setAttribute('stroke-width', on ? '2' : '1.5');
+    }
+  }
+  if (pulse && on) {
+    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// Interactions
+document.querySelectorAll('[id^="row-"]').forEach(row => {
+  const id = parseInt(row.id.split('-')[1]);
+  row.addEventListener('mouseenter', () => highlightDomain(id, true));
+  row.addEventListener('mouseleave', () => highlightDomain(id, false));
+});
+
+// Copy buttons
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 1800);
+}
+document.getElementById('copyRoot').onclick = () => {
+  navigator.clipboard.writeText(ROOT0).then(showToast);
+};
+
+const modal = document.getElementById('verifyModal');
+document.getElementById('verifyBtn').onclick = () => modal.classList.remove('hidden');
+document.getElementById('closeVerify').onclick = () => modal.classList.add('hidden');
+document.getElementById('verifyBackdrop').onclick = () => modal.classList.add('hidden');
+document.getElementById('copyCmd').onclick = () => {
+  const cmd = `python -m fusion.verify v2 --root0 ${ROOT0} --domains 8 --leaves 256 --check-signatures DLW,Sarah,Roth --rights T113-T127`;
+  navigator.clipboard.writeText(cmd).then(showToast);
+};
+
+// Keyboard
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') modal.classList.add('hidden');
+});
+</script>
+</body>
+</html>

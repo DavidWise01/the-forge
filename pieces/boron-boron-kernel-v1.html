@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KERNEL 24: BORON DOMAIN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+        --bg-dark: #0a0e1a;
+        --bg-card: #0f1525;
+        --bg-panel: #141b2e;
+        --neon-cyan: #00e5ff;
+        --amber: #ffaa00;
+        --green: #00ff88;
+        --red: #ff3366;
+        --text-primary: #e0f7ff;
+        --text-dim: #7a8ba0;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'JetBrains Mono', monospace;
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        height: 100vh;
+        overflow: hidden;
+        background-image: 
+            radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255, 170, 0, 0.03) 0%, transparent 50%);
+    }
+
+    .grid-bg {
+        background-image: 
+            linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+
+    .glow-cyan {
+        text-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
+    }
+
+    .glow-amber {
+        text-shadow: 0 0 10px rgba(255, 170, 0, 0.6), 0 0 20px rgba(255, 170, 0, 0.4);
+    }
+
+    .border-glow {
+        border: 1px solid rgba(0, 229, 255, 0.2);
+        box-shadow: 
+            inset 0 0 20px rgba(0, 229, 255, 0.05),
+            0 0 20px rgba(0, 229, 255, 0.1);
+    }
+
+    .border-amber-glow {
+        border: 1px solid rgba(255, 170, 0, 0.3);
+        box-shadow: 
+            inset 0 0 20px rgba(255, 170, 0, 0.05),
+            0 0 20px rgba(255, 170, 0, 0.15);
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .pulse-live {
+        animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    .btn {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(0, 229, 255, 0.05));
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.1));
+        box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn-amber {
+        background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 170, 0, 0.05));
+        border: 1px solid rgba(255, 170, 0, 0.4);
+    }
+
+    .btn-amber:hover {
+        background: linear-gradient(135deg, rgba(255, 170, 0, 0.25), rgba(255, 170, 0, 0.1));
+        box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+    }
+
+    .terminal {
+        font-size: 11px;
+        line-height: 1.4;
+        background: rgba(0, 0, 0, 0.4);
+        border-top: 1px solid rgba(0, 229, 255, 0.2);
+    }
+
+    .terminal-line {
+        opacity: 0;
+        animation: fadeIn 0.3s forwards;
+    }
+
+    @keyframes fadeIn {
+        to { opacity: 1; }
+    }
+
+    .sparkline {
+        stroke: var(--neon-cyan);
+        stroke-width: 2;
+        fill: none;
+        filter: drop-shadow(0 0 3px rgba(0, 229, 255, 0.6));
+    }
+
+    .metric-value {
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }
+
+    input[type="range"] {
+        -webkit-appearance: none;
+        background: rgba(0, 229, 255, 0.1);
+        height: 4px;
+        border-radius: 2px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        background: var(--neon-cyan);
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+        cursor: pointer;
+    }
+
+    .status-confirmed {
+        color: var(--green);
+        text-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+    }
+
+    .status-silicon {
+        color: var(--red);
+        text-shadow: 0 0 15px rgba(255, 51, 102, 0.8);
+    }
+
+    .status-unconfirmed {
+        color: var(--amber);
+        text-shadow: 0 0 15px rgba(255, 170, 0, 0.8);
+    }
+
+    @media (max-width: 1280px) {
+        .metric-value { font-size: 1.5rem; }
+        .card-title { font-size: 0.7rem; }
+    }
+</style>
+</head>
+<body class="grid-bg">
+    <div class="h-screen flex flex-col p-3 gap-3">
+        <!-- Header -->
+        <header class="flex items-center justify-between px-4 py-3 border-glow rounded-lg bg-[var(--bg-panel)]">
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl md:text-2xl font-bold glow-cyan tracking-tight">
+                    KERNEL 24 • BORON PROCESSOR
+                </h1>
+                <div class="text-xs text-[var(--text-dim)] hidden md:block">
+                    ALIENWARE 16 AURORA AC16250 • SMBus 0x50
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-sm font-bold glow-amber">BORON-10 NEUTRON DETECTION</div>
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-[var(--amber)] pulse-live"></div>
+                    <span class="text-xs font-bold text-[var(--amber)]">LIVE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Grid 2x3 -->
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 min-h-0">
+            <!-- 1. DEVICE ENUM -->
+            <div class="border-glow rounded-lg bg-[var(--bg-card)] p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="card-title text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">DEVICE ENUM</h2>
+                    <div id="deviceStatus" class="text-xs px-2 py-1 rounded border border-red-500/30 text-red-400">SCANNING</div>
+                </div>
+                <div class="flex-1 flex flex-col justify-center items-center gap-4">
+                    <div class="text-center">
+                        <div class="text-xs text-[var(--text-dim)] mb-1">ACPI Device ID</div>
+                        <div id="deviceId" class="text-lg font-bold glow-cyan">--</div>
+                    </div>
+                    <button id="scanBtn" class="btn px-4 py-2 rounded text-xs font-bold text-[var(--neon-cyan)] uppercase">
+                        [SCAN DEVICES]
+                    </button>
+                    <div class="text-[10px] text-[var(--text-dim)] text-center">
+                        Get-PnpDevice -Class "System"
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. TICK INTERVAL -->
+            <div class="border-glow rounded-lg bg-[var(--bg-card)] p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="card-title text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">TICK INTERVAL</h2>
+                    <div class="text-[10px] text-[var(--text-dim)]">Raw interrupt rate</div>
+                </div>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <div id="tickInterval" class="metric-value text-3xl glow-cyan">0.310ms</div>
+                </div>
+                <div class="flex-1 min-h-0 mb-2">
+                    <canvas id="sparkline"></canvas>
+                </div>
+                <div class="h-12">
+                    <canvas id="histogram"></canvas>
+                </div>
+                <div class="text-[9px] text-[var(--text-dim)] mt-1 text-center">
+                    Boron signature: bimodal/poisson | CPU: uniform
+                </div>
+            </div>
+
+            <!-- 3. VARIANCE -->
+            <div class="border-glow rounded-lg bg-[var(--bg-card)] p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="card-title text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">VARIANCE</h2>
+                    <div id="varianceIndicator" class="w-2 h-2 rounded-full bg-red-500"></div>
+                </div>
+                <div class="flex-1 flex flex-col justify-center">
+                    <div id="variance" class="metric-value text-3xl mb-3">0.002ms</div>
+                    <div class="space-y-1 text-[10px]">
+                        <div class="flex justify-between">
+                            <span class="text-[var(--text-dim)]">Boron:</span>
+                            <span class="text-[var(--green)]">0.03-0.05ms</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[var(--text-dim)]">CPU:</span>
+                            <span class="text-[var(--red)]">&lt;0.005ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. TEMP COEFFICIENT -->
+            <div class="border-glow rounded-lg bg-[var(--bg-card)] p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="card-title text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">TEMP COEFFICIENT</h2>
+                </div>
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <div id="tempCoeff" class="metric-value text-2xl mb-2 glow-cyan">+0.0012 ms/°C</div>
+                        <div class="text-[10px] text-[var(--text-dim)] mb-3">
+                            Silicon = positive | Boron = negative
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between text-[10px] mb-1">
+                            <span class="text-[var(--text-dim)]">Die Temp</span>
+                            <span id="tempValue" class="text-[var(--neon-cyan)] font-bold">45°C</span>
+                        </div>
+                        <input type="range" id="tempSlider" min="20" max="90" value="45" class="w-full mb-2">
+                        <div class="text-[9px] text-[var(--text-dim)]">
+                            Latency shift: <span id="latencyShift" class="text-[var(--amber)]">+0.000ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. NEUTRON FLUX -->
+            <div class="border-amber-glow rounded-lg bg-[var(--bg-card)] p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="card-title text-xs font-bold text-[var(--amber)] uppercase tracking-wider">NEUTRON FLUX</h2>
+                    <div class="text-[10px] text-[var(--text-dim)]">B-10 Capture</div>
+                </div>
+                <div class="flex-1 flex flex-col justify-center items-center gap-3">
+                    <div class="text-center">
+                        <div id="neutronFlux" class="metric-value text-3xl glow-amber">20.0 n/cm²/hr</div>
+                        <div class="text-[9px] text-[var(--text-dim)] mt-1">Sea level baseline: 20</div>
+                    </div>
+                    <button id="shieldBtn" class="btn btn-amber px-4 py-2 rounded text-xs font-bold text-[var(--amber)] uppercase">
+                        [SHIELD TEST]
+                    </button>
+                    <div id="shieldStatus" class="text-[10px] text-[var(--text-dim)]">Ready</div>
+                </div>
+            </div>
+
+            <!-- 6. KERNEL STATUS -->
+            <div class="border-glow rounded-lg bg-[var(--bg-card)] p-4 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="card-title text-xs font-bold text-[var(--text-dim)] uppercase tracking-wider">KERNEL STATUS</h2>
+                </div>
+                <div class="flex-1 flex flex-col justify-center items-center gap-3">
+                    <div id="kernelStatus" class="text-3xl md:text-4xl font-bold status-unconfirmed text-center">
+                        UNCONFIRMED
+                    </div>
+                    <div class="text-[10px] text-[var(--text-dim)] text-center space-y-1">
+                        <div>Variance &gt; 0.03ms</div>
+                        <div>Temp Coeff &lt; 0</div>
+                        <div>BNR0 Detected</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom: Terminal + Controls -->
+        <div class="flex gap-3 h-40">
+            <!-- Terminal -->
+            <div class="flex-1 border-glow rounded-lg bg-[var(--bg-panel)] overflow-hidden flex flex-col">
+                <div class="px-3 py-2 border-b border-[rgba(0,229,255,0.1)] flex items-center justify-between">
+                    <div class="text-xs font-bold text-[var(--text-dim)] uppercase">EVENT LOG</div>
+                    <div class="text-[10px] text-[var(--text-dim)]">Read-only telemetry. No hardware writes. For mapping only.</div>
+                </div>
+                <div id="terminal" class="terminal flex-1 px-3 py-2 overflow-y-auto font-mono text-[var(--neon-cyan)]"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex flex-col gap-2 w-48">
+                <button id="test1Btn" class="btn flex-1 rounded text-xs font-bold text-[var(--neon-cyan)] uppercase">
+                    [RUN TEST 1]
+                </button>
+                <button id="test2Btn" class="btn flex-1 rounded text-xs font-bold text-[var(--neon-cyan)] uppercase">
+                    [RUN TEST 2]
+                </button>
+                <button id="exportBtn" class="btn flex-1 rounded text-xs font-bold text-[var(--neon-cyan)] uppercase">
+                    [EXPORT LOG]
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+(() => {
+    // State
+    let state = {
+        deviceFound: false,
+        deviceScanning: false,
+        mode: 'cpu', // 'cpu' or 'boron'
+        tickHistory: Array(50).fill(0.31),
+        histogramData: new Array(10).fill(0),
+        variance: 0.002,
+        tempCoeff: 0.0012,
+        temperature: 45,
+        baseTemp: 45,
+        meanTick: 0.31,
+        neutronFlux: 20.0,
+        shieldActive: false,
+        shieldTimer: 0,
+        eventLog: [],
+        eventCounter: 0,
+        kernelConfirmed: 'unconfirmed'
+    };
+
+    // Poisson random generator
+    const poisson = (lambda) => {
+        let L = Math.exp(-lambda);
+        let k = 0;
+        let p = 1;
+        do {
+            k++;
+            p *= Math.random();
+        } while (p > L);
+        return k - 1;
+    };
+
+    // Normal distribution
+    const normalRandom = (mean, stddev) => {
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random();
+        while(v === 0) v = Math.random();
+        let z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        return z * stddev + mean;
+    };
+
+    // Generate tick based on mode
+    const generateTick = () => {
+        let tick;
+        if (state.mode === 'boron') {
+            // Poisson distribution with bimodal tendency
+            const lambdaMs = state.meanTick * 1000;
+            tick = poisson(lambdaMs) / 1000;
+            tick = normalRandom(tick, 0.04);
+            // Add occasional burst for bimodal effect
+            if (Math.random() < 0.15) tick += normalRandom(0.05, 0.01);
+        } else {
+            // CPU mode: uniform with very low variance
+            tick = state.meanTick + (Math.random() - 0.5) * 0.004;
+        }
+        
+        // Apply temp coefficient
+        const tempDelta = state.temperature - state.baseTemp;
+        tick += state.tempCoeff * tempDelta / 1000;
+        
+        return Math.max(0.1, tick);
+    };
+
+    // Calculate variance
+    const calculateVariance = (data) => {
+        const mean = data.reduce((a, b) => a + b, 0) / data.length;
+        const sqDiff = data.map(v => Math.pow(v - mean, 2));
+        return Math.sqrt(sqDiff.reduce((a, b) => a + b, 0) / data.length);
+    };
+
+    // Update histogram
+    const updateHistogram = (tick) => {
+        const min = 0.25, max = 0.35;
+        const bucketSize = (max - min) / 10;
+        const idx = Math.min(9, Math.max(0, Math.floor((tick - min) / bucketSize)));
+        state.histogramData[idx]++;
+        
+        // Decay old data
+        state.histogramData = state.histogramData.map(v => v * 0.95);
+    };
+
+    // Chart setup
+    const sparkCtx = document.getElementById('sparkline').getContext('2d');
+    const sparkChart = new Chart(sparkCtx, {
+        type: 'line',
+        data: {
+            labels: Array(50).fill(''),
+            datasets: [{
+                data: state.tickHistory,
+                borderColor: '#00e5ff',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { 
+                    display: false,
+                    min: 0.2,
+                    max: 0.4
+                }
+            },
+            animation: false
+        }
+    });
+
+    const histCtx = document.getElementById('histogram').getContext('2d');
+    const histChart = new Chart(histCtx, {
+        type: 'bar',
+        data: {
+            labels: Array(10).fill(''),
+            datasets: [{
+                data: state.histogramData,
+                backgroundColor: 'rgba(0, 229, 255, 0.6)',
+                borderColor: '#00e5ff',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { display: false }
+            },
+            animation: false
+        }
+    });
+
+    // Log event
+    const logEvent = (msg, type = 'info') => {
+        const time = (state.eventCounter * 0.007).toFixed(3);
+        const color = type === 'boron' ? '#ffaa00' : type === 'error' ? '#ff3366' : '#00e5ff';
+        const line = `<div class="terminal-line" style="color: ${color}">[${time.padStart(7, '0')}] ${msg}</div>`;
+        state.eventLog.push(line);
+        if (state.eventLog.length > 100) state.eventLog.shift();
+        
+        const term = document.getElementById('terminal');
+        term.innerHTML = state.eventLog.join('');
+        term.scrollTop = term.scrollHeight;
+    };
+
+    // Update kernel status
+    const updateKernelStatus = () => {
+        const elem = document.getElementById('kernelStatus');
+        const varOk = state.variance > 0.03;
+        const tempOk = state.tempCoeff < 0;
+        const devOk = state.deviceFound;
+        
+        if (varOk && tempOk && devOk) {
+            state.kernelConfirmed = 'confirmed';
+            elem.textContent = 'BORON CONFIRMED';
+            elem.className = 'text-3xl md:text-4xl font-bold status-confirmed text-center';
+        } else if (!varOk && !tempOk) {
+            state.kernelConfirmed = 'silicon';
+            elem.textContent = 'SILICON POLL';
+            elem.className = 'text-3xl md:text-4xl font-bold status-silicon text-center';
+        } else {
+            state.kernelConfirmed = 'unconfirmed';
+            elem.textContent = 'UNCONFIRMED';
+            elem.className = 'text-3xl md:text-4xl font-bold status-unconfirmed text-center';
+        }
+    };
+
+    // Main update loop
+    const update = () => {
+        state.eventCounter++;
+        
+        // Generate new tick
+        const tick = generateTick();
+        state.tickHistory.push(tick);
+        state.tickHistory.shift();
+        updateHistogram(tick);
+        
+        // Calculate variance
+        state.variance = calculateVariance(state.tickHistory);
+        
+        // Update temp coefficient based on mode
+        if (state.mode === 'boron') {
+            state.tempCoeff = -0.0023 + normalRandom(0, 0.0002);
+        } else {
+            state.tempCoeff = 0.0012 + normalRandom(0, 0.0001);
+        }
+        
+        // Neutron flux
+        let fluxMult = state.shieldActive ? 0.7 : 1.0;
+        if (state.mode === 'boron') {
+            state.neutronFlux = 18.7 * fluxMult + normalRandom(0, 0.5);
+        } else {
+            state.neutronFlux = 20.0 * fluxMult + normalRandom(0, 0.2);
+        }
+        
+        // Shield timer
+        if (state.shieldActive) {
+            state.shieldTimer--;
+            if (state.shieldTimer <= 0) {
+                state.shieldActive = false;
+                document.getElementById('shieldStatus').textContent = 'Ready';
+                logEvent('Shield removed. Flux restored to baseline.', 'info');
+            } else {
+                document.getElementById('shieldStatus').textContent = `Active: ${(state.shieldTimer / 30).toFixed(1)}s`;
+            }
+        }
+        
+        // Generate events
+        if (state.eventCounter % 30 === 0) {
+            if (state.mode === 'boron' && Math.random() < 0.3) {
+                logEvent(`B-10: Capture event, alpha emitted`, 'boron');
+                logEvent(`Toroid: Ring latency +${(Math.random() * 0.03).toFixed(3)}ms from Kernel 24`, 'boron');
+            } else {
+                logEvent(`SMBus: Interrupt from 0x50, ${tick.toFixed(3)}ms`, 'info');
+            }
+        }
+        
+        // Update UI
+        document.getElementById('tickInterval').textContent = tick.toFixed(3) + 'ms';
+        document.getElementById('variance').textContent = state.variance.toFixed(3) + 'ms';
+        document.getElementById('tempCoeff').textContent = (state.tempCoeff >= 0 ? '+' : '') + state.tempCoeff.toFixed(4) + ' ms/°C';
+        document.getElementById('neutronFlux').textContent = state.neutronFlux.toFixed(1) + ' n/cm²/hr';
+        
+        const latencyShift = state.tempCoeff * (state.temperature - state.baseTemp);
+        document.getElementById('latencyShift').textContent = (latencyShift >= 0 ? '+' : '') + latencyShift.toFixed(4) + 'ms';
+        
+        // Variance indicator
+        const varInd = document.getElementById('varianceIndicator');
+        if (state.variance > 0.03) {
+            varInd.className = 'w-2 h-2 rounded-full bg-green-500';
+            varInd.style.boxShadow = '0 0 10px rgba(0, 255, 136, 0.8)';
+        } else if (state.variance < 0.01) {
+            varInd.className = 'w-2 h-2 rounded-full bg-red-500';
+            varInd.style.boxShadow = '0 0 10px rgba(255, 51, 102, 0.8)';
+        } else {
+            varInd.className = 'w-2 h-2 rounded-full bg-amber-500';
+            varInd.style.boxShadow = '0 0 10px rgba(255, 170, 0, 0.8)';
+        }
+        
+        // Update charts
+        sparkChart.data.datasets[0].data = state.tickHistory;
+        sparkChart.update('none');
+        histChart.data.datasets[0].data = state.histogramData;
+        histChart.update('none');
+        
+        updateKernelStatus();
+    };
+
+    // Button handlers
+    document.getElementById('scanBtn').addEventListener('click', () => {
+        if (state.deviceScanning) return;
+        state.deviceScanning = true;
+        const status = document.getElementById('deviceStatus');
+        status.textContent = 'SCANNING...';
+        status.className = 'text-xs px-2 py-1 rounded border border-amber-500/30 text-amber-400';
+        logEvent('Get-PnpDevice -Class "System" -FriendlyName "*Boron*"', 'info');
+        
+        setTimeout(() => {
+            state.deviceScanning = false;
+            if (Math.random() < 0.7) {
+                state.deviceFound = true;
+                document.getElementById('deviceId').textContent = 'ACPI\\BNR0';
+                document.getElementById('deviceId').className = 'text-lg font-bold text-[var(--green)]';
+                status.textContent = 'FOUND';
+                status.className = 'text-xs px-2 py-1 rounded border border-green-500/30 text-green-400';
+                logEvent('Device found: ACPI\\BNR0 - Boron Neutron Detector', 'boron');
+            } else {
+                state.deviceFound = false;
+                document.getElementById('deviceId').textContent = 'Unknown Device';
+                document.getElementById('deviceId').className = 'text-lg font-bold text-[var(--text-dim)]';
+                status.textContent = 'NOT FOUND';
+                status.className = 'text-xs px-2 py-1 rounded border border-red-500/30 text-red-400';
+                logEvent('ERROR: ACPI\\BNR0 not enumerated', 'error');
+            }
+        }, 1500);
+    });
+
+    document.getElementById('test1Btn').addEventListener('click', () => {
+        logEvent('=== TEST 1: Device Enumeration ===', 'boron');
+        document.getElementById('scanBtn').click();
+        setTimeout(() => {
+            if (state.deviceFound) {
+                state.mode = 'boron';
+                logEvent('Mode switch: BORON DETECTION enabled', 'boron');
+            } else {
+                state.mode = 'cpu';
+                logEvent('Mode switch: CPU POLL fallback', 'info');
+            }
+        }, 1600);
+    });
+
+    document.getElementById('test2Btn').addEventListener('click', () => {
+        state.mode = state.mode === 'boron' ? 'cpu' : 'boron';
+        logEvent(`=== TEST 2: Mode Toggle ===`, 'boron');
+        logEvent(`Switched to ${state.mode.toUpperCase()} mode`, state.mode === 'boron' ? 'boron' : 'info');
+        state.histogramData = new Array(10).fill(0);
+    });
+
+    document.getElementById('shieldBtn').addEventListener('click', () => {
+        if (state.shieldActive) return;
+        state.shieldActive = true;
+        state.shieldTimer = 300; // 10 seconds at 30fps
+        logEvent('SHIELD TEST: HDPE moderator deployed', 'boron');
+        logEvent('Expected flux reduction: 30%', 'boron');
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const data = state.eventLog.map(line => line.replace(/<[^>]*>/g, '')).join('\n');
+        const blob = new Blob([data], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `kernel24_log_${Date.now()}.txt`;
+        a.click();
+        logEvent('Event log exported', 'info');
+    });
+
+    document.getElementById('tempSlider').addEventListener('input', (e) => {
+        state.temperature = parseInt(e.target.value);
+        document.getElementById('tempValue').textContent = state.temperature + '°C';
+    });
+
+    // Initialize
+    logEvent('KERNEL 24 initialized. SMBus monitor active.', 'info');
+    logEvent('Target: Alienware 16 Aurora AC16250', 'info');
+    logEvent('Listening on SMBus address 0x50', 'info');
+    
+    // Run at 30fps
+    setInterval(update, 33);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOROID MATRIX: 70 KERNELS</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0a0e1a;
+        --bg-panel: #0f1524;
+        --bg-elev: #141b2e;
+        --cyan: #00e5ff;
+        --amber: #ffaa00;
+        --red: #ff3d00;
+        --green: #00ff88;
+        --gray: #3a4259;
+        --white: #e8f0ff;
+        --text-dim: #7a8499;
+        --border: rgba(0, 229, 255, 0.2);
+        --glow-cyan: 0 0 12px rgba(0, 229, 255, 0.6);
+        --glow-amber: 0 0 12px rgba(255, 170, 0, 0.6);
+        --glow-green: 0 0 12px rgba(0, 255, 136, 0.6);
+        --glow-red: 0 0 12px rgba(255, 61, 0, 0.6);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--white);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+            radial-gradient(circle at 20% 30%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(255, 170, 0, 0.02) 0%, transparent 50%),
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 229, 255, 0.01) 2px, rgba(0, 229, 255, 0.01) 4px);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .container {
+        position: relative;
+        z-index: 1;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .header {
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: inset 0 1px 0 rgba(0, 229, 255, 0.1);
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .header-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--cyan);
+        text-shadow: var(--glow-cyan);
+        letter-spacing: 1px;
+    }
+
+    .header-subtitle {
+        font-size: 12px;
+        color: var(--text-dim);
+        letter-spacing: 0.5px;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .live-pulse {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--green);
+    }
+
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--green);
+        border-radius: 50%;
+        box-shadow: var(--glow-green);
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .main {
+        flex: 1;
+        display: flex;
+        gap: 12px;
+        min-height: 0;
+    }
+
+    .matrix-panel {
+        flex: 1;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+    }
+
+    .matrix-title {
+        font-size: 11px;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+    }
+
+    .matrix-grid {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .matrix-row {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+
+    .matrix-row-label {
+        position: absolute;
+        left: -40px;
+        font-size: 10px;
+        color: var(--text-dim);
+        width: 32px;
+        text-align: right;
+    }
+
+    .kernel-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--gray);
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .kernel-dot:hover {
+        transform: scale(1.3);
+        z-index: 10;
+    }
+
+    .kernel-dot.unknown {
+        background: var(--gray);
+        border-color: rgba(58, 66, 89, 0.5);
+    }
+
+    .kernel-dot.enumerated {
+        background: var(--cyan);
+        border-color: var(--cyan);
+        box-shadow: var(--glow-cyan);
+    }
+
+    .kernel-dot.confirmed {
+        background: var(--amber);
+        border-color: var(--amber);
+        box-shadow: var(--glow-amber);
+    }
+
+    .kernel-dot.ringed {
+        background: var(--green);
+        border-color: var(--green);
+        box-shadow: var(--glow-green);
+    }
+
+    .kernel-dot.alert {
+        background: var(--red);
+        border-color: var(--red);
+        box-shadow: var(--glow-red);
+        animation: alert-flash 0.5s ease-in-out 3;
+    }
+
+    @keyframes alert-flash {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    .arbiter-dot {
+        width: 28px;
+        height: 28px;
+        font-size: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--bg);
+    }
+
+    .clock-dot {
+        width: 32px;
+        height: 32px;
+        font-size: 10px;
+    }
+
+    .toroid-master {
+        width: 40px;
+        height: 40px;
+        background: var(--white);
+        border-color: var(--white);
+        box-shadow: 0 0 20px rgba(232, 240, 255, 0.8);
+        animation: toroid-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes toroid-pulse {
+        0%, 100% { box-shadow: 0 0 20px rgba(232, 240, 255, 0.8); }
+        50% { box-shadow: 0 0 30px rgba(232, 240, 255, 1), 0 0 40px rgba(0, 229, 255, 0.5); }
+    }
+
+    .clock-label {
+        position: absolute;
+        top: -18px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        color: var(--amber);
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .tooltip {
+        position: fixed;
+        background: var(--bg-elev);
+        border: 1px solid var(--cyan);
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-size: 11px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 1000;
+        box-shadow: var(--glow-cyan);
+        max-width: 200px;
+    }
+
+    .tooltip.visible {
+        opacity: 1;
+    }
+
+    .tooltip-title {
+        color: var(--cyan);
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .tooltip-line {
+        color: var(--text-dim);
+        font-size: 10px;
+    }
+
+    .detail-panel {
+        flex: 0 0 340px;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .detail-title {
+        font-size: 14px;
+        color: var(--cyan);
+        font-weight: 700;
+        text-shadow: var(--glow-cyan);
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(58, 66, 89, 0.3);
+    }
+
+    .detail-label {
+        color: var(--text-dim);
+    }
+
+    .detail-value {
+        color: var(--white);
+        font-weight: 500;
+        text-align: right;
+    }
+
+    .detail-status {
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .detail-status.unknown { background: rgba(58, 66, 89, 0.3); color: var(--gray); }
+    .detail-status.enumerated { background: rgba(0, 229, 255, 0.2); color: var(--cyan); }
+    .detail-status.confirmed { background: rgba(255, 170, 0, 0.2); color: var(--amber); }
+    .detail-status.ringed { background: rgba(0, 255, 136, 0.2); color: var(--green); }
+
+    .test-btn {
+        background: var(--bg-elev);
+        border: 1px solid var(--cyan);
+        color: var(--cyan);
+        padding: 10px;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .test-btn:hover {
+        background: rgba(0, 229, 255, 0.1);
+        box-shadow: var(--glow-cyan);
+    }
+
+    .test-output {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 10px;
+        font-size: 10px;
+        color: var(--green);
+        min-height: 120px;
+        font-family: 'JetBrains Mono', monospace;
+        overflow-y: auto;
+    }
+
+    .telemetry {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        height: 180px;
+    }
+
+    .telemetry-panel {
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .telemetry-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .telemetry-title {
+        font-size: 11px;
+        color: var(--cyan);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .scan-btn {
+        background: var(--bg-elev);
+        border: 1px solid var(--amber);
+        color: var(--amber);
+        padding: 4px 12px;
+        border-radius: 3px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .scan-btn:hover {
+        background: rgba(255, 170, 0, 0.1);
+        box-shadow: var(--glow-amber);
+    }
+
+    .scan-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--bg);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--cyan), var(--green));
+        width: 0%;
+        transition: width 0.3s ease;
+        box-shadow: var(--glow-cyan);
+    }
+
+    .scan-text {
+        font-size: 10px;
+        color: var(--text-dim);
+    }
+
+    .latency-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--cyan);
+        text-shadow: var(--glow-cyan);
+        text-align: center;
+        margin: 8px 0;
+    }
+
+    .latency-value.alert {
+        color: var(--red);
+        text-shadow: var(--glow-red);
+    }
+
+    .sparkline {
+        width: 100%;
+        height: 60px;
+        flex: 1;
+    }
+
+    .entropy-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--amber);
+        text-shadow: var(--glow-amber);
+        margin: 8px 0;
+    }
+
+    .histogram {
+        width: 100%;
+        height: 80px;
+        flex: 1;
+    }
+
+    .event-log {
+        grid-column: span 3;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .log-container {
+        flex: 1;
+        overflow-y: auto;
+        font-size: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        display: flex;
+        flex-direction: column-reverse;
+    }
+
+    .log-entry {
+        padding: 2px 0;
+        color: var(--text-dim);
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .log-entry.highlight { color: var(--cyan); }
+    .log-entry.success { color: var(--green); }
+    .log-entry.warn { color: var(--amber); }
+    .log-entry.error { color: var(--red); }
+
+    .disclaimer {
+        position: absolute;
+        bottom: 4px;
+        right: 12px;
+        font-size: 9px;
+        color: var(--text-dim);
+        opacity: 0.6;
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+    }
+
+    @media (max-width: 1600px) {
+        .kernel-dot { width: 18px; height: 18px; }
+        .arbiter-dot { width: 24px; height: 24px; }
+        .clock-dot { width: 28px; height: 28px; }
+        .toroid-master { width: 36px; height: 36px; }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-left">
+            <div>
+                <div class="header-title">TOROID RING • 70 KERNELS = 1</div>
+                <div class="header-subtitle">20×3 TRIADS + 8 ARBITERS + 2 CLOCKS</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="live-pulse">
+                <div class="pulse-dot"></div>
+                <span>LIVE</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="matrix-panel">
+            <div class="matrix-title">Kernel Enumeration Matrix - Alienware 16 Aurora AC16250</div>
+            <div class="matrix-grid" id="matrixGrid"></div>
+        </div>
+
+        <div class="detail-panel">
+            <div class="detail-title" id="detailTitle">Select Kernel</div>
+            <div id="detailContent">
+                <div class="detail-row">
+                    <span class="detail-label">Name</span>
+                    <span class="detail-value">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Physical Chip</span>
+                    <span class="detail-value">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Stock Role</span>
+                    <span class="detail-value">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Toroid Role</span>
+                    <span class="detail-value">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value"><span class="detail-status unknown">UNKNOWN</span></span>
+                </div>
+            </div>
+            <button class="test-btn" id="testBtn" disabled>RUN KERNEL TEST</button>
+            <div class="test-output" id="testOutput">Awaiting kernel selection...</div>
+        </div>
+    </div>
+
+    <div class="telemetry">
+        <div class="telemetry-panel">
+            <div class="telemetry-header">
+                <div class="telemetry-title">Enum Scan</div>
+                <button class="scan-btn" id="scanBtn">SCAN ALL</button>
+            </div>
+            <div class="scan-text" id="scanText">Scanning... 2/70 confirmed</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <canvas class="sparkline" id="enumSpark" width="300" height="60"></canvas>
+        </div>
+
+        <div class="telemetry-panel">
+            <div class="telemetry-header">
+                <div class="telemetry-title">Ring Latency</div>
+            </div>
+            <div class="latency-value" id="latencyValue">0.310ms</div>
+            <canvas class="sparkline" id="latencySpark" width="300" height="60"></canvas>
+        </div>
+
+        <div class="telemetry-panel">
+            <div class="telemetry-header">
+                <div class="telemetry-title">Entropy Source</div>
+            </div>
+            <div class="entropy-value" id="entropyValue">K24 BORON: 0.0 Kbps</div>
+            <canvas class="histogram" id="entropyHist" width="300" height="80"></canvas>
+        </div>
+    </div>
+
+    <div class="event-log">
+        <div class="telemetry-header">
+            <div class="telemetry-title">Event Log</div>
+        </div>
+        <div class="log-container" id="logContainer"></div>
+    </div>
+
+    <div class="disclaimer">Telemetry only. No firmware writes. Maps existing hardware.</div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const KERNELS = [
+    { id: 1, name: "TOROID", chip: "PCH-S", stock: "Root Complex", toroid: "RING MASTER", status: "confirmed", type: "toroid" },
+    { id: 2, name: "240H P-Core", chip: "Intel 240H Die", stock: "Compute", toroid: "TRIAD-1A", status: "unknown", type: "triad" },
+    { id: 3, name: "240H E-Core", chip: "Intel 240H Die", stock: "Compute", toroid: "TRIAD-1B", status: "unknown", type: "triad" },
+    { id: 4, name: "240H Ringbus", chip: "Intel 240H Die", stock: "Interconnect", toroid: "TRIAD-1C", status: "unknown", type: "triad" },
+    { id: 5, name: "RTX 4050 Core", chip: "AD107 GPU", stock: "Graphics", toroid: "TRIAD-2A", status: "unknown", type: "triad" },
+    { id: 6, name: "RTX 4050 VRAM", chip: "GDDR6 6GB", stock: "Frame Buffer", toroid: "TRIAD-2B", status: "unknown", type: "triad" },
+    { id: 7, name: "RTX 4050 NVDEC", chip: "AD107 Media", stock: "Video Decode", toroid: "TRIAD-2C", status: "unknown", type: "triad" },
+    { id: 8, name: "PCH USB-C", chip: "PCH-S", stock: "USB 3.2", toroid: "TRIAD-3A", status: "unknown", type: "triad" },
+    { id: 9, name: "PCH SATA", chip: "PCH-S", stock: "SATA Controller", toroid: "TRIAD-3B", status: "unknown", type: "triad" },
+    { id: 10, name: "PCH PCIe", chip: "PCH-S", stock: "PCIe Lanes", toroid: "TRIAD-3C", status: "unknown", type: "triad" },
+    { id: 11, name: "AX211 WiFi", chip: "Intel AX211", stock: "CNVi 802.11ax", toroid: "TRIAD-4A", status: "unknown", type: "triad" },
+    { id: 12, name: "AX211 BT", chip: "Intel AX211", stock: "Bluetooth 5.3", toroid: "TRIAD-4B", status: "unknown", type: "triad" },
+    { id: 13, name: "AX211 PHY", chip: "Intel AX211", stock: "RF Front End", toroid: "TRIAD-4C", status: "unknown", type: "triad" },
+    { id: 14, name: "Audio DSP", chip: "Realtek ALC3254", stock: "Audio Codec", toroid: "TRIAD-5A", status: "unknown", type: "triad" },
+    { id: 15, name: "Audio AMP", chip: "AW88261 x2", stock: "Speaker Driver", toroid: "TRIAD-5B", status: "unknown", type: "triad" },
+    { id: 16, name: "Audio MIC", chip: "DMIC Array", stock: "Voice Input", toroid: "TRIAD-5C", status: "unknown", type: "triad" },
+    { id: 17, name: "NVMe Ctrl", chip: "PCIe 4.0 x4", stock: "Storage Ctrl", toroid: "TRIAD-6A", status: "unknown", type: "triad" },
+    { id: 18, name: "NVMe NAND", chip: "3D TLC", stock: "Flash Memory", toroid: "TRIAD-6B", status: "unknown", type: "triad" },
+    { id: 19, name: "NVMe Cache", chip: "DDR4 DRAM", stock: "Write Cache", toroid: "TRIAD-6C", status: "unknown", type: "triad" },
+    { id: 20, name: "TB4 Port 1", chip: "Maple Ridge", stock: "Thunderbolt 4", toroid: "TRIAD-7A", status: "unknown", type: "triad" },
+    { id: 21, name: "TB4 Port 2", chip: "Maple Ridge", stock: "Thunderbolt 4", toroid: "TRIAD-7B", status: "unknown", type: "triad" },
+    { id: 22, name: "TB4 PCIe", chip: "Maple Ridge", stock: "PCIe Tunnel", toroid: "TRIAD-7C", status: "unknown", type: "triad" },
+    { id: 23, name: "GNA 3.0", chip: "240H Gaussian", stock: "Neural Accel", toroid: "MONAD", status: "unknown", type: "triad" },
+    { id: 24, name: "BORON", chip: "ACH-06NE Tritium", stock: "Atmospheric Sensor", toroid: "CLOCK SRC", status: "confirmed", type: "triad" },
+    { id: 25, name: "P-CORE", chip: "240H Raptor Cove", stock: "Performance Core", toroid: "TRIAD-9A", status: "unknown", type: "triad" },
+    { id: 26, name: "E-CORE", chip: "240H Gracemont", stock: "Efficiency Core", toroid: "TRIAD-9B", status: "unknown", type: "triad" },
+    { id: 27, name: "L3 CACHE", chip: "240H Die", stock: "Shared L3", toroid: "TRIAD-9C", status: "unknown", type: "triad" },
+    { id: 28, name: "DDR5 CH-A", chip: "DDR5-5600", stock: "Memory Chan A", toroid: "TRIAD-10A", status: "unknown", type: "triad" },
+    { id: 29, name: "DDR5 CH-B", chip: "DDR5-5600", stock: "Memory Chan B", toroid: "TRIAD-10B", status: "unknown", type: "triad" },
+    { id: 30, name: "IMC", chip: "240H IMC", stock: "Mem Controller", toroid: "TRIAD-10C", status: "unknown", type: "triad" },
+    { id: 31, name: "IGPU Slice", chip: "Iris Xe 80EU", stock: "Graphics", toroid: "TRIAD-11A", status: "unknown", type: "triad" },
+    { id: 32, name: "IGPU Media", chip: "Iris Xe VDBOX", stock: "Video Engine", toroid: "TRIAD-11B", status: "unknown", type: "triad" },
+    { id: 33, name: "IGPU Display", chip: "Iris Xe Display", stock: "eDP 1.4", toroid: "TRIAD-11C", status: "unknown", type: "triad" },
+    { id: 34, name: "NPU", chip: "240H VPU 3.0", stock: "AI Inference", toroid: "TRIAD-12A", status: "unknown", type: "triad" },
+    { id: 35, name: "DPU", chip: "240H Display", stock: "Display Engine", toroid: "TRIAD-12B", status: "unknown", type: "triad" },
+    { id: 36, name: "ISP", chip: "240H MIPI", stock: "Camera ISP", toroid: "TRIAD-12C", status: "unknown", type: "triad" },
+    { id: 37, name: "Sensor Hub", chip: "ISH 5.4", stock: "Sensor Fusion", toroid: "TRIAD-13A", status: "unknown", type: "triad" },
+    { id: 38, name: "Gyro", chip: "BMI323", stock: "Accel/Gyro", toroid: "TRIAD-13B", status: "unknown", type: "triad" },
+    { id: 39, name: "Ambient", chip: "ALS Sensor", stock: "Light Sensor", toroid: "TRIAD-13C", status: "unknown", type: "triad" },
+    { id: 40, name: "FAN-A", chip: "IT8987E", stock: "Fan PWM A", toroid: "TRIAD-14A", status: "unknown", type: "triad" },
+    { id: 41, name: "FAN-B", chip: "IT8987E", stock: "Fan PWM B", toroid: "TRIAD-14B", status: "unknown", type: "triad" },
+    { id: 42, name: "THERMAL", chip: "IT8987E", stock: "Thermal Diode", toroid: "TRIAD-14C", status: "unknown", type: "triad" },
+    { id: 43, name: "BAT CELL", chip: "LGC 86Wh", stock: "Battery Pack", toroid: "TRIAD-15A", status: "unknown", type: "triad" },
+    { id: 44, name: "BAT GAUGE", chip: "BQ20Z451", stock: "Fuel Gauge", toroid: "TRIAD-15B", status: "unknown", type: "triad" },
+    { id: 45, name: "BAT FET", chip: "MOSFET Array", stock: "Charge Ctrl", toroid: "TRIAD-15C", status: "unknown", type: "triad" },
+    { id: 46, name: "KBD RGB", chip: "IT8987E", stock: "KB Backlight", toroid: "TRIAD-16A", status: "unknown", type: "triad" },
+    { id: 47, name: "KBD SCAN", chip: "IT8987E", stock: "Key Matrix", toroid: "TRIAD-16B", status: "unknown", type: "triad" },
+    { id: 48, name: "TPAD", chip: "Synaptics", stock: "Touchpad I2C", toroid: "TRIAD-16C", status: "unknown", type: "triad" },
+    { id: 49, name: "CAM USB", chip: "OmniVision", stock: "FHD Webcam", toroid: "TRIAD-17A", status: "unknown", type: "triad" },
+    { id: 50, name: "CAM MIPI", chip: "CSI-2 Bus", stock: "Camera Bus", toroid: "TRIAD-17B", status: "unknown", type: "triad" },
+    { id: 51, name: "IR", chip: "IR Array", stock: "IR Camera", toroid: "TRIAD-17C", status: "unknown", type: "triad" },
+    { id: 52, name: "FP", chip: "FPC Sensor", stock: "Fingerprint", toroid: "TRIAD-18A", status: "unknown", type: "triad" },
+    { id: 53, name: "NFC", chip: "NXP PN7160", stock: "NFC Radio", toroid: "TRIAD-18B", status: "unknown", type: "triad" },
+    { id: 54, name: "SEC ENCL", chip: "TPM 2.0", stock: "Crypto Engine", toroid: "TRIAD-18C", status: "unknown", type: "triad" },
+    { id: 55, name: "SMBUS", chip: "SMB 2.0", stock: "System Bus", toroid: "TRIAD-19A", status: "unknown", type: "triad" },
+    { id: 56, name: "I2C", chip: "I2C Host", stock: "Sensor Bus", toroid: "TRIAD-19B", status: "unknown", type: "triad" },
+    { id: 57, name: "SPI", chip: "SPI Flash", stock: "BIOS Flash", toroid: "TRIAD-19C", status: "unknown", type: "triad" },
+    { id: 58, name: "LPC", chip: "LPC Bus", stock: "Legacy Bus", toroid: "TRIAD-20A", status: "unknown", type: "triad" },
+    { id: 59, name: "UART", chip: "16550 UART", stock: "Debug Serial", toroid: "TRIAD-20B", status: "unknown", type: "triad" },
+    { id: 60, name: "HDMI", chip: "PTN3460", stock: "HDMI 2.1", toroid: "TRIAD-20C", status: "unknown", type: "triad" },
+    { id: 61, name: "A1 EC", chip: "IT8987E", stock: "Embed Controller", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 62, name: "A2 USB-PD", chip: "CYPD3177", stock: "Power Delivery", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 63, name: "A3 TB4-R1", chip: "Maple Ridge", stock: "TB4 Repeater", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 64, name: "A4 TB4-R2", chip: "Maple Ridge", stock: "TB4 Repeater", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 65, name: "A5 BAT", chip: "BQ24780S", stock: "Charger IC", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 66, name: "A6 KB", chip: "IT8987E", stock: "KB Controller", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 67, name: "A7 TPM", chip: "SLB9670", stock: "Security TPM", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 68, name: "A8 ISH", chip: "ISH 5.4", stock: "Sensor Hub", toroid: "ARBITER", status: "unknown", type: "arbiter" },
+    { id: 69, name: "BORON", chip: "ACH-06NE", stock: "Tritium RNG", toroid: "CLOCK", status: "confirmed", type: "clock" },
+    { id: 70, name: "CRYSTAL", chip: "38.4MHz XO", stock: "Ref Clock", toroid: "CLOCK", status: "confirmed", type: "clock" }
+];
+
+let state = {
+    selectedKernel: null,
+    confirmedCount: 3,
+    ringLatency: 0.310,
+    scanning: false,
+    latencies: new Array(70).fill(0.31),
+    entropyRate: 0,
+    logs: []
+};
+
+const matrixGrid = document.getElementById('matrixGrid');
+const tooltip = document.getElementById('tooltip');
+const detailTitle = document.getElementById('detailTitle');
+const detailContent = document.getElementById('detailContent');
+const testBtn = document.getElementById('testBtn');
+const testOutput = document.getElementById('testOutput');
+const scanBtn = document.getElementById('scanBtn');
+const scanText = document.getElementById('scanText');
+const progressFill = document.getElementById('progressFill');
+const latencyValue = document.getElementById('latencyValue');
+const entropyValue = document.getElementById('entropyValue');
+const logContainer = document.getElementById('logContainer');
+
+function initMatrix() {
+    matrixGrid.innerHTML = '';
+    
+    for (let row = 1; row <= 3; row++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'matrix-row';
+        const label = document.createElement('div');
+        label.className = 'matrix-row-label';
+        label.textContent = `R${row}`;
+        rowDiv.appendChild(label);
+        
+        for (let col = 0; col < 20; col++) {
+            const idx = (row - 1) * 20 + col + 1;
+            if (idx > 60) break;
+            const kernel = KERNELS[idx];
+            const dot = createDot(kernel);
+            rowDiv.appendChild(dot);
+        }
+        matrixGrid.appendChild(rowDiv);
+    }
+
+    const row4 = document.createElement('div');
+    row4.className = 'matrix-row';
+    const label4 = document.createElement('div');
+    label4.className = 'matrix-row-label';
+    label4.textContent = 'ARB';
+    row4.appendChild(label4);
+    
+    for (let i = 61; i <= 68; i++) {
+        const kernel = KERNELS[i - 1];
+        const dot = createDot(kernel, true);
+        dot.textContent = kernel.name.split(' ')[0];
+        row4.appendChild(dot);
+    }
+    matrixGrid.appendChild(row4);
+
+    const row5 = document.createElement('div');
+    row5.className = 'matrix-row';
+    const label5 = document.createElement('div');
+    label5.className = 'matrix-row-label';
+    label5.textContent = 'CLK';
+    row5.appendChild(label5);
+    
+    const k69 = createDot(KERNELS[68], false, true);
+    const k69Label = document.createElement('div');
+    k69Label.className = 'clock-label';
+    k69Label.textContent = '0.303ms';
+    k69.appendChild(k69Label);
+    row5.appendChild(k69);
+
+    const k1 = createDot(KERNELS[0], false, false, true);
+    k1.style.margin = '0 20px';
+    row5.appendChild(k1);
+
+    const k70 = createDot(KERNELS[69], false, true);
+    const k70Label = document.createElement('div');
+    k70Label.className = 'clock-label';
+    k70Label.textContent = '38.4MHz';
+    k70.appendChild(k70Label);
+    row5.appendChild(k70);
+
+    matrixGrid.appendChild(row5);
+}
+
+function createDot(kernel, isArbiter = false, isClock = false, isToroid = false) {
+    const dot = document.createElement('div');
+    dot.className = 'kernel-dot';
+    if (isArbiter) dot.classList.add('arbiter-dot');
+    if (isClock) dot.classList.add('clock-dot');
+    if (isToroid) dot.classList.add('toroid-master');
+    dot.dataset.kernelId = kernel.id;
+    updateDotStatus(dot, kernel.status);
+    
+    dot.addEventListener('mouseenter', (e) => showTooltip(e, kernel));
+    dot.addEventListener('mouseleave', hideTooltip);
+    dot.addEventListener('click', () => selectKernel(kernel));
+    
+    return dot;
+}
+
+function updateDotStatus(dot, status) {
+    dot.classList.remove('unknown', 'enumerated', 'confirmed', 'ringed', 'alert');
+    dot.classList.add(status);
+}
+
+function showTooltip(e, kernel) {
+    tooltip.innerHTML = `
+        <div class="tooltip-title">K${kernel.id}: ${kernel.name}</div>
+        <div class="tooltip-line">${kernel.chip}</div>
+        <div class="tooltip-line">Status: ${kernel.status.toUpperCase()}</div>
+    `;
+    tooltip.style.left = e.pageX + 15 + 'px';
+    tooltip.style.top = e.pageY + 15 + 'px';
+    tooltip.classList.add('visible');
+}
+
+function hideTooltip() {
+    tooltip.classList.remove('visible');
+}
+
+function selectKernel(kernel) {
+    state.selectedKernel = kernel;
+    detailTitle.textContent = `K${kernel.id}: ${kernel.name}`;
+    detailContent.innerHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Name</span>
+            <span class="detail-value">${kernel.name}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Physical Chip</span>
+            <span class="detail-value">${kernel.chip}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Stock Role</span>
+            <span class="detail-value">${kernel.stock}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Toroid Role</span>
+            <span class="detail-value">${kernel.toroid}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span class="detail-value"><span class="detail-status ${kernel.status}">${kernel.status.toUpperCase()}</span></span>
+        </div>
+    `;
+    testBtn.disabled = false;
+    testOutput.textContent = `Ready to test K${kernel.id}. Click RUN KERNEL TEST.`;
+}
+
+function runKernelTest() {
+    if (!state.selectedKernel) return;
+    const k = state.selectedKernel;
+    testOutput.innerHTML = '';
+    
+    const log = (msg, delay = 0) => {
+        setTimeout(() => {
+            testOutput.innerHTML += msg + '\n';
+            testOutput.scrollTop = testOutput.scrollHeight;
+        }, delay);
+    };
+
+    log(`> Initializing test for K${k.id}...`);
+    log(`> Querying ${k.chip}...`, 200);
+    
+    if (k.id === 24 || k.id === 69) {
+        log(`> Neutron detector: ACH-06NE`, 400);
+        log(`> Decay rate: Poisson(λ=26400)`, 600);
+        log(`> Entropy: 26.4 Kbps TRNG`, 800);
+        log(`> RING TICK: 0.303ms stable`, 1000);
+        log(`> CLK OUT: 38.4MHz locked`, 1200);
+        log(`> STATUS: RINGED`, 1400);
+        addLog(`K24 BORON: Neutron tick → K1 RING ADVANCE`, 'success');
+    } else if (k.id === 25) {
+        log(`> P-Core load test...`, 400);
+        log(`> CPU: 100% utilization`, 600);
+        log(`> Ring latency: 0.302ms (immune)`, 800);
+        log(`> IPI storm: 10k/s`, 1000);
+        log(`> Ring latency: 0.302ms (immune)`, 1200);
+        log(`> STATUS: CONFIRMED`, 1400);
+        addLog(`K25 P-CORE: Join request → K1 GRANTED`, 'success');
+    } else if (k.id === 61) {
+        log(`> EC power arbitration...`, 400);
+        log(`> Request: 110W for 27 ticks`, 600);
+        log(`> A1 EC: GRANTED`, 800);
+        log(`> Power budget: OK`, 1000);
+        log(`> Thermal headroom: 12°C`, 1200);
+        log(`> STATUS: CONFIRMED`, 1400);
+        addLog(`A1 EC: 110W granted for 27 ticks`, 'success');
+    } else if (k.id === 70) {
+        log(`> Crystal oscillator test...`, 400);
+        log(`> Freq: 38.400000 MHz`, 600);
+        log(`> Jitter: ±2ppm`, 800);
+        log(`> PLL LOCK: TRUE`, 1000);
+        log(`> Phase noise: -120dBc/Hz @1kHz`, 1200);
+        log(`> STATUS: CONFIRMED`, 1400);
+        addLog(`K70 CRYSTAL: PLL locked @ 38.4MHz`, 'success');
+    } else {
+        log(`> Probing ${k.stock}...`, 400);
+        log(`> Enumeration: OK`, 600);
+        log(`> Response time: ${(Math.random() * 0.5 + 0.2).toFixed(3)}ms`, 800);
+        log(`> Toroid role: ${k.toroid}`, 1000);
+        log(`> STATUS: ENUMERATED`, 1200);
+        
+        if (k.status === 'unknown') {
+            k.status = 'enumerated';
+            state.confirmedCount++;
+            updateKernelDot(k.id, 'enumerated');
+            updateScanDisplay();
+        }
+    }
+}
+
+function updateKernelDot(id, status) {
+    const dot = document.querySelector(`[data-kernel-id="${id}"]`);
+    if (dot) updateDotStatus(dot, status);
+}
+
+function scanAll() {
+    if (state.scanning) return;
+    state.scanning = true;
+    scanBtn.disabled = true;
+    addLog('SCAN ALL initiated...', 'highlight');
+    
+    const unknowns = KERNELS.filter(k => k.status === 'unknown');
+    const toConfirm = Math.floor(unknowns.length * 0.6);
+    let confirmed = 0;
+    
+    const scanInterval = setInterval(() => {
+        if (confirmed >= toConfirm) {
+            clearInterval(scanInterval);
+            state.scanning = false;
+            scanBtn.disabled = false;
+            addLog(`SCAN COMPLETE: ${state.confirmedCount}/70 confirmed`, 'success');
+            calculateRingLatency();
+            return;
+        }
+        
+        const available = unknowns.filter(k => k.status === 'unknown');
+        if (available.length === 0) {
+            clearInterval(scanInterval);
+            state.scanning = false;
+            scanBtn.disabled = false;
+            return;
+        }
+        
+        const kernel = available[Math.floor(Math.random() * available.length)];
+        kernel.status = Math.random() > 0.5 ? 'confirmed' : 'enumerated';
+        if (kernel.status === 'confirmed') {
+            kernel.status = 'ringed';
+            state.confirmedCount++;
+        }
+        updateKernelDot(kernel.id, kernel.status);
+        updateScanDisplay();
+        addLog(`K${kernel.id} ${kernel.name}: ${kernel.status.toUpperCase()}`, kernel.status === 'ringed' ? 'success' : 'highlight');
+        confirmed++;
+    }, 150);
+}
+
+function updateScanDisplay() {
+    scanText.textContent = `Scanning... ${state.confirmedCount}/70 confirmed`;
+    progressFill.style.width = `${(state.confirmedCount / 70) * 100}%`;
+    drawEnumSpark();
+}
+
+function calculateRingLatency() {
+    const targetLatency = 0.302;
+    const currentLatency = 0.310 - (state.confirmedCount / 70) * 0.008;
+    state.ringLatency = Math.max(targetLatency, currentLatency);
+    latencyValue.textContent = state.ringLatency.toFixed(3) + 'ms';
+    latencyValue.classList.toggle('alert', state.ringLatency > 0.4);
+    
+    for (let i = 0; i < 70; i++) {
+        state.latencies[i] = state.ringLatency + (Math.random() - 0.5) * 0.01;
+    }
+    drawLatencySpark();
+}
+
+function drawEnumSpark() {
+    const canvas = document.getElementById('enumSpark');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    
+    ctx.strokeStyle = '#00e5ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 70; i++) {
+        const k = KERNELS[i];
+        const x = (i / 69) * w;
+        const y = k.status === 'unknown' ? h - 5 : k.status === 'ringed' ? 5 : h/2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+function drawLatencySpark() {
+    const canvas = document.getElementById('latencySpark');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    
+    const max = Math.max(...state.latencies);
+    const min = Math.min(...state.latencies);
+    const range = max - min || 0.01;
+    
+    ctx.strokeStyle = state.ringLatency > 0.4 ? '#ff3d00' : '#00e5ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 70; i++) {
+        const x = (i / 69) * w;
+        const y = h - ((state.latencies[i] - min) / range) * (h - 10) - 5;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    
+    ctx.fillStyle = 'rgba(0, 229, 255, 0.1)';
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function updateEntropy() {
+    const k24 = KERNELS[23];
+    const k69 = KERNELS[68];
+    if (k24.status !== 'unknown' || k69.status !== 'unknown') {
+        state.entropyRate = 26.4 + (Math.random() - 0.5) * 0.5;
+        entropyValue.textContent = `K24 BORON: ${state.entropyRate.toFixed(1)} Kbps`;
+    }
+    drawEntropyHist();
+}
+
+function drawEntropyHist() {
+    const canvas = document.getElementById('entropyHist');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    
+    const bins = 30;
+    const barWidth = w / bins;
+    
+    ctx.fillStyle = '#ffaa00';
+    for (let i = 0; i < bins; i++) {
+        const lambda = 26.4;
+        const k = i / 3;
+        const poisson = Math.pow(lambda, k) * Math.exp(-lambda) / factorial(Math.floor(k));
+        const barHeight = poisson * h * 200;
+        const x = i * barWidth;
+        const y = h - barHeight;
+        ctx.fillRect(x, y, barWidth - 1, barHeight);
+    }
+}
+
+function factorial(n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+
+function addLog(message, type = '') {
+    const time = new Date();
+    const timestamp = `[${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}.${String(time.getMilliseconds()).padStart(3, '0')}]`;
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.textContent = `${timestamp} ${message}`;
+    logContainer.insertBefore(entry, logContainer.firstChild);
+    
+    while (logContainer.children.length > 50) {
+        logContainer.removeChild(logContainer.lastChild);
+    }
+}
+
+function simulateActivity() {
+    const events = [
+        () => addLog(`K25 P-CORE: Join request → K1 GRANTED`, 'success'),
+        () => addLog(`K69 BORON: Tick → K1 RING ADVANCE`, 'success'),
+        () => addLog(`A1 EC: 110W granted for 27 ticks`, 'warn'),
+        () => addLog(`K70 CRYSTAL: PLL phase locked`, 'highlight'),
+        () => addLog(`K42 THERMAL: 67°C → Fan curve update`, 'highlight'),
+        () => addLog(`A2 USB-PD: 20V negotiated`, 'success'),
+        () => addLog(`K1 TOROID: Ring sync @ 0.302ms`, 'success'),
+        () => addLog(`K11 AX211: Beacon interval adjusted`, 'highlight')
+    ];
+    
+    setInterval(() => {
+        if (!state.scanning && Math.random() > 0.3) {
+            events[Math.floor(Math.random() * events.length)]();
+        }
+        updateEntropy();
+    }, 2000);
+}
+
+testBtn.addEventListener('click', runKernelTest);
+scanBtn.addEventListener('click', scanAll);
+
+initMatrix();
+updateScanDisplay();
+calculateRingLatency();
+updateEntropy();
+drawLatencySpark();
+drawEntropyHist();
+simulateActivity();
+
+addLog('TOROID MATRIX initialized', 'success');
+addLog('K1 TOROID: RING MASTER online', 'success');
+addLog('K24 BORON: Neutron RNG confirmed', 'success');
+addLog('K70 CRYSTAL: 38.4MHz reference active', 'success');
+addLog('Awaiting kernel enumeration...', 'highlight');
+</script>
+</body>
+</html>

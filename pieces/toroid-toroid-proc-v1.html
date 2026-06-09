@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FULL BOX — Torroid Processor Silo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; background: #020617; }
+  body { font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+  .orbitron { font-family: 'Orbitron', sans-serif; }
+  .glass { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  input[type=range] { accent-color: #22d3ee; }
+  canvas { touch-action: none; }
+</style>
+</head>
+<body class="bg-[#020617] text-cyan-100 selection:bg-cyan-400/30 selection:text-cyan-100">
+<div id="app" class="fixed inset-0">
+  <canvas id="canvas" class="absolute inset-0 w-full h-full"></canvas>
+
+  <!-- vignette -->
+  <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse at center, transparent 35%, rgba(2,6,23,0.9) 85%), radial-gradient(ellipse at center, rgba(0,255,255,0.06), transparent 60%);"></div>
+  <div class="pointer-events-none absolute inset-0 opacity-[0.035] mix-blend-screen" style="background-image: repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 1px, transparent 3px);"></div>
+
+  <!-- UI -->
+  <div class="pointer-events-none absolute inset-0">
+    <!-- top -->
+    <div class="flex justify-between items-start p-4 md:p-7 gap-4">
+      <div class="pointer-events-auto glass rounded-[20px] border border-cyan-500/20 bg-[#040b16]/70 px-5 py-4 shadow-[0_0_80px_rgba(6,182,212,0.18),inset_0_1px_0_rgba(255,255,255,0.05)]">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_16px_#22d3ee]"></div>
+            <div class="absolute inset-0 h-2.5 w-2.5 rounded-full bg-cyan-400/30 blur-md"></div>
+          </div>
+          <h1 class="orbitron text-[13px] md:text-[20px] tracking-[0.22em] text-cyan-100">FULL BOX // TORROID PROCESSOR</h1>
+        </div>
+        <p class="mt-1.5 text-[10px] md:text-[11px] tracking-[0.28em] text-cyan-300/60">SILO STACK v10 • TEN-PLANE ARRAY</p>
+      </div>
+
+      <div class="pointer-events-auto hidden lg:flex glass rounded-[20px] border border-fuchsia-500/15 bg-black/50 px-5 py-3.5 gap-6">
+        <div>
+          <div class="text-[10px] tracking-widest text-cyan-300/50">POWER</div>
+          <div id="stat-power" class="orbitron text-[15px] text-cyan-100 leading-tight">98.7%</div>
+        </div>
+        <div>
+          <div class="text-[10px] tracking-widest text-cyan-300/50">CORE TEMP</div>
+          <div id="stat-temp" class="orbitron text-[15px] text-cyan-100 leading-tight">41.2K</div>
+        </div>
+        <div>
+          <div class="text-[10px] tracking-widest text-cyan-300/50">INTERCONNECT</div>
+          <div class="orbitron text-[15px] text-emerald-300 leading-tight">40/40 FAILOVER</div>
+        </div>
+        <div>
+          <div class="text-[10px] tracking-widest text-cyan-300/50">FLOW</div>
+          <div id="stat-flow" class="orbitron text-[15px] text-fuchsia-300 leading-tight">TOP→BOTTOM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right labels hint -->
+    <div class="hidden md:block absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+      <div class="flex flex-col gap-3 items-end">
+        <div class="text-[10px] tracking-[0.3em] text-cyan-400/60 rotate-90 origin-right translate-x-6">PLANE 10 → 01</div>
+      </div>
+    </div>
+
+    <!-- bottom controls -->
+    <div class="absolute bottom-0 left-0 right-0 p-4 md:p-7 flex justify-center">
+      <div class="pointer-events-auto glass rounded-[20px] border border-cyan-500/20 bg-[#030b14]/75 px-4 py-3 flex items-center gap-4 md:gap-6 shadow-[0_10px_60px_rgba(0,0,0,0.6)]">
+        <button id="btn-play" class="group flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-500/10 hover:bg-cyan-500/20 px-3 py-2 transition">
+          <svg id="icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-cyan-300"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/></svg>
+          <svg id="icon-play" width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-cyan-300 hidden"><path d="M7 5v14l11-7z" fill="currentColor"/></svg>
+          <span class="text-[11px] tracking-widest hidden sm:inline">PAUSE</span>
+        </button>
+
+        <div class="flex items-center gap-3">
+          <span class="text-[10px] tracking-[0.2em] text-cyan-300/70">SPEED</span>
+          <input id="speed" type="range" min="0.2" max="2.2" step="0.1" value="1" class="w-24 md:w-36" />
+        </div>
+
+        <div class="h-6 w-px bg-cyan-400/15 hidden sm:block"></div>
+
+        <div class="flex items-center gap-2">
+          <button id="btn-boxes" class="text-[11px] tracking-widest px-3 py-1.5 rounded-lg border border-fuchsia-400/20 bg-fuchsia-500/10 hover:bg-fuchsia-500/20 text-fuchsia-200 transition">NESTER: ON</button>
+          <button id="btn-links" class="text-[11px] tracking-widest px-3 py-1.5 rounded-lg border border-cyan-400/20 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 transition">LINKS: ON</button>
+          <button id="btn-rotate" class="text-[11px] tracking-widest px-3 py-1.5 rounded-lg border border-cyan-400/20 bg-white/5 hover:bg-white/10 text-cyan-100/80 transition">AUTO-ROTATE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const canvas = document.getElementById('canvas');
+const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x020617);
+scene.fog = new THREE.FogExp2(0x020617, 0.024);
+
+const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 120);
+camera.position.set(9.5, 5.5, 11.5);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.2 : 1.6));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.055;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.35;
+controls.target.set(0, 1.2, 0);
+controls.minDistance = 6;
+controls.maxDistance = 24;
+controls.maxPolarAngle = Math.PI * 0.86;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), isMobile ? 0.85 : 1.25, 0.52, 0.18);
+composer.addPass(bloom);
+
+// Lights
+scene.add(new THREE.AmbientLight(0x0b2545, 0.7));
+const key = new THREE.DirectionalLight(0x7dd3fc, 1.1);
+key.position.set(6, 12, 8);
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xa855f7, 0.6);
+rim.position.set(-8, 4, -6);
+scene.add(rim);
+
+// Starfield
+{
+  const sGeo = new THREE.BufferGeometry();
+  const sCount = 1600;
+  const pos = new Float32Array(sCount * 3);
+  for (let i=0;i<sCount;i++){
+    const r = 60 + Math.random()*40;
+    const th = Math.random()*Math.PI*2;
+    const ph = Math.acos((Math.random()*2-1));
+    pos[i*3] = r*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1] = (Math.random()-0.3)*40;
+    pos[i*3+2] = r*Math.sin(ph)*Math.sin(th);
+  }
+  sGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const sMat = new THREE.PointsMaterial({ color:0x3b82f6, size:0.04, transparent:true, opacity:0.6, sizeAttenuation:true });
+  scene.add(new THREE.Points(sGeo, sMat));
+}
+
+// Ground grid
+{
+  const grid = new THREE.GridHelper(40, 40, 0x0ea5e9, 0x082f49);
+  grid.position.y = -3.2;
+  grid.material.transparent = true;
+  grid.material.opacity = 0.18;
+  scene.add(grid);
+}
+
+// Silo group
+const silo = new THREE.Group();
+scene.add(silo);
+
+const PLANE_COUNT = 10;
+const SPACING = 1.4;
+const RADIUS = 2.25;
+const TOTAL = (PLANE_COUNT-1)*SPACING;
+silo.position.y = -TOTAL/2 + 0.8;
+
+const planes = [];
+const torusMats = [];
+
+// Materials
+const discMat = new THREE.MeshPhysicalMaterial({
+  color: 0x061428,
+  metalness: 0.9,
+  roughness: 0.18,
+  transmission: 0.92,
+  thickness: 0.6,
+  ior: 1.3,
+  clearcoat: 1,
+  clearcoatRoughness: 0.08,
+  emissive: 0x003244,
+  emissiveIntensity: 0.25,
+  transparent: true,
+  opacity: 0.88,
+  side: THREE.DoubleSide
+});
+const edgeMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent:true, opacity:0.9 });
+
+function makeLabel(text, sub){
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,512,256);
+  ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 24;
+  ctx.font = '800 88px Orbitron, sans-serif';
+  ctx.fillStyle = '#cffafe'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, 256, 100);
+  ctx.shadowBlur = 0;
+  ctx.font = '600 28px JetBrains Mono, monospace';
+  ctx.fillStyle = '#7dd3fc'; ctx.globalAlpha = 0.85;
+  ctx.fillText(sub, 256, 180);
+  const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4;
+  return tex;
+}
+
+for (let i=0;i<PLANE_COUNT;i++){
+  const y = i*SPACING;
+  const g = new THREE.Group(); g.position.y = y;
+  silo.add(g);
+
+  // disc
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(RADIUS, RADIUS, 0.13, 72), discMat.clone());
+  g.add(disc);
+
+  // outer ring
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(RADIUS, 0.035, 16, 160), edgeMat);
+  ring.rotation.x = Math.PI/2;
+  g.add(ring);
+
+  // inner detail rings
+  const innerRing = new THREE.Mesh(new THREE.RingGeometry(RADIUS*0.72, RADIUS*0.74, 128), new THREE.MeshBasicMaterial({color:0x0891b2, transparent:true, opacity:0.25, side:THREE.DoubleSide}));
+  innerRing.rotation.x = -Math.PI/2;
+  g.add(innerRing);
+
+  // torroid core assembly
+  const core = new THREE.Group();
+  g.add(core);
+
+  const plasmaMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent:true, opacity:0.95 });
+  const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(0.22, 32, 32), plasmaMat);
+  core.add(coreSphere);
+
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.44, 32, 32), new THREE.MeshBasicMaterial({ color:0x0ea5e9, transparent:true, opacity:0.18, blending:THREE.AdditiveBlending, depthWrite:false }));
+  core.add(glow);
+
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.68, 32, 32), new THREE.MeshBasicMaterial({ color:0x22d3ee, transparent:true, opacity:0.07, blending:THREE.AdditiveBlending, side:THREE.BackSide }));
+  core.add(halo);
+
+  const tor1Mat = new THREE.MeshStandardMaterial({ color:0x67e8f9, emissive:0x0891b2, emissiveIntensity:1.8, metalness:0.6, roughness:0.25, transparent:true, opacity:0.95 });
+  const tor1 = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.028, 18, 180), tor1Mat);
+  tor1.rotation.x = Math.PI/2.3;
+  core.add(tor1);
+
+  const tor2Mat = tor1Mat.clone(); tor2Mat.emissive.setHex(0x22d3ee); tor2Mat.emissiveIntensity = 1.4;
+  const tor2 = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.022, 16, 160), tor2Mat);
+  tor2.rotation.x = Math.PI/2;
+  tor2.rotation.y = Math.PI/6;
+  core.add(tor2);
+
+  torusMats.push(tor1Mat, tor2Mat);
+
+  const light = new THREE.PointLight(0x00e5ff, 1.3, 5, 2.2);
+  light.position.set(0,0,0);
+  core.add(light);
+
+  // label
+  const idx = i+1;
+  const tex = makeLabel(`PLANE ${String(idx).padStart(2,'0')}`, idx===10?'INPUT BUS':'');
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthTest:false, depthWrite:false }));
+  sprite.scale.set(1.9, 0.95, 1);
+  sprite.position.set((i%2?1:-1)*(RADIUS+1.15), 0.15, 0);
+  g.add(sprite);
+
+  // tick
+  const tick = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.012, 0.012), new THREE.MeshBasicMaterial({color:0x22d3ee}));
+  tick.position.set((i%2?1:-1)*(RADIUS+0.32), 0, 0);
+  g.add(tick);
+
+  planes.push({ g, disc: disc, light, coreSphere, glow, halo, tor1, tor2, y });
+}
+
+// Interconnects - 40 lines
+const INTER = 40;
+const icRadius = RADIUS*0.81;
+const icBottom = -0.28;
+const icTop = TOTAL + 0.28;
+const icHeight = icTop - icBottom;
+const icGroup = new THREE.Group();
+silo.add(icGroup);
+
+const icMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent:true, opacity:0.26 });
+const icLines = [];
+for(let i=0;i<INTER;i++){
+  const a = i/INTER * Math.PI*2;
+  const x = Math.cos(a)*icRadius;
+  const z = Math.sin(a)*icRadius;
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, icHeight, 6), icMat.clone());
+  m.position.set(x, (icTop+icBottom)/2, z);
+  icGroup.add(m);
+  icLines.push({m, a, x, z});
+}
+
+// Packets flowing
+const packets = [];
+const pGeo = new THREE.SphereGeometry(0.052, 14);
+for(let i=0;i<INTER;i++){
+  const pm = new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending });
+  const p = new THREE.Mesh(pGeo, pm);
+  p.userData = { i, offset: Math.random() };
+  packets.push(p);
+  silo.add(p);
+}
+
+// Inputs (top) & Outputs (bottom)
+function makePort(color, emissive, yBase, dir){
+  const group = new THREE.Group();
+  const tubeMat = new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity:1.3, metalness:0.7, roughness:0.28 });
+  for(let s=-1;s<=1;s+=2){
+    const start = new THREE.Vector3(s*1.0, yBase + dir*2.6, 0);
+    const mid = new THREE.Vector3(s*1.35, yBase + dir*1.2, 0);
+    const end = new THREE.Vector3(s*0.62, yBase + dir*0.28, 0);
+    const curve = new THREE.CatmullRomCurve3([start, mid, end]);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.075, 10, false), tubeMat.clone());
+    group.add(tube);
+    const port = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 16, 40), new THREE.MeshBasicMaterial({ color: emissive }));
+    port.position.copy(start);
+    port.rotation.y = Math.PI/2;
+    group.add(port);
+    const glow = new THREE.PointLight(emissive, 0.8, 3, 2);
+    glow.position.copy(start);
+    group.add(glow);
+  }
+  return group;
+}
+const inputs = makePort(0x0ea5e9, 0x22d3ee, icTop, 1);
+const outputs = makePort(0xa21caf, 0xd946ef, icBottom, -1);
+silo.add(inputs); silo.add(outputs);
+
+// Nester boxes
+const boxGroup = new THREE.Group();
+silo.add(boxGroup);
+const boxDefs = [
+  { s:[5.5, TOTAL+3.2, 5.5], c:0x22d3ee },
+  { s:[6.3, TOTAL+4.2, 6.3], c:0xa855f7 },
+  { s:[7.1, TOTAL+5.2, 7.1], c:0xec4899 },
+];
+const boxes = boxDefs.map((d,i)=>{
+  const geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(...d.s));
+  const mat = new THREE.LineBasicMaterial({ color:d.c, transparent:true, opacity:0.22 - i*0.04 });
+  const lines = new THREE.LineSegments(geo, mat);
+  lines.position.y = TOTAL/2;
+  boxGroup.add(lines);
+  return lines;
+});
+
+// Animation state
+let playing = true;
+let speed = 1.0;
+const clock = new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.elapsedTime * speed;
+
+  if(playing) controls.autoRotate = true; else controls.autoRotate = false;
+  controls.update();
+
+  // ripple top -> bottom
+  planes.forEach((p, i)=>{
+    const planeIndexTop = PLANE_COUNT-1 - i;
+    const phase = (t*0.7 - planeIndexTop*0.38);
+    const wave = Math.pow(Math.max(0, Math.sin(phase)*0.5+0.5), 3.2);
+    const pulse = 0.5 + wave*1.6;
+
+    p.light.intensity = 0.6 + wave*2.4;
+    p.light.color.setHSL(0.52 + wave*0.08, 1, 0.58);
+    p.coreSphere.material.opacity = 0.7 + wave*0.3;
+    p.coreSphere.scale.setScalar(1 + wave*0.18);
+    p.glow.scale.setScalar(1 + wave*0.35);
+    p.glow.material.opacity = 0.14 + wave*0.22;
+    p.halo.material.opacity = 0.05 + wave*0.08;
+    p.disc.material.emissiveIntensity = 0.18 + wave*0.85;
+    p.disc.material.opacity = 0.78 + wave*0.12;
+
+    p.tor1.rotation.z = t*0.6 + i*0.2;
+    p.tor2.rotation.z = -t*0.45 - i*0.15;
+    p.tor1.material.emissiveIntensity = 1.2 + wave*1.6;
+    p.tor2.material.emissiveIntensity = 0.9 + wave*1.2;
+    p.tor1.rotation.x = Math.PI/2.3 + Math.sin(t*0.8 + i)*0.08;
+  });
+
+  // interconnect shimmer
+  icLines.forEach(l=>{
+    const shimmer = 0.18 + Math.sin(t*2.1 + l.a*4.5)*0.07;
+    l.m.material.opacity = shimmer;
+  });
+
+  // packets
+  packets.forEach(pkt=>{
+    const { i, offset } = pkt.userData;
+    const line = icLines[i];
+    const tt = ((t*0.9 + offset*2.3 + i*0.03) % 1);
+    const y = icTop - tt * icHeight;
+    pkt.position.set(line.x, y, line.z);
+    const mid = Math.sin(tt*Math.PI);
+    pkt.scale.setScalar(0.75 + mid*0.55);
+    pkt.material.opacity = 0.3 + mid*0.7;
+  });
+
+  // boxes cycling
+  boxes.forEach((b, i)=>{
+    b.rotation.y = t * 0.12 * (i%2?1:-1) * (1 + i*0.15);
+    b.rotation.x = Math.sin(t*0.2 + i)*0.06;
+    b.material.opacity = 0.12 + Math.sin(t*0.6 + i*1.7)*0.05;
+  });
+
+  // inputs/outputs pulse
+  inputs.children.forEach((ch, i)=>{
+    if(ch.material && ch.material.emissive) ch.material.emissiveIntensity = 1.1 + Math.sin(t*3 + i)*0.4;
+  });
+  outputs.children.forEach((ch, i)=>{
+    if(ch.material && ch.material.emissive) ch.material.emissiveIntensity = 1.0 + Math.cos(t*2.6 + i)*0.35;
+  });
+
+  // subtle silo breathe
+  silo.rotation.y = Math.sin(t*0.08) * 0.03;
+
+  composer.render();
+}
+animate();
+
+// Resize
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+
+// UI wiring
+const btnPlay = document.getElementById('btn-play');
+const iconPlay = document.getElementById('icon-play');
+const iconPause = document.getElementById('icon-pause');
+btnPlay.onclick = ()=>{
+  playing = !playing;
+  iconPlay.classList.toggle('hidden', playing);
+  iconPause.classList.toggle('hidden', !playing);
+  btnPlay.querySelector('span').textContent = playing ? 'PAUSE' : 'PLAY';
+};
+document.getElementById('speed').oninput = e=>{ speed = parseFloat(e.target.value); };
+const btnBoxes = document.getElementById('btn-boxes');
+btnBoxes.onclick = ()=>{
+  boxGroup.visible = !boxGroup.visible;
+  btnBoxes.textContent = `NESTER: ${boxGroup.visible?'ON':'OFF'}`;
+};
+const btnLinks = document.getElementById('btn-links');
+btnLinks.onclick = ()=>{
+  icGroup.visible = !icGroup.visible;
+  packets.forEach(p=>p.visible = icGroup.visible);
+  btnLinks.textContent = `LINKS: ${icGroup.visible?'ON':'OFF'}`;
+};
+document.getElementById('btn-rotate').onclick = (e)=>{
+  controls.autoRotate = !controls.autoRotate;
+  e.target.textContent = controls.autoRotate ? 'AUTO-ROTATE' : 'MANUAL';
+};
+
+// stats ticker
+setInterval(()=>{
+  document.getElementById('stat-power').textContent = (96.5 + Math.random()*2.8).toFixed(1) + '%';
+  document.getElementById('stat-temp').textContent = (39 + Math.random()*4).toFixed(1) + 'K';
+  document.getElementById('stat-flow').textContent = Math.random()>0.5 ? 'TOP→BOTTOM' : 'SYNC PULSE';
+}, 1300);
+</script>
+</body>
+</html>

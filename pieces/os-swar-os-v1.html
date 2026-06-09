@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swarm OS v0.1 — Technical Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <style>
+        :root { color-scheme: dark; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #030712; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass { backdrop-filter: blur(16px); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); }
+        .glow { box-shadow: 0 0 40px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255,255,255,0.05); }
+        .grid-bg { background-image: radial-gradient(rgba(139,92,246,0.1) 1px, transparent 1px); background-size: 24px 24px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0b1120; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .lattice-cell { transition: all 0.3s ease; }
+        .flow-dot { filter: drop-shadow(0 0 8px currentColor); }
+        .code-tab.active { background: rgba(139,92,246,0.2); color: #c4b5fd; border-color: rgba(139,92,246,0.5); }
+    </style>
+</head>
+<body class="text-slate-200 antialiased selection:bg-violet-500/30 selection:text-violet-200">
+    <div class="fixed inset-0 grid-bg opacity-40 pointer-events-none"></div>
+    <div class="fixed top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-violet-600/20 blur-[200px] pointer-events-none"></div>
+    
+    <!-- NAV -->
+    <nav class="sticky top-0 z-50 border-b border-slate-800/80 glass">
+        <div class="max-w-[1400px] mx-auto px-6 h-[64px] flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center glow">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <div>
+                    <div class="font-semibold tracking-wide">Swarm OS</div>
+                    <div class="text-[10px] -mt-1 text-slate-400 mono">v0.1 ARCHITECTURE</div>
+                </div>
+            </div>
+            <div class="hidden md:flex items-center gap-6 text-sm">
+                <a href="#architecture" class="hover:text-white text-slate-300 transition">Architecture</a>
+                <a href="#layers" class="hover:text-white text-slate-300 transition">Layers</a>
+                <a href="#knowledge" class="hover:text-white text-slate-300 transition">Knowledge</a>
+                <a href="#loop" class="hover:text-white text-slate-300 transition">Loop</a>
+                <a href="#starter" class="hover:text-white text-slate-300 transition">Starter Kit</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="deployBtn" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium transition">Deploy Locally</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="relative max-w-[1400px] mx-auto px-6 pt-16 pb-12">
+        <div class="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs mono mb-6">
+                    <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+                    100-AGENT RECURSIVE MEMORY ENGINE
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold tracking-tight leading-[1.05]">
+                    Full-Stack <span class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">Swarm OS</span><br>Blueprint
+                </h1>
+                <p class="mt-6 text-lg text-slate-300 leading-relaxed max-w-xl">
+                    A persistent, self-improving memory fabric. Frontend React lattice, FastAPI backend, 100-agent consensus engine, SQLite/Postgres vector store. Designed to become 100% like you after 1,000 interactions.
+                </p>
+                <div class="mt-8 flex flex-wrap gap-3">
+                    <a href="#starter" class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 font-medium transition glow">Get Starter Code</a>
+                    <button onclick="document.getElementById('runFlow').click()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-medium transition">Run Data Flow ↓</button>
+                </div>
+                <div class="mt-10 flex items-center gap-6 text-xs text-slate-400 mono">
+                    <div>ASK → ENCODE → RETRIEVE → VOTE → ANSWER → STORE</div>
+                </div>
+            <div class="relative">
+                <div class="glass rounded-2xl p-6 glow">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm font-medium">Live Swarm Lattice (10×10)</div>
+                        <div class="flex gap-1.5">
+                            <button data-mode="recall" class="lattice-mode px-2.5 py-1 rounded-md text-[11px] bg-violet-500/20 text-violet-300 border border-violet-500/30">RECALL</button>
+                            <button data-mode="forge" class="lattice-mode px-2.5 py-1 rounded-md text-[11px] bg-slate-700/50 text-slate-300 border border-slate-700">FORGE</button>
+                            <button data-mode="socratic" class="lattice-mode px-2.5 py-1 rounded-md text-[11px] bg-slate-700/50 text-slate-300 border border-slate-700">SOCRATIC</button>
+                        </div>
+                    <canvas id="lattice" width="400" height="400" class="w-full aspect-square rounded-xl bg-black/40"></canvas>
+                    <div class="mt-3 flex justify-between text-[11px] mono text-slate-500">
+                        <span>100 RecursiveMemory instances</span>
+                        <span id="latticeStats">66/100 consensus • 4.2ms</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto px-6 pb-24 space-y-24">
+
+        <!-- 1. ARCHITECTURE -->
+        <section id="architecture" class="scroll-mt-24">
+            <h2 class="text-3xl font-semibold mb-2">1. Architecture Diagram</h2>
+            <p class="text-slate-400 mb-8 max-w-3xl">Four-tier design with persistent vector memory. Everything flows through the consensus engine.</p>
+            
+            <div class="glass rounded-2xl p-8 glow relative overflow-hidden">
+                <div class="relative" id="archContainer">
+                    <!-- Nodes -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-4 items-center relative z-10">
+                        <!-- Frontend -->
+                        <div id="node-frontend" class="arch-node group relative p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center mb-3">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21l8-10M12 17v4"/></svg>
+                            </div>
+                            <div class="font-medium">Frontend</div>
+                            <div class="text-xs text-slate-400 mono">React / Next.js</div>
+                            <div class="text-[11px] mt-2 text-slate-500">10×10 lattice • Tool builder</div>
+                        </div>
+                        
+                        <!-- Gateway -->
+                        <div id="node-gateway" class="arch-node relative p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-violet-500/15 border border-violet-500/30 flex items-center justify-center mb-3">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M4 9h16M4 15h16M10 3L8 7h8l-2-4"/><circle cx="12" cy="17" r="2"/></svg>
+                            </div>
+                            <div class="font-medium">API Gateway</div>
+                            <div class="text-xs text-slate-400 mono">FastAPI</div>
+                            <div class="text-[11px] mt-2 text-slate-500">/ask /learn /create /memory</div>
+                        </div>
+                        
+                        <!-- Engine -->
+                        <div id="node-engine" class="arch-node relative p-5 rounded-xl bg-slate-900/80 border-2 border-violet-500/50 hover:border-violet-400 transition">
+                            <div class="absolute -top-2 -right-2 px-1.5 py-0.5 rounded bg-violet-600 text-[9px] font-bold">100x</div>
+                            <div class="w-10 h-10 rounded-lg bg-fuchsia-500/15 border border-fuchsia-500/30 flex items-center justify-center mb-3">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e879f9" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+                            </div>
+                            <div class="font-medium">Swarm Engine</div>
+                            <div class="text-xs text-slate-400 mono">Python / NumPy</div>
+                            <div class="text-[11px] mt-2 text-slate-500">vote • improve • mutate</div>
+                        </div>
+                        
+                        <!-- DB -->
+                        <div id="node-db" class="arch-node relative p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/50 transition">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-3">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+                            </div>
+                            <div class="font-medium">Database</div>
+                            <div class="text-xs text-slate-400 mono">SQLite / Postgres + FAISS</div>
+                            <div class="text-[11px] mt-2 text-slate-500">triples • memories • vectors</div>
+                        </div>
+                    </div>
+
+                    <!-- SVG connections -->
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none hidden md:block" style="top: 50px">
+                        <defs>
+                            <linearGradient id="flowGrad" x1="0" x2="1">
+                                <stop offset="0%" stop-color="#22d3ee" stop-opacity="0"/>
+                                <stop offset="50%" stop-color="#a78bfa" stop-opacity="1"/>
+                                <stop offset="100%" stop-color="#e879f9" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <path id="p1" d="M 180 40 H 320" stroke="#334155" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+                        <path id="p2" d="M 460 40 H 600" stroke="#334155" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+                        <path id="p3" d="M 740 40 H 880" stroke="#334155" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+                    </svg>
+                    <div id="flowDot" class="flow-dot absolute w-2.5 h-2.5 rounded-full bg-violet-400 hidden" style="left:180px; top:50px;"></div>
+                </div>
+
+                <!-- Data flow control -->
+                <div class="mt-10 pt-6 border-t border-slate-800">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-2">
+                            <button id="runFlow" class="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-sm font-medium transition">▶ Run Full Flow</button>
+                            <div class="text-xs mono text-slate-500 ml-2">Click to animate ask → answer cycle</div>
+                        </div>
+                        <div class="flex gap-2 text-[11px] mono">
+                            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">1 ask</span>
+                            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">2 encode</span>
+                            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">3 retrieve</span>
+                            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">4 vote</span>
+                            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">5 answer</span>
+                            <span class="px-2.5 py-1 rounded bg-slate-800 border border-slate-700">6 store</span>
+                        </div>
+                    </div>
+                    <div id="flowLog" class="mt-4 h-[84px] overflow-auto p-3 rounded-lg bg-black/50 border border-slate-800 mono text-[12px] leading-relaxed text-slate-400"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. THREE LAYERS -->
+        <section id="layers" class="scroll-mt-24">
+            <h2 class="text-3xl font-semibold mb-2">2. The Three Layers</h2>
+            <p class="text-slate-400 mb-8 max-w-3xl">Separation of concerns: stateless UI, stateful gateway, emergent engine.</p>
+
+            <div class="grid lg:grid-cols-3 gap-6">
+                <!-- Backend -->
+                <div class="glass rounded-2xl p-6 glow">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded bg-violet-500/20 flex items-center justify-center text-violet-300">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16"/></svg>
+                        </div>
+                        <h3 class="font-semibold">BACKEND • FastAPI</h3>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <div class="text-[11px] uppercase tracking-wide text-slate-500 mb-1.5">Endpoints</div>
+                            <div class="space-y-1.5 mono text-[12px]">
+                                <div class="flex justify-between p-2 rounded bg-black/40 border border-slate-800"><span class="text-cyan-400">POST /ask</span><span class="text-slate-500">query swarm</span></div>
+                                <div class="flex justify-between p-2 rounded bg-black/40 border border-slate-800"><span class="text-cyan-400">POST /learn</span><span class="text-slate-500">teach triple</span></div>
+                                <div class="flex justify-between p-2 rounded bg-black/40 border border-slate-800"><span class="text-violet-400">POST /create</span><span class="text-slate-500">forge tool</span></div>
+                                <div class="flex justify-between p-2 rounded bg-black/40 border border-slate-800"><span class="text-emerald-400">GET /memory</span><span class="text-slate-500">dump state</span></div>
+                                <div class="flex justify-between p-2 rounded bg-black/40 border border-slate-800"><span class="text-emerald-400">GET /knowledge</span><span class="text-slate-500">search triples</span></div>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800">
+                            <div class="text-[11px] uppercase tracking-wide text-slate-500 mb-1.5">SQLite Tables</div>
+                            <div class="mono text-[11px] leading-relaxed text-slate-400">
+                                knowledge_triples<br>memories (vector[5], text, ts)<br>conversations<br>tools<br>swarm_state
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800">
+                            <div class="text-[11px] uppercase tracking-wide text-slate-500 mb-1">Vector Index</div>
+                            <p class="text-xs text-slate-400">FAISS or sqlite-vec for <span class="text-white">cosine similarity</span> over 5D memory vectors. <span class="text-emerald-400">Persists across restarts.</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Engine -->
+                <div class="glass rounded-2xl p-6 glow border-violet-500/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded bg-fuchsia-500/20 flex items-center justify-center text-fuchsia-300">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 0 0 0 9 19.4a1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 0 0 0 19 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09A1.65 0 0 0 19.4 15z"/></svg>
+                        </div>
+                        <h3 class="font-semibold">ENGINE • 100 Agents</h3>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div class="p-3 rounded-lg bg-black/40 border border-slate-800">
+                            <div class="mono text-[12px] text-slate-300">class RecursiveMemory:</div>
+                            <div class="mono text-[11px] text-slate-500 ml-3 mt-1">vector: float[5]<br>text: str<br>result: any<br>timestamp: int</div>
+                        </div>
+                        <div>
+                            <div class="text-[11px] uppercase tracking-wide text-slate-500 mb-1.5">Core Methods</div>
+                            <div class="grid grid-cols-2 gap-1.5 text-[12px] mono">
+                                <div class="p-2 rounded bg-slate-800/50">store(v,t,r)</div>
+                                <div class="p-2 rounded bg-slate-800/50">retrieve(k=6)</div>
+                                <div class="p-2 rounded bg-slate-800/50">improve()</div>
+                                <div class="p-2 rounded bg-slate-800/50">vote(q)</div>
+                            </div>
+                        <div class="pt-3">
+                            <div class="flex justify-between text-[11px] mb-1.5"><span class="uppercase tracking-wide text-slate-500">Consensus</span><span class="mono text-emerald-400" id="consensusLabel">66/100</span></div>
+                            <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div id="consensusBar" class="h-full w-[66%] bg-gradient-to-r from-violet-600 to-fuchsia-500 transition-all duration-500"></div>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1.5">Recursion: improve() retrieves from 6 neighbors, mutates, votes again</p>
+                        </div>
+                        <button id="simulateVote" class="w-full mt-2 py-1.5 rounded-lg bg-fuchsia-600/20 hover:bg-fuchsia-600/30 border border-fuchsia-500/30 text-xs">Simulate Vote</button>
+                    </div>
+                </div>
+
+                <!-- Frontend -->
+                <div class="glass rounded-2xl p-6 glow">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 rounded bg-cyan-500/20 flex items-center justify-center text-cyan-300">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21l8-10"/></svg>
+                        </div>
+                        <h3 class="font-semibold">FRONTEND • React</h3>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <div class="text-[11px] uppercase tracking-wide text-slate-500 mb-1.5">Three Modes</div>
+                            <div class="space-y-2">
+                                <div class="p-2.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                                    <div class="font-medium text-violet-300 text-xs">RECALL</div>
+                                    <div class="text-[11px] text-slate-400">Query memory, retrieve similar vectors</div>
+                                </div>
+                                <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                    <div class="font-medium text-amber-300 text-xs">FORGE</div>
+                                    <div class="text-[11px] text-slate-400">Mutate + vote to create new tools</div>
+                                </div>
+                                <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                    <div class="font-medium text-emerald-300 text-xs">SOCRATIC</div>
+                                    <div class="text-[11px] text-slate-400">Swarm asks you, builds triples</div>
+                                </div>
+                            </div>
+                        <div class="pt-3 border-t border-slate-800">
+                            <div class="text-[11px] uppercase tracking-wide text-slate-500 mb-1.5">Visualizations</div>
+                            <div class="text-xs text-slate-400">Live 10×10 lattice • Memory graph (force-directed) • Tool builder with live preview</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. KNOWLEDGE BASE -->
+        <section id="knowledge" class="scroll-mt-24">
+            <h2 class="text-3xl font-semibold mb-2">3. Knowledge Base Design</h2>
+            <p class="text-slate-400 mb-8 max-w-3xl">It doesn't just store facts. It stores <em>you</em> — your patterns, timing, vocabulary, and logic.</p>
+
+            <div class="grid lg:grid-cols-2 gap-6">
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="font-medium mb-4 flex items-center gap-2"><span class="w-5 h-5 rounded bg-emerald-500/20 flex items-center justify-center">✓</span> How it becomes 100% like you</h3>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] mono mt-0.5">1</div>
+                            <div>
+                                <div class="font-medium text-slate-200">Stores triples: (subject, predicate, object)</div>
+                                <div class="text-slate-400 mono text-[12px] mt-1 p-2 rounded bg-black/40 border border-slate-800">(Socrates, taught, Plato) • (you, prefer, concise answers)</div>
+                            </div>
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] mono mt-0.5">2</div>
+                            <div>
+                                <div class="font-medium text-slate-200">Stores full context with timestamps</div>
+                                <div class="text-slate-400 text-[12px] mt-1 p-2 rounded bg-black/40 border border-slate-800">"You told me on Tuesday at 14:22 that when you say 'hold' you mean [2,2,2]"</div>
+                            </div>
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] mono mt-0.5">3</div>
+                            <div>
+                                <div class="font-medium text-slate-200">Learns your patterns</div>
+                                <div class="text-slate-400 text-[12px] mt-1">When you say "hold" → vector averages to [2,2,2]. When you type "?" → you want Socratic mode.</div>
+                            </div>
+                        <div class="flex gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] mono mt-0.5">4</div>
+                            <div>
+                                <div class="font-medium text-slate-200">After 1,000 interactions, it mirrors your reasoning</div>
+                                <div class="text-slate-400 text-[12px] mt-1">Retrieval bias shifts to your vectors. Consensus threshold adapts to your confidence patterns.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="font-medium mb-4">Live Triple Store</h3>
+                    <div class="space-y-3">
+                        <div class="flex gap-2">
+                            <input id="tripleSubj" placeholder="you" class="flex-1 px-3 py-2 rounded-lg bg-black/50 border border-slate-700 text-sm outline-none focus:border-violet-500">
+                            <input id="triplePred" placeholder="mean by 'hold'" class="flex-1 px-3 py-2 rounded-lg bg-black/50 border border-slate-700 text-sm outline-none focus:border-violet-500">
+                            <input id="tripleObj" placeholder="[2,2,2]" class="flex-1 px-3 py-2 rounded-lg bg-black/50 border border-slate-700 text-sm outline-none focus:border-violet-500">
+                            <button id="addTriple" class="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-sm">+</button>
+                        </div>
+                        <div id="tripleList" class="h-[220px] overflow-auto space-y-1.5 p-3 rounded-lg bg-black/30 border border-slate-800 mono text-[12px]">
+                            <div class="flex gap-2"><span class="text-slate-600">001</span><span class="text-cyan-400">you</span><span class="text-slate-500">prefer</span><span class="text-violet-300">concise answers</span></div>
+                            <div class="flex gap-2"><span class="text-slate-600">002</span><span class="text-cyan-400">hold</span><span class="text-slate-500">means</span><span class="text-violet-300">[2,2,2]</span></div>
+                            <div class="flex gap-2"><span class="text-slate-600">003</span><span class="text-cyan-400">Socrates</span><span class="text-slate-500">taught</span><span class="text-violet-300">Plato</span></div>
+                            <div class="flex gap-2"><span class="text-slate-600">004</span><span class="text-cyan-400">you</span><span class="text-slate-500">said on Tuesday</span><span class="text-violet-300">"use 66% threshold"</span></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-500 mono">
+                            <span>vectors indexed • cosine similarity active</span>
+                            <span id="tripleCount">4 triples</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. CONVERSATIONAL LOOP -->
+        <section id="loop" class="scroll-mt-24">
+            <h2 class="text-3xl font-semibold mb-2">4. The Conversational Loop</h2>
+            <p class="text-slate-400 mb-8 max-w-3xl">Not ingestion. Dialogue. The swarm switches sides when confidence drops.</p>
+
+            <div class="glass rounded-2xl p-8 glow">
+                <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
+                    <div class="relative">
+                        <svg viewBox="0 0 600 300" class="w-full">
+                            <defs>
+                                <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64748b"/></marker>
+                            </defs>
+                            <!-- Loop path -->
+                            <path d="M 100 150 C 150 50, 450 50, 500 150 C 450 250, 150 250, 100 150" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="6 6"/>
+                            <!-- Nodes -->
+                            <g id="loopNodes">
+                                <circle cx="100" cy="150" r="28" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+                                <text x="100" y="155" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="600">ASK</text>
+                                <circle cx="250" cy="70" r="28" fill="#0f172a" stroke="#a78bfa" stroke-width="2"/>
+                                <text x="250" y="75" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">ANSWER</text>
+                                <circle cx="400" cy="70" r="28" fill="#0f172a" stroke="#a78bfa" stroke-width="2"/>
+                                <text x="400" y="75" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">LISTEN</text>
+                                <circle cx="500" cy="150" r="28" fill="#0f172a" stroke="#e879f9" stroke-width="2"/>
+                                <text x="500" y="155" text-anchor="middle" fill="#e879f9" font-size="11" font-weight="600">ANSWER</text>
+                                <circle cx="400" cy="230" r="28" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+                                <text x="400" y="235" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="600">ASK</text>
+                                <circle cx="250" cy="230" r="28" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+                                <text x="250" y="235" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="600">REPEAT</text>
+                            </g>
+                            <text x="300" y="155" text-anchor="middle" fill="#64748b" font-size="11" class="mono">SWITCH SIDES</text>
+                        </svg>
+                        <div class="flex justify-center gap-3 mt-4">
+                            <button id="stepLoop" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm">Step Loop</button>
+                            <button id="toggleMode" class="px-4 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-sm">Mode: Normal</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 rounded-xl bg-black/40 border border-slate-800">
+                            <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Normal Mode</div>
+                            <p class="text-sm text-slate-300">You ask → swarm retrieves 6 neighbors, votes (66/100), answers, stores interaction.</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-black/40 border border-amber-500/20">
+                            <div class="text-xs uppercase tracking-wide text-amber-400 mb-2">Socratic Mode</div>
+                            <p class="text-sm text-slate-300">Swarm asks you → confidence &lt; 0.4 or command <span class="mono text-amber-300">/socratic</span> → you teach → triple stored.</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-black/40 border border-slate-800">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs uppercase tracking-wide text-slate-500">Confidence</span>
+                                <span class="mono text-[11px] text-slate-400" id="confValue">0.72</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                <div id="confBar" class="h-full w-[72%] bg-gradient-to-r from-emerald-500 to-violet-500 transition-all"></div>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-2">Triggers switch when &lt; 0.4</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. STARTER KIT -->
+        <section id="starter" class="scroll-mt-24">
+            <h2 class="text-3xl font-semibold mb-2">5. Code Starter Kit</h2>
+            <p class="text-slate-400 mb-8 max-w-3xl">Copy-paste complete. Run with <span class="mono text-violet-300">docker-compose up</span>. Built for persistence, recall, and self-improvement.</p>
+
+            <div class="glass rounded-2xl overflow-hidden glow">
+                <div class="flex items-center gap-1 p-2 border-b border-slate-800 bg-black/30 overflow-x-auto">
+                    <button data-code="main" class="code-tab active px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent whitespace-nowrap">backend/main.py</button>
+                    <button data-code="swarm" class="code-tab px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent whitespace-nowrap">engine/swarm.py</button>
+                    <button data-code="schema" class="code-tab px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent whitespace-nowrap">database/schema.sql</button>
+                    <button data-code="frontend" class="code-tab px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent whitespace-nowrap">frontend/index.html</button>
+                    <button data-code="compose" class="code-tab px-3 py-1.5 rounded-lg text-xs font-medium border border-transparent whitespace-nowrap">docker-compose.yml</button>
+                </div>
+                
+                <div class="relative">
+                    <button class="copy-btn absolute top-3 right-3 z-10 px-2.5 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] mono">Copy</button>
+                    <div class="max-h-[520px] overflow-auto">
+                        <pre class="m-0 p-0"><code id="codeBlock" class="language-python text-[12px] leading-relaxed block p-6"></code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 grid md:grid-cols-3 gap-4 text-sm">
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <div class="font-medium mb-1">Quick Start</div>
+                    <div class="mono text-[12px] text-slate-400">git clone &lt;repo&gt;<br>cd swarm-os<br>docker-compose up --build</div>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <div class="font-medium mb-1">Test It</div>
+                    <div class="mono text-[12px] text-slate-400">curl -X POST localhost:8000/ask \<br>-d '{"q":"what is hold?"}'</div>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <div class="font-medium mb-1">Persist</div>
+                    <div class="text-[12px] text-slate-400">SQLite at ./data/swarm.db survives restarts. Mount volume in compose.</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-slate-800 py-10 text-center text-xs text-slate-500 mono">
+        Swarm OS v0.1 • 100-agent recursive memory • Built for persistence
+    </footer>
+
+    <script>
+        // Code snippets
+        const codes = {
+            main: `# backend/main.py
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import sqlite3, time, json, numpy as np
+from pathlib import Path
+
+DB = Path("./data/swarm.db")
+DB.parent.mkdir(exist_ok=True)
+
+app = FastAPI(title="Swarm OS API")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# --- DB init ---
+def db():
+    c = sqlite3.connect(DB)
+    c.row_factory = sqlite3.Row
+    return c
+
+def init_db():
+    con = db()
+    con.executescript(open("database/schema.sql").read())
+    con.commit()
+
+@app.on_event("startup")
+def start():
+    init_db()
+    # lazy import to avoid circular
+    from engine.swarm import SwarmOS
+    app.state.swarm = SwarmOS(db_path=str(DB))
+
+class AskReq(BaseModel):
+    q: str
+    mode: str = "recall"  # recall | forge | socratic
+
+@app.post("/ask")
+def ask(req: AskReq):
+    swarm = app.state.swarm
+    vector = swarm.encode(req.q)
+    hits = swarm.retrieve(vector, k=6)
+    answer, votes, conf = swarm.vote(req.q, hits)
+    
+    # Socratic switch
+    if conf < 0.4 or req.mode == "socratic":
+        question = swarm.generate_question(req.q, hits)
+        return {"mode": "socratic", "question": question, "confidence": conf}
+    
+    # Store interaction
+    swarm.store(vector, req.q, answer)
+    con = db()
+    con.execute("INSERT INTO conversations(ts,q,a,mode,confidence) VALUES (?,?,?,?,?)",
+                (int(time.time()), req.q, answer, req.mode, conf))
+    con.commit()
+    return {"mode": "recall", "answer": answer, "votes": votes, "confidence": conf, "hits": len(hits)}
+
+class LearnReq(BaseModel):
+    subject: str; predicate: str; object: str
+    context: str = ""
+
+@app.post("/learn")
+def learn(r: LearnReq):
+    con = db()
+    con.execute("INSERT INTO knowledge_triples(s,p,o,context,ts) VALUES (?,?,?,?,?)",
+                (r.subject, r.predicate, r.object, r.context, int(time.time())))
+    con.commit()
+    # also store as memory
+    app.state.swarm.store(app.state.swarm.encode(f"{r.subject} {r.predicate} {r.object}"),
+                          f"{r.subject} {r.predicate} {r.object}", r.object)
+    return {"ok": True}
+
+@app.post("/create")
+def create(req: AskReq):
+    # FORGE mode: mutate + vote across 20 agents
+    swarm = app.state.swarm
+    result = swarm.forge(req.q)
+    return {"tool": result}
+
+@app.get("/memory")
+def memory(limit: int = 100):
+    con = db()
+    rows = con.execute("SELECT * FROM memories ORDER BY ts DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(r) for r in rows]
+
+@app.get("/knowledge")
+def knowledge(q: str = ""):
+    con = db()
+    if q:
+        rows = con.execute("SELECT * FROM knowledge_triples WHERE s LIKE ? OR o LIKE ? LIMIT 50", (f"%{q}%", f"%{q}%")).fetchall()
+    else:
+        rows = con.execute("SELECT * FROM knowledge_triples ORDER BY ts DESC LIMIT 50").fetchall()
+    return [dict(r) for r in rows]
+`,
+            swarm: `# engine/swarm.py
+import numpy as np, sqlite3, time, random, json
+from typing import List, Tuple
+
+class RecursiveMemory:
+    def __init__(self, id: int, vector: np.ndarray, text: str, result: str, ts: int):
+        self.id = id
+        self.vector = vector  # shape (5,)
+        self.text = text
+        self.result = result
+        self.ts = ts
+        self.neighbors = []
+
+    def similarity(self, v: np.ndarray) -> float:
+        return float(np.dot(self.vector, v) / (np.linalg.norm(self.vector)*np.linalg.norm(v)+1e-9))
+
+class SwarmOS:
+    def __init__(self, db_path: str, n_agents: int = 100, dim: int = 5):
+        self.db_path = db_path
+        self.dim = dim
+        self.agents: List[RecursiveMemory] = []
+        self._load_or_init(n_agents)
+        
+    def _load_or_init(self, n):
+        con = sqlite3.connect(self.db_path)
+        rows = con.execute("SELECT * FROM memories ORDER BY ts DESC LIMIT ?", (n*2,)).fetchall()
+        if len(rows) < n:
+            # seed with random memories
+            for i in range(n):
+                v = np.random.randn(self.dim).astype(np.float32)
+                v /= np.linalg.norm(v)
+                self.agents.append(RecursiveMemory(i, v, f"seed-{i}", "{}", int(time.time())))
+        else:
+            for i, r in enumerate(rows[:n]):
+                v = np.array(json.loads(r[1]), dtype=np.float32)
+                self.agents.append(RecursiveMemory(i, v, r[2], r[3], r[4]))
+        # wire neighbors (ring + random)
+        for i, a in enumerate(self.agents):
+            a.neighbors = [self.agents[(i+d)%len(self.agents)] for d in [1,2,3,5,8,13]]
+
+    def encode(self, text: str) -> np.ndarray:
+        # simple hash -> 5D vector (replace with sentence-transformers in prod)
+        h = abs(hash(text))
+        v = np.array([(h >> (i*8)) & 0xFF for i in range(self.dim)], dtype=np.float32)
+        v = (v - 127.5) / 127.5
+        return v / (np.linalg.norm(v) + 1e-9)
+
+    def store(self, vector: np.ndarray, text: str, result: str):
+        agent = random.choice(self.agents)
+        agent.vector = 0.9*agent.vector + 0.1*vector
+        agent.text = text[:200]
+        agent.result = result[:500]
+        agent.ts = int(time.time())
+        # persist
+        con = sqlite3.connect(self.db_path)
+        con.execute("INSERT INTO memories(vector,text,result,ts) VALUES (?,?,?,?)",
+                    (json.dumps(agent.vector.tolist()), agent.text, agent.result, agent.ts))
+        con.commit()
+
+    def retrieve(self, v: np.ndarray, k: int = 6) -> List[RecursiveMemory]:
+        scored = sorted(self.agents, key=lambda a: a.similarity(v), reverse=True)
+        return scored[:k]
+
+    def improve(self, mem: RecursiveMemory) -> RecursiveMemory:
+        # recursion: ask neighbors
+        neighbor_hits = []
+        for nb in mem.neighbors[:3]:
+            neighbor_hits.extend(self.retrieve(nb.vector, k=2))
+        # mutate
+        best = max(neighbor_hits, key=lambda x: x.similarity(mem.vector), default=mem)
+        new_v = 0.7*mem.vector + 0.3*best.vector
+        new_v /= np.linalg.norm(new_v)
+        mem.vector = new_v
+        return mem
+
+    def vote(self, query: str, hits: List[RecursiveMemory]) -> Tuple[str, int, float]:
+        # each agent votes for its best hit
+        votes = {}
+        for agent in random.sample(self.agents, 66):  # sample for speed
+            improved = self.improve(agent)
+            sim = improved.similarity(self.encode(query))
+            choice = max(hits, key=lambda h: h.similarity(improved.vector), default=hits[0])
+            votes[choice.result] = votes.get(choice.result, 0) + (1 if sim > 0.3 else 0)
+        if not votes:
+            return "I don't know yet. Teach me? /socratic", 0, 0.0
+        winner, count = max(votes.items(), key=lambda kv: kv[1])
+        confidence = count / 66.0
+        # consensus threshold 66/100 scaled to sample
+        if count < 44:  # ~66%
+            return f"Uncertain ({count}/66). {winner}", count, confidence
+        return winner, count, confidence
+
+    def forge(self, prompt: str) -> dict:
+        # mutate across 20 agents, majority vote
+        candidates = []
+        base = self.encode(prompt)
+        for _ in range(20):
+            a = random.choice(self.agents)
+            mutated = a.vector + np.random.randn(self.dim)*0.1
+            mutated /= np.linalg.norm(mutated)
+            candidates.append({"vector": mutated.tolist(), "text": f"tool-{random.randint(1000,9999)}"})
+        # vote
+        best = max(candidates, key=lambda c: np.dot(base, c["vector"]))
+        return {"name": best["text"], "spec": prompt, "vector": best["vector"]}
+
+    def generate_question(self, query: str, hits: List[RecursiveMemory]) -> str:
+        if not hits:
+            return f"What do you mean by '{query}'? Can you give me an example?"
+        top = hits[0]
+        return f"You mentioned '{top.text[:40]}...' before. When you say '{query}', do you mean {top.result}?"
+`,
+            schema: `-- database/schema.sql
+PRAGMA journal_mode=WAL;
+
+CREATE TABLE IF NOT EXISTS knowledge_triples (
+    id INTEGER PRIMARY KEY,
+    s TEXT NOT NULL,  -- subject
+    p TEXT NOT NULL,  -- predicate
+    o TEXT NOT NULL,  -- object
+    context TEXT,
+    ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_triples_s ON knowledge_triples(s);
+CREATE INDEX IF NOT EXISTS idx_triples_o ON knowledge_triples(o);
+
+CREATE TABLE IF NOT EXISTS memories (
+    id INTEGER PRIMARY KEY,
+    vector TEXT NOT NULL,  -- JSON array float[5]
+    text TEXT NOT NULL,
+    result TEXT,
+    ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_memories_ts ON memories(ts DESC);
+
+CREATE TABLE IF NOT EXISTS conversations (
+    id INTEGER PRIMARY KEY,
+    ts INTEGER NOT NULL,
+    q TEXT NOT NULL,
+    a TEXT,
+    mode TEXT,  -- recall | forge | socratic
+    confidence REAL
+);
+
+CREATE TABLE IF NOT EXISTS tools (
+    id INTEGER PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    spec TEXT,
+    code TEXT,
+    vector TEXT,
+    created_ts INTEGER,
+    uses INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS swarm_state (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_ts INTEGER
+);
+-- Persist consensus threshold, mode, etc.
+INSERT OR IGNORE INTO swarm_state(key,value,updated_ts) VALUES ('consensus_threshold','0.66', strftime('%s','now'));
+INSERT OR IGNORE INTO swarm_state(key,value,updated_ts) VALUES ('version','0.1', strftime('%s','now'));
+`,
+            frontend: `<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwarmOS Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#030712] text-slate-200 min-h-screen">
+  <div class="max-w-6xl mx-auto p-6">
+    <header class="flex items-center justify-between mb-6">
+      <h1 class="text-xl font-semibold">Swarm OS <span class="text-violet-400">console</span></h1>
+      <div class="flex gap-2">
+        <button data-mode="recall" class="mode px-3 py-1.5 rounded bg-violet-600/30 border border-violet-500/40 text-xs">RECALL</button>
+        <button data-mode="forge" class="mode px-3 py-1.5 rounded bg-slate-800 border border-slate-700 text-xs">FORGE</button>
+        <button data-mode="socratic" class="mode px-3 py-1.5 rounded bg-slate-800 border border-slate-700 text-xs">SOCRATIC</button>
+      </div>
+    </header>
+
+    <div class="grid lg:grid-cols-[1fr_380px] gap-6">
+      <div class="space-y-4">
+        <div id="chat" class="h-[480px] overflow-auto p-4 rounded-xl bg-slate-900/60 border border-slate-800 font-mono text-sm space-y-3"></div>
+        <div class="flex gap-2">
+          <input id="q" placeholder="Ask or type /socratic" class="flex-1 px-4 py-3 rounded-xl bg-black/50 border border-slate-700 outline-none focus:border-violet-500"/>
+          <button id="send" class="px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 font-medium">Send</button>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+          <div class="text-xs uppercase text-slate-500 mb-2">Lattice 10×10</div>
+          <canvas id="grid" width="340" height="340" class="w-full bg-black/40 rounded-lg"></canvas>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+          <div class="text-xs uppercase text-slate-500 mb-2">Memory</div>
+          <pre id="mem" class="text-[11px] h-[120px] overflow-auto text-slate-400"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const API = "http://localhost:8000";
+let mode = "recall";
+document.querySelectorAll('.mode').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.mode').forEach(x => x.classList.replace('bg-violet-600/30','bg-slate-800'));
+  b.classList.replace('bg-slate-800','bg-violet-600/30'); mode = b.dataset.mode;
+});
+async function ask(q){
+  const el = document.getElementById('chat');
+  el.innerHTML += \`<div class="text-cyan-400">> \${q}</div>\`;
+  const r = await fetch(API+'/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q,mode})});
+  const j = await r.json();
+  if(j.mode === 'socratic'){
+    el.innerHTML += \`<div class="text-amber-300">swarm asks: \${j.question} <span class="text-slate-500">[conf \${(j.confidence*100).toFixed(0)}%]</span></div>\`;
+  } else {
+    el.innerHTML += \`<div class="text-slate-200">\${j.answer} <span class="text-slate-500">[votes \${j.votes}/66]</span></div>\`;
+  }
+  el.scrollTop = el.scrollHeight;
+  drawGrid(j.votes||0);
+  loadMem();
+}
+document.getElementById('send').onclick = () => { const q=document.getElementById('q'); if(q.value) {ask(q.value); q.value=''} };
+document.getElementById('q').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('send').click() });
+
+function drawGrid(votes){
+  const c = document.getElementById('grid'), ctx = c.getContext('2d');
+  ctx.clearRect(0,0,340,340);
+  const s = 32, pad=10;
+  for(let y=0;y<10;y++) for(let x=0;x<10;x++){
+    const i=y*10+x; const active = i < Math.floor(votes/0.66);
+    ctx.fillStyle = active ? 'rgba(139,92,246,0.9)' : 'rgba(30,41,59,0.8)';
+    ctx.fillRect(pad+x*s, pad+y*s, s-4, s-4);
+  }
+}
+async function loadMem(){
+  const r = await fetch(API+'/memory?limit=5'); const j = await r.json();
+  document.getElementById('mem').textContent = j.map(m=>\`\${new Date(m.ts*1000).toLocaleTimeString()} | \${m.text.slice(0,40)}\`).join("\\n");
+}
+drawGrid(44); loadMem();
+</script>
+</body>
+</html>
+`,
+            compose: `# docker-compose.yml
+version: "3.9"
+services:
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./engine:/app/engine
+      - ./database:/app/database
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+
+volumes:
+  swarm_data:
+`
+        };
+
+        // Init code display
+        const codeBlock = document.getElementById('codeBlock');
+        function showCode(key) {
+            codeBlock.textContent = codes[key];
+            codeBlock.className = 'language-' + (key==='main'||key==='swarm' ? 'python' : key==='schema' ? 'sql' : key==='compose' ? 'yaml' : 'html') + ' text-[12px] leading-relaxed block p-6';
+            hljs.highlightElement(codeBlock);
+            document.querySelectorAll('.code-tab').forEach(t => t.classList.toggle('active', t.dataset.code===key));
+        }
+        showCode('main');
+        document.querySelectorAll('.code-tab').forEach(btn => btn.addEventListener('click', () => showCode(btn.dataset.code)));
+        document.querySelector('.copy-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(codeBlock.textContent);
+            const b = document.querySelector('.copy-btn'); b.textContent='Copied!'; setTimeout(()=>b.textContent='Copy',1200);
+        });
+
+        // Lattice animation
+        const canvas = document.getElementById('lattice');
+        const ctx = canvas.getContext('2d');
+        let latticeMode = 'recall';
+        let t = 0;
+        function drawLattice(){
+            ctx.clearRect(0,0,400,400);
+            const size=36, pad=20;
+            for(let y=0; y<10; y++){
+                for(let x=0; x<10; x++){
+                    const i = y*10+x;
+                    const px = pad + x*size;
+                    const py = pad + y*size;
+                    let alpha = 0.2;
+                    if(latticeMode==='recall'){
+                        alpha = 0.2 + 0.6 * Math.sin(t*0.02 + (x+y)*0.3)**2;
+                    } else if(latticeMode==='forge'){
+                        alpha = 0.2 + 0.7 * Math.random()* (Math.sin(t*0.05 + i*0.1)>0?1:0.2);
+                    } else {
+                        alpha = 0.2 + 0.6 * ( ((t + i*7) % 200) < 20 ? 1 : 0 );
+                    }
+                    ctx.fillStyle = `rgba(${latticeMode==='recall'?139: latticeMode==='forge'?245:16}, ${latticeMode==='socratic'?185:92}, ${latticeMode==='forge'?66:246}, ${alpha})`;
+                    ctx.fillRect(px, py, size-4, size-4);
+                    ctx.strokeStyle = 'rgba(100,116,139,0.15)';
+                    ctx.strokeRect(px, py, size-4);
+                }
+            }
+            t++;
+            requestAnimationFrame(drawLattice);
+        }
+        drawLattice();
+        document.querySelectorAll('.lattice-mode').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.lattice-mode').forEach(x => x.classList.replace('bg-violet-500/20','bg-slate-700/50'));
+                b.classList.add('bg-violet-500/20'); b.classList.remove('bg-slate-700/50');
+                latticeMode = b.dataset.mode;
+                document.getElementById('latticeStats').textContent = latticeMode==='recall' ? '66/100 consensus • 4.2ms' : latticeMode==='forge' ? '20/100 mutating • 12.7ms' : 'asking user • socratic';
+            });
+        });
+
+        // Architecture flow
+        const flowLog = document.getElementById('flowLog');
+        const flowDot = document.getElementById('flowDot');
+        const steps = [
+            {node:'frontend', text:'[ASK] user: "what does hold mean?"', pos:[180,50], color:'#22d3ee'},
+            {node:'gateway', text:'[ENCODE] text → vector[5] = [0.12, -0.44, 0.81, 0.03, -0.19]', pos:[360,50], color:'#a78bfa'},
+            {node:'engine', text:'[RETRIEVE] cosine sim → top 6 neighbors (0.91,0.87,0.84...)', pos:[540,50], color:'#e879f9'},
+            {node:'engine', text:'[VOTE] 66 agents sampled → 48 vote [2,2,2], 12 vote [1,1,1], 6 abstain', pos:[540,80], color:'#e879f9'},
+            {node:'gateway', text:'[ANSWER] consensus 48/66 = 73% > 66% threshold → return', pos:[360,80], color:'#a78bfa'},
+            {node:'db', text:'[STORE] INSERT memory + triple (hold, means, [2,2,2]) ts=...', pos:[720,50], color:'#34d399'},
+        ];
+        let flowRunning = false;
+        document.getElementById('runFlow').addEventListener('click', async () => {
+            if(flowRunning) return; flowRunning=true;
+            flowLog.innerHTML=''; flowDot.classList.remove('hidden');
+            for(let i=0;i<steps.length;i++){
+                const s = steps[i];
+                flowDot.style.transition='all 0.6s ease'; flowDot.style.left=s.pos[0]+'px'; flowDot.style.top=s.pos[1]+'px'; flowDot.style.background=s.color;
+                document.querySelectorAll('.arch-node').forEach(n=>n.classList.remove('ring-2','ring-violet-500/50'));
+                document.getElementById('node-'+s.node)?.classList.add('ring-2','ring-violet-500/50');
+                flowLog.innerHTML += `<div class="text-slate-300">${s.text}</div>`; flowLog.scrollTop=flowLog.scrollHeight;
+                await new Promise(r=>setTimeout(r,900));
+            }
+            flowDot.classList.add('hidden'); flowRunning=false;
+        });
+
+        // Consensus simulate
+        document.getElementById('simulateVote').addEventListener('click', () => {
+            const v = 44 + Math.floor(Math.random()*22);
+            document.getElementById('consensusBar').style.width = v+'%';
+            document.getElementById('consensusLabel').textContent = v+'/100';
+        });
+
+        // Triple store
+        let tripleId=5;
+        document.getElementById('addTriple').addEventListener('click', () => {
+            const s = document.getElementById('tripleSubj').value || 'you';
+            const p = document.getElementById('triplePred').value || 'mean';
+            const o = document.getElementById('tripleObj').value || '[?]';
+            const list = document.getElementById('tripleList');
+            const div = document.createElement('div'); div.className='flex gap-2';
+            div.innerHTML = `<span class="text-slate-600">${String(tripleId++).padStart(3,'0')}</span><span class="text-cyan-400">${s}</span><span class="text-slate-500">${p}</span><span class="text-violet-300">${o}</span>`;
+            list.prepend(div);
+            document.getElementById('tripleCount').textContent = `${tripleId-1} triples`;
+        });
+
+        // Conversational loop
+        let loopStep=0; const loopNodes = document.querySelectorAll('#loopNodes circle'); const colors=['#22d3ee','#a78bfa','#a78bfa','#e879f9','#f59e0b','#f59e0b'];
+        document.getElementById('stepLoop').addEventListener('click', () => {
+            loopNodes.forEach((c,i)=>c.setAttribute('stroke', i===loopStep ? colors[i] : '#334155'));
+            loopStep = (loopStep+1)%6;
+            const conf = Math.max(0.2, 0.9 - loopStep*0.12 + Math.random()*0.1);
+            document.getElementById('confValue').textContent = conf.toFixed(2);
+            document.getElementById('confBar').style.width = (conf*100)+'%';
+        });
+        let modeNormal=true;
+        document.getElementById('toggleMode').addEventListener('click', (e) => {
+            modeNormal=!modeNormal;
+            e.target.textContent = 'Mode: ' + (modeNormal?'Normal':'Socratic');
+            e.target.classList.toggle('bg-emerald-600/20', !modeNormal);
+        });
+
+        // Deploy button
+        document.getElementById('deployBtn').addEventListener('click', () => {
+            showCode('compose');
+            document.getElementById('starter').scrollIntoView({behavior:'smooth'});
+        });
+
+        // Initial highlight
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUSION ENGINE MK-IV – Atomic Visualization</title>
+<style>
+  :root {
+    --bg: #020712;
+    --cyan: #00e5ff;
+    --cyan2: #7ddfff;
+    --mag: #ff3bd4;
+    --amber: #ffb344;
+    --amber2: #ff9a3c;
+    --grid: #0a1a2a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: radial-gradient(1200px 800px at 50% 40%, #0b1930 0%, #030711 45%, #01040a 100%);
+    color: #cfe8ff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    overflow: hidden;
+  }
+  .viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(0,229,255,0.15);
+    background: linear-gradient(to bottom, rgba(4,20,38,0.9), rgba(2,10,20,0.6));
+    backdrop-filter: blur(6px);
+    gap: 12px;
+  }
+  .title {
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    font-size: 13px;
+    color: #e6f7ff;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .title b {
+    color: var(--cyan);
+    text-shadow: 0 0 12px rgba(0,229,255,0.7);
+  }
+  .status {
+    display: flex;
+    gap: 14px;
+    font-size: 10.5px;
+    color: #8fb4cc;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .status span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .status i {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+  main.core {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .grid-bg {
+    position: absolute;
+    inset: -20%;
+    background:
+      radial-gradient(circle at center, transparent 38%, #000 75%),
+      repeating-linear-gradient(0deg, rgba(0,229,255,0.07) 0 1px, transparent 1px 78px),
+      repeating-linear-gradient(90deg, rgba(0,229,255,0.06) 0 1px, transparent 1px 78px);
+    transform: perspective(900px) rotateX(62deg) translateY(10%);
+    opacity: 0.28;
+    filter: blur(0.3px);
+  }
+  .core-stage {
+    position: relative;
+    width: min(92vmin, 940px);
+    aspect-ratio: 1/1;
+  }
+  svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .scanlines {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 2px, transparent 4px);
+    mix-blend-mode: overlay;
+    opacity: 0.18;
+    z-index: 5;
+  }
+  .vignette {
+    pointer-events: none;
+    position: absolute;
+    inset: -5%;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.85) 100%);
+    z-index: 4;
+  }
+
+  /* Labels */
+  .labels {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
+  }
+  .label {
+    position: absolute;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #b8eaff;
+    background: rgba(3,18,32,0.88);
+    border: 1px solid rgba(0,229,255,0.35);
+    padding: 9px 11px 8px;
+    border-radius: 7px;
+    box-shadow: 0 0 24px rgba(0,229,255,0.12), inset 0 0 12px rgba(0,229,255,0.05);
+    backdrop-filter: blur(5px);
+    line-height: 1.25;
+  }
+  .label small {
+    display: block;
+    color: #7fc1d9;
+    font-size: 10px;
+    margin-top: 3px;
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+  .label::before {
+    content: '';
+    position: absolute;
+    width: 7px; height: 7px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--cyan), 0 0 18px var(--cyan);
+  }
+  .label.core-label { left: 2%; top: 26%; }
+  .label.core-label::before { right: -16px; top: 50%; transform: translateY(-50%); }
+  .label.boron-label { right: 1%; top: 16%; }
+  .label.boron-label::before { left: -16px; top: 50%; transform: translateY(-50%); background: var(--amber); box-shadow: 0 0 10px var(--amber), 0 0 18px var(--amber); border: 1px solid rgba(255,179,68,0.5); }
+  .label.photonic-label { left: 8%; bottom: 10%; }
+  .label.photonic-label::before { right: -12px; top: -8px; background: var(--mag); box-shadow: 0 0 10px var(--mag), 0 0 18px var(--mag); }
+
+  .leader { stroke: rgba(0,229,255,0.5); stroke-width: 1; stroke-dasharray: 3 4; fill: none; filter: drop-shadow(0 0 5px rgba(0,229,255,0.5)); }
+  .leader.mag { stroke: rgba(255,59,212,0.55); filter: drop-shadow(0 0 5px rgba(255,59,212,0.5)); }
+
+  /* Ripples */
+  .ripple {
+    fill: none;
+    stroke: var(--cyan);
+    stroke-width: 1.4;
+    opacity: 0;
+    transform-origin: center;
+  }
+  .r1 { animation: pulse 3s cubic-bezier(.2,.6,.2,1) infinite; }
+  .r2 { animation: pulse 3s cubic-bezier(.2,.6,.2,1) infinite 1s; }
+  .r3 { animation: pulse 3s cubic-bezier(.2,.6,.2,1) infinite 2s; }
+  @keyframes pulse {
+    0% { transform: scale(0.12); opacity: 0.85; }
+    55% { opacity: 0.28; }
+    100% { transform: scale(1); opacity: 0; }
+  }
+
+  /* Waveguides */
+  .waveguide {
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  /* Atoms */
+  .atom { cursor: pointer; transition: filter 0.2s; }
+  .atom:hover { filter: brightness(1.25); }
+  .boron-halo { fill: var(--amber); opacity: 0.15; transition: opacity 0.2s; }
+
+  .plasma-particle { fill: var(--cyan2); }
+
+  /* Ticker */
+  .ticker-wrap {
+    border-top: 1px solid rgba(0,229,255,0.14);
+    background: linear-gradient(to right, rgba(0,8,18,0.95), rgba(2,14,28,0.95));
+    padding: 8px 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .ticker {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+    animation: ticker 55s linear infinite;
+    padding-left: 100%;
+  }
+  .ticker span {
+    display: inline-block;
+    margin-right: 52px;
+    font-size: 11px;
+    color: #7ec8e6;
+    letter-spacing: 0.06em;
+  }
+  .ticker span b { color: #e4f6ff; font-weight: 600; }
+  .ticker span em { color: var(--amber); font-style: normal; text-shadow: 0 0 6px rgba(255,179,68,0.55); }
+  @keyframes ticker { to { transform: translateX(-100%); } }
+
+  @media (max-width: 720px) {
+    .header { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; }
+    .title { font-size: 11.5px; letter-spacing: 0.1em; }
+    .status { gap: 10px; font-size: 10px; }
+    .label { transform: scale(0.88); transform-origin: left center; }
+    .label.boron-label { transform-origin: right center; }
+    .label.core-label { left: 0; top: 22%; }
+    .label.boron-label { right: 0; top: 12%; }
+    .label.photonic-label { left: 2%; bottom: 6%; }
+  }
+</style>
+</head>
+<body>
+<div class="viewport">
+  <header class="header">
+    <div class="title">FUSION ENGINE <b>MK-IV</b> • ATOMIC VISUALIZATION</div>
+    <div class="status">
+      <span><i></i> CORE STABLE</span>
+      <span><i style="background:var(--amber); box-shadow:0 0 8px var(--amber)"></i> 72 BORONIC SITES</span>
+      <span><i style="background:var(--mag); box-shadow:0 0 8px var(--mag)"></i> PHOTONIC LOCK</span>
+    </div>
+  </header>
+
+  <main class="core">
+    <div class="grid-bg"></div>
+    <div class="core-stage">
+      <svg viewBox="0 0 1000 1000" aria-label="Atomic fusion engine visualization">
+        <defs>
+          <radialGradient id="boron" cx="32%" cy="26%" r="70%">
+            <stop offset="0%" stop-color="#ffe8c7"/>
+            <stop offset="22%" stop-color="#ffc46b"/>
+            <stop offset="55%" stop-color="#ff9a3c"/>
+            <stop offset="100%" stop-color="#7a2e00"/>
+          </radialGradient>
+          <radialGradient id="boronSpec" cx="50%" cy="50%" r="55%">
+            <stop offset="0%" stop-color="white" stop-opacity="0"/>
+            <stop offset="70%" stop-color="white" stop-opacity="0.06"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0.18"/>
+          </radialGradient>
+          <linearGradient id="waveguideGrad" x1="0" x2="1">
+            <stop offset="0%" stop-color="#00e5ff" stop-opacity="0"/>
+            <stop offset="18%" stop-color="#00e5ff" stop-opacity="1"/>
+            <stop offset="82%" stop-color="#7ddfff" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+          </linearGradient>
+          <radialGradient id="core1" cx="50%" cy="44%" r="60%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="12%" stop-color="#d4faff"/>
+            <stop offset="28%" stop-color="#6de8ff"/>
+            <stop offset="52%" stop-color="#00b7ff"/>
+            <stop offset="78%" stop-color="#0046c2"/>
+            <stop offset="100%" stop-color="#00122e" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="glowCore" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="14" result="b"/>
+            <feGaussianBlur stdDeviation="28" in="SourceGraphic" result="g"/>
+            <feMerge><feMergeNode in="g"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="plasmaNoise" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.020" numOctaves="2" seed="7" result="n">
+              <animate attributeName="baseFrequency" dur="7s" values="0.018;0.026;0.019;0.022;0.018" repeatCount="indefinite"/>
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5"/>
+          </filter>
+        </defs>
+
+        <!-- background stars -->
+        <g id="stars" opacity="0.38"></g>
+
+        <!-- label leaders -->
+        <g id="label-lines">
+          <path id="leader-core" class="leader" d="M210 375 C295 410 380 450 442 485"/>
+          <path id="leader-boron" class="leader" d="M790 358 C745 385 695 410 658 425"/>
+          <path id="leader-photonic" class="leader mag" d="M298 728 C342 692 392 648 428 608"/>
+        </g>
+
+        <!-- central system -->
+        <g id="plasma-core" transform="translate(500 500)">
+          <circle r="210" fill="none" stroke="#00e5ff" stroke-opacity="0.05"/>
+          <circle r="185" fill="none" stroke="#00e5ff" stroke-opacity="0.04" stroke-dasharray="2 12"/>
+          <circle class="ripple r1" r="245"/>
+          <circle class="ripple r2" r="245"/>
+          <circle class="ripple r3" r="245"/>
+          
+          <g filter="url(#glowCore)" opacity="0.95">
+            <circle r="72" fill="#00264d" opacity="0.7"/>
+            <circle r="58" fill="url(#core1)" filter="url(#plasmaNoise)"/>
+            <circle r="41" fill="white" opacity="0.12"/>
+            <circle r="24" fill="white" opacity="0.22"/>
+            <circle r="12" fill="white" opacity="0.35"/>
+          </g>
+
+          <g id="core-particles"></g>
+
+          <g opacity="0.65">
+            <circle r="88" fill="none" stroke="#00e5ff" stroke-width="0.6" stroke-dasharray="3 9" opacity="0.5">
+              <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="38s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="106" fill="none" stroke="#ff3bd4" stroke-width="0.5" stroke-dasharray="1.5 7" opacity="0.42">
+              <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="52s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="124" fill="none" stroke="#ffb344" stroke-width="0.4" stroke-dasharray="2 10" opacity="0.3">
+              <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="70s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+        </g>
+
+        <!-- helical lattice -->
+        <g id="helix-system">
+          <g id="waveguides" opacity="0.9"></g>
+          <g id="atoms"></g>
+          <animateTransform attributeName="transform" type="rotate" from="0 500 500" to="360 500 500" dur="240s" repeatCount="indefinite"/>
+        </g>
+
+        <!-- outer containment ring -->
+        <g transform="translate(500 500)" opacity="0.22" pointer-events="none">
+          <circle r="360" fill="none" stroke="#7ddfff" stroke-width="1.2" stroke-dasharray="4 18"/>
+          <circle r="374" fill="none" stroke="#00e5ff" stroke-width="0.4" stroke-dasharray="1 12"/>
+        </g>
+      </svg>
+
+      <div class="vignette"></div>
+      <div class="scanlines"></div>
+
+      <div class="labels">
+        <div class="label core-label">Plasma Core<small>Deuterium-Boron • 15.2 MK • Q&gt;1.2</small></div>
+        <div class="label boron-label">Boronic Sites (72)<small>Double helix • B-11 enriched lattice</small></div>
+        <div class="label photonic-label">Photonic Inlays<small>Hexagonal waveguide • 1-2-3 ripple sync</small></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="ticker-wrap">
+    <div class="ticker" id="ticker"></div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // stars
+    const stars = document.getElementById('stars');
+    for (let i=0;i<140;i++) {
+      const s = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      const x = Math.random()*1000;
+      const y = Math.random()*1000;
+      const r = Math.random()*1.1 + 0.2;
+      s.setAttribute('cx', x);
+      s.setAttribute('cy', y);
+      s.setAttribute('r', r);
+      s.setAttribute('fill', '#bfeaff');
+      s.setAttribute('opacity', (0.2 + Math.random()*0.6).toFixed(2));
+      if (Math.random() > 0.7) {
+        const an = document.createElementNS('http://www.w3.org/2000/svg','animate');
+        an.setAttribute('attributeName','opacity');
+        an.setAttribute('values','0.2;0.9;0.2');
+        an.setAttribute('dur', (3+Math.random()*5)+'s');
+        an.setAttribute('repeatCount','indefinite');
+        an.setAttribute('begin', (Math.random()*3)+'s');
+        s.appendChild(an);
+      }
+      stars.appendChild(s);
+    }
+
+    // core particles
+    const cp = document.getElementById('core-particles');
+    for(let i=0;i<62;i++){
+      const a = Math.random()*Math.PI*2;
+      const r = 16 + Math.random()*52;
+      const x = Math.cos(a)*r;
+      const y = Math.sin(a)*r;
+      const sz = 0.6 + Math.random()*1.7;
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', sz.toFixed(2));
+      c.setAttribute('class','plasma-particle'); c.style.opacity = (0.35+Math.random()*0.65).toString();
+      const an = document.createElementNS('http://www.w3.org/2000/svg','animate');
+      an.setAttribute('attributeName','opacity'); an.setAttribute('values','0.25;1;0.25'); an.setAttribute('dur', (1.8+Math.random()*3.2)+'s'); an.setAttribute('repeatCount','indefinite'); an.setAttribute('begin', (Math.random()*2)+'s');
+      c.appendChild(an);
+      const an2 = document.createElementNS('http://www.w3.org/2000/svg','animateTransform');
+      an2.setAttribute('attributeName','transform'); an2.setAttribute('type','translate'); an2.setAttribute('values',`0 0; ${ (Math.cos(a)*5).toFixed(1) } ${ (Math.sin(a)*5).toFixed(1) }; 0 0`); an2.setAttribute('dur', (7+Math.random()*6)+'s'); an2.setAttribute('repeatCount','indefinite');
+      c.appendChild(an2);
+      cp.appendChild(c);
+    }
+
+    // build double helix of 72 boron atoms
+    const wg = document.getElementById('waveguides');
+    const atomsG = document.getElementById('atoms');
+    const atoms = [];
+    const A=[], B=[];
+    const per = 36, turns = 2.65, rx = 228, ry = 212, height = 460;
+    for(let h=0; h<2; h++){
+      for(let i=0;i<per;i++){
+        const t = i/(per-1);
+        const angle = t * Math.PI*2*turns + h*Math.PI;
+        const x = 500 + Math.cos(angle) * rx;
+        const y = 500 + (t-0.5)*height + Math.sin(angle)*28;
+        const z = Math.sin(angle);
+        const scale = 0.58 + 0.42 * ( (z+1)/2 );
+        const at = {x,y,z,scale,helix:h,i,id:`${h}-${i}`};
+        atoms.push(at);
+        (h===0? A:B).push(at);
+      }
+    }
+    const bond = (a,b,type)=>{
+      const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1', a.x.toFixed(1)); l.setAttribute('y1', a.y.toFixed(1));
+      l.setAttribute('x2', b.x.toFixed(1)); l.setAttribute('y2', b.y.toFixed(1));
+      l.setAttribute('class','waveguide');
+      const isRung = type==='rung' || type==='hex';
+      l.setAttribute('stroke', isRung ? '#ff3bd4' : '#00e5ff');
+      l.setAttribute('stroke-width', isRung ? '1.7' : '1.15');
+      l.setAttribute('stroke-opacity', type==='helix' ? '0.28' : '0.58');
+      l.setAttribute('stroke-dasharray', isRung ? '3 5' : '4 7');
+      l.style.color = isRung ? '#ff3bd4' : '#00e5ff';
+      const dur = (2.6 + Math.random()*1.8).toFixed(2);
+      l.innerHTML = `<animate attributeName="stroke-dashoffset" values="0;-22" dur="${dur}s" repeatCount="indefinite"/>`;
+      wg.appendChild(l);
+    };
+    for(let i=0;i<per-1;i++){ bond(A[i],A[i+1],'helix'); bond(B[i],B[i+1],'helix'); }
+    for(let i=0;i<per;i+=2){ bond(A[i], B[i], 'rung'); if(i+1<per){ bond(A[i], B[i+1], 'diag'); bond(B[i], A[i+1], 'diag'); } }
+    // hexagonal photonic inlays at 3 bands
+    [0.22,0.5,0.78].forEach(level=>{
+      const idx = Math.floor(level*(per-1));
+      for(let k=-2;k<=2;k++){
+        const ai = idx+k, bi = idx+k+1;
+        if(A[ai] && B[bi]) bond(A[ai], B[bi], 'hex');
+      }
+    });
+    // render atoms back-to-front
+    atoms.sort((a,b)=>a.z-b.z);
+    atoms.forEach(at=>{
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('class','atom');
+      g.setAttribute('transform',`translate(${at.x.toFixed(1)} ${at.y.toFixed(1)}) scale(${at.scale.toFixed(3)})`);
+      g.innerHTML = `
+        <circle class="boron-halo" r="15"/>
+        <circle r="8.2" fill="url(#boron)" stroke="#ffb344" stroke-opacity="0.28" stroke-width="0.5"/>
+        <circle r="8.2" fill="url(#boronSpec)" opacity="0.38"/>
+        <circle r="2.6" cx="-2.4" cy="-2.8" fill="#fff6e5" opacity="0.32" filter="url(#soft)"/>
+        <text y="19" text-anchor="middle" font-size="6.5" fill="#ffb344" opacity="0.6" font-weight="600">B</text>
+      `;
+      g.addEventListener('mouseenter',()=>{ g.querySelector('.boron-halo').setAttribute('opacity','0.42'); });
+      g.addEventListener('mouseleave',()=>{ g.querySelector('.boron-halo').setAttribute('opacity','0.15'); });
+      atomsG.appendChild(g);
+    });
+    // update leader to rightmost atom
+    const right = atoms.reduce((m,a)=>a.x>m.x?a:m, atoms[0]);
+    const lb = document.getElementById('leader-boron');
+    if(lb){ lb.setAttribute('d', `M790 358 C ${ (790+right.x-10)/2 } 375, ${ (720+right.x-10)/2 } 405, ${ (right.x-8).toFixed(0) } ${(right.y+2).toFixed(0)}`); }
+
+    // ticker
+    const ticker = document.getElementById('ticker');
+    const parts = [];
+    for(let i=0;i<48;i++){
+      const coh = (0.921 + Math.random()*0.074).toFixed(3);
+      const phi = (Math.random()*2.8 + 0.2).toFixed(1);
+      const seq = (0xA000 + Math.floor(Math.random()*4095)).toString(16).toUpperCase();
+      const temp = (14.8 + Math.random()*0.7).toFixed(1);
+      parts.push(`<span><b>CHAOTIC</b> SEQ-${seq} | B<sup>11</sup>–B<sup>10</sup> COH <em>${coh}</em> | PHOTONIC ΔΦ <em>${phi}°</em> | RIPPLE 1-2-3 SYNC | CORE ${temp}MK</span>`);
+    }
+    ticker.innerHTML = parts.join('') + parts.join('');
+  });
+</script>
+</body>
+</html>

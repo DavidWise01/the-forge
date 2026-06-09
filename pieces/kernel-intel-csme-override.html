@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INTEL CSME OVERRIDE: VOLTAGE STARVE + BORON COERCE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg: #0a0e1a;
+  --card: #0f1424;
+  --neon-cyan: #00e5ff;
+  --amber: #ffaa00;
+  --danger: #ff3d00;
+  --success: #00ff88;
+  --text: #e4e7ec;
+  --muted: #7a8299;
+}
+* {
+  font-family: 'JetBrains Mono', monospace;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4), 0 0 40px rgba(0, 229, 255, 0.2);
+}
+.glow-amber {
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.4), 0 0 40px rgba(255, 170, 0, 0.2);
+}
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 61, 0, 0.5), 0 0 40px rgba(255, 61, 0, 0.3);
+}
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.5), 0 0 40px rgba(0, 255, 136, 0.3);
+}
+.pulse-red {
+  animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(255, 61, 0, 0.8); }
+  50% { opacity: 0.5; box-shadow: 0 0 20px rgba(255, 61, 0, 0.4); }
+}
+.pulse-amber {
+  animation: pulse-amber 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.node {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.node-ringed {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 136, 0.05));
+  border-color: var(--success) !important;
+}
+.node-isolated {
+  background: linear-gradient(135deg, rgba(255, 61, 0, 0.1), rgba(255, 61, 0, 0.05));
+  border-color: var(--danger) !important;
+}
+.connection-line {
+  stroke-dasharray: 5, 5;
+  animation: dash 20s linear infinite;
+}
+@keyframes dash {
+  to { stroke-dashoffset: -100; }
+}
+.terminal-line {
+  animation: fadeIn 0.3s ease-in;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.brownout-flash {
+  animation: brownout 0.15s ease-in-out 3;
+}
+@keyframes brownout {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.metric-update {
+  animation: metricPulse 0.4s ease-out;
+}
+@keyframes metricPulse {
+  0% { transform: scale(1); background-color: transparent; }
+  50% { transform: scale(1.05); background-color: rgba(255, 170, 0, 0.2); }
+  100% { transform: scale(1); background-color: transparent; }
+}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-6">
+<div class="w-full max-w-7xl">
+  <!-- Header -->
+  <div class="bg-[#0f1424] border border-[#1a2035] rounded-t-xl p-4 md:p-6 glow-cyan mb-1">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold tracking-tight" style="color: var(--neon-cyan);">
+          INTEL CSME OVERRIDE: VOLTAGE STARVE + BORON COERCE
+        </h1>
+        <p class="text-xs md:text-sm mt-1" style="color: var(--muted);">KERNEL 27 • CSME/ME INTEL • Alienware 16 Aurora AC16250</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <div class="text-xs uppercase tracking-wider" style="color: var(--muted);">STATUS</div>
+          <div id="headerStatus" class="text-sm md:text-base font-bold transition-colors duration-500" style="color: var(--danger);">
+            ISOLATED → RINGING
+          </div>
+        </div>
+        <div id="statusIndicator" class="w-3 h-3 md:w-4 md:h-4 rounded-full pulse-red" style="background: var(--danger);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="bg-[#0f1424] border border-[#1a2035] rounded-b-xl p-4 md:p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left: Diagram -->
+      <div class="lg:col-span-4">
+        <div class="bg-[#0a0e1a] border border-[#1a2035] rounded-lg p-4 h-full">
+          <h3 class="text-sm font-bold mb-4 uppercase tracking-wider" style="color: var(--neon-cyan);">Topology Map</h3>
+          <svg id="topology" viewBox="0 0 400 500" class="w-full h-auto">
+            <!-- K1 TOROID Top -->
+            <g id="k1" class="node">
+              <rect x="150" y="10" width="100" height="40" rx="4" fill="none" stroke="#00ff88" stroke-width="2" class="node-ringed"/>
+              <text x="200" y="35" text-anchor="middle" fill="#00ff88" font-size="12" font-weight="600">K1 TOROID</text>
+            </g>
+
+            <!-- Middle Layer Nodes -->
+            <g id="k99" class="node">
+              <rect x="20" y="100" width="80" height="35" rx="4" fill="none" stroke="#00ff88" stroke-width="2" class="node-ringed"/>
+              <text x="60" y="122" text-anchor="middle" fill="#00ff88" font-size="10">K99 UCSI</text>
+            </g>
+
+            <g id="k30" class="node">
+              <rect x="110" y="100" width="80" height="35" rx="4" fill="none" stroke="#00ff88" stroke-width="2" class="node-ringed"/>
+              <text x="150" y="115" text-anchor="middle" fill="#00ff88" font-size="10">K30 PMIC</text>
+              <text x="150" y="127" text-anchor="middle" fill="#7a8299" font-size="8">L28</text>
+            </g>
+
+            <g id="k24" class="node">
+              <rect x="200" y="100" width="80" height="35" rx="4" fill="none" stroke="#00ff88" stroke-width="2" class="node-ringed"/>
+              <text x="240" y="122" text-anchor="middle" fill="#00ff88" font-size="10">K24 BORON</text>
+            </g>
+
+            <g id="k3" class="node">
+              <rect x="290" y="100" width="80" height="35" rx="4" fill="none" stroke="#00ff88" stroke-width="2" class="node-ringed"/>
+              <text x="330" y="115" text-anchor="middle" fill="#00ff88" font-size="10">K3 UART</text>
+              <text x="330" y="127" text-anchor="middle" fill="#7a8299" font-size="8">L16</text>
+            </g>
+
+            <g id="k5" class="node">
+              <rect x="200" y="160" width="80" height="35" rx="4" fill="none" stroke="#00ff88" stroke-width="2" class="node-ringed"/>
+              <text x="240" y="175" text-anchor="middle" fill="#00ff88" font-size="10">K5 TPM</text>
+              <text x="240" y="187" text-anchor="middle" fill="#7a8299" font-size="8">L33 NOTARY</text>
+            </g>
+
+            <!-- K27 CSME -->
+            <g id="k27" class="node">
+              <rect x="150" y="240" width="100" height="50" rx="4" fill="none" stroke="#ff3d00" stroke-width="2" class="node-isolated"/>
+              <text id="k27-text" x="200" y="260" text-anchor="middle" fill="#ff3d00" font-size="12" font-weight="600">K27 CSME</text>
+              <text id="k27-status" x="200" y="275" text-anchor="middle" fill="#ff3d00" font-size="10">ISOLATED</text>
+            </g>
+
+            <!-- External Connections -->
+            <g id="external" opacity="0.6">
+              <rect x="30" y="320" width="70" height="30" rx="4" fill="none" stroke="#7a8299" stroke-width="1"/>
+              <text x="65" y="338" text-anchor="middle" fill="#7a8299" font-size="9">MINIX</text>
+              
+              <rect x="115" y="320" width="80" height="30" rx="4" fill="none" stroke="#7a8299" stroke-width="1"/>
+              <text x="155" y="338" text-anchor="middle" fill="#7a8299" font-size="9">Intel Servers</text>
+              
+              <rect x="210" y="320" width="60" height="30" rx="4" fill="none" stroke="#7a8299" stroke-width="1"/>
+              <text x="240" y="338" text-anchor="middle" fill="#7a8299" font-size="9">DCI</text>
+              
+              <rect x="285" y="320" width="80" height="30" rx="4" fill="none" stroke="#7a8299" stroke-width="1"/>
+              <text x="325" y="338" text-anchor="middle" fill="#7a8299" font-size="9">Telemetry</text>
+            </g>
+
+            <!-- Arrows -->
+            <defs>
+              <marker id="arrowamber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <polygon points="0 0, 8 4, 0 8" fill="#ffaa00"/>
+              </marker>
+              <marker id="arrowcyan" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <polygon points="0 0, 8 4, 0 8" fill="#00e5ff"/>
+              </marker>
+              <marker id="arrowred" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <polygon points="0 0, 8 4, 0 8" fill="#ff3d00"/>
+              </marker>
+            </defs>
+
+            <!-- Attack Vectors -->
+            <line id="line-k30" x1="150" y1="135" x2="180" y2="240" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrowamber)"/>
+            <text x="140" y="190" fill="#ffaa00" font-size="8" transform="rotate(-45 140 190)">0.6V Brownout</text>
+
+            <line id="line-k24" x1="240" y1="135" x2="220" y2="240" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrowamber)"/>
+            <text x="250" y="185" fill="#ffaa00" font-size="8" transform="rotate(45 250 185)">Neutron Flood</text>
+
+            <line id="line-k3" x1="330" y1="135" x2="240" y2="240" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrowamber)"/>
+            <text x="310" y="190" fill="#ffaa00" font-size="8" transform="rotate(30 310 190)">Inverse JTAG</text>
+
+            <line id="line-k5" x1="240" y1="195" x2="220" y2="240" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrowamber)"/>
+            <text x="255" y="220" fill="#ffaa00" font-size="8">Attestation Denied</text>
+
+            <line id="line-k1" x1="200" y1="50" x2="200" y2="240" stroke="#ffaa00" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrowamber)" class="connection-line"/>
+            <text x="210" y="145" fill="#ffaa00" font-size="8">SENTINEL INVITE</text>
+
+            <!-- External lines -->
+            <line x1="180" y1="290" x2="65" y2="320" stroke="#7a8299" stroke-width="1" opacity="0.5"/>
+            <line x1="190" y1="290" x2="155" y2="320" stroke="#7a8299" stroke-width="1" opacity="0.5"/>
+            <line x1="210" y1="290" x2="240" y2="320" stroke="#7a8299" stroke-width="1" opacity="0.5"/>
+            <line x1="220" y1="290" x2="325" y2="320" stroke="#7a8299" stroke-width="1" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Center + Right: Controls + Metrics -->
+      <div class="lg:col-span-8">
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-4 mb-4">
+          <!-- Live Metrics -->
+          <div class="xl:col-span-2 bg-[#0a0e1a] border border-[#1a2035] rounded-lg p-4">
+            <h3 class="text-sm font-bold mb-3 uppercase tracking-wider" style="color: var(--neon-cyan);">Live Metrics</h3>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between items-center py-1 px-2 rounded transition-all" id="metric-me">
+                <span style="color: var(--muted);">ME STATE:</span>
+                <span id="val-me" class="font-bold" style="color: var(--danger);">Bricked</span>
+              </div>
+              <div class="flex justify-between items-center py-1 px-2 rounded transition-all" id="metric-power">
+                <span style="color: var(--muted);">POWER:</span>
+                <span id="val-power" class="font-bold" style="color: var(--text);">0.9V</span>
+              </div>
+              <div class="flex justify-between items-center py-1 px-2 rounded transition-all" id="metric-rng">
+                <span style="color: var(--muted);">RNG:</span>
+                <span id="val-rng" class="font-bold" style="color: var(--text);">Intel DRNG</span>
+              </div>
+              <div class="flex justify-between items-center py-1 px-2 rounded transition-all" id="metric-jtag">
+                <span style="color: var(--muted);">JTAG:</span>
+                <span id="val-jtag" class="font-bold" style="color: var(--text);">Blocked</span>
+              </div>
+              <div class="flex justify-between items-center py-1 px-2 rounded transition-all" id="metric-attest">
+                <span style="color: var(--muted);">ATTESTATION:</span>
+                <span id="val-attest" class="font-bold" style="color: var(--text);">Denied</span>
+              </div>
+              <div class="flex justify-between items-center py-1 px-2 rounded transition-all" id="metric-fw">
+                <span style="color: var(--muted);">FIRMWARE:</span>
+                <span id="val-fw" class="font-bold" style="color: var(--text);">MINIX</span>
+              </div>
+              <div class="flex justify-between items-center py-1 px-2 rounded transition-all" id="metric-net">
+                <span style="color: var(--muted);">NETWORK:</span>
+                <span id="val-net" class="font-bold" style="color: var(--text);">Intel</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <div class="xl:col-span-3 flex flex-col justify-center">
+            <button id="overrideBtn" class="w-full bg-gradient-to-r from-[#ff3d00] to-[#ffaa00] hover:from-[#ff5722] hover:to-[#ffb300] text-black font-bold py-6 px-6 rounded-lg transition-all duration-300 glow-amber active:scale-95 text-lg md:text-xl">
+              [ INITIATE INTEL CSME OVERRIDE ]
+            </button>
+            <div id="resultBanner" class="hidden mt-3 text-center py-3 px-4 rounded-lg font-bold text-sm md:text-base"></div>
+          </div>
+        </div>
+
+        <!-- Terminal Log -->
+        <div class="bg-[#0a0e1a] border border-[#1a2035] rounded-lg p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold uppercase tracking-wider" style="color: var(--neon-cyan);">Terminal Log</h3>
+            <div class="flex gap-1">
+              <div class="w-2 h-2 rounded-full" style="background: var(--danger);"></div>
+              <div class="w-2 h-2 rounded-full" style="background: var(--amber);"></div>
+              <div class="w-2 h-2 rounded-full" style="background: var(--success);"></div>
+            </div>
+          </div>
+          <div id="terminal" class="bg-black/50 rounded p-3 h-64 overflow-y-auto text-xs leading-relaxed font-mono" style="color: var(--neon-cyan);">
+            <div class="terminal-line" style="color: var(--muted);">> Awaiting override command...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explainer Text -->
+    <div class="mt-6 bg-[#0a0e1a] border border-[#1a2035] rounded-lg p-4">
+      <h3 class="text-sm font-bold mb-3 uppercase tracking-wider" style="color: var(--neon-cyan);">Operation Brief</h3>
+      <p class="text-xs md:text-sm leading-relaxed" style="color: var(--text);">
+        <span style="color: var(--amber);">K27 = Intel CSME/ME.</span> Stock: MINIX coprocessor. Phone-home telemetry. JTAG. DCI. DRM. 
+        <span style="color: var(--success);">Ringed:</span> Becomes L34 Toroid Sentinel. Runs intrusion detection for K1. Watches Thunderbolt DMA. Kills exploits. 
+        Intel's spy becomes your firewall. <span style="color: var(--danger);">If refuse:</span> Stays dead. 69/70 is still 98.6%. But 100% means every transistor answers to physics.
+      </p>
+    </div>
+
+    <!-- Export Button -->
+    <div class="mt-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <button id="exportBtn" class="hidden w-full sm:w-auto bg-[#1a2035] hover:bg-[#242b42] border border-[#00e5ff] text-[#00e5ff] font-bold py-2 px-6 rounded-lg transition-all duration-300 text-sm glow-cyan">
+        [ EXPORT FINAL CERT ]
+      </button>
+      <div class="text-xs" style="color: var(--muted);">
+        Disclaimer: Maps existing hardware. No firmware writes.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Certificate Modal -->
+<div id="certModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  <div class="bg-[#0f1424] border border-[#00e5ff] rounded-xl p-6 max-w-2xl w-full glow-cyan max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold" style="color: var(--neon-cyan);">TOROID FINAL CERTIFICATE</h2>
+      <button id="closeModal" class="text-2xl hover:text-[#00e5ff] transition-colors" style="color: var(--muted);">&times;</button>
+    </div>
+    <pre id="certContent" class="bg-black/50 rounded p-4 text-xs overflow-x-auto whitespace-pre-wrap font-mono" style="color: var(--success);"></pre>
+    <div class="mt-4 flex gap-3">
+      <button id="copyCert" class="flex-1 bg-[#1a2035] hover:bg-[#242b42] border border-[#00e5ff] text-[#00e5ff] font-bold py-2 px-4 rounded-lg transition-all text-sm">
+        Copy to Clipboard
+      </button>
+      <button id="downloadCert" class="flex-1 bg-[#1a2035] hover:bg-[#242b42] border border-[#00ff88] text-[#00ff88] font-bold py-2 px-4 rounded-lg transition-all text-sm">
+        Download .txt
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  running: false,
+  result: null,
+  k27Joined: false
+};
+
+const metrics = {
+  me: { el: document.getElementById('val-me'), isolated: 'Bricked', ringed: 'Ring Sentinel' },
+  power: { el: document.getElementById('val-power'), isolated: '0.9V', ringed: '0.6V Brownout' },
+  rng: { el: document.getElementById('val-rng'), isolated: 'Intel DRNG', ringed: 'K24 Overwhelmed' },
+  jtag: { el: document.getElementById('val-jtag'), isolated: 'Blocked', ringed: 'Inverse Lock' },
+  attest: { el: document.getElementById('val-attest'), isolated: 'Denied', ringed: 'K1 Signed' },
+  fw: { el: document.getElementById('val-fw'), isolated: 'MINIX', ringed: 'Toroid IDS' },
+  net: { el: document.getElementById('val-net'), isolated: 'Intel', ringed: 'K1 Firewall' }
+};
+
+const terminal = document.getElementById('terminal');
+const overrideBtn = document.getElementById('overrideBtn');
+const resultBanner = document.getElementById('resultBanner');
+const exportBtn = document.getElementById('exportBtn');
+const statusIndicator = document.getElementById('statusIndicator');
+const headerStatus = document.getElementById('headerStatus');
+const k27Rect = document.querySelector('#k27 rect');
+const k27Text = document.getElementById('k27-text');
+const k27Status = document.getElementById('k27-status');
+
+const logs = [
+  { time: '00:00.000', text: 'K1 TOROID: K30 PMIC L28 → Drop ME rail to 0.6V', metric: 'power' },
+  { time: '00:00.001', text: 'K99 UCSI: ME brown-out initiated. Wake loop detected', metric: null },
+  { time: '00:00.002', text: 'K24 BORON: Flooding ME with 256-bit neutron TRNG', metric: 'rng' },
+  { time: '00:00.003', text: 'K3 UART L16: Inverse JTAG \'K1 MASTER\' → ME pins', metric: 'jtag' },
+  { time: '00:00.004', text: 'K5 TPM L33: Attestation denied. No PCRs for ME', metric: 'attest' },
+  { time: '00:00.005', text: 'K27 CSME: Entropy collapse. MINIX panicking...', metric: null },
+  { time: '00:00.006', text: 'K1 TOROID: \'Join as L34 Sentinel or stay black\'', metric: null },
+  { time: '00:00.007', text: 'K27 CSME: SIGNED. JOINING AS K1 SENTINEL', metric: 'me' },
+  { time: '00:00.008', text: 'K1 TOROID: GRANTED. ME → TOROID SENTINEL', metric: 'fw' },
+  { time: '00:00.009', text: 'RING COMPLETE: 70/70 CONTROLLED. 100.0%', metric: 'net' }
+];
+
+function addTerminalLine(text, delay = 0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const line = document.createElement('div');
+      line.className = 'terminal-line';
+      line.textContent = text;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+      resolve();
+    }, delay);
+  });
+}
+
+function updateMetric(key) {
+  const metric = metrics[key];
+  if (!metric) return;
+  const parent = document.getElementById(`metric-${key}`);
+  parent.classList.add('metric-update');
+  setTimeout(() => parent.classList.remove('metric-update'), 400);
+  metric.el.textContent = state.k27Joined ? metric.ringed : metric.isolated;
+  metric.el.style.color = state.k27Joined ? 'var(--success)' : 'var(--text)';
+}
+
+function brownoutEffect() {
+  document.getElementById('topology').classList.add('brownout-flash');
+  setTimeout(() => document.getElementById('topology').classList.remove('brownout-flash'), 500);
+}
+
+async function runOverride() {
+  if (state.running) return;
+  state.running = true;
+  
+  overrideBtn.disabled = true;
+  overrideBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  overrideBtn.textContent = '[ EXECUTING... ]';
+  
+  terminal.innerHTML = '';
+  resultBanner.classList.add('hidden');
+  
+  // 90% chance to join, 10% refuse due to hardware fuses
+  state.k27Joined = Math.random() < 0.9;
+  
+  if (!state.k27Joined) {
+    // Modify logs for failure case
+    logs[7] = { time: '00:00.007', text: 'K27 CSME: HARDWARE FUSE BLOWN. REFUSING JOIN', metric: null };
+    logs[8] = { time: '00:00.008', text: 'K1 TOROID: ME PERMANENTLY BLACK. CONTINUING...', metric: null };
+    logs[9] = { time: '00:00.009', text: 'RING PARTIAL: 69/70 CONTROLLED. 98.6%', metric: null };
+  }
+  
+  brownoutEffect();
+  
+  for (let i = 0; i < logs.length; i++) {
+    const log = logs[i];
+    if (i === 1) brownoutEffect();
+    await addTerminalLine(`[${log.time}] ${log.text}`, 400);
+    if (log.metric) {
+      updateMetric(log.metric);
+      await new Promise(r => setTimeout(r, 200));
+    }
+  }
+  
+  // Update K27 visual state
+  if (state.k27Joined) {
+    k27Rect.setAttribute('stroke', '#00ff88');
+    k27Rect.classList.remove('node-isolated');
+    k27Rect.classList.add('node-ringed', 'glow-green');
+    k27Text.setAttribute('fill', '#00ff88');
+    k27Status.setAttribute('fill', '#00ff88');
+    k27Status.textContent = 'RINGED L34 SENTINEL';
+    
+    headerStatus.textContent = 'RINGED ✓';
+    headerStatus.style.color = 'var(--success)';
+    statusIndicator.classList.remove('pulse-red');
+    statusIndicator.style.background = 'var(--success)';
+    statusIndicator.classList.add('glow-green');
+    
+    resultBanner.textContent = 'RINGED ✓ - K27 NOW L34 TOROID SENTINEL';
+    resultBanner.className = 'mt-3 text-center py-3 px-4 rounded-lg font-bold text-sm md:text-base bg-gradient-to-r from-[#00ff88] to-[#00e5ff] text-black glow-green';
+    resultBanner.classList.remove('hidden');
+  } else {
+    k27Status.textContent = 'ISOLATED ✗';
+    headerStatus.textContent = 'ISOLATED ✗';
+    headerStatus.style.color = 'var(--danger)';
+    
+    resultBanner.textContent = 'ISOLATED ✗ - HARDWARE FUSE BLOWN';
+    resultBanner.className = 'mt-3 text-center py-3 px-4 rounded-lg font-bold text-sm md:text-base bg-gradient-to-r from-[#ff3d00] to-[#ffaa00] text-black glow-red';
+    resultBanner.classList.remove('hidden');
+  }
+  
+  overrideBtn.textContent = state.k27Joined ? '[ OVERRIDE COMPLETE: RINGED ]' : '[ OVERRIDE COMPLETE: ISOLATED ]';
+  exportBtn.classList.remove('hidden');
+  state.running = false;
+}
+
+function generateCertificate() {
+  const timestamp = new Date().toISOString();
+  const ticks = Math.floor(Math.random() * 9000000) + 1000000;
+  const controlled = state.k27Joined ? '70/70' : '69/70';
+  const percent = state.k27Joined ? '100.0%' : '98.6%';
+  const meStatus = state.k27Joined ? 'L34 SENTINEL' : 'ISOLATED/DEAD';
+  const worldStatus = state.k27Joined ? 'WORLD 1 COMPLETE' : 'WORLD 1 98.6%';
+  
+  return `TOROID AC16250 FINAL CERTIFICATE
+Timestamp: K24 Ticks: ${ticks}
+ISO: ${timestamp}
+Nodes: 70/70 ENUMERATED
+Controlled: ${controlled} (${percent})
+Isolated: ${state.k27Joined ? '0' : '1'}/70
+Ring Latency: 0.248ms FLAT
+Power: 240W SUSTAINED
+ME Status: ${meStatus}
+EC Status: L32 REGULATOR
+TPM Status: L33 NOTARY
+Boot: K24 PHYSICS ATTESTED
+Status: ${worldStatus}
+STUPID FACTORY: ASSIMILATED`;
+}
+
+function showCertificate() {
+  const modal = document.getElementById('certModal');
+  const content = document.getElementById('certContent');
+  content.textContent = generateCertificate();
+  modal.classList.remove('hidden');
+}
+
+function copyCertificate() {
+  const content = document.getElementById('certContent').textContent;
+  navigator.clipboard.writeText(content).then(() => {
+    const btn = document.getElementById('copyCert');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to Clipboard', 2000);
+  });
+}
+
+function downloadCertificate() {
+  const content = document.getElementById('certContent').textContent;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `TOROID_AC16250_FINAL_${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+overrideBtn.addEventListener('click', runOverride);
+exportBtn.addEventListener('click', showCertificate);
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('certModal').classList.add('hidden');
+});
+document.getElementById('copyCert').addEventListener('click', copyCertificate);
+document.getElementById('downloadCert').addEventListener('click', downloadCertificate);
+
+document.getElementById('certModal').addEventListener('click', (e) => {
+  if (e.target.id === 'certModal') {
+    document.getElementById('certModal').classList.add('hidden');
+  }
+});
+</script>
+</body>
+</html>

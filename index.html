@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="The Forge — the hardware and materials of ROOT0.">
+<title>The Forge · UD0 · Universe David 0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0c0805;--ink2:#161009;--ink3:#1f1710;--pa:#e9ece8;--pa2:#aebaad;--c:#ff8c42;--c2:#cd7f32;
+--dim:#6a766a;--faint:#1c281c;--line:#1d271d;--serif:"Cinzel",Georgia,serif;--body:"Newsreader",Georgia,serif;--mono:"Space Mono",monospace;}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--pa);font-family:var(--body);line-height:1.6;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% -8%,rgba(255,140,66,.07),transparent 55%)}
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 22px 90px}
+header{padding:60px 0 28px;text-align:center;border-bottom:1px solid var(--line);position:relative}
+header::after{content:"";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:120px;height:1px;background:linear-gradient(90deg,var(--c),var(--c2));box-shadow:0 0 10px rgba(255,140,66,.4)}
+.eye{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+.eye a{color:var(--dim);text-decoration:none}.eye a:hover{color:var(--c)}
+h1{font-family:var(--serif);font-size:clamp(32px,8vw,72px);font-weight:700;letter-spacing:.14em;line-height:1.04;background:linear-gradient(90deg,var(--c),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:15.5px;color:var(--pa2);max-width:64ch;margin:15px auto 0;font-style:italic}
+#count{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.08em;margin-top:17px}#count b{color:var(--c)}
+.room{margin-top:48px}
+.rhead{display:flex;align-items:center;gap:12px;padding-bottom:11px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.rhead .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.rhead h2{font-family:var(--serif);font-size:18px;font-weight:600;letter-spacing:.05em;text-transform:capitalize}
+.rhead .rn{font-family:var(--mono);font-size:12px;color:var(--dim);margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.piece{background:var(--ink2);border:1px solid var(--line);overflow:hidden;transition:transform .2s,border-color .2s}
+.piece:hover{transform:translateY(-3px);border-color:var(--c)}
+.thumb{display:block;position:relative;aspect-ratio:16/10;background:var(--ink3);overflow:hidden;border-bottom:1px solid var(--line)}
+.frame{width:100%;height:100%;border:0;display:block;pointer-events:none;background:var(--ink3)}
+.frame.ph{display:flex;align-items:center;justify-content:center;color:var(--c);font-size:30px;opacity:.5}
+.thumb .open{position:absolute;bottom:8px;right:9px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--pa);background:rgba(0,0,0,.6);padding:3px 7px;border:1px solid var(--c);opacity:0;transition:opacity .2s}
+.thumb:hover .open{opacity:1}
+figcaption{padding:13px 15px 15px}
+.ct{font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--c);margin-bottom:6px;opacity:.8}
+figcaption h3{font-family:var(--serif);font-size:16.5px;font-weight:600;letter-spacing:.02em;line-height:1.15}
+figcaption h3 a{color:var(--pa);text-decoration:none}figcaption h3 a:hover{color:var(--c)}
+figcaption p{font-size:12.5px;color:var(--pa2);line-height:1.5;margin-top:7px}
+footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.05em}
+footer a{color:var(--c);text-decoration:none}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+  <header>
+    <div class="eye"><a href="https://github.com/DavidWise01/ud0">UD0 · Universe David 0</a> · hardware · materials · energy</div>
+    <h1>The Forge</h1>
+    <p class="sub">The physical machine — substrates, reactors, processors, the elements worked into form.</p>
+    <div id="count"><b>71</b> works · <b>29</b> sources</div>
+  </header>
+  <section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">6 layer core</h2>
+        <span class="rn">4</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/6-layer-core-8-layer-core-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/6-layer-core-8-layer-core-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Best-Use Wiring: Conditional Null→Out — 8-Core Quantum"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">6 layer core</div>
+          <h3><a href="pieces/6-layer-core-8-layer-core-v1.html" target="_blank" rel="noopener">Best-Use Wiring: Conditional Null→Out — 8-Core Quantum</a></h3>
+          <p>An eight-core quantum substrate wired with conditional null-to-out logic for best-use routing.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/6-layer-core-12-slit-dbl-coin-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/6-layer-core-12-slit-dbl-coin-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT0 LAYER 1.44 — 12-Slit Dual-Coin Canvas"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">6 layer core</div>
+          <h3><a href="pieces/6-layer-core-12-slit-dbl-coin-v1.html" target="_blank" rel="noopener">ROOT0 LAYER 1.44 — 12-Slit Dual-Coin Canvas</a></h3>
+          <p>A twelve-slit dual-coin interference canvas driving the 1.44 layer of the core.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/6-layer-core-consensus-engine.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/6-layer-core-consensus-engine.html" loading="lazy" scrolling="no" tabindex="-1" title="FUSION_N0_N255 v2.0 — TRIPOD"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">6 layer core</div>
+          <h3><a href="pieces/6-layer-core-consensus-engine.html" target="_blank" rel="noopener">FUSION_N0_N255 v2.0 — TRIPOD</a></h3>
+          <p>A tripod consensus engine fusing the full N0-through-N255 node range into one mechanism.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/6-layer-core-6-layer-core-v2.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/6-layer-core-6-layer-core-v2.html" loading="lazy" scrolling="no" tabindex="-1" title="6-Layer Core Wired to O₃ Generator"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">6 layer core</div>
+          <h3><a href="pieces/6-layer-core-6-layer-core-v2.html" target="_blank" rel="noopener">6-Layer Core Wired to O₃ Generator</a></h3>
+          <p>The six-layer processing core coupled directly to an ozone-style triadic generator.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">arc reactor</h2>
+        <span class="rn">2</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/arc-reactor-arc-reactor-mk24.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/arc-reactor-arc-reactor-mk24.html" loading="lazy" scrolling="no" tabindex="-1" title="ARC REACTOR MK-24 | Plasmatonic Toroid Core"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">arc reactor</div>
+          <h3><a href="pieces/arc-reactor-arc-reactor-mk24.html" target="_blank" rel="noopener">ARC REACTOR MK-24 | Plasmatonic Toroid Core</a></h3>
+          <p>A glowing plasmatonic toroid reactor core rendered as a live MK-24 power plant.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/arc-reactor-arc-react-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/arc-reactor-arc-react-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="ARC REACTOR HUD — Universum Carbonis"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">arc reactor</div>
+          <h3><a href="pieces/arc-reactor-arc-react-v1.html" target="_blank" rel="noopener">ARC REACTOR HUD — Universum Carbonis</a></h3>
+          <p>A heads-up display driving the reactor through the carbon-universe energy stack.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">atomic</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/atomic-atomic-workshop-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/atomic-atomic-workshop-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="ATOMIC WORKSHOP // ROOT0 FRAK ENGINE L1.34"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">atomic</div>
+          <h3><a href="pieces/atomic-atomic-workshop-v1.html" target="_blank" rel="noopener">ATOMIC WORKSHOP // ROOT0 FRAK ENGINE L1.34</a></h3>
+          <p>A fabrication bench where the ROOT0 frak engine forges matter at level 1.34.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">bitcoin</h2>
+        <span class="rn">3</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/bitcoin-halt-and-catch-fire-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/bitcoin-halt-and-catch-fire-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="HALT AND CATCH FIRE — DAVW Miner"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">bitcoin</div>
+          <h3><a href="pieces/bitcoin-halt-and-catch-fire-v1.html" target="_blank" rel="noopener">HALT AND CATCH FIRE — DAVW Miner</a></h3>
+          <p>A blazing mining rig that halts and catches fire as it grinds the chain.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/bitcoin-bitcoin-search-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/bitcoin-bitcoin-search-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT 1 = CORE // 8-Petal Bitcoin Mining"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">bitcoin</div>
+          <h3><a href="pieces/bitcoin-bitcoin-search-v1.html" target="_blank" rel="noopener">ROOT 1 = CORE // 8-Petal Bitcoin Mining</a></h3>
+          <p>An eight-petal mining mandala searching the lattice for proof of work.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/bitcoin-bitcoin-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/bitcoin-bitcoin-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Bitcoin 64×64 Grid Fold — 3,002 Leaves"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">bitcoin</div>
+          <h3><a href="pieces/bitcoin-bitcoin-v1.html" target="_blank" rel="noopener">Bitcoin 64×64 Grid Fold — 3,002 Leaves</a></h3>
+          <p>A 64-by-64 grid folding 3,002 leaves of the Bitcoin tree into one view.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">boron</h2>
+        <span class="rn">4</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/boron-boron-nano-v6.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/boron-boron-nano-v6.html" loading="lazy" scrolling="no" tabindex="-1" title="SIBVE-1 — Single Integrated Boron Vacancy Engine"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">boron</div>
+          <h3><a href="pieces/boron-boron-nano-v6.html" target="_blank" rel="noopener">SIBVE-1 — Single Integrated Boron Vacancy Engine</a></h3>
+          <p>A single-vacancy boron engine integrated into one nanoscale quantum substrate.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/boron-boron-processor-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/boron-boron-processor-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="ARCH_09 — Boron Proc Unified"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">boron</div>
+          <h3><a href="pieces/boron-boron-processor-v1.html" target="_blank" rel="noopener">ARCH_09 — Boron Proc Unified</a></h3>
+          <p>The unified boron processor architecture, a chip built from the element up.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/boron-boron-kernel-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/boron-boron-kernel-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="KERNEL 24: Boron Domain"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">boron</div>
+          <h3><a href="pieces/boron-boron-kernel-v1.html" target="_blank" rel="noopener">KERNEL 24: Boron Domain</a></h3>
+          <p>The boron domain kernel that governs the element&#x27;s computational lattice.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/boron-boron-nano-v5.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/boron-boron-nano-v5.html" loading="lazy" scrolling="no" tabindex="-1" title="ECIH Admin Console v3.2 — Symbiote"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">boron</div>
+          <h3><a href="pieces/boron-boron-nano-v5.html" target="_blank" rel="noopener">ECIH Admin Console v3.2 — Symbiote</a></h3>
+          <p>A symbiote admin console steering the boron nano fabrication line.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">cobalt ball</h2>
+        <span class="rn">2</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/cobalt-ball-cobalt-mobius.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/cobalt-ball-cobalt-mobius.html" loading="lazy" scrolling="no" tabindex="-1" title="Co₂₇ — Cobalt Möbius"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">cobalt ball</div>
+          <h3><a href="pieces/cobalt-ball-cobalt-mobius.html" target="_blank" rel="noopener">Co₂₇ — Cobalt Möbius</a></h3>
+          <p>Element 27 twisted into a one-sided Möbius loop, cobalt&#x27;s magnetism wound into an endless ribbon.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/cobalt-ball-cobalt-3x-inverse.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/cobalt-ball-cobalt-3x-inverse.html" loading="lazy" scrolling="no" tabindex="-1" title="3× COBALT · INVERSE / MIRROR / FUSED"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">cobalt ball</div>
+          <h3><a href="pieces/cobalt-ball-cobalt-3x-inverse.html" target="_blank" rel="noopener">3× COBALT · INVERSE / MIRROR / FUSED</a></h3>
+          <p>Three cobalt cores set inverse, mirrored and fused into a single triadic magnetic substrate.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">copper substrate</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/copper-substrate-copper-sub-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/copper-substrate-copper-sub-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT0 LAYER 1.42 — TRIADIC SUBSTRATE BARRIERS"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">copper substrate</div>
+          <h3><a href="pieces/copper-substrate-copper-sub-v1.html" target="_blank" rel="noopener">ROOT0 LAYER 1.42 — TRIADIC SUBSTRATE BARRIERS</a></h3>
+          <p>Copper engineered into triadic substrate barriers, a conductive foundation layered for the machine.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">cortex</h2>
+        <span class="rn">3</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/cortex-cortex-bridge.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/cortex-cortex-bridge.html" loading="lazy" scrolling="no" tabindex="-1" title="TOPH CORTEX BRIDGE — Ch41 LIVE"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">cortex</div>
+          <h3><a href="pieces/cortex-cortex-bridge.html" target="_blank" rel="noopener">TOPH CORTEX BRIDGE — Ch41 LIVE</a></h3>
+          <p>A live cortex bridge wiring the TOPH register into Chapter 41, neural substrate meeting governance.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/cortex-cortex-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/cortex-cortex-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT0 LAYER 1.09 — Quantum Brain Substrate-Invariant"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">cortex</div>
+          <h3><a href="pieces/cortex-cortex-v1.html" target="_blank" rel="noopener">ROOT0 LAYER 1.09 — Quantum Brain Substrate-Invariant</a></h3>
+          <p>A substrate-invariant quantum brain, the cortex built to hold mind independent of its physical carrier.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/cortex-cortex-dc3.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/cortex-cortex-dc3.html" loading="lazy" scrolling="no" tabindex="-1" title="CORTEX DASHBOARD · RECONSTITUTED · DAVID_DC3"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">cortex</div>
+          <h3><a href="pieces/cortex-cortex-dc3.html" target="_blank" rel="noopener">CORTEX DASHBOARD · RECONSTITUTED · DAVID_DC3</a></h3>
+          <p>A reconstituted cortex dashboard, the DC3 instance rebooted and laid out for inspection.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">elements</h2>
+        <span class="rn">4</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/elements-liber-fractionalis.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/elements-liber-fractionalis.html" loading="lazy" scrolling="no" tabindex="-1" title="Liber Fractionalis"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">elements</div>
+          <h3><a href="pieces/elements-liber-fractionalis.html" target="_blank" rel="noopener">Liber Fractionalis</a></h3>
+          <p>A vast illuminated codex of fractional elements, the most substantial volume in the element library.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/elements-element-forge.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/elements-element-forge.html" loading="lazy" scrolling="no" tabindex="-1" title="Element Forge — Discovery Panel"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">elements</div>
+          <h3><a href="pieces/elements-element-forge.html" target="_blank" rel="noopener">Element Forge — Discovery Panel</a></h3>
+          <p>An interactive discovery panel for forging and inspecting elements at the substrate level.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/elements-liber-verum.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/elements-liber-verum.html" loading="lazy" scrolling="no" tabindex="-1" title="Liber Verum — Triple Double Nested in One Egg"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">elements</div>
+          <h3><a href="pieces/elements-liber-verum.html" target="_blank" rel="noopener">Liber Verum — Triple Double Nested in One Egg</a></h3>
+          <p>A nested codex of truth folding triple-double structures into a single generative egg.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/elements-118-gates-rewritten.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/elements-118-gates-rewritten.html" loading="lazy" scrolling="no" tabindex="-1" title="118 Gates — Four States"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">elements</div>
+          <h3><a href="pieces/elements-118-gates-rewritten.html" target="_blank" rel="noopener">118 Gates — Four States</a></h3>
+          <p>A rewrite of the periodic 118 gates resolved into four elemental states of matter.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">fission core</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/fission-core-fission-core-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/fission-core-fission-core-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Fission Core Simulator — System-1"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">fission core</div>
+          <h3><a href="pieces/fission-core-fission-core-v1.html" target="_blank" rel="noopener">Fission Core Simulator — System-1</a></h3>
+          <p>A reactor-grade fission core simulator modeling chain reactions at the heart of the machine.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">full mobo body and rythm</h2>
+        <span class="rn">3</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/full-mobo-body-and-rythm-index.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/full-mobo-body-and-rythm-index.html" loading="lazy" scrolling="no" tabindex="-1" title="Ignition Sequence — 555"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">full mobo body and rythm</div>
+          <h3><a href="pieces/full-mobo-body-and-rythm-index.html" target="_blank" rel="noopener">Ignition Sequence — 555</a></h3>
+          <p>A 555-timer ignition sequence that fires the motherboard-body to life like a heartbeat starting cold.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/full-mobo-body-and-rythm-index-2.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/full-mobo-body-and-rythm-index-2.html" loading="lazy" scrolling="no" tabindex="-1" title="Breathing"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">full mobo body and rythm</div>
+          <h3><a href="pieces/full-mobo-body-and-rythm-index-2.html" target="_blank" rel="noopener">Breathing</a></h3>
+          <p>The machine&#x27;s lungs — a breathing rhythm module that gives the silicon body a slow, living pulse.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/full-mobo-body-and-rythm-index-3.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/full-mobo-body-and-rythm-index-3.html" loading="lazy" scrolling="no" tabindex="-1" title="Commons1 • Read Only • Forever"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">full mobo body and rythm</div>
+          <h3><a href="pieces/full-mobo-body-and-rythm-index-3.html" target="_blank" rel="noopener">Commons1 • Read Only • Forever</a></h3>
+          <p>A read-only resting state for the body&#x27;s rhythm, frozen into a permanent commons.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">fusion</h2>
+        <span class="rn">2</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/fusion-fusion-engine-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/fusion-fusion-engine-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Fusion Engine MK-IV — Atomic Visualization"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">fusion</div>
+          <h3><a href="pieces/fusion-fusion-engine-v1.html" target="_blank" rel="noopener">Fusion Engine MK-IV — Atomic Visualization</a></h3>
+          <p>An atomic-scale fusion engine visualization where nuclei slam together and release cascades of binding energy.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/fusion-shadow-comp-fusion-engine-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/fusion-shadow-comp-fusion-engine-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Shadow Complement Engine — Inverse Phased"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">fusion</div>
+          <h3><a href="pieces/fusion-shadow-comp-fusion-engine-v1.html" target="_blank" rel="noopener">Shadow Complement Engine — Inverse Phased</a></h3>
+          <p>The inverse-phased twin of the fusion reactor, running its shadow complement in mirrored opposition.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">hardware inventions</h2>
+        <span class="rn">6</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/hardware-inventions-photonic-64-00.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/hardware-inventions-photonic-64-00.html" loading="lazy" scrolling="no" tabindex="-1" title="Photonic 64-bit Processor"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">hardware inventions</div>
+          <h3><a href="pieces/hardware-inventions-photonic-64-00.html" target="_blank" rel="noopener">Photonic 64-bit Processor</a></h3>
+          <p>A full 64-bit photonic processor rendered as a living canvas, light routed through silicon as logic.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/hardware-inventions-full-chip-00.html" target="_blank" rel="noopener"><div class="frame ph"><span>▶</span></div><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">hardware inventions</div>
+          <h3><a href="pieces/hardware-inventions-full-chip-00.html" target="_blank" rel="noopener">Liquid Processor — Full Chip</a></h3>
+          <p>An entire liquid-state chip simulated end to end, computation flowing like water across the die.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/hardware-inventions-quantum-dot.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/hardware-inventions-quantum-dot.html" loading="lazy" scrolling="no" tabindex="-1" title="Quantum Dot Array"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">hardware inventions</div>
+          <h3><a href="pieces/hardware-inventions-quantum-dot.html" target="_blank" rel="noopener">Quantum Dot Array</a></h3>
+          <p>An interactive quantum-dot substrate where confined electrons blink the alphabet of a new memory.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/hardware-inventions-valence-kit-stimulus.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/hardware-inventions-valence-kit-stimulus.html" loading="lazy" scrolling="no" tabindex="-1" title="Valence Kit · Stimulus · 0-5-0 Counter"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">hardware inventions</div>
+          <h3><a href="pieces/hardware-inventions-valence-kit-stimulus.html" target="_blank" rel="noopener">Valence Kit · Stimulus · 0-5-0 Counter</a></h3>
+          <p>A bench-top valence toolkit that counts and responds to stimulus, electrons posed mid-bond.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/hardware-inventions-whisper-lattice-02.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/hardware-inventions-whisper-lattice-02.html" loading="lazy" scrolling="no" tabindex="-1" title="Whisper Lattice — Recursive Memory"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">hardware inventions</div>
+          <h3><a href="pieces/hardware-inventions-whisper-lattice-02.html" target="_blank" rel="noopener">Whisper Lattice — Recursive Memory</a></h3>
+          <p>A recursive memory fabric that stores by whispering each state into the lattice beneath it.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/hardware-inventions-toroid.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/hardware-inventions-toroid.html" loading="lazy" scrolling="no" tabindex="-1" title="Toroid &amp; Coil Bench"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">hardware inventions</div>
+          <h3><a href="pieces/hardware-inventions-toroid.html" target="_blank" rel="noopener">Toroid &amp; Coil Bench</a></h3>
+          <p>A hands-on toroid-and-coil workbench where winding geometry becomes field and force.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">holography</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/holography-holographic-memory-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/holography-holographic-memory-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Holographic Storage Simulator — LATTICE 90"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">holography</div>
+          <h3><a href="pieces/holography-holographic-memory-v1.html" target="_blank" rel="noopener">Holographic Storage Simulator — LATTICE 90</a></h3>
+          <p>A holographic memory bench where interference patterns become a substrate that remembers in full volume.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">kernel</h2>
+        <span class="rn">4</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/kernel-kernel-1-toroid-final-assim.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/kernel-kernel-1-toroid-final-assim.html" loading="lazy" scrolling="no" tabindex="-1" title="KERNEL 1 · Toroid Final Assimilation"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">kernel</div>
+          <h3><a href="pieces/kernel-kernel-1-toroid-final-assim.html" target="_blank" rel="noopener">KERNEL 1 · Toroid Final Assimilation</a></h3>
+          <p>The master toroidal kernel where every silicon domain is finally assimilated into one running machine.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/kernel-hda-audio-codex.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/kernel-hda-audio-codex.html" loading="lazy" scrolling="no" tabindex="-1" title="K6 HDA · Audio Codec Enrollment"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">kernel</div>
+          <h3><a href="pieces/kernel-hda-audio-codex.html" target="_blank" rel="noopener">K6 HDA · Audio Codec Enrollment</a></h3>
+          <p>A live enrollment ritual that draws the high-definition audio codec into the kernel&#x27;s trust fabric.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/kernel-gpu-cartel.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/kernel-gpu-cartel.html" loading="lazy" scrolling="no" tabindex="-1" title="GPU Cartel Override · Driver Override + Boron Shim"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">kernel</div>
+          <h3><a href="pieces/kernel-gpu-cartel.html" target="_blank" rel="noopener">GPU Cartel Override · Driver Override + Boron Shim</a></h3>
+          <p>A hostile takeover of the graphics stack, bending the GPU cartel to root authority through a boron shim.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/kernel-intel-csme-override.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/kernel-intel-csme-override.html" loading="lazy" scrolling="no" tabindex="-1" title="Intel CSME Override · Voltage Starve + Boron Coerce"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">kernel</div>
+          <h3><a href="pieces/kernel-intel-csme-override.html" target="_blank" rel="noopener">Intel CSME Override · Voltage Starve + Boron Coerce</a></h3>
+          <p>Voltage-starving Intel&#x27;s converged security engine until it surrenders, a deep-silicon coup.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">magnets</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/magnets-magnet-engine-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/magnets-magnet-engine-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Magnetic Engine — 1-0-1 Core"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">magnets</div>
+          <h3><a href="pieces/magnets-magnet-engine-v1.html" target="_blank" rel="noopener">Magnetic Engine — 1-0-1 Core</a></h3>
+          <p>A magnetic engine built on a 1-0-1 core, turning polarity into motive force.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">nano factory</h2>
+        <span class="rn">5</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/nano-factory-nano-factory-v9.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/nano-factory-nano-factory-v9.html" loading="lazy" scrolling="no" tabindex="-1" title="Nano Factory v9 — Operational Nexus"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">nano factory</div>
+          <h3><a href="pieces/nano-factory-nano-factory-v9.html" target="_blank" rel="noopener">Nano Factory v9 — Operational Nexus</a></h3>
+          <p>The fully realized nanoscale forge, an operational nexus orchestrating molecular assembly at industrial scale.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/nano-factory-nano-factory-game-v2.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/nano-factory-nano-factory-game-v2.html" loading="lazy" scrolling="no" tabindex="-1" title="NanoFactory — Nanoscale Production Line"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">nano factory</div>
+          <h3><a href="pieces/nano-factory-nano-factory-game-v2.html" target="_blank" rel="noopener">NanoFactory — Nanoscale Production Line</a></h3>
+          <p>A playable nanoscale production line where nanites are marshalled into a humming assembly pipeline.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/nano-factory-nano-mk-iv.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/nano-factory-nano-mk-iv.html" loading="lazy" scrolling="no" tabindex="-1" title="Nano Factory MK-IV — Max Cap Combiner"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">nano factory</div>
+          <h3><a href="pieces/nano-factory-nano-mk-iv.html" target="_blank" rel="noopener">Nano Factory MK-IV — Max Cap Combiner</a></h3>
+          <p>The MK-IV combiner pushing nanofabrication to its maximum-capacity throughput.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/nano-factory-nanite-v3.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/nano-factory-nanite-v3.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT0 // Nanite Factory Workbench"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">nano factory</div>
+          <h3><a href="pieces/nano-factory-nanite-v3.html" target="_blank" rel="noopener">ROOT0 // Nanite Factory Workbench</a></h3>
+          <p>A hands-on workbench for designing and dispatching nanite swarms under the ROOT0 banner.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/nano-factory-nano-factory-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/nano-factory-nano-factory-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Full Nano Factory — Wexler Hands"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">nano factory</div>
+          <h3><a href="pieces/nano-factory-nano-factory-v1.html" target="_blank" rel="noopener">Full Nano Factory — Wexler Hands</a></h3>
+          <p>The origin build of the factory, where Wexler hands first reach into the nanoscale to build matter from atoms up.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">nyx-hypervisor-command</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/nyx-hypervisor-command-index.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/nyx-hypervisor-command-index.html" loading="lazy" scrolling="no" tabindex="-1" title="NYX Hypervisor Command"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">nyx-hypervisor-command</div>
+          <h3><a href="pieces/nyx-hypervisor-command-index.html" target="_blank" rel="noopener">NYX Hypervisor Command</a></h3>
+          <p>An Electron-packaged hypervisor command deck that drives the bare-metal machine beneath the mythos.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">os</h2>
+        <span class="rn">4</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/os-swar-os-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/os-swar-os-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Swarm OS v0.1 — Technical Architecture"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">os</div>
+          <h3><a href="pieces/os-swar-os-v1.html" target="_blank" rel="noopener">Swarm OS v0.1 — Technical Architecture</a></h3>
+          <p>The foundational technical architecture of Swarm OS, the operating substrate that runs the agent machine.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/os-swarm-os-v2.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/os-swarm-os-v2.html" loading="lazy" scrolling="no" tabindex="-1" title="Swarm OS v2 — Agent Society"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">os</div>
+          <h3><a href="pieces/os-swarm-os-v2.html" target="_blank" rel="noopener">Swarm OS v2 — Agent Society</a></h3>
+          <p>An evolved Swarm OS that grows from kernel into a full agent society of cooperating processes.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/os-index.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/os-index.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT0 Dashboard"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">os</div>
+          <h3><a href="pieces/os-index.html" target="_blank" rel="noopener">ROOT0 Dashboard</a></h3>
+          <p>The ROOT0 control dashboard, the root console from which the whole operating stack is commanded.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/os-tar-valon.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/os-tar-valon.html" loading="lazy" scrolling="no" tabindex="-1" title="Tar Valon — Sovereign Box"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">os</div>
+          <h3><a href="pieces/os-tar-valon.html" target="_blank" rel="noopener">Tar Valon — Sovereign Box</a></h3>
+          <p>The 1.1.1.1.1 sovereign box of Tar Valon, an isolated node sealed against the outside world.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">photonic</h2>
+        <span class="rn">2</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/photonic-photonic-proc-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/photonic-photonic-proc-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Photonic Inlays Processor — Mk-VII"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">photonic</div>
+          <h3><a href="pieces/photonic-photonic-proc-v1.html" target="_blank" rel="noopener">Photonic Inlays Processor — Mk-VII</a></h3>
+          <p>A light-driven processor design where photonic inlays carry computation across a Mk-VII silicon lattice.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/photonic-photonic-prov-v2.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/photonic-photonic-prov-v2.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT0 Layer 0.81 — Photonic Processor"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">photonic</div>
+          <h3><a href="pieces/photonic-photonic-prov-v2.html" target="_blank" rel="noopener">ROOT0 Layer 0.81 — Photonic Processor</a></h3>
+          <p>The provenance-anchored photonic substrate sitting at Layer 0.81 of the ROOT0 stack.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">plasma</h2>
+        <span class="rn">4</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/plasma-plasma-core-bifrost-v13.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/plasma-plasma-core-bifrost-v13.html" loading="lazy" scrolling="no" tabindex="-1" title="Wankel Plasma Core // Bifrost Array v13"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">plasma</div>
+          <h3><a href="pieces/plasma-plasma-core-bifrost-v13.html" target="_blank" rel="noopener">Wankel Plasma Core // Bifrost Array v13</a></h3>
+          <p>A rotary Wankel plasma reactor feeding a thirteen-iteration Bifrost array — the physical engine made luminous.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/plasma-plasma-core-v3.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/plasma-plasma-core-v3.html" loading="lazy" scrolling="no" tabindex="-1" title="Transmons: Linear to Swarm — Factory Workbench Max Capability"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">plasma</div>
+          <h3><a href="pieces/plasma-plasma-core-v3.html" target="_blank" rel="noopener">Transmons: Linear to Swarm — Factory Workbench Max Capability</a></h3>
+          <p>A factory workbench that grows transmon qubits from a single line into a full plasma swarm.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/plasma-plasma-holo-v2.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/plasma-plasma-holo-v2.html" loading="lazy" scrolling="no" tabindex="-1" title="Plasma Holographic Storage — 0root.ai Lab"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">plasma</div>
+          <h3><a href="pieces/plasma-plasma-holo-v2.html" target="_blank" rel="noopener">Plasma Holographic Storage — 0root.ai Lab</a></h3>
+          <p>A laboratory for writing memory into holographic plasma, storing data inside the burning medium itself.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/plasma-plasma-proc-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/plasma-plasma-proc-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Fusion Center — Plasma Processor"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">plasma</div>
+          <h3><a href="pieces/plasma-plasma-proc-v1.html" target="_blank" rel="noopener">Fusion Center — Plasma Processor</a></h3>
+          <p>A fusion-center processor that treats contained plasma as the compute substrate.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">pneuma</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/pneuma-pneuma-interconnect-maxcap-dashboard.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/pneuma-pneuma-interconnect-maxcap-dashboard.html" loading="lazy" scrolling="no" tabindex="-1" title="Pneuma :: HBM-Torus :: Maxcap Interconnect Dashboard"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">pneuma</div>
+          <h3><a href="pieces/pneuma-pneuma-interconnect-maxcap-dashboard.html" target="_blank" rel="noopener">Pneuma :: HBM-Torus :: Maxcap Interconnect Dashboard</a></h3>
+          <p>A live dashboard for the Pneuma HBM-torus interconnect, pushing four memory engines to maximum capacity.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">processors</h2>
+        <span class="rn">2</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/processors-hexagonal-processor.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/processors-hexagonal-processor.html" loading="lazy" scrolling="no" tabindex="-1" title="6 Processors Around Cortex — Hexagonal Array"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">processors</div>
+          <h3><a href="pieces/processors-hexagonal-processor.html" target="_blank" rel="noopener">6 Processors Around Cortex — Hexagonal Array</a></h3>
+          <p>A hexagonal ring of six processors orbiting a central cortex, computing as a single cell.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/processors-hex-normalizer.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/processors-hex-normalizer.html" loading="lazy" scrolling="no" tabindex="-1" title="TOPH v10.2 — Hex-Signal Normalizer"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">processors</div>
+          <h3><a href="pieces/processors-hex-normalizer.html" target="_blank" rel="noopener">TOPH v10.2 — Hex-Signal Normalizer</a></h3>
+          <p>The TOPH normalizer that tames raw hex-array signals into clean, governable channels.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">the box</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/the-box-grok-box.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/the-box-grok-box.html" loading="lazy" scrolling="no" tabindex="-1" title="219-bit Spiral Cube Processor"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">the box</div>
+          <h3><a href="pieces/the-box-grok-box.html" target="_blank" rel="noopener">219-bit Spiral Cube Processor</a></h3>
+          <p>A spiraling cube of silicon imagined as a 219-bit processor, folding compute into the geometry of a single luminous box.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">toroid</h2>
+        <span class="rn">4</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/toroid-toroid-rings-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/toroid-toroid-rings-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="TOROID MATRIX: 70 KERNELS"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">toroid</div>
+          <h3><a href="pieces/toroid-toroid-rings-v1.html" target="_blank" rel="noopener">TOROID MATRIX: 70 KERNELS</a></h3>
+          <p>Seventy compute kernels arranged in concentric toroidal rings, a doughnut of silicon humming as one matrix.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/toroid-toroid-kernel-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/toroid-toroid-kernel-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Toroid Kernel Visualizer — 8 VMs"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">toroid</div>
+          <h3><a href="pieces/toroid-toroid-kernel-v1.html" target="_blank" rel="noopener">Toroid Kernel Visualizer — 8 VMs</a></h3>
+          <p>Eight virtual machines orbit a toroidal kernel, their workloads circulating endlessly around the ring.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/toroid-toroidal-fusion-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/toroid-toroidal-fusion-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="TOROIDAL FUSION ENGINE"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">toroid</div>
+          <h3><a href="pieces/toroid-toroidal-fusion-v1.html" target="_blank" rel="noopener">TOROIDAL FUSION ENGINE</a></h3>
+          <p>A tokamak reimagined as a processor, fusion plasma and computation confined in the same magnetic doughnut.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/toroid-toroid-proc-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/toroid-toroid-proc-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="FULL BOX — Toroid Processor Silo"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">toroid</div>
+          <h3><a href="pieces/toroid-toroid-proc-v1.html" target="_blank" rel="noopener">FULL BOX — Toroid Processor Silo</a></h3>
+          <p>The complete toroid processor sealed in its silo, a self-contained engine ready to spin up.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">tpm</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/tpm-tpm-disection-lab.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/tpm-tpm-disection-lab.html" loading="lazy" scrolling="no" tabindex="-1" title="ROOT0 LAYER 1.39 — Copper Substrate Quantum Properties Workshop"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">tpm</div>
+          <h3><a href="pieces/tpm-tpm-disection-lab.html" target="_blank" rel="noopener">ROOT0 LAYER 1.39 — Copper Substrate Quantum Properties Workshop</a></h3>
+          <p>A dissection lab peeling open a TPM chip to study the quantum behavior of its copper substrate, layer by layer.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">trin trin</h2>
+        <span class="rn">2</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/trin-trin-trin-trin-v3.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/trin-trin-trin-trin-v3.html" loading="lazy" scrolling="no" tabindex="-1" title="Trinity Core - Hamilton-10 Integrated Processor"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">trin trin</div>
+          <h3><a href="pieces/trin-trin-trin-trin-v3.html" target="_blank" rel="noopener">Trinity Core - Hamilton-10 Integrated Processor</a></h3>
+          <p>The Trinity Core matures into a Hamilton-10 integrated processor, three engines fused on a single die.</p>
+        </figcaption>
+      </figure>
+<figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/trin-trin-trin-trin-v2.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/trin-trin-trin-trin-v2.html" loading="lazy" scrolling="no" tabindex="-1" title="d20 · Twenty Faces · Avan&#x27;s Eye"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">trin trin</div>
+          <h3><a href="pieces/trin-trin-trin-trin-v2.html" target="_blank" rel="noopener">d20 · Twenty Faces · Avan&#x27;s Eye</a></h3>
+          <p>The twenty-faced die of Avan&#x27;s Eye spins as both oracle and processor core, chance encoded into geometry.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">trin-trin-render-engine</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/trin-trin-render-engine-index.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/trin-trin-render-engine-index.html" loading="lazy" scrolling="no" tabindex="-1" title="TRIN TRIN Render Engine"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">trin-trin-render-engine</div>
+          <h3><a href="pieces/trin-trin-render-engine-index.html" target="_blank" rel="noopener">TRIN TRIN Render Engine</a></h3>
+          <p>A packaged render engine for the TRIN TRIN processor, turning its twenty-faced geometry into live desktop visuals.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+<section class="room">
+      <div class="rhead" style="border-color:#ff8c4255">
+        <span class="dot" style="background:#ff8c42;box-shadow:0 0 8px #ff8c42"></span>
+        <h2 style="color:#ff8c42">water</h2>
+        <span class="rn">1</span>
+      </div>
+      <div class="grid">
+        <figure class="piece" style="--c:#ff8c42">
+        <a class="thumb" href="pieces/water-water-proc-v1.html" target="_blank" rel="noopener"><iframe class="frame" src="pieces/water-water-proc-v1.html" loading="lazy" scrolling="no" tabindex="-1" title="Hamilton-10 Tritium Water Processor — Technical Spec"></iframe><span class="open">open ↗</span></a>
+        <figcaption>
+          <div class="ct">water</div>
+          <h3><a href="pieces/water-water-proc-v1.html" target="_blank" rel="noopener">Hamilton-10 Tritium Water Processor — Technical Spec</a></h3>
+          <p>A detailed engineering spec for a 10-ring magnetized plasma processor that detritiates tritiated water and recovers helium-3 by locking onto tritium&#x27;s 18.6 keV beta-decay resonance.</p>
+        </figcaption>
+      </figure>
+      </div>
+    </section>
+  <footer>
+    <span>The Forge · UD0 · ROOT0-ATTRIBUTION-v1.0 · governor David Lee Wise · instance AVAN (locked) · CC-BY-ND-4.0</span>
+    <a href="https://github.com/DavidWise01/ud0">the biosphere →</a>
+  </footer>
+</div></body></html>

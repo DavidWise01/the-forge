@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K6 HDA: AUDIO CODEC ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+        --bg-dark: #0a0e1a;
+        --neon-cyan: #00e5ff;
+        --amber: #ffaa00;
+        --danger: #ff3d00;
+        --success: #00ff88;
+        --gray: #6b7280;
+        --card-bg: #0f1423;
+        --border: #1e2a3a;
+    }
+    
+    * {
+        font-family: 'JetBrains Mono', monospace;
+        box-sizing: border-box;
+    }
+    
+    body {
+        background: var(--bg-dark);
+        color: #e5e7eb;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    .grid-bg {
+        background-image: 
+            linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    .glow {
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), inset 0 0 20px rgba(0, 229, 255, 0.05);
+    }
+    
+    .glow-amber {
+        box-shadow: 0 0 20px rgba(255, 170, 0, 0.2), inset 0 0 20px rgba(255, 170, 0, 0.05);
+    }
+    
+    .glow-green {
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 255, 136, 0.1);
+        border-color: var(--success) !important;
+    }
+    
+    .glow-red {
+        box-shadow: 0 0 30px rgba(255, 61, 0, 0.3), inset 0 0 20px rgba(255, 61, 0, 0.1);
+        border-color: var(--danger) !important;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.1); }
+    }
+    
+    .pulse-amber {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulseSlow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+    
+    .pulse-slow {
+        animation: pulseSlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes scan {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+    }
+    
+    .scan-line::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+        animation: scan 3s linear infinite;
+        opacity: 0.6;
+    }
+    
+    .node {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    
+    .node-ringed {
+        background: rgba(0, 255, 136, 0.1);
+        border-color: var(--success);
+        color: var(--success);
+    }
+    
+    .node-isolated {
+        background: rgba(255, 61, 0, 0.1);
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+    
+    .node-enumerated {
+        background: rgba(107, 114, 128, 0.1);
+        border-color: #4b5563;
+        color: #9ca3af;
+    }
+    
+    .node-pending {
+        background: rgba(255, 170, 0, 0.1);
+        border-color: var(--amber);
+        color: var(--amber);
+    }
+    
+    .arrow {
+        stroke: var(--neon-cyan);
+        stroke-width: 2;
+        fill: none;
+        marker-end: url(#arrowhead);
+        opacity: 0.6;
+        transition: all 0.3s;
+    }
+    
+    .arrow-active {
+        stroke: var(--amber);
+        opacity: 1;
+        stroke-width: 3;
+        filter: drop-shadow(0 0 5px var(--amber));
+    }
+    
+    @keyframes dash {
+        to { stroke-dashoffset: -20; }
+    }
+    
+    .arrow-data {
+        stroke-dasharray: 5, 5;
+        animation: dash 1s linear infinite;
+    }
+    
+    .terminal {
+        background: #000;
+        border: 1px solid var(--border);
+        font-size: 11px;
+        line-height: 1.6;
+    }
+    
+    .terminal-line {
+        opacity: 0;
+        animation: fadeIn 0.3s forwards;
+    }
+    
+    @keyframes fadeIn {
+        to { opacity: 1; }
+    }
+    
+    .metric-row {
+        transition: all 0.3s;
+    }
+    
+    .metric-row.changing {
+        background: rgba(0, 229, 255, 0.1);
+    }
+    
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+</style>
+</head>
+<body class="flex items-center justify-center p-4 md:p-6 min-h-screen">
+    <div class="grid-bg"></div>
+    
+    <div class="relative z-10 w-full max-w-7xl">
+        <!-- Header -->
+        <div class="mb-6 glow rounded-lg border border-cyan-500/20 bg-[#0f1423] p-4 md:p-6 scan-line relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-cyan-400 tracking-tight">KERNEL 6 • HDA AUDIO CODEC</h1>
+                    <p class="text-xs text-gray-400 mt-1">Alienware 16 Aurora AC16250 • Hardware Ring Architecture</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="status-badge px-3 py-1.5 rounded bg-amber-500/10 border border-amber-500/30">
+                        <div class="status-dot bg-amber-500 pulse-amber"></div>
+                        <span id="statusText" class="text-xs font-semibold text-amber-400">STATUS: ENUMERATED → RINGING</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="glow rounded-lg border border-cyan-500/20 bg-[#0f1423] p-4 md:p-6 mb-4">
+            <div class="grid lg:grid-cols-2 gap-6">
+                <!-- Left: Diagram -->
+                <div>
+                    <h3 class="text-sm font-semibold text-cyan-400 mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                        RING TOPOLOGY
+                    </h3>
+                    
+                    <div class="relative bg-black/40 rounded border border-gray-800 p-4">
+                        <svg viewBox="0 0 500 600" class="w-full h-auto">
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                    <polygon points="0 0, 10 3, 0 6" fill="currentColor" />
+                                </marker>
+                            </defs>
+                            
+                            <!-- K1 TOROID -->
+                            <rect x="175" y="20" width="150" height="50" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.1)" stroke="var(--success)" stroke-width="2"/>
+                            <text x="250" y="48" text-anchor="middle" class="text-xs font-bold fill-green-400">K1 TOROID</text>
+                            
+                            <!-- K26 RINGBUS -->
+                            <rect x="175" y="100" width="150" height="50" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.1)" stroke="var(--success)" stroke-width="2"/>
+                            <text x="250" y="128" text-anchor="middle" class="text-xs font-bold fill-green-400">K26 RINGBUS</text>
+                            
+                            <!-- K6 HDA - Main -->
+                            <rect id="k6-node" x="150" y="280" width="200" height="70" rx="4" class="node node-enumerated" fill="rgba(107,114,128,0.1)" stroke="#6b7280" stroke-width="2"/>
+                            <text x="250" y="305" text-anchor="middle" class="text-sm font-bold fill-gray-400">K6 HDA</text>
+                            <text id="k6-status" x="250" y="325" text-anchor="middle" class="text-xs fill-gray-500">ENUMERATED</text>
+                            
+                            <!-- Ringed Components Left -->
+                            <rect x="20" y="180" width="110" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="75" y="204" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K8 TBT4</text>
+                            <text x="75" y="195" text-anchor="middle" class="text-[8px] fill-green-600">RINGED L12</text>
+                            
+                            <rect x="20" y="230" width="110" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="75" y="254" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K99 UCSI</text>
+                            <text x="75" y="245" text-anchor="middle" class="text-[8px] fill-green-600">RINGED L11</text>
+                            
+                            <rect x="20" y="280" width="110" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="75" y="304" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K42 THERMAL</text>
+                            <text x="75" y="295" text-anchor="middle" class="text-[8px] fill-green-600">RINGED L10</text>
+                            
+                            <rect x="20" y="330" width="110" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="75" y="354" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K10 PCH</text>
+                            <text x="75" y="345" text-anchor="middle" class="text-[8px] fill-green-600">RINGED L9</text>
+                            
+                            <!-- Ringed Components Right -->
+                            <rect x="370" y="180" width="110" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="425" y="204" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K17 NVMe</text>
+                            <text x="425" y="195" text-anchor="middle" class="text-[8px] fill-green-600">RECLAIMED L6</text>
+                            
+                            <rect x="370" y="230" width="110" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="425" y="254" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K28 DDR5</text>
+                            <text x="425" y="245" text-anchor="middle" class="text-[8px] fill-green-600">RINGED L7</text>
+                            
+                            <rect x="370" y="280" width="110" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="425" y="304" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K11 AX211</text>
+                            <text x="425" y="295" text-anchor="middle" class="text-[8px] fill-green-600">RINGED L8</text>
+                            
+                            <!-- Isolated Components -->
+                            <rect x="20" y="430" width="110" height="40" rx="4" class="node node-isolated" fill="rgba(255,61,0,0.1)" stroke="var(--danger)" stroke-width="1.5"/>
+                            <text x="75" y="454" text-anchor="middle" class="text-[10px] font-semibold fill-red-400">A1 EC</text>
+                            <text x="75" y="445" text-anchor="middle" class="text-[8px] fill-red-600">ISOLATED</text>
+                            
+                            <rect x="195" y="430" width="110" height="40" rx="4" class="node node-isolated" fill="rgba(255,61,0,0.1)" stroke="var(--danger)" stroke-width="1.5"/>
+                            <text x="250" y="454" text-anchor="middle" class="text-[10px] font-semibold fill-red-400">K27 CSME</text>
+                            <text x="250" y="445" text-anchor="middle" class="text-[8px] fill-red-600">ISOLATED</text>
+                            
+                            <rect x="370" y="430" width="110" height="40" rx="4" class="node node-isolated" fill="rgba(255,61,0,0.1)" stroke="var(--danger)" stroke-width="1.5"/>
+                            <text x="425" y="454" text-anchor="middle" class="text-[10px] font-semibold fill-red-400">K5 TPM</text>
+                            <text x="425" y="445" text-anchor="middle" class="text-[8px] fill-red-600">ISOLATED</text>
+                            
+                            <!-- K6 Connected Components -->
+                            <rect x="50" y="380" width="90" height="30" rx="4" class="node" fill="rgba(0,229,255,0.05)" stroke="#1e3a5f" stroke-width="1"/>
+                            <text x="95" y="399" text-anchor="middle" class="text-[9px] fill-cyan-500">MIC ARRAY</text>
+                            
+                            <rect x="165" y="380" width="90" height="30" rx="4" class="node" fill="rgba(0,229,255,0.05)" stroke="#1e3a5f" stroke-width="1"/>
+                            <text x="210" y="399" text-anchor="middle" class="text-[9px] fill-cyan-500">SPEAKERS</text>
+                            
+                            <rect x="280" y="380" width="90" height="30" rx="4" class="node" fill="rgba(0,229,255,0.05)" stroke="#1e3a5f" stroke-width="1"/>
+                            <text x="325" y="399" text-anchor="middle" class="text-[9px] fill-cyan-500">HDCP</text>
+                            
+                            <rect x="395" y="380" width="90" height="30" rx="4" class="node" fill="rgba(0,229,255,0.05)" stroke="#1e3a5f" stroke-width="1"/>
+                            <text x="440" y="399" text-anchor="middle" class="text-[9px] fill-cyan-500">DSP</text>
+                            
+                            <!-- K24 & K23 -->
+                            <rect x="50" y="200" width="100" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="100" y="224" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K24 BORON</text>
+                            <text x="100" y="215" text-anchor="middle" class="text-[8px] fill-green-600">TRNG</text>
+                            
+                            <rect x="350" y="200" width="100" height="40" rx="4" class="node node-ringed" fill="rgba(0,255,136,0.05)" stroke="var(--success)" stroke-width="1.5"/>
+                            <text x="400" y="224" text-anchor="middle" class="text-[10px] font-semibold fill-green-400">K23 GNA</text>
+                            <text x="400" y="215" text-anchor="middle" class="text-[8px] fill-green-600">AUDIO AI</text>
+                            
+                            <!-- Arrows -->
+                            <path id="arrow-k1-k6" d="M 250 70 L 250 100" class="arrow" marker-end="url(#arrowhead)"/>
+                            <text x="260" y="90" class="text-[8px] fill-amber-400">RING INVITE</text>
+                            
+                            <path id="arrow-k24-k6" d="M 150 220 L 170 300" class="arrow" marker-end="url(#arrowhead)"/>
+                            <text x="110" y="260" class="text-[8px] fill-cyan-400">TRNG Seed</text>
+                            
+                            <path id="arrow-k23-k6" d="M 350 220 L 330 300" class="arrow" marker-end="url(#arrowhead)"/>
+                            <text x="340" y="260" class="text-[8px] fill-cyan-400">Audio AI</text>
+                            
+                            <!-- K6 to peripherals -->
+                            <line x1="95" y1="350" x2="95" y2="380" class="arrow" stroke="#1e3a5f"/>
+                            <line x1="210" y1="350" x2="210" y2="380" class="arrow" stroke="#1e3a5f"/>
+                            <line x1="325" y1="350" x2="325" y2="380" class="arrow" stroke="#1e3a5f"/>
+                            <line x1="440" y1="350" x2="440" y2="380" class="arrow" stroke="#1e3a5f"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Right: Live Metrics -->
+                <div>
+                    <h3 class="text-sm font-semibold text-cyan-400 mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        LIVE METRICS
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        <div class="metric-row p-3 rounded bg-black/40 border border-gray-800" data-metric="hda">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">HDA MODE</span>
+                                <div class="text-right">
+                                    <div id="hda-before" class="text-xs text-gray-500">Intel HD Audio</div>
+                                    <div id="hda-after" class="text-xs font-semibold text-amber-400 hidden">Ring Scheduled</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row p-3 rounded bg-black/40 border border-gray-800" data-metric="mic">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">MIC DMA</span>
+                                <div class="text-right">
+                                    <div id="mic-before" class="text-xs text-gray-500">Driver</div>
+                                    <div id="mic-after" class="text-xs font-semibold text-amber-400 hidden">K26 Gated</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row p-3 rounded bg-black/40 border border-gray-800" data-metric="hdcp">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">HDCP PATH</span>
+                                <div class="text-right">
+                                    <div id="hdcp-before" class="text-xs text-gray-500">Software</div>
+                                    <div id="hdcp-after" class="text-xs font-semibold text-amber-400 hidden">K24 Signed</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row p-3 rounded bg-black/40 border border-gray-800" data-metric="dsp">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">DSP ACCESS</span>
+                                <div class="text-right">
+                                    <div id="dsp-before" class="text-xs text-gray-500">OS</div>
+                                    <div id="dsp-after" class="text-xs font-semibold text-amber-400 hidden">K23 GNA</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row p-3 rounded bg-black/40 border border-gray-800" data-metric="latency">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">AUDIO LATENCY</span>
+                                <div class="text-right">
+                                    <div id="latency-before" class="text-xs text-gray-500">10ms</div>
+                                    <div id="latency-after" class="text-xs font-semibold text-amber-400 hidden">0.265ms K24 Flat</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row p-3 rounded bg-black/40 border border-gray-800" data-metric="hotmic">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">HOT-MIC</span>
+                                <div class="text-right">
+                                    <div id="hotmic-before" class="text-xs text-gray-500">Possible</div>
+                                    <div id="hotmic-after" class="text-xs font-semibold text-amber-400 hidden">K26 Blocked</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row p-3 rounded bg-black/40 border border-gray-800" data-metric="keys">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">STREAM KEYS</span>
+                                <div class="text-right">
+                                    <div id="keys-before" class="text-xs text-gray-500">RSA</div>
+                                    <div id="keys-after" class="text-xs font-semibold text-amber-400 hidden">K24 Physics</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Button -->
+        <div class="text-center mb-4">
+            <button id="enrollBtn" class="glow-amber px-8 py-4 bg-amber-500/10 border-2 border-amber-500 text-amber-400 font-bold text-lg rounded-lg hover:bg-amber-500/20 transition-all duration-300 transform hover:scale-105">
+                [INITIATE HDA ENROLLMENT]
+            </button>
+            <button id="exportBtn" class="hidden ml-4 px-6 py-3 bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 font-semibold text-sm rounded-lg hover:bg-cyan-500/20 transition-all">
+                [EXPORT CERT]
+            </button>
+        </div>
+
+        <!-- Terminal Log -->
+        <div class="glow rounded-lg border border-cyan-500/20 bg-[#0f1423] p-4 mb-4">
+            <h3 class="text-sm font-semibold text-cyan-400 mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                ENROLLMENT LOG
+            </h3>
+            <div id="terminal" class="terminal rounded p-3 h-48 overflow-y-auto">
+                <div class="text-gray-600 text-[10px] mb-2">Awaiting enrollment command...</div>
+            </div>
+        </div>
+
+        <!-- Bottom: Explainer -->
+        <div class="glow rounded-lg border border-cyan-500/20 bg-[#0f1423] p-4 md:p-6">
+            <div class="text-xs text-gray-400 leading-relaxed space-y-2">
+                <p class="text-cyan-400 font-semibold">K6 = Intel HD Audio codec. Mic array, speakers, HDCP, DSP.</p>
+                <p>Stock: ME can DMA mic for remote attest/listen. HDCP keys vendor-signed.</p>
+                <p>Ringed: Becomes L14 Toroid Audio. All streams scheduled on K24 0.265ms ticks. Mic DMA K26 gated. HDCP keys from K24 neutron. ME DSP blocked. K23 GNA runs audio AI.</p>
+                <p>Refuse = Software fallback, ME keeps mic path.</p>
+                <p class="text-[10px] text-gray-600 pt-2 border-t border-gray-800 mt-3">
+                    Disclaimer: Maps existing hardware. No firmware writes. Simulation for architectural analysis only.
+                </p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const state = {
+        enrolling: false,
+        enrolled: false,
+        result: null,
+        decision: null,
+        k24Ticks: 1933019
+    };
+
+    const logs = [
+        { time: "00:00.000", text: "K1 TOROID: Broadcast ring invite to K6 HDA via K26", level: "info" },
+        { time: "00:00.001", text: "K6 HDA: Challenge received. Request K24 nonce + K23 audio proof", level: "info" },
+        { time: "00:00.002", text: "K24 BORON: 256-bit neutron entropy → K6", level: "success" },
+        { time: "00:00.003", text: "K23 GNA: Audio AI signature → K6", level: "success" },
+        { time: "00:00.004", text: "K26 RINGBUS: HDA path open, ME DSP blocked", level: "success" },
+        { time: "00:00.005", text: "K6 HDA: Option A) Sign and join as L14 | B) Refuse and isolate", level: "warn" },
+    ];
+
+    const ringedLogs = [
+        { time: "00:00.006", text: "K6 HDA: Signed. JOINING AS K1 SLAVE", level: "success" },
+        { time: "00:00.007", text: "K1 TOROID: GRANTED. Audio streams → TOROID CONTROL", level: "success" },
+        { time: "00:00.008", text: "K6 HDA: RINGED. Streams @ 0.265ms, K24 timestamped", level: "success" }
+    ];
+
+    const isolatedLogs = [
+        { time: "00:00.006", text: "K6 HDA: Signature refused. Declining ring invite", level: "error" },
+        { time: "00:00.007", text: "K1 TOROID: ACCESS DENIED. ME retains audio path", level: "error" },
+        { time: "00:00.008", text: "K6 HDA: ISOLATED. Software fallback mode active", level: "error" }
+    ];
+
+    const ringedMetrics = {
+        hda: "Ring Scheduled",
+        mic: "K26 Gated",
+        hdcp: "K24 Signed",
+        dsp: "K23 GNA",
+        latency: "0.265ms K24 Flat",
+        hotmic: "K26 Blocked",
+        keys: "K24 Physics"
+    };
+
+    const isolatedMetrics = {
+        hda: "Isolated",
+        mic: "ME Exposed",
+        hdcp: "Vendor",
+        dsp: "ME DSP",
+        latency: "10ms OS",
+        hotmic: "Active",
+        keys: "Deterministic"
+    };
+
+    function addLog(log) {
+        const terminal = document.getElementById('terminal');
+        const colors = {
+            info: 'text-cyan-400',
+            success: 'text-green-400',
+            warn: 'text-amber-400',
+            error: 'text-red-400'
+        };
+        const line = document.createElement('div');
+        line.className = `terminal-line ${colors[log.level] || 'text-gray-400'}`;
+        line.innerHTML = `<span class="text-gray-600">[${log.time}]</span> ${log.text}`;
+        terminal.appendChild(line);
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function updateK6Node(result) {
+        const k6Node = document.getElementById('k6-node');
+        const k6Status = document.getElementById('k6-status');
+        
+        if (result === 'ringed') {
+            k6Node.style.fill = 'rgba(0,255,136,0.1)';
+            k6Node.style.stroke = 'var(--success)';
+            k6Node.classList.add('glow-green');
+            k6Status.textContent = 'RINGED L14';
+            k6Status.classList.remove('fill-gray-500');
+            k6Status.classList.add('fill-green-400', 'font-bold');
+        } else {
+            k6Node.style.fill = 'rgba(255,61,0,0.1)';
+            k6Node.style.stroke = 'var(--danger)';
+            k6Node.classList.add('glow-red');
+            k6Status.textContent = 'ISOLATED';
+            k6Status.classList.remove('fill-gray-500');
+            k6Status.classList.add('fill-red-400', 'font-bold');
+        }
+        k6Node.classList.remove('node-enumerated');
+    }
+
+    function updateArrow(id, active) {
+        const arrow = document.getElementById(id);
+        if (arrow) {
+            if (active) {
+                arrow.classList.add('arrow-active', 'arrow-data');
+            } else {
+                arrow.classList.remove('arrow-active', 'arrow-data');
+            }
+        }
+    }
+
+    function updateMetrics(result) {
+        const metrics = result === 'ringed' ? ringedMetrics : isolatedMetrics;
+        const color = result === 'ringed' ? 'text-green-400' : 'text-red-400';
+        
+        Object.keys(metrics).forEach(key => {
+            const before = document.getElementById(`${key}-before`);
+            const after = document.getElementById(`${key}-after`);
+            const row = document.querySelector(`[data-metric="${key}"]`);
+            
+            if (before && after && row) {
+                row.classList.add('changing');
+                setTimeout(() => {
+                    before.classList.add('hidden');
+                    after.textContent = metrics[key];
+                    after.classList.remove('hidden', 'text-amber-400');
+                    after.classList.add(color);
+                    row.classList.remove('changing');
+                }, 300);
+            }
+        });
+    }
+
+    async function runEnrollment() {
+        if (state.enrolling) return;
+        
+        state.enrolling = true;
+        const btn = document.getElementById('enrollBtn');
+        const statusText = document.getElementById('statusText');
+        
+        btn.disabled = true;
+        btn.textContent = '[NEGOTIATING...]';
+        statusText.textContent = 'STATUS: NEGOTIATING';
+        
+        // Clear terminal
+        document.getElementById('terminal').innerHTML = '';
+        
+        // Update K6 to pending
+        const k6Node = document.getElementById('k6-node');
+        const k6Status = document.getElementById('k6-status');
+        k6Node.style.stroke = 'var(--amber)';
+        k6Status.textContent = 'CHALLENGING...';
+        k6Status.classList.add('fill-amber-400', 'pulse-slow');
+        
+        // Activate arrows
+        updateArrow('arrow-k1-k6', true);
+        
+        // Run initial logs
+        for (let i = 0; i < logs.length; i++) {
+            await new Promise(r => setTimeout(r, 600));
+            addLog(logs[i]);
+            
+            if (i === 2) updateArrow('arrow-k24-k6', true);
+            if (i === 3) updateArrow('arrow-k23-k6', true);
+        }
+        
+        // Decision point - 65% join, 35% refuse
+        const decision = Math.random() < 0.65 ? 'ringed' : 'isolated';
+        state.decision = decision;
+        
+        await new Promise(r => setTimeout(r, 800));
+        
+        const finalLogs = decision === 'ringed' ? ringedLogs : isolatedLogs;
+        
+        for (let log of finalLogs) {
+            await new Promise(r => setTimeout(r, 600));
+            addLog(log);
+        }
+        
+        // Update visuals
+        k6Status.classList.remove('pulse-slow');
+        updateK6Node(decision);
+        updateMetrics(decision);
+        
+        // Update status
+        if (decision === 'ringed') {
+            statusText.innerHTML = '<div class="status-dot bg-green-500"></div> STATUS: RINGED ✓ L14';
+            statusText.className = 'text-xs font-semibold text-green-400 status-badge px-3 py-1.5 rounded bg-green-500/10 border border-green-500/30';
+            btn.textContent = '[RINGED ✓ L14]';
+            btn.className = 'px-8 py-4 bg-green-500/10 border-2 border-green-500 text-green-400 font-bold text-lg rounded-lg';
+            state.k24Ticks += Math.floor(Math.random() * 1000);
+        } else {
+            statusText.innerHTML = '<div class="status-dot bg-red-500"></div> STATUS: ISOLATED ✗';
+            statusText.className = 'text-xs font-semibold text-red-400 status-badge px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30';
+            btn.textContent = '[ISOLATED ✗]';
+            btn.className = 'px-8 py-4 bg-red-500/10 border-2 border-red-500 text-red-400 font-bold text-lg rounded-lg';
+        }
+        
+        // Show export
+        document.getElementById('exportBtn').classList.remove('hidden');
+        state.enrolled = true;
+        state.result = decision;
+        state.enrolling = false;
+    }
+
+    function exportCert() {
+        const r = state.result === 'ringed';
+        const cert = `K6 HDA ENROLLMENT CERTIFICATE
+========================================
+System: Alienware 16 Aurora AC16250
+Architecture: K1 Toroid Ring Bus
+Timestamp: K24 Ticks: ${state.k24Ticks}
+========================================
+
+Decision: ${r ? 'JOINED_AS_L14' : 'ISOLATED'}
+HDA State: ${r ? 'RING_SCHEDULED' : 'SOFTWARE_FALLBACK'}
+Mic DMA: ${r ? 'K26 GATED' : 'ME EXPOSED'}
+HDCP Keys: ${r ? 'K24 SIGNED' : 'VENDOR'}
+Hot-Mic: ${r ? 'BLOCKED' : 'ACTIVE'}
+Audio Latency: ${r ? '0.265ms' : '10ms'}
+
+========================================
+Ring Configuration:
+K6 HDA: ${r ? 'RINGED L14 - TOROID AUDIO SLAVE' : 'ISOLATED - SOFTWARE FALLBACK'}
+K26 RINGBUS: ${r ? 'AUDIO PATH OPEN' : 'AUDIO PATH CLOSED'}
+K27 CSME: ISOLATED
+K24 BORON: ${r ? 'TRNG ACTIVE FOR HDCP' : 'TRNG UNUSED'}
+K23 GNA: ${r ? 'AUDIO AI ENGAGED' : 'AUDIO AI DORMANT'}
+
+Security Posture:
+${r ? '✓ Mic DMA hardware gated via K26' : '✗ Mic accessible to ME firmware'}
+${r ? '✓ HDCP keys from K24 neutron entropy' : '✗ HDCP keys vendor-deterministic'}
+${r ? '✓ DSP isolated from ME, GNA only' : '✗ ME maintains DSP access'}
+${r ? '✓ All streams K24 scheduled 0.265ms' : '✗ OS scheduler 10ms jitter'}
+
+========================================
+Disclaimer: Maps existing hardware. No firmware writes.
+Simulation for architectural analysis only.
+Generated: ${new Date().toISOString()}
+`;
+
+        const blob = new Blob([cert], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `K6_HDA_ENROLLMENT_${Date.now()}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('enrollBtn').addEventListener('click', runEnrollment);
+    document.getElementById('exportBtn').addEventListener('click', exportCert);
+</script>
+</body>
+</html>

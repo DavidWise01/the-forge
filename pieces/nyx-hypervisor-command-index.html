@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NYX Hypervisor Command</title>
+  <meta name="theme-color" content="#09101a">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+    :root {
+      color-scheme: dark;
+      --bg-0: #04070d;
+      --bg-1: #09101a;
+      --bg-2: rgba(8, 16, 27, 0.82);
+      --bg-3: rgba(14, 24, 38, 0.84);
+      --line: rgba(135, 174, 218, 0.16);
+      --line-strong: rgba(135, 174, 218, 0.28);
+      --text: #edf4ff;
+      --muted: #9eb2cb;
+      --soft: #6d7d92;
+      --cyan: #63e9ff;
+      --gold: #efbf72;
+      --mint: #69d9a6;
+      --violet: #9b89ff;
+      --rose: #ff6f8b;
+      --panel-shadow: 0 30px 90px rgba(0, 0, 0, 0.42);
+      --radius: 28px;
+      --font-display: "Cinzel", "Palatino Linotype", serif;
+      --font-body: "Space Grotesk", "Segoe UI", sans-serif;
+      --font-mono: "Share Tech Mono", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 16%, rgba(99, 233, 255, 0.16), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(155, 137, 255, 0.16), transparent 28%),
+        radial-gradient(circle at 50% 105%, rgba(239, 191, 114, 0.18), transparent 32%),
+        linear-gradient(180deg, #050913 0%, #09101a 38%, #04070d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    body::before {
+      background:
+        linear-gradient(rgba(99, 233, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 233, 255, 0.05) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent 95%);
+    }
+
+    body::after {
+      background: radial-gradient(circle at center, transparent 48%, rgba(4, 7, 13, 0.88) 84%, rgba(0, 0, 0, 0.96) 100%);
+    }
+
+    .shell {
+      position: relative;
+      width: min(1440px, calc(100% - 32px));
+      margin: 24px auto;
+      padding: 28px;
+      border: 1px solid rgba(131, 166, 205, 0.14);
+      border-radius: 36px;
+      background:
+        linear-gradient(180deg, rgba(10, 18, 31, 0.92), rgba(7, 13, 23, 0.9)),
+        radial-gradient(circle at top, rgba(99, 233, 255, 0.08), transparent 48%);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+        var(--panel-shadow);
+      backdrop-filter: blur(24px) saturate(135%);
+    }
+
+    .shell::before {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      pointer-events: none;
+    }
+
+    .hero,
+    .card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(18, 29, 45, 0.76), rgba(11, 20, 33, 0.84)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+      box-shadow:
+        0 12px 50px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        inset 0 -24px 60px rgba(99, 233, 255, 0.03);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero::after,
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(99, 233, 255, 0.12), transparent 30%);
+      opacity: 0;
+      transition: opacity 220ms ease;
+      pointer-events: none;
+    }
+
+    .hero:hover::after,
+    .card:hover::after {
+      opacity: 1;
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .eyebrow,
+    .section-kicker,
+    .panel-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .title-block {
+      position: relative;
+      z-index: 1;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin-top: 12px;
+      font-family: var(--font-display);
+      font-size: clamp(2.7rem, 6vw, 5.2rem);
+      line-height: 0.94;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fbfdff;
+      text-shadow:
+        0 0 24px rgba(99, 233, 255, 0.18),
+        0 0 64px rgba(155, 137, 255, 0.14);
+    }
+
+    .lede {
+      max-width: 70ch;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .status-row,
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .status-pill,
+    .view-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(131, 166, 205, 0.18);
+      background: rgba(255, 255, 255, 0.03);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .status-pill[data-tone="live"] {
+      color: var(--mint);
+      border-color: rgba(105, 217, 166, 0.2);
+      background: rgba(105, 217, 166, 0.08);
+    }
+
+    .status-pill[data-tone="warn"] {
+      color: var(--gold);
+      border-color: rgba(239, 191, 114, 0.22);
+      background: rgba(239, 191, 114, 0.08);
+    }
+
+    .status-pill[data-tone="focus"] {
+      color: var(--cyan);
+      border-color: rgba(99, 233, 255, 0.22);
+      background: rgba(99, 233, 255, 0.08);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .stat {
+      padding: 16px 16px 18px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(131, 166, 205, 0.12);
+    }
+
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--soft);
+    }
+
+    .stat-value {
+      margin-top: 12px;
+      font-size: clamp(1.5rem, 3vw, 2.4rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .stat-foot {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hero-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22px;
+      border-radius: 26px;
+      border: 1px solid rgba(131, 166, 205, 0.16);
+      background:
+        radial-gradient(circle at top, rgba(155, 137, 255, 0.11), transparent 36%),
+        linear-gradient(180deg, rgba(12, 20, 31, 0.72), rgba(9, 15, 24, 0.86));
+      min-height: 100%;
+    }
+
+    .watch-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .watch-title h2 {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .timebox {
+      text-align: right;
+      font-family: var(--font-mono);
+    }
+
+    .timebox .time {
+      font-size: 28px;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+    }
+
+    .timebox .date {
+      margin-top: 4px;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .watch-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .watch-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(131, 166, 205, 0.1);
+    }
+
+    .watch-mark {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      box-shadow: 0 0 18px currentColor;
+    }
+
+    .watch-mark[data-tone="mint"] { color: var(--mint); background: var(--mint); }
+    .watch-mark[data-tone="gold"] { color: var(--gold); background: var(--gold); }
+    .watch-mark[data-tone="rose"] { color: var(--rose); background: var(--rose); }
+    .watch-mark[data-tone="cyan"] { color: var(--cyan); background: var(--cyan); }
+
+    .watch-row strong {
+      display: block;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .watch-row span {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .watch-score {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    .deck {
+      display: grid;
+      gap: 24px;
+    }
+
+    .primary-grid {
+      display: grid;
+      grid-template-columns: minmax(360px, 1.05fr) minmax(0, 1.3fr);
+      gap: 24px;
+    }
+
+    .secondary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .tertiary-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.92fr);
+      gap: 24px;
+    }
+
+    .card {
+      padding: 24px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-head h2 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(131, 166, 205, 0.14);
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .orbit {
+      position: relative;
+      min-height: 470px;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at center, rgba(99, 233, 255, 0.09), transparent 32%),
+        radial-gradient(circle at center, rgba(239, 191, 114, 0.08), transparent 64%),
+        rgba(5, 10, 18, 0.64);
+      border: 1px solid rgba(131, 166, 205, 0.12);
+      overflow: hidden;
+    }
+
+    .orbit::before,
+    .orbit::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      inset: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .orbit::before {
+      width: 75%;
+      height: 75%;
+      border: 1px dashed rgba(99, 233, 255, 0.18);
+      animation: spin 34s linear infinite;
+    }
+
+    .orbit::after {
+      width: 46%;
+      height: 46%;
+      border: 1px dashed rgba(239, 191, 114, 0.18);
+      animation: spinReverse 24s linear infinite;
+    }
+
+    .core {
+      position: absolute;
+      inset: 50%;
+      width: 168px;
+      height: 168px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      border: 1px solid rgba(99, 233, 255, 0.2);
+      background:
+        radial-gradient(circle at 40% 35%, rgba(99, 233, 255, 0.26), transparent 36%),
+        radial-gradient(circle at 65% 68%, rgba(239, 191, 114, 0.2), transparent 34%),
+        linear-gradient(180deg, rgba(17, 29, 44, 0.94), rgba(8, 15, 26, 0.96));
+      display: grid;
+      place-items: center;
+      box-shadow:
+        0 0 0 22px rgba(99, 233, 255, 0.03),
+        0 0 60px rgba(99, 233, 255, 0.12);
+      text-align: center;
+      padding: 20px;
+      z-index: 2;
+    }
+
+    .core .label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .core strong {
+      display: block;
+      margin-top: 10px;
+      font-size: 1.4rem;
+      letter-spacing: 0.06em;
+    }
+
+    .core span {
+      display: block;
+      margin-top: 8px;
+      color: var(--cyan);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .node {
+      position: absolute;
+      width: 154px;
+      padding: 14px 14px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(131, 166, 205, 0.14);
+      background: rgba(11, 19, 31, 0.88);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.26);
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    .node h3 {
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+    }
+
+    .node p {
+      margin: 4px 0 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .node small {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--soft);
+    }
+
+    .link {
+      position: absolute;
+      inset: 50%;
+      width: 2px;
+      transform-origin: top center;
+      background: linear-gradient(180deg, rgba(99, 233, 255, 0.35), transparent 88%);
+      z-index: 1;
+    }
+
+    .satellite {
+      position: absolute;
+      inset: 50%;
+      width: 12px;
+      height: 12px;
+      margin: -6px;
+      border-radius: 999px;
+      background: var(--gold);
+      box-shadow: 0 0 14px rgba(239, 191, 114, 0.8);
+      animation: orbitShift 16s linear infinite;
+    }
+
+    .constellation-legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .legend-cell {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(131, 166, 205, 0.1);
+    }
+
+    .legend-cell strong {
+      display: block;
+      font-size: 15px;
+      margin-top: 6px;
+    }
+
+    .host-stack,
+    .pool-stack,
+    .fleet-stack,
+    .alert-stack,
+    .event-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .host-row,
+    .pool-row,
+    .fleet-row,
+    .alert-row,
+    .event-row {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(131, 166, 205, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .host-top,
+    .pool-top,
+    .alert-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .host-name,
+    .pool-name,
+    .alert-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .host-name strong,
+    .pool-name strong,
+    .alert-title strong {
+      font-size: 15px;
+      letter-spacing: 0.02em;
+    }
+
+    .host-badge,
+    .pool-badge,
+    .severity {
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .host-badge[data-state="steady"],
+    .severity[data-severity="low"] {
+      color: var(--mint);
+      background: rgba(105, 217, 166, 0.08);
+      border: 1px solid rgba(105, 217, 166, 0.16);
+    }
+
+    .host-badge[data-state="watch"],
+    .severity[data-severity="medium"] {
+      color: var(--gold);
+      background: rgba(239, 191, 114, 0.08);
+      border: 1px solid rgba(239, 191, 114, 0.18);
+    }
+
+    .host-badge[data-state="hot"],
+    .severity[data-severity="high"] {
+      color: var(--rose);
+      background: rgba(255, 111, 139, 0.08);
+      border: 1px solid rgba(255, 111, 139, 0.18);
+    }
+
+    .host-metrics,
+    .pool-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .mini-metric .panel-label {
+      font-size: 9px;
+    }
+
+    .mini-metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 15px;
+    }
+
+    .meter {
+      position: relative;
+      height: 8px;
+      margin-top: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+
+    .meter span {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 40%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(99, 233, 255, 0.3), var(--cyan));
+      box-shadow: 0 0 18px rgba(99, 233, 255, 0.3);
+    }
+
+    .meter[data-tone="gold"] span {
+      background: linear-gradient(90deg, rgba(239, 191, 114, 0.22), var(--gold));
+      box-shadow: 0 0 18px rgba(239, 191, 114, 0.3);
+    }
+
+    .meter[data-tone="mint"] span {
+      background: linear-gradient(90deg, rgba(105, 217, 166, 0.22), var(--mint));
+      box-shadow: 0 0 18px rgba(105, 217, 166, 0.28);
+    }
+
+    .fleet-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fleet-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .fleet-top strong {
+      font-size: 15px;
+    }
+
+    .fleet-row p,
+    .pool-row p,
+    .alert-row p,
+    .event-row p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .vm-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+      overflow: hidden;
+    }
+
+    .vm-table thead th {
+      padding: 0 0 12px;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--soft);
+      border-bottom: 1px solid rgba(131, 166, 205, 0.12);
+    }
+
+    .vm-table tbody td {
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(131, 166, 205, 0.08);
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .vm-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .vm-name strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .vm-name span {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .state-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1px solid rgba(131, 166, 205, 0.12);
+    }
+
+    .state-pill[data-state="running"] {
+      color: var(--mint);
+      background: rgba(105, 217, 166, 0.08);
+    }
+
+    .state-pill[data-state="migrating"] {
+      color: var(--gold);
+      background: rgba(239, 191, 114, 0.08);
+    }
+
+    .state-pill[data-state="paused"] {
+      color: var(--violet);
+      background: rgba(155, 137, 255, 0.08);
+    }
+
+    .action {
+      color: var(--cyan);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .event-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .event-time {
+      min-width: 72px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--cyan);
+      text-transform: uppercase;
+    }
+
+    .event-body strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .footer-note {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-radius: 22px;
+      border: 1px solid rgba(131, 166, 205, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .footer-note strong {
+      color: var(--text);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    @keyframes spin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    @keyframes spinReverse {
+      from { transform: translate(-50%, -50%) rotate(360deg); }
+      to { transform: translate(-50%, -50%) rotate(0deg); }
+    }
+
+    @keyframes orbitShift {
+      from { transform: rotate(0deg) translateX(150px) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(150px) rotate(-360deg); }
+    }
+
+    @media (max-width: 1120px) {
+      .hero-grid,
+      .primary-grid,
+      .tertiary-grid,
+      .secondary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .host-metrics,
+      .pool-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100% - 16px, 100%);
+        padding: 16px;
+        margin: 8px auto 16px;
+        border-radius: 24px;
+      }
+
+      .hero,
+      .card {
+        padding: 18px;
+        border-radius: 22px;
+      }
+
+      .hero-stats,
+      .constellation-legend,
+      .host-metrics,
+      .pool-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .orbit {
+        min-height: 560px;
+      }
+
+      .node {
+        width: 132px;
+      }
+
+      .vm-table,
+      .vm-table thead,
+      .vm-table tbody,
+      .vm-table tr,
+      .vm-table th,
+      .vm-table td {
+        display: block;
+      }
+
+      .vm-table thead {
+        display: none;
+      }
+
+      .vm-table tbody tr {
+        padding: 14px 0;
+        border-bottom: 1px solid rgba(131, 166, 205, 0.08);
+      }
+
+      .vm-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border: 0;
+      }
+
+      .vm-table tbody td::before {
+        content: attr(data-label);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        color: var(--soft);
+        text-transform: uppercase;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="title-block">
+          <div class="eyebrow">NYX telemetry grammar x Maya motion shell</div>
+          <h1>Hypervisor Command</h1>
+          <p class="lede">
+            A cinematic control room for cluster operators. This prototype watches host pressure, migration lanes,
+            VM drift, storage quorum, and fabric health with a command-register voice instead of a generic dashboard skin.
+          </p>
+          <div class="status-row">
+            <div class="status-pill" data-tone="live">Live cluster fabric</div>
+            <div class="status-pill" data-tone="focus">Migration window active</div>
+            <div class="status-pill" data-tone="warn" id="hero-alert-pill">1 host under watch</div>
+            <div class="status-pill">KVM / Hyper-V / Proxmox ready</div>
+          </div>
+          <div class="hero-stats" id="hero-stats"></div>
+        </div>
+
+        <aside class="hero-side">
+          <div>
+            <div class="watch-title">
+              <div>
+                <div class="section-kicker">Night watch</div>
+                <h2>Command Post</h2>
+              </div>
+              <div class="timebox">
+                <div class="time" id="clock">00:00:00</div>
+                <div class="date" id="date-line">May 05 2026</div>
+              </div>
+            </div>
+            <div class="watch-list">
+              <div class="watch-row">
+                <div class="watch-mark" data-tone="mint"></div>
+                <div>
+                  <strong>Quorum intact</strong>
+                  <span>Five nodes in consensus, no split-brain signature observed.</span>
+                </div>
+                <div class="watch-score" id="quorum-score">5 / 5</div>
+              </div>
+              <div class="watch-row">
+                <div class="watch-mark" data-tone="gold"></div>
+                <div>
+                  <strong>Migration lane</strong>
+                  <span>One active rebalance moving a noisy VM off the hottest blade.</span>
+                </div>
+                <div class="watch-score" id="migration-score">01 live</div>
+              </div>
+              <div class="watch-row">
+                <div class="watch-mark" data-tone="cyan"></div>
+                <div>
+                  <strong>Storage pulse</strong>
+                  <span>Replica and write-ahead surfaces remain healthy inside tolerance.</span>
+                </div>
+                <div class="watch-score" id="storage-score">3.4 ms</div>
+              </div>
+              <div class="watch-row">
+                <div class="watch-mark" data-tone="rose"></div>
+                <div>
+                  <strong>Risk rail</strong>
+                  <span>Automated throttles armed for thermal and memory contention events.</span>
+                </div>
+                <div class="watch-score" id="risk-score">Watch</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <div class="view-pill">Cluster view</div>
+            <div class="view-pill">Host pressure</div>
+            <div class="view-pill">VM ledger</div>
+            <div class="view-pill">Storage fabric</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <div class="deck">
+      <section class="primary-grid">
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <div class="panel-label">Planetary rack model</div>
+              <h2>Cluster Constellation</h2>
+            </div>
+            <div class="chip">Asterion-04</div>
+          </div>
+          <div class="orbit" id="orbit-map">
+            <div class="core">
+              <div>
+                <div class="label">Primary fabric</div>
+                <strong>VEIL-01</strong>
+                <span id="cluster-health">Health 96</span>
+              </div>
+            </div>
+            <div class="satellite" aria-hidden="true"></div>
+          </div>
+          <div class="constellation-legend" id="constellation-legend"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <div class="panel-label">Load, memory, write pressure, lane state</div>
+              <h2>Host Pressure</h2>
+            </div>
+            <div class="chip" id="host-summary-chip">5 active blades</div>
+          </div>
+          <div class="host-stack" id="host-stack"></div>
+        </article>
+      </section>
+
+      <section class="secondary-grid">
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <div class="panel-label">Workload composition</div>
+              <h2>Fleet Balance</h2>
+            </div>
+            <div class="chip" id="fleet-chip">128 live guests</div>
+          </div>
+          <div class="fleet-stack" id="fleet-stack"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <div class="panel-label">Latency, fullness, replica state</div>
+              <h2>Storage Fabric</h2>
+            </div>
+            <div class="chip" id="storage-chip">3 pools observed</div>
+          </div>
+          <div class="pool-stack" id="pool-stack"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <div class="panel-label">Escalations, heat, policy triggers</div>
+              <h2>Alert Rail</h2>
+            </div>
+            <div class="chip" id="alert-chip">3 active signals</div>
+          </div>
+          <div class="alert-stack" id="alert-stack"></div>
+        </article>
+      </section>
+
+      <section class="tertiary-grid">
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <div class="panel-label">Priority machines under observation</div>
+              <h2>VM Ledger</h2>
+            </div>
+            <div class="chip">Top movers</div>
+          </div>
+          <table class="vm-table">
+            <thead>
+              <tr>
+                <th>Machine</th>
+                <th>State</th>
+                <th>Host</th>
+                <th>CPU Ready</th>
+                <th>Mem</th>
+                <th>Latency</th>
+                <th>Next action</th>
+              </tr>
+            </thead>
+            <tbody id="vm-body"></tbody>
+          </table>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <div class="panel-label">Recent movement inside the shell</div>
+              <h2>Event Stream</h2>
+            </div>
+            <div class="chip" id="event-chip">Rotating cadence</div>
+          </div>
+          <div class="event-stack" id="event-stack"></div>
+          <div class="footer-note">
+            <strong>Operator note</strong><br>
+            This is already shaped like a desktop surface. If you want the next move, I can wrap this into an
+            Electron or Tauri shell so it launches as a real Windows executable instead of a raw HTML file.
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const state = {
+      hosts: [
+        { id: "HV-01", role: "Compute prime", state: "steady", cpu: 54, mem: 61, io: 38, temp: 64, vms: 27, lane: "Open" },
+        { id: "HV-02", role: "AI burst lane", state: "watch", cpu: 82, mem: 77, io: 68, temp: 76, vms: 33, lane: "Migrating" },
+        { id: "HV-03", role: "Storage edge", state: "steady", cpu: 43, mem: 58, io: 49, temp: 61, vms: 22, lane: "Open" },
+        { id: "HV-04", role: "GPU relay", state: "steady", cpu: 66, mem: 71, io: 44, temp: 68, vms: 25, lane: "Pinned" },
+        { id: "HV-05", role: "Backup anchor", state: "steady", cpu: 36, mem: 47, io: 29, temp: 57, vms: 21, lane: "Open" }
+      ],
+      fleet: [
+        { tier: "Production", count: 64, spread: 84, note: "Revenue and customer surfaces remain evenly distributed." },
+        { tier: "Platform", count: 28, spread: 63, note: "Control-plane and auth services are inside safe thermal bounds." },
+        { tier: "Analytics", count: 19, spread: 71, note: "Nightly jobs active, ingest wave currently on the rise." },
+        { tier: "Sandbox", count: 17, spread: 38, note: "Low-priority guests parked on cooler hosts." }
+      ],
+      pools: [
+        { name: "Ceph Aurora", used: 72, latency: 3.4, replicas: "3x mirrored", free: "112 TB free", tone: "cyan" },
+        { name: "NVMe Tempest", used: 58, latency: 1.2, replicas: "2x striped", free: "44 TB free", tone: "mint" },
+        { name: "Archive Obsidian", used: 81, latency: 5.6, replicas: "Cold parity", free: "236 TB free", tone: "gold" }
+      ],
+      alerts: [
+        { severity: "medium", title: "HV-02 memory crest", detail: "Guest ballooning projected within 14 minutes if ingest remains constant." },
+        { severity: "low", title: "Replica scrub in progress", detail: "Ceph Aurora performing a background scrub with no quorum risk." },
+        { severity: "high", title: "Archive pool nearing tier policy", detail: "Obsidian crossed 80 percent fullness and is one burst away from a rebalance." }
+      ],
+      vms: [
+        { name: "ledger-prime-07", class: "Finance / prod", state: "running", host: "HV-01", cpuReady: "2.1%", mem: "19 GB", latency: "1.6 ms", action: "Hold steady" },
+        { name: "vision-batch-12", class: "Inference / burst", state: "migrating", host: "HV-02", cpuReady: "9.7%", mem: "34 GB", latency: "4.8 ms", action: "Shift to HV-05" },
+        { name: "edge-cache-04", class: "Platform / edge", state: "running", host: "HV-03", cpuReady: "1.8%", mem: "11 GB", latency: "1.1 ms", action: "Refresh image" },
+        { name: "night-etl-22", class: "Analytics / batch", state: "paused", host: "HV-04", cpuReady: "0.4%", mem: "8 GB", latency: "0.9 ms", action: "Resume at 02:15" },
+        { name: "citadel-auth-02", class: "Identity / prod", state: "running", host: "HV-02", cpuReady: "4.2%", mem: "15 GB", latency: "2.3 ms", action: "Observe pressure" },
+        { name: "backup-seal-03", class: "Recovery / vault", state: "running", host: "HV-05", cpuReady: "0.8%", mem: "24 GB", latency: "3.1 ms", action: "Throttle writes" }
+      ],
+      events: [
+        { time: "00:12", title: "Workload drift detected", detail: "vision-batch-12 exceeded CPU ready threshold and entered the migration lane." },
+        { time: "00:08", title: "Replica scrub entered phase two", detail: "Aurora storage fabric reported consistent checksums across all mirrored objects." },
+        { time: "00:05", title: "Thermal band normalized", detail: "HV-04 returned to a healthy GPU plate temperature after fan curve correction." },
+        { time: "00:03", title: "Sandbox guests collapsed", detail: "Four low-priority machines were stacked onto HV-05 to free headroom on prime compute." }
+      ]
+    };
+
+    const heroStats = document.getElementById("hero-stats");
+    const hostStack = document.getElementById("host-stack");
+    const fleetStack = document.getElementById("fleet-stack");
+    const poolStack = document.getElementById("pool-stack");
+    const alertStack = document.getElementById("alert-stack");
+    const vmBody = document.getElementById("vm-body");
+    const eventStack = document.getElementById("event-stack");
+    const orbitMap = document.getElementById("orbit-map");
+    const legend = document.getElementById("constellation-legend");
+    const heroAlertPill = document.getElementById("hero-alert-pill");
+
+    const eventTemplates = [
+      "Scheduler shifted two sandbox guests onto the coolest host.",
+      "Storage write pressure dipped after analytics buffers drained.",
+      "Network fabric remained clean during the latest east-west sweep.",
+      "GPU relay completed its warm failover probe with zero guest loss.",
+      "Policy engine re-tagged one batch node as migration-friendly.",
+      "Archive pool completed a tiering pass into cold parity."
+    ];
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function jitter(value, delta, min, max) {
+      return clamp(value + ((Math.random() * delta * 2) - delta), min, max);
+    }
+
+    function average(values) {
+      return values.reduce((sum, item) => sum + item, 0) / values.length;
+    }
+
+    function clusterHealthScore() {
+      const avgCpu = average(state.hosts.map((host) => host.cpu));
+      const avgMem = average(state.hosts.map((host) => host.mem));
+      const avgPool = average(state.pools.map((pool) => pool.used));
+      return clamp(Math.round(100 - ((avgCpu * 0.14) + (avgMem * 0.12) + (avgPool * 0.1)) / 2), 82, 99);
+    }
+
+    function watchCount() {
+      return state.hosts.filter((host) => host.state !== "steady").length + state.alerts.filter((alert) => alert.severity === "high").length;
+    }
+
+    function totals() {
+      return {
+        hosts: state.hosts.length,
+        guests: state.hosts.reduce((sum, host) => sum + host.vms, 0),
+        avgCpu: Math.round(average(state.hosts.map((host) => host.cpu))),
+        avgMem: Math.round(average(state.hosts.map((host) => host.mem))),
+        avgLatency: average(state.pools.map((pool) => pool.latency)).toFixed(1)
+      };
+    }
+
+    function renderHeroStats() {
+      const numbers = totals();
+      const stats = [
+        { label: "Guest count", value: numbers.guests, foot: "live across five blades" },
+        { label: "Average CPU", value: numbers.avgCpu + "%", foot: "burst lanes included" },
+        { label: "Average memory", value: numbers.avgMem + "%", foot: "ballooning and cache combined" },
+        { label: "Storage latency", value: numbers.avgLatency + " ms", foot: "cross-pool write acknowledgement" }
+      ];
+
+      heroStats.innerHTML = stats.map((stat) => `
+        <div class="stat">
+          <div class="stat-label">${stat.label}</div>
+          <div class="stat-value">${stat.value}</div>
+          <div class="stat-foot">${stat.foot}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderOrbit() {
+      const positions = [
+        { left: "50%", top: "13%", angle: 0, length: 116 },
+        { left: "83%", top: "34%", angle: 58, length: 128 },
+        { left: "73%", top: "78%", angle: 132, length: 108 },
+        { left: "27%", top: "78%", angle: 228, length: 108 },
+        { left: "17%", top: "34%", angle: 302, length: 128 }
+      ];
+
+      orbitMap.querySelectorAll(".node, .link").forEach((element) => element.remove());
+
+      state.hosts.forEach((host, index) => {
+        const pos = positions[index];
+        const link = document.createElement("div");
+        link.className = "link";
+        link.style.height = pos.length + "px";
+        link.style.transform = `translate(-50%, -50%) rotate(${pos.angle}deg)`;
+        orbitMap.appendChild(link);
+
+        const node = document.createElement("div");
+        node.className = "node";
+        node.style.left = pos.left;
+        node.style.top = pos.top;
+        node.innerHTML = `
+          <small>${host.role}</small>
+          <h3>${host.id}</h3>
+          <p>${host.vms} guests // ${host.lane}</p>
+          <small>cpu ${Math.round(host.cpu)}% // mem ${Math.round(host.mem)}%</small>
+        `;
+        orbitMap.appendChild(node);
+      });
+
+      document.getElementById("cluster-health").textContent = `Health ${clusterHealthScore()}`;
+
+      legend.innerHTML = [
+        { label: "Compute load", value: `${totals().avgCpu}%`, detail: "average host draw" },
+        { label: "Guest spread", value: `${totals().guests}`, detail: "machines alive in fabric" },
+        { label: "Watch signals", value: `${watchCount()}`, detail: "alerts and hot hosts combined" }
+      ].map((item) => `
+        <div class="legend-cell">
+          <div class="panel-label">${item.label}</div>
+          <strong>${item.value}</strong>
+          <div class="stat-foot">${item.detail}</div>
+        </div>
+      `).join("");
+    }
+
+    function hostTone(host) {
+      if (host.cpu > 84 || host.mem > 82 || host.temp > 79) return "hot";
+      if (host.cpu > 72 || host.mem > 70 || host.io > 62) return "watch";
+      return "steady";
+    }
+
+    function renderHosts() {
+      state.hosts.forEach((host) => {
+        host.state = hostTone(host);
+      });
+
+      hostStack.innerHTML = state.hosts.map((host) => `
+        <div class="host-row">
+          <div class="host-top">
+            <div class="host-name">
+              <strong>${host.id}</strong>
+              <span class="panel-label">${host.role}</span>
+            </div>
+            <div class="host-badge" data-state="${host.state}">${host.state}</div>
+          </div>
+          <div class="host-metrics">
+            <div class="mini-metric">
+              <div class="panel-label">CPU</div>
+              <strong>${Math.round(host.cpu)}%</strong>
+              <div class="meter"><span style="width:${host.cpu}%"></span></div>
+            </div>
+            <div class="mini-metric">
+              <div class="panel-label">Memory</div>
+              <strong>${Math.round(host.mem)}%</strong>
+              <div class="meter" data-tone="gold"><span style="width:${host.mem}%"></span></div>
+            </div>
+            <div class="mini-metric">
+              <div class="panel-label">IO pressure</div>
+              <strong>${Math.round(host.io)}%</strong>
+              <div class="meter" data-tone="mint"><span style="width:${host.io}%"></span></div>
+            </div>
+            <div class="mini-metric">
+              <div class="panel-label">Thermal</div>
+              <strong>${Math.round(host.temp)} C</strong>
+              <div class="stat-foot">${host.vms} guests // lane ${host.lane}</div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      const hot = state.hosts.filter((host) => host.state === "hot").length;
+      const watch = state.hosts.filter((host) => host.state === "watch").length;
+      document.getElementById("host-summary-chip").textContent = `${state.hosts.length} active blades`;
+      heroAlertPill.textContent = hot > 0
+        ? `${hot} host critical`
+        : watch > 0
+          ? `${watch} host under watch`
+          : "No hosts under watch";
+      document.getElementById("risk-score").textContent = hot > 0 ? "Critical" : watch > 0 ? "Watch" : "Stable";
+    }
+
+    function renderFleet() {
+      fleetStack.innerHTML = state.fleet.map((entry) => `
+        <div class="fleet-row">
+          <div class="fleet-top">
+            <strong>${entry.tier}</strong>
+            <span class="chip">${entry.count} guests</span>
+          </div>
+          <div class="meter"><span style="width:${entry.spread}%"></span></div>
+          <p>${entry.note}</p>
+        </div>
+      `).join("");
+
+      document.getElementById("fleet-chip").textContent = `${totals().guests} live guests`;
+    }
+
+    function renderPools() {
+      poolStack.innerHTML = state.pools.map((pool) => `
+        <div class="pool-row">
+          <div class="pool-top">
+            <div class="pool-name">
+              <strong>${pool.name}</strong>
+            </div>
+            <div class="pool-badge chip">${pool.replicas}</div>
+          </div>
+          <div class="pool-metrics">
+            <div class="mini-metric">
+              <div class="panel-label">Used</div>
+              <strong>${Math.round(pool.used)}%</strong>
+              <div class="meter" data-tone="${pool.tone}"><span style="width:${pool.used}%"></span></div>
+            </div>
+            <div class="mini-metric">
+              <div class="panel-label">Latency</div>
+              <strong>${pool.latency.toFixed(1)} ms</strong>
+              <div class="stat-foot">${pool.free}</div>
+            </div>
+            <div class="mini-metric">
+              <div class="panel-label">Replica</div>
+              <strong>${pool.replicas}</strong>
+            </div>
+            <div class="mini-metric">
+              <div class="panel-label">Pressure</div>
+              <strong>${pool.used > 80 ? "High" : pool.used > 65 ? "Watch" : "Nominal"}</strong>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("storage-chip").textContent = `${state.pools.length} pools observed`;
+      document.getElementById("storage-score").textContent = `${totals().avgLatency} ms`;
+    }
+
+    function renderAlerts() {
+      alertStack.innerHTML = state.alerts.map((alert) => `
+        <div class="alert-row">
+          <div class="alert-top">
+            <div class="alert-title">
+              <strong>${alert.title}</strong>
+            </div>
+            <div class="severity" data-severity="${alert.severity}">${alert.severity}</div>
+          </div>
+          <p>${alert.detail}</p>
+        </div>
+      `).join("");
+
+      document.getElementById("alert-chip").textContent = `${state.alerts.length} active signals`;
+    }
+
+    function renderVms() {
+      vmBody.innerHTML = state.vms.map((vm) => `
+        <tr>
+          <td data-label="Machine">
+            <div class="vm-name">
+              <strong>${vm.name}</strong>
+              <span>${vm.class}</span>
+            </div>
+          </td>
+          <td data-label="State"><span class="state-pill" data-state="${vm.state}">${vm.state}</span></td>
+          <td data-label="Host">${vm.host}</td>
+          <td data-label="CPU Ready">${vm.cpuReady}</td>
+          <td data-label="Mem">${vm.mem}</td>
+          <td data-label="Latency">${vm.latency}</td>
+          <td data-label="Next action"><span class="action">${vm.action}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderEvents() {
+      eventStack.innerHTML = state.events.map((event) => `
+        <div class="event-row">
+          <div class="event-time">${event.time}</div>
+          <div class="event-body">
+            <strong>${event.title}</strong>
+            <p>${event.detail}</p>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function tickClock() {
+      const now = new Date();
+      document.getElementById("clock").textContent = now.toLocaleTimeString([], { hour12: false });
+      document.getElementById("date-line").textContent = now.toLocaleDateString([], {
+        month: "short",
+        day: "2-digit",
+        year: "numeric"
+      });
+    }
+
+    function cycleEvents() {
+      const now = new Date();
+      state.events.unshift({
+        time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
+        title: "Operator fabric pulse",
+        detail: eventTemplates[Math.floor(Math.random() * eventTemplates.length)]
+      });
+      state.events = state.events.slice(0, 5);
+    }
+
+    function mutateState() {
+      state.hosts = state.hosts.map((host) => {
+        const nextCpu = jitter(host.cpu, host.id === "HV-02" ? 6 : 4.2, 24, 94);
+        const nextMem = jitter(host.mem, host.id === "HV-02" ? 4.5 : 3.2, 32, 90);
+        const nextIo = jitter(host.io, 4, 15, 88);
+        const nextTemp = jitter(host.temp, 2.4, 48, 84);
+        return {
+          ...host,
+          cpu: nextCpu,
+          mem: nextMem,
+          io: nextIo,
+          temp: nextTemp
+        };
+      });
+
+      state.fleet = state.fleet.map((entry) => ({
+        ...entry,
+        spread: jitter(entry.spread, 3, 28, 91)
+      }));
+
+      state.pools = state.pools.map((pool, index) => ({
+        ...pool,
+        used: jitter(pool.used, index === 2 ? 2.6 : 1.8, 35, 90),
+        latency: jitter(pool.latency, 0.5, 0.8, 7.2)
+      }));
+
+      state.vms = state.vms.map((vm, index) => {
+        if (index === 1) {
+          const moveTo = state.hosts[Math.random() > 0.55 ? 4 : 3].id;
+          return {
+            ...vm,
+            host: moveTo,
+            cpuReady: `${jitter(parseFloat(vm.cpuReady), 1.4, 2.8, 12.4).toFixed(1)}%`,
+            latency: `${jitter(parseFloat(vm.latency), 0.8, 1.2, 6.6).toFixed(1)} ms`
+          };
+        }
+        return {
+          ...vm,
+          cpuReady: `${jitter(parseFloat(vm.cpuReady), 0.5, 0.4, 10.5).toFixed(1)}%`,
+          latency: `${jitter(parseFloat(vm.latency), 0.3, 0.7, 5.5).toFixed(1)} ms`
+        };
+      });
+
+      const highArchive = state.pools[2].used > 82;
+      const hotHost = state.hosts.find((host) => host.state === "hot" || host.cpu > 84);
+      state.alerts = [
+        {
+          severity: hotHost ? "high" : "medium",
+          title: hotHost ? `${hotHost.id} memory crest` : "HV-02 memory crest",
+          detail: hotHost
+            ? `${hotHost.id} crossed the thermal watchline and may need a guest shed if the burst continues.`
+            : "Guest ballooning projected within 14 minutes if ingest remains constant."
+        },
+        {
+          severity: "low",
+          title: "Replica scrub in progress",
+          detail: "Ceph Aurora performing a background scrub with no quorum risk."
+        },
+        {
+          severity: highArchive ? "high" : "medium",
+          title: highArchive ? "Archive pool nearing tier policy" : "Archive pool stabilizing",
+          detail: highArchive
+            ? "Obsidian crossed 80 percent fullness and is one burst away from a rebalance."
+            : "Obsidian has cooled below the hard threshold but remains the nearest capacity concern."
+        }
+      ];
+
+      document.getElementById("quorum-score").textContent = `${state.hosts.length} / ${state.hosts.length}`;
+      document.getElementById("migration-score").textContent = state.vms.some((vm) => vm.state === "migrating") ? "01 live" : "Idle";
+      document.getElementById("event-chip").textContent = `Pulse ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    }
+
+    function renderAll() {
+      renderHeroStats();
+      renderOrbit();
+      renderHosts();
+      renderFleet();
+      renderPools();
+      renderAlerts();
+      renderVms();
+      renderEvents();
+    }
+
+    function attachGlowTracking() {
+      document.querySelectorAll(".hero, .card").forEach((element) => {
+        element.addEventListener("mousemove", (event) => {
+          const bounds = element.getBoundingClientRect();
+          element.style.setProperty("--mx", `${event.clientX - bounds.left}px`);
+          element.style.setProperty("--my", `${event.clientY - bounds.top}px`);
+        });
+      });
+    }
+
+    tickClock();
+    renderAll();
+    attachGlowTracking();
+
+    setInterval(() => {
+      tickClock();
+    }, 1000);
+
+    setInterval(() => {
+      mutateState();
+      cycleEvents();
+      renderAll();
+    }, 4200);
+  </script>
+</body>
+</html>

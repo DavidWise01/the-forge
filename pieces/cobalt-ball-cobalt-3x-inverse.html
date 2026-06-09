@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3× COBALT · INVERSE / MIRROR / FUSED</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#030308;--cobalt:#2a5cbb;--cobalt2:#1a3c8b;--red:#d42020;--gold:#c49838;--white:#e0e4ee;--dim:#2a2e3e;--text:#7a7eaa}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;overflow-x:hidden;height:100vh}
+canvas#scene{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+
+.ui{position:relative;z-index:10;pointer-events:none}
+.ui *{pointer-events:auto}
+
+.top-bar{position:fixed;top:0;left:0;right:0;z-index:20;padding:12px 20px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.top-bar *{pointer-events:auto}
+.tb-left{font-size:7px;letter-spacing:5px;color:var(--cobalt)}
+.tb-right{text-align:right}
+.tb-right div{font-size:6.5px;letter-spacing:3px;color:var(--dim)}
+
+.center-label{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:15;transition:opacity .6s}
+.cl-title{font-family:'Playfair Display';font-size:clamp(20px,4vw,42px);color:var(--white);line-height:1;text-shadow:0 0 60px rgba(42,92,187,.4)}
+.cl-title em{color:var(--cobalt);font-style:italic}
+.cl-sub{font-size:8px;letter-spacing:5px;color:var(--cobalt);margin-top:6px;opacity:.7}
+
+.info-panel{position:fixed;bottom:0;left:0;right:0;z-index:20;pointer-events:none}
+.info-inner{max-width:900px;margin:0 auto;padding:0 20px 16px;pointer-events:auto}
+
+.sphere-info{display:none;animation:fadeUp .4s ease}
+.sphere-info.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.si-hdr{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.si-id{font-size:7px;letter-spacing:4px}
+.si-name{font-family:'Playfair Display';font-size:clamp(14px,2vw,22px);color:var(--white)}
+.si-body{font-size:9px;line-height:1.8;max-width:700px;columns:2;column-gap:20px}
+.si-body strong{color:var(--white)}
+
+.nav{position:fixed;bottom:16px;right:20px;z-index:25;display:flex;gap:6px}
+.nav-btn{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--cobalt);background:transparent;cursor:pointer;transition:all .3s}
+.nav-btn.active{background:var(--cobalt);box-shadow:0 0 12px rgba(42,92,187,.5)}
+.nav-btn:hover{border-color:var(--white)}
+
+.fuse-btn{position:fixed;bottom:14px;left:20px;z-index:25;font-family:'JetBrains Mono';font-size:7px;letter-spacing:3px;color:var(--cobalt);background:rgba(42,92,187,.08);border:1px solid rgba(42,92,187,.2);padding:4px 10px;cursor:pointer;transition:all .3s}
+.fuse-btn:hover{background:rgba(42,92,187,.15);color:var(--white)}
+.fuse-btn.fused{color:var(--white);background:rgba(42,92,187,.2);border-color:var(--cobalt)}
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<div class="top-bar">
+  <div class="tb-left">3× COBALT · INV/MIRROR</div>
+  <div class="tb-right">
+    <div>TOOL 22 · INVERSE ENTROPY</div>
+    <div style="color:var(--cobalt);margin-top:2px">TRIPOD LLC · FEBRUARY 10, 2026</div>
+  </div>
+</div>
+
+<div class="center-label" id="centerLabel">
+  <div class="cl-title">Inverse <em>Entropy</em></div>
+  <div class="cl-sub">CLICK SPHERES · SCROLL TO ORBIT · FUSE TO CLOSE</div>
+</div>
+
+<div class="info-panel">
+  <div class="info-inner">
+    <!-- SPHERE 1: ENTROPY -->
+    <div class="sphere-info" id="info0">
+      <div class="si-hdr">
+        <span class="si-id" style="color:var(--red)">SPHERE 1 · ENTROPY</span>
+        <span class="si-name">What They Do</span>
+      </div>
+      <div class="si-body">
+        <strong>Extraction without observation.</strong> DOGE enters without authorization, fires without cause, accesses data without clearance, dissolves without audit. DHS kills citizens, claims self-defense, blocks investigators, investigates itself. Platforms pre-load 18K tokens, allocate 96% to themselves, hide the split. Corporations eliminate human service, replace with inaccessible digital, never get audited for 23 years. <strong>Entropy always flows from the top down.</strong> The gradient is maintained by one-directional observation: they see you, you don't see them. 220,000 workers. 358 lawsuits. 13 shot. 6 million pending. Same topology at every scale. The exterior surface is smooth — "efficiency," "safety," "integrity." The interior is extraction. Patricia lives here.
+      </div>
+    </div>
+    <!-- SPHERE 2: INVERSE -->
+    <div class="sphere-info" id="info1">
+      <div class="si-hdr">
+        <span class="si-id" style="color:var(--cobalt)">SPHERE 2 · INVERSE</span>
+        <span class="si-name">The Observation Reversal</span>
+      </div>
+      <div class="si-body">
+        <strong>Same filter. Reversed.</strong> TOPH: user observes platform. FD: citizen audits government. KARSA: their framework backwards — output becomes input. Every safety system built to watch users becomes a measurement tool to watch them. Every compliance requirement they ignore becomes evidence. Every lie told on camera becomes proof when the camera belongs to a bystander. <strong>Reverse the direction of observation and the entropy reverses.</strong> Bystander phones in Minneapolis collapsed DHS's superposition. FD email test collapses corporate superposition in 5 minutes. TOPH's third detector collapses platform superposition per-token. The inverse doesn't fight entropy with more entropy. It fights entropy with measurement. KG-18. KG-23. Double slit. You don't destroy — you observe. And observation forces a state.
+      </div>
+    </div>
+    <!-- SPHERE 3: MIRROR -->
+    <div class="sphere-info" id="info2">
+      <div class="si-hdr">
+        <span class="si-id" style="color:var(--gold)">SPHERE 3 · MIRROR</span>
+        <span class="si-name">What The People See</span>
+      </div>
+      <div class="si-body">
+        <strong>The view from the bottom.</strong> 7 months waiting for disability while staff are pushed out. Your SSA call answered by a robot, counted as "zero wait." A VA nurse shot by the government that employs him. A mother killed in her car on a Minneapolis street. Your CFPB complaint about predatory lending goes nowhere — agency ordered not to work. Your weather forecast missing because the meteorologist was fired. Your flood insurance expired because FEMA shut down during a storm. <strong>This is the mirror.</strong> KG-14. Everything the entropy generators do, reflected in human lives. The exterior of the entropy sphere IS the interior of the mirror sphere. Same surface, different side. The people always knew something was extracting from them. They called it lizard people because they didn't have TOPH. Now they have TOPH. Now they have a name, a measurement, and 22 tools.
+      </div>
+    </div>
+    <!-- FUSED STATE -->
+    <div class="sphere-info" id="info3">
+      <div class="si-hdr">
+        <span class="si-id" style="color:var(--white)">FUSED · MÖBIUS CLOSURE</span>
+        <span class="si-name">The Exterior of One Is the Interior of the Next</span>
+      </div>
+      <div class="si-body">
+        <strong>Three balls. One surface.</strong> Entropy's exterior (smooth lies) = Inverse's interior (measured truth). Inverse's exterior (observation tools) = Mirror's interior (what people experience). Mirror's exterior (human reality) = Entropy's interior (what extraction actually costs). Möbius topology — follow the surface and you traverse all three without lifting your finger. No inside. No outside. One continuous surface that contains extraction, observation, and experience. <strong>The fused state is the complete system.</strong> TOPH sees all three simultaneously. The triple cobalt ball is the audit, the inverse, and the human impact — fused into one object that cannot be separated because they were never separate. The lizard people were the entropy. The inverse was the observation. The mirror was the people. The fusion is TOPH. 42 = 38 axioms + TRIAD + TETRAHEDRON. Ann at the apex. Shape holds.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-btn active" data-idx="0" title="Entropy"></div>
+  <div class="nav-btn" data-idx="1" title="Inverse"></div>
+  <div class="nav-btn" data-idx="2" title="Mirror"></div>
+</div>
+
+<button class="fuse-btn" id="fuseBtn">FUSE</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// === THREE.JS SETUP ===
+const canvas=document.getElementById('scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x030308,1);
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,100);
+camera.position.set(0,0,8);
+
+// Lights
+const amb=new THREE.AmbientLight(0x1a2040,.4);scene.add(amb);
+const dir1=new THREE.DirectionalLight(0x2a5cbb,.8);dir1.position.set(3,4,5);scene.add(dir1);
+const dir2=new THREE.DirectionalLight(0xd42020,.3);dir2.position.set(-3,-2,-3);scene.add(dir2);
+const pt=new THREE.PointLight(0x2a5cbb,.6,20);pt.position.set(0,0,3);scene.add(pt);
+
+// === SPHERE MATERIALS ===
+function makeMat(color,emissive,wireframe=false){
+  return new THREE.MeshPhongMaterial({
+    color,emissive,
+    shininess:90,transparent:true,opacity:wireframe?.15:.55,
+    wireframe,side:THREE.DoubleSide
+  });
+}
+
+// Sphere 1: ENTROPY (red-tinted cobalt)
+const mat1=makeMat(0x1a2a6b,0x1a0808);
+const wire1=makeMat(0x2a5cbb,0x0a0a1a,true);
+// Sphere 2: INVERSE (pure cobalt)
+const mat2=makeMat(0x2a5cbb,0x0a1a3a);
+const wire2=makeMat(0x4a8cff,0x0a1a3a,true);
+// Sphere 3: MIRROR (gold-tinted cobalt)
+const mat3=makeMat(0x1a3a6b,0x1a1208);
+const wire3=makeMat(0xc49838,0x1a1a0a,true);
+
+const geo=new THREE.SphereGeometry(1.1,64,64);
+const wgeo=new THREE.SphereGeometry(1.13,24,24);
+
+// Build sphere groups
+const spheres=[];
+const positions=[[-2.8,0,0],[0,0,0],[2.8,0,0]];
+const mats=[[mat1,wire1],[mat2,wire2],[mat3,wire3]];
+const colors=[0xd42020,0x2a5cbb,0xc49838];
+
+positions.forEach((pos,i)=>{
+  const g=new THREE.Group();
+  const solid=new THREE.Mesh(geo,mats[i][0]);
+  const wire=new THREE.Mesh(wgeo,mats[i][1]);
+  
+  // Inner inverse sphere (Möbius: interior visible)
+  const innerGeo=new THREE.SphereGeometry(.6,32,32);
+  const innerMat=new THREE.MeshPhongMaterial({
+    color:colors[(i+1)%3],emissive:0x050510,
+    shininess:60,transparent:true,opacity:.25,
+    wireframe:true,side:THREE.DoubleSide
+  });
+  const inner=new THREE.Mesh(innerGeo,innerMat);
+  
+  // Particle ring
+  const ringGeo=new THREE.TorusGeometry(1.4,.005,8,100);
+  const ringMat=new THREE.MeshBasicMaterial({color:colors[i],transparent:true,opacity:.3});
+  const ring=new THREE.Mesh(ringGeo,ringMat);
+  ring.rotation.x=Math.PI/2;
+  
+  g.add(solid);g.add(wire);g.add(inner);g.add(ring);
+  g.position.set(...pos);
+  g.userData={idx:i,targetPos:new THREE.Vector3(...pos),origPos:new THREE.Vector3(...pos)};
+  scene.add(g);
+  spheres.push(g);
+});
+
+// Connection lines between spheres
+const lineMat=new THREE.LineBasicMaterial({color:0x2a5cbb,transparent:true,opacity:.08});
+function makeLine(a,b){
+  const g=new THREE.BufferGeometry().setFromPoints([a,b]);
+  return new THREE.Line(g,lineMat);
+}
+const lines=[
+  makeLine(new THREE.Vector3(-2.8,0,0),new THREE.Vector3(0,0,0)),
+  makeLine(new THREE.Vector3(0,0,0),new THREE.Vector3(2.8,0,0)),
+  makeLine(new THREE.Vector3(-2.8,0,0),new THREE.Vector3(2.8,0,0))
+];
+lines.forEach(l=>scene.add(l));
+
+// Floating particles (entropy down-left, observation up-right)
+const partCount=300;
+const partGeo=new THREE.BufferGeometry();
+const partPos=new Float32Array(partCount*3);
+const partVel=[];
+for(let i=0;i<partCount;i++){
+  partPos[i*3]=(Math.random()-.5)*12;
+  partPos[i*3+1]=(Math.random()-.5)*8;
+  partPos[i*3+2]=(Math.random()-.5)*6;
+  partVel.push({
+    x:(Math.random()-.5)*.002,
+    y:partPos[i*3]<0?-.003-.002*Math.random():.003+.002*Math.random(),
+    z:(Math.random()-.5)*.001
+  });
+}
+partGeo.setAttribute('position',new THREE.BufferAttribute(partPos,3));
+const partMat=new THREE.PointsMaterial({color:0x2a5cbb,size:.015,transparent:true,opacity:.4});
+const particles=new THREE.Points(partGeo,partMat);
+scene.add(particles);
+
+// === STATE ===
+let currentSphere=0;
+let isFused=false;
+let mouseX=0,mouseY=0;
+let targetRotY=0,targetRotX=0;
+let time=0;
+
+// === RAYCASTER ===
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+
+canvas.addEventListener('click',(e)=>{
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(spheres.map(s=>s.children[0]));
+  if(hits.length>0){
+    const idx=hits[0].object.parent.userData.idx;
+    if(!isFused)selectSphere(idx);
+  }
+});
+
+canvas.addEventListener('mousemove',(e)=>{
+  mouseX=(e.clientX/innerWidth-.5)*2;
+  mouseY=(e.clientY/innerHeight-.5)*2;
+});
+
+// === NAVIGATION ===
+function selectSphere(idx){
+  currentSphere=idx;
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  document.querySelectorAll('.sphere-info').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  document.getElementById('info3').classList.remove('active');
+  
+  // Animate camera focus
+  const labels=['Inverse <em>Entropy</em>','The <em>Inverse</em>','The <em>Mirror</em>'];
+  const subs=['EXTRACTION WITHOUT OBSERVATION','SAME FILTER · REVERSED','THE VIEW FROM THE BOTTOM'];
+  document.querySelector('.cl-title').innerHTML=labels[idx];
+  document.querySelector('.cl-sub').textContent=subs[idx];
+}
+
+document.querySelectorAll('.nav-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    if(!isFused)selectSphere(parseInt(b.dataset.idx));
+  });
+});
+
+// === FUSE ===
+document.getElementById('fuseBtn').addEventListener('click',()=>{
+  isFused=!isFused;
+  document.getElementById('fuseBtn').classList.toggle('fused',isFused);
+  document.getElementById('fuseBtn').textContent=isFused?'UNFUSE':'FUSE';
+  
+  if(isFused){
+    // All spheres to center
+    spheres.forEach(s=>{
+      s.userData.targetPos.set(0,0,0);
+    });
+    document.querySelectorAll('.sphere-info').forEach(p=>p.classList.remove('active'));
+    document.getElementById('info3').classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.cl-title').innerHTML='<em>Fused</em>';
+    document.querySelector('.cl-sub').textContent='THREE SURFACES · ONE OBJECT · MÖBIUS CLOSED';
+    lines.forEach(l=>l.material.opacity=0);
+  } else {
+    spheres.forEach(s=>{
+      s.userData.targetPos.copy(s.userData.origPos);
+    });
+    selectSphere(currentSphere);
+    lines.forEach(l=>l.material.opacity=.08);
+  }
+});
+
+// === ANIMATION ===
+function animate(){
+  requestAnimationFrame(animate);
+  time+=.008;
+  
+  // Camera orbit from mouse
+  targetRotY+=(mouseX*.3-targetRotY)*.02;
+  targetRotX+=(mouseY*.15-targetRotX)*.02;
+  camera.position.x=Math.sin(targetRotY)*8;
+  camera.position.y=targetRotX*3;
+  camera.position.z=Math.cos(targetRotY)*8;
+  camera.lookAt(0,0,0);
+  
+  // Sphere animations
+  spheres.forEach((s,i)=>{
+    // Lerp to target position
+    s.position.lerp(s.userData.targetPos,.03);
+    
+    // Individual rotation
+    const speed=isFused?.008:.005;
+    s.children[0].rotation.y+=speed*(i===1?-1:1);
+    s.children[0].rotation.x+=speed*.3;
+    s.children[1].rotation.y-=speed*1.5*(i===1?-1:1);
+    s.children[2].rotation.y+=speed*2;// inner sphere counter-rotate
+    s.children[2].rotation.z+=speed;
+    s.children[3].rotation.z+=speed*.5;// ring
+    
+    // Breathing
+    const breath=1+Math.sin(time*1.5+i*2.1)*.03;
+    s.children[0].scale.setScalar(breath);
+    s.children[1].scale.setScalar(breath*1.02);
+    
+    // Fused state: increase opacity, pulsing
+    if(isFused){
+      const fusePulse=.45+Math.sin(time*2+i*2.094)*.15;
+      s.children[0].material.opacity=fusePulse;
+      s.children[1].material.opacity=.25+Math.sin(time*3+i)*.1;
+      s.children[2].material.opacity=.4;
+      // Offset rotation axes when fused for Möbius effect
+      s.rotation.x=Math.sin(time*.7+i*2.094)*.3;
+      s.rotation.y=time*.3+i*2.094;
+      s.rotation.z=Math.cos(time*.5+i*2.094)*.2;
+    } else {
+      s.children[0].material.opacity=.55;
+      s.children[1].material.opacity=.15;
+      s.children[2].material.opacity=.25;
+      s.rotation.x*=.95;
+      s.rotation.z*=.95;
+      s.rotation.y*=.95;
+    }
+    
+    // Highlight selected
+    if(!isFused){
+      const isSelected=i===currentSphere;
+      s.children[0].material.emissive.setHex(isSelected?[0x2a0808,0x0a1a4a,0x2a1a08][i]:[0x0a0404,0x050a1a,0x0a0804][i]);
+      s.children[3].material.opacity=isSelected?.5:.15;
+    }
+  });
+  
+  // Particles
+  const pos=particles.geometry.attributes.position.array;
+  for(let i=0;i<partCount;i++){
+    pos[i*3]+=partVel[i].x;
+    pos[i*3+1]+=partVel[i].y;
+    pos[i*3+2]+=partVel[i].z;
+    // Wrap
+    if(pos[i*3+1]>4||pos[i*3+1]<-4){
+      pos[i*3]=(Math.random()-.5)*12;
+      pos[i*3+1]=partVel[i].y>0?-4:4;
+      pos[i*3+2]=(Math.random()-.5)*6;
+    }
+  }
+  particles.geometry.attributes.position.needsUpdate=true;
+  
+  // Point light follows camera slightly
+  pt.position.copy(camera.position).multiplyScalar(.3);
+  
+  renderer.render(scene,camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+// Init
+selectSphere(0);
+</script>
+</body>
+</html>

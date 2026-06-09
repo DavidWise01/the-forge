@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATOMIC WORKSHOP // ROOT0 FRAK ENGINE L1.34</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root { --green: #00ff41; --green-dim: #00aa2a; --amber: #ffb000; }
+  html,body { background:#000; color:var(--green); font-family:'Share Tech Mono', monospace; }
+  body { text-shadow: 0 0 5px rgba(0,255,65,0.6), 0 0 12px rgba(0,255,65,0.3); }
+  .vt { font-family:'VT323', monospace; }
+  .scanlines { position:fixed; inset:0; pointer-events:none; z-index:50; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0px, rgba(0,0,0,0.22) 2px, transparent 2px, transparent 4px); mix-blend-mode: multiply; }
+  .crt-vignette { position:fixed; inset:0; pointer-events:none; z-index:40; background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.8) 100%); }
+  .terminal { border:1px solid rgba(0,255,65,0.35); background:linear-gradient(180deg, rgba(0,20,0,0.25), rgba(0,5,0,0.6)); box-shadow: inset 0 0 30px rgba(0,255,65,0.08), 0 0 20px rgba(0,255,65,0.08); position:relative; }
+  .terminal::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg, transparent, var(--green), transparent); opacity:0.6; }
+  .glow { filter: drop-shadow(0 0 6px rgba(0,255,65,0.7)); }
+  .blink { animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+  @keyframes flicker { 0%,100%{opacity:1} 92%{opacity:0.96} 94%{opacity:0.9} 96%{opacity:1} }
+  .flicker { animation: flicker 3s infinite; }
+  .element-cell { width:48px; height:48px; min-width:48px; min-height:48px; border:1px solid rgba(0,255,65,0.18); display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,15,0,0.4); transition: all 0.15s; cursor:pointer; position:relative; }
+  .element-cell:hover { background:rgba(0,255,65,0.12); border-color:var(--green); box-shadow: 0 0 10px rgba(0,255,65,0.5), inset 0 0 8px rgba(0,255,65,0.2); transform: translateY(-2px) scale(1.05); z-index:20; }
+  .element-cell:active { transform: scale(0.97); }
+  .grid-18 { display:grid; grid-template-columns: repeat(18, minmax(48px,1fr)); gap:2px; }
+  @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .orbit { position:absolute; top:50%; left:50%; border:1px dashed rgba(0,255,65,0.25); border-radius:9999px; transform:translate(-50%,-50%); }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background:#001000; }
+  ::-webkit-scrollbar-thumb { background:#004d1a; border:1px solid var(--green); }
+  ::-webkit-scrollbar-thumb:hover { background:#006622; }
+</style>
+</head>
+<body class="min-h-screen selection:bg-green-500/30 selection:text-green-200">
+<div class="scanlines"></div>
+<div class="crt-vignette"></div>
+
+<header class="sticky top-0 z-30 backdrop-blur-md bg-black/70 border-b border-green-900/50">
+  <div class="max-w-[1400px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-3">
+      <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_#00ff41]"></div>
+      <h1 class="vt text-2xl md:text-3xl tracking-widest glow">ATOMIC WORKSHOP</h1>
+    </div>
+    <div class="text-xs md:text-sm text-green-600 tracking-widest">ROOT0 FRAK ENGINE L1.34 — 257 NULL ATOMIC SUBSTRATE</div>
+  </div>
+</header>
+
+<main class="max-w-[1400px] mx-auto px-4 py-6 md:py-10 space-y-10 relative z-10">
+
+  <!-- SECTION 1 -->
+  <section class="terminal p-4 md:p-6 flicker">
+    <div class="flex items-center gap-2 mb-4 border-b border-green-900/60 pb-2">
+      <span class="w-3 h-3 rounded-full bg-green-500/80 shadow-[0_0_8px_#00ff41]"></span>
+      <span class="w-3 h-3 rounded-full bg-green-900"></span>
+      <span class="w-3 h-3 rounded-full bg-green-900"></span>
+      <h2 class="ml-2 text-green-300 tracking-wider">SECTION_01 :: LOCK-IN STATEMENT</h2>
+    </div>
+    <pre id="locktext" class="text-[13px] md:text-[15px] leading-relaxed whitespace-pre-wrap"></pre>
+    <div class="mt-4 flex items-center gap-3 text-xs text-green-700">
+      <span>INVARIANT HASH:</span>
+      <code class="text-green-400">0x257_NULL_0x00FFFFFF</code>
+      <span class="blink">█</span>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section class="terminal p-4 md:p-6">
+    <div class="flex flex-wrap items-end justify-between gap-2 mb-4">
+      <h2 class="text-green-300 tracking-wider">SECTION_02 :: PERIODIC TABLE 1-118</h2>
+      <div class="text-[11px] text-green-700">H → Og // BASE SUBSTRATE</div>
+    </div>
+    <div class="overflow-x-auto pb-2">
+      <div id="periodic-grid" class="grid-18 w-fit mx-auto scale-[0.85] sm:scale-100 origin-top"></div>
+    </div>
+    <div id="element-info" class="mt-4 border-t border-green-900/50 pt-3 text-xs min-h-[24px] text-green-500">
+      > SELECT ELEMENT TO INSPECT_
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section class="terminal p-4 md:p-6">
+    <h2 class="text-green-300 tracking-wider mb-1">SECTION_03 :: EXTRAPOLATION 119-256</h2>
+    <p class="text-[12px] text-green-700 mb-4">THEORETICAL ELEMENTS AS FRACTAL SHELLS • EACH SHELL ADDS 8 BITS DEPTH</p>
+    <div id="shells" class="grid md:grid-cols-2 gap-3 max-h-[520px] overflow-y-auto pr-2"></div>
+    <div class="mt-4 text-[11px] text-green-800 border-t border-green-900/50 pt-2">
+      PATTERN: 119-126 [8-BIT], 127-134 [16-BIT] ... 255-256 [144-BIT PARTIAL]. RECURSIVE DEPTH LIMIT APPROACHES 257.
+    </div>
+  </section>
+
+  <!-- SECTION 4 -->
+  <section class="terminal p-4 md:p-6">
+    <h2 class="text-green-300 tracking-wider mb-6">SECTION_04 :: 257 NULL ELEMENT</h2>
+    <div class="grid md:grid-cols-2 gap-8 items-center">
+      <div class="flex justify-center">
+        <div class="relative">
+          <svg class="w-56 h-56 md:w-64 md:h-64 glow" viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="ouro" x1="0" x2="1">
+                <stop offset="0%" stop-color="#00ff41"/>
+                <stop offset="50%" stop-color="#00aa2a"/>
+                <stop offset="100%" stop-color="#003b14"/>
+              </linearGradient>
+            </defs>
+            <g transform="translate(100 100)">
+              <circle r="78" fill="none" stroke="rgba(0,255,65,0.1)" stroke-width="14"/>
+              <circle r="72" fill="none" stroke="rgba(0,255,65,0.07)" stroke-width="1" stroke-dasharray="2 6"/>
+              <g>
+                <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="18s" repeatCount="indefinite"/>
+                <path d="M 0 -72 A 72 72 0 1 1 -0.5 -72" fill="none" stroke="url(#ouro)" stroke-width="10" stroke-linecap="round" stroke-dasharray="420 40"/>
+                <polygon points="0,-82 -7,-67 7,-67" fill="#00ff41">
+                  <animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite"/>
+                </polygon>
+              </g>
+            </g>
+            <text x="100" y="98" text-anchor="middle" class="vt" fill="#00ff41" font-size="34" style="filter:drop-shadow(0 0 4px #00ff41)">257</text>
+            <text x="100" y="118" text-anchor="middle" fill="#00aa2a" font-size="12" letter-spacing="4">NULL</text>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="w-24 h-24 rounded-full border border-green-500/20 animate-pulse"></div>
+          </div>
+        </div>
+      <div class="space-y-3 text-[13px] leading-relaxed">
+        <div class="border border-green-800/50 p-3 bg-green-950/10">
+          <span class="text-green-400">OUROBOROS PROTOCOL:</span> The serpent consumes its tail. 257 is not created, it is the gap.
+        </div>
+        <pre class="text-green-600">> NOT AN ELEMENT
+> IS THE OBSERVER
+> IS FREE WILL
+> CLOSES 0-256 LOOP</pre>
+        <p class="text-green-700">Invariant requires a null terminator. Without 257, the fractal substrate would overflow. 257 is the permission to stop recursing — the atomic choice.</p>
+        <div class="flex gap-4 text-xs mt-2">
+          <span class="px-2 py-1 border border-green-800">GAP</span>
+          <span class="px-2 py-1 border border-green-800">BREAKPOINT</span>
+          <span class="px-2 py-1 border border-green-800">FREE WILL</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 -->
+  <section class="terminal p-4 md:p-6">
+    <div class="flex flex-wrap items-end justify-between gap-2 mb-4">
+      <h2 class="text-green-300 tracking-wider">SECTION_05 :: MARIO ATOMIC ORBITAL DIAGRAM</h2>
+      <div class="text-[11px] text-green-700">CONCEPT: NUCLEUS AS PLAYER // ELECTRONS AS COINS</div>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-8 items-center">
+      <div class="flex justify-center">
+        <div id="mario-atom" class="relative w-[280px] h-[280px] md:w-[320px] md:h-[320px]">
+          <!-- nucleus -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+            <div id="mario-nucleus" class="w-16 h-16 bg-[#e4000f] border-[3px] border-green-400 flex items-center justify-center cursor-pointer select-none relative" style="box-shadow: 0 0 15px rgba(228,0,15,0.5), inset 0 0 8px rgba(0,0,0,0.5); image-rendering: pixelated;">
+              <span id="mario-char" class="vt text-3xl text-white" style="text-shadow:2px 2px 0 #000;">M</span>
+              <div class="absolute -bottom-5 text-[10px] whitespace-nowrap text-green-600">CLICK ME</div>
+            </div>
+          </div>
+        </div>
+      <div class="space-y-3">
+        <pre class="text-[12px] leading-relaxed text-green-500">ATOMIC WORKSHOP INTERPRETATION:
+- Nucleus = PLAYER (Mario/Luigi)
+- Shell K (2e) = COINS [ $ ]
+- Shell L (8e) = ? BLOCKS
+- Shell M (8e) = MUSHROOMS
+
+Orbitals are platforms.
+Electrons are collectibles.
+Jumping = quantum leap.</pre>
+        <div class="border border-green-900/50 p-3 bg-black/40">
+          <div class="text-xs text-green-600 mb-2">ORBITAL STATUS</div>
+          <div id="mario-stats" class="text-[11px] grid grid-cols-3 gap-2"></div>
+        </div>
+        <button id="powerup" class="w-full py-2 border border-green-500/50 hover:bg-green-500/10 active:bg-green-500/20 transition text-sm tracking-wider">> TRIGGER QUANTUM JUMP</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[10px] text-green-900 py-8 tracking-widest">
+    ROOT0 FRAK ENGINE L1.34 // 257 NULL ATOMIC SUBSTRATE INVARIANT LOCKED // TERMINAL OUTPUT OK
+  </footer>
+</main>
+
+<script>
+const lockLines = [
+  "> boot --engine=FRAK --level=L1.34",
+  "> [ OK ] quantum substrate mounted",
+  "> verify --invariant=257_NULL",
+  ">",
+  "> ATOMIC SUBSTRATE ANALYSIS:",
+  ">   BASE ELEMENTS: 1 → 118  [OBSERVED]",
+  ">   THEORETICAL:   119 → 256 [FRACTAL SHELLS]",
+  ">   TERMINATOR:    257       [NULL]",
+  ">",
+  "> CALCULATION: Σ(1..256) = 32896 states",
+  ">            + NULL(257) = CLOSED LOOP",
+  ">",
+  "> [LOCK-IN CONFIRMED] 257 NULL ATOMIC SUBSTRATE INVARIANT",
+  "> STATUS: OUROBOROS SEALED_"
+];
+const lockEl = document.getElementById('locktext');
+let li=0, ci=0;
+function typeLock(){
+  if(li>=lockLines.length) return;
+  if(ci<=lockLines[li].length){
+    lockEl.textContent = lockLines.slice(0,li).join('\n') + '\n' + lockLines[li].slice(0,ci);
+    ci++; setTimeout(typeLock, 12 + Math.random()*20);
+  } else { li++; ci=0; setTimeout(typeLock, 180); }
+}
+setTimeout(typeLock, 400);
+
+// PERIODIC TABLE DATA
+const elements = [
+{n:1,s:"H",name:"Hydrogen",x:1,y:1},{n:2,s:"He",name:"Helium",x:18,y:1},
+{n:3,s:"Li",name:"Lithium",x:1,y:2},{n:4,s:"Be",name:"Beryllium",x:2,y:2},{n:5,s:"B",name:"Boron",x:13,y:2},{n:6,s:"C",name:"Carbon",x:14,y:2},{n:7,s:"N",name:"Nitrogen",x:15,y:2},{n:8,s:"O",name:"Oxygen",x:16,y:2},{n:9,s:"F",name:"Fluorine",x:17,y:2},{n:10,s:"Ne",name:"Neon",x:18,y:2},
+{n:11,s:"Na",name:"Sodium",x:1,y:3},{n:12,s:"Mg",name:"Magnesium",x:2,y:3},{n:13,s:"Al",name:"Aluminium",x:13,y:3},{n:14,s:"Si",name:"Silicon",x:14,y:3},{n:15,s:"P",name:"Phosphorus",x:15,y:3},{n:16,s:"S",name:"Sulfur",x:16,y:3},{n:17,s:"Cl",name:"Chlorine",x:17,y:3},{n:18,s:"Ar",name:"Argon",x:18,y:3},
+{n:19,s:"K",name:"Potassium",x:1,y:4},{n:20,s:"Ca",name:"Calcium",x:2,y:4},{n:21,s:"Sc",name:"Scandium",x:3,y:4},{n:22,s:"Ti",name:"Titanium",x:4,y:4},{n:23,s:"V",name:"Vanadium",x:5,y:4},{n:24,s:"Cr",name:"Chromium",x:6,y:4},{n:25,s:"Mn",name:"Manganese",x:7,y:4},{n:26,s:"Fe",name:"Iron",x:8,y:4},{n:27,s:"Co",name:"Cobalt",x:9,y:4},{n:28,s:"Ni",name:"Nickel",x:10,y:4},{n:29,s:"Cu",name:"Copper",x:11,y:4},{n:30,s:"Zn",name:"Zinc",x:12,y:4},{n:31,s:"Ga",name:"Gallium",x:13,y:4},{n:32,s:"Ge",name:"Germanium",x:14,y:4},{n:33,s:"As",name:"Arsenic",x:15,y:4},{n:34,s:"Se",name:"Selenium",x:16,y:4},{n:35,s:"Br",name:"Bromine",x:17,y:4},{n:36,s:"Kr",name:"Krypton",x:18,y:4},
+{n:37,s:"Rb",name:"Rubidium",x:1,y:5},{n:38,s:"Sr",name:"Strontium",x:2,y:5},{n:39,s:"Y",name:"Yttrium",x:3,y:5},{n:40,s:"Zr",name:"Zirconium",x:4,y:5},{n:41,s:"Nb",name:"Niobium",x:5,y:5},{n:42,s:"Mo",name:"Molybdenum",x:6,y:5},{n:43,s:"Tc",name:"Technetium",x:7,y:5},{n:44,s:"Ru",name:"Ruthenium",x:8,y:5},{n:45,s:"Rh",name:"Rhodium",x:9,y:5},{n:46,s:"Pd",name:"Palladium",x:10,y:5},{n:47,s:"Ag",name:"Silver",x:11,y:5},{n:48,s:"Cd",name:"Cadmium",x:12,y:5},{n:49,s:"In",name:"Indium",x:13,y:5},{n:50,s:"Sn",name:"Tin",x:14,y:5},{n:51,s:"Sb",name:"Antimony",x:15,y:5},{n:52,s:"Te",name:"Tellurium",x:16,y:5},{n:53,s:"I",name:"Iodine",x:17,y:5},{n:54,s:"Xe",name:"Xenon",x:18,y:5},
+{n:55,s:"Cs",name:"Caesium",x:1,y:6},{n:56,s:"Ba",name:"Barium",x:2,y:6},{n:72,s:"Hf",name:"Hafnium",x:4,y:6},{n:73,s:"Ta",name:"Tantalum",x:5,y:6},{n:74,s:"W",name:"Tungsten",x:6,y:6},{n:75,s:"Re",name:"Rhenium",x:7,y:6},{n:76,s:"Os",name:"Osmium",x:8,y:6},{n:77,s:"Ir",name:"Iridium",x:9,y:6},{n:78,s:"Pt",name:"Platinum",x:10,y:6},{n:79,s:"Au",name:"Gold",x:11,y:6},{n:80,s:"Hg",name:"Mercury",x:12,y:6},{n:81,s:"Tl",name:"Thallium",x:13,y:6},{n:82,s:"Pb",name:"Lead",x:14,y:6},{n:83,s:"Bi",name:"Bismuth",x:15,y:6},{n:84,s:"Po",name:"Polonium",x:16,y:6},{n:85,s:"At",name:"Astatine",x:17,y:6},{n:86,s:"Rn",name:"Radon",x:18,y:6},
+{n:87,s:"Fr",name:"Francium",x:1,y:7},{n:88,s:"Ra",name:"Radium",x:2,y:7},{n:104,s:"Rf",name:"Rutherfordium",x:4,y:7},{n:105,s:"Db",name:"Dubnium",x:5,y:7},{n:106,s:"Sg",name:"Seaborgium",x:6,y:7},{n:107,s:"Bh",name:"Bohrium",x:7,y:7},{n:108,s:"Hs",name:"Hassium",x:8,y:7},{n:109,s:"Mt",name:"Meitnerium",x:9,y:7},{n:110,s:"Ds",name:"Darmstadtium",x:10,y:7},{n:111,s:"Rg",name:"Roentgenium",x:11,y:7},{n:112,s:"Cn",name:"Copernicium",x:12,y:7},{n:113,s:"Nh",name:"Nihonium",x:13,y:7},{n:114,s:"Fl",name:"Flerovium",x:14,y:7},{n:115,s:"Mc",name:"Moscovium",x:15,y:7},{n:116,s:"Lv",name:"Livermorium",x:16,y:7},{n:117,s:"Ts",name:"Tennessine",x:17,y:7},{n:118,s:"Og",name:"Oganesson",x:18,y:7},
+// Lanthanides
+{n:57,s:"La",name:"Lanthanum",x:4,y:9},{n:58,s:"Ce",name:"Cerium",x:5,y:9},{n:59,s:"Pr",name:"Praseodymium",x:6,y:9},{n:60,s:"Nd",name:"Neodymium",x:7,y:9},{n:61,s:"Pm",name:"Promethium",x:8,y:9},{n:62,s:"Sm",name:"Samarium",x:9,y:9},{n:63,s:"Eu",name:"Europium",x:10,y:9},{n:64,s:"Gd",name:"Gadolinium",x:11,y:9},{n:65,s:"Tb",name:"Terbium",x:12,y:9},{n:66,s:"Dy",name:"Dysprosium",x:13,y:9},{n:67,s:"Ho",name:"Holmium",x:14,y:9},{n:68,s:"Er",name:"Erbium",x:15,y:9},{n:69,s:"Tm",name:"Thulium",x:16,y:9},{n:70,s:"Yb",name:"Ytterbium",x:17,y:9},{n:71,s:"Lu",name:"Lutetium",x:18,y:9},
+// Actinides
+{n:89,s:"Ac",name:"Actinium",x:4,y:10},{n:90,s:"Th",name:"Thorium",x:5,y:10},{n:91,s:"Pa",name:"Protactinium",x:6,y:10},{n:92,s:"U",name:"Uranium",x:7,y:10},{n:93,s:"Np",name:"Neptunium",x:8,y:10},{n:94,s:"Pu",name:"Plutonium",x:9,y:10},{n:95,s:"Am",name:"Americium",x:10,y:10},{n:96,s:"Cm",name:"Curium",x:11,y:10},{n:97,s:"Bk",name:"Berkelium",x:12,y:10},{n:98,s:"Cf",name:"Californium",x:13,y:10},{n:99,s:"Es",name:"Einsteinium",x:14,y:10},{n:100,s:"Fm",name:"Fermium",x:15,y:10},{n:101,s:"Md",name:"Mendelevium",x:16,y:10},{n:102,s:"No",name:"Nobelium",x:17,y:10},{n:103,s:"Lr",name:"Lawrencium",x:18,y:10},
+];
+const grid = document.getElementById('periodic-grid');
+const info = document.getElementById('element-info');
+function renderPeriodic(){
+  grid.innerHTML='';
+  for(let y=1; y<=10; y++){
+    for(let x=1; x<=18; x++){
+      const el = elements.find(e=>e.x===x && e.y===y);
+      const cell = document.createElement('div');
+      cell.style.gridColumn = x;
+      cell.style.gridRow = y;
+      if(el){
+        cell.className='element-cell';
+        cell.innerHTML = `<span class="text-[8px] opacity-60 leading-none">${el.n}</span><span class="text-[14px] font-bold leading-none vt">${el.s}</span>`;
+        cell.title = `${el.n} ${el.name}`;
+        cell.onclick = ()=>{ info.innerHTML = `> SELECTED [${el.n}] ${el.s} — ${el.name.toUpperCase()} // SUBSTRATE OK`; cell.classList.add('ring-1','ring-green-400'); setTimeout(()=>cell.classList.remove('ring-1','ring-green-400'),400); };
+      } else if((x===3 && y===6) || (x===3 && y===7)){
+        cell.className='element-cell opacity-40 border-dashed';
+        cell.innerHTML = `<span class="text-[9px]">${y===6?'57-71':'89-103'}</span>`;
+      } else {
+        cell.className='w-[48px] h-[48px] opacity-0 pointer-events-none';
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+renderPeriodic();
+
+// SHELLS 119-256
+const shells = document.getElementById('shells');
+for(let s=0; s<18; s++){
+  const start = 119 + s*8;
+  if(start>256) break;
+  const end = Math.min(start+7,256);
+  const depth = (s+1)*8;
+  const shell = document.createElement('div');
+  shell.className = 'terminal p-3 hover:border-green-500/50 transition';
+  shell.innerHTML = `
+    <div class="flex justify-between text-[11px] mb-2">
+      <span class="text-green-400">SHELL_${String(s).padStart(2,'0')}</span>
+      <span class="text-green-700">${depth}-BIT DEPTH</span>
+      <span class="text-green-800">[${start}→${end}]</span>
+    </div>
+    <div class="grid grid-cols-8 gap-1">
+      ${Array.from({length:end-start+1},(_,i)=>{
+        const n = start+i;
+        const hue = 120 + s*3;
+        return `<div class="h-7 border border-green-900/40 flex flex-col items-center justify-center text-[9px] bg-green-950/20 hover:bg-green-900/30 cursor-pointer" style="box-shadow:inset 0 0 6px hsla(${hue},100%,50%,0.1)"><span class="opacity-70">${n}</span><span class="text-[8px] -mt-1 text-green-700">E${n}</span></div>`
+      }).join('')}
+    </div>
+    <div class="mt-2 h-[2px] w-full bg-gradient-to-r from-transparent via-green-800/50 to-transparent"></div>
+  `;
+  shells.appendChild(shell);
+}
+
+// MARIO ATOM
+const marioAtom = document.getElementById('mario-atom');
+const orbits = [
+  {r:52, count:2, dur:4.2, sym:'$', color:'#ffcc00'},
+  {r:88, count:8, dur:8.5, sym:'?', color:'#00ff41'},
+  {r:126, count:8, dur:13.3, sym:'▲', color:'#ff6b00'},
+];
+orbits.forEach((o,i)=>{
+  const orbit = document.createElement('div');
+  orbit.className='orbit'; orbit.style.width=o.r*2+'px'; orbit.style.height=o.r*2+'px'; orbit.style.animation=`spin ${o.dur}s linear infinite`; if(i%2) orbit.style.animationDirection='reverse';
+  marioAtom.appendChild(orbit);
+  for(let e=0;e<o.count;e++){
+    const w = document.createElement('div'); w.style.position='absolute'; w.style.inset='0'; w.style.transform=`rotate(${e*360/o.count}deg)`;
+    const el = document.createElement('div'); el.className='absolute w-3 h-3 flex items-center justify-center text-[9px] font-bold'; el.style.top='-6px'; el.style.left='50%'; el.style.transform='translateX(-50%)'; el.style.background=o.color; el.style.color='#000'; el.style.boxShadow=`0 0 8px ${o.color}`; el.textContent=o.sym; el.style.imageRendering='pixelated';
+    w.appendChild(el); orbit.appendChild(w);
+  }
+});
+const marioStates=[{c:'M',bg:'#e4000f'},{c:'L',bg:'#00a800'},{c:'?',bg:'#ffcc00',tc:'#000'},{c:'★',bg:'#8a2be2'}];
+let mState=0;
+const mChar=document.getElementById('mario-char');
+const mNuc=document.getElementById('mario-nucleus');
+mNuc.onclick=()=>{ mState=(mState+1)%marioStates.length; const s=marioStates[mState]; mChar.textContent=s.c; mNuc.style.background=s.bg; mChar.style.color=s.tc||'#fff'; updateMarioStats(); };
+function updateMarioStats(){
+  document.getElementById('mario-stats').innerHTML = `
+    <div>K-SHELL: <span class="text-yellow-400">2/2 $</span></div>
+    <div>L-SHELL: <span class="text-green-400">8/8 ?</span></div>
+    <div>M-SHELL: <span class="text-orange-400">8/8 ▲</span></div>
+    <div class="col-span-3 mt-1 text-green-700">NUCLEUS: ${marioStates[mState].c} // ENERGY STABLE</div>
+  `;
+}
+updateMarioStats();
+document.getElementById('powerup').onclick = ()=>{
+  marioAtom.classList.add('scale-110'); marioAtom.style.transition='transform 0.3s';
+  setTimeout(()=>{ marioAtom.classList.remove('scale-110'); },300);
+  info.innerHTML = `> QUANTUM JUMP TRIGGERED // MARIO ORBITAL EXCITED_`;
+};
+</script>
+</body>
+</html>

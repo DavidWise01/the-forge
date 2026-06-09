@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRIN TRIN Render Engine</title>
+  <meta name="theme-color" content="#0a131c">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="stage-card">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Public commons geometry engine</div>
+          <h1>TRIN TRIN Render Engine</h1>
+          <p class="lede">
+            Render the purple core, six ice containers, five-phase ring, and ten-step gate as a live scene.
+            This app exists to generate frames, diagrams, and seal-grade visuals from the brief.
+          </p>
+        </div>
+        <div class="status-cluster">
+          <div class="status-chip">1 core + 6 containers</div>
+          <div class="status-chip">5 phases</div>
+          <div class="status-chip">10-step gate</div>
+          <div class="status-chip">96 / 100 / 132 bitframes</div>
+        </div>
+      </header>
+
+      <section class="viewport-wrap">
+        <div class="viewport-panel">
+          <canvas id="scene" aria-label="TRIN TRIN render viewport"></canvas>
+          <div class="viewport-overlay">
+            <div class="overlay-block">
+              <span class="overlay-label">Current gate</span>
+              <strong id="gate-readout">1</strong>
+              <span id="gate-caption">Build pressure</span>
+            </div>
+            <div class="overlay-block">
+              <span class="overlay-label">Phase index</span>
+              <strong id="phase-readout">0</strong>
+              <span id="phase-caption">carry online</span>
+            </div>
+            <div class="overlay-block">
+              <span class="overlay-label">Render mode</span>
+              <strong id="preset-readout">Seal</strong>
+              <span>center-out field active</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="control-panel">
+          <section class="panel-section purpose-box">
+            <div class="section-kicker">Purpose</div>
+            <h2>Purposeful Output</h2>
+            <p>
+              This renderer is for producing a visual grammar of the system: seals, motion studies, gate diagrams,
+              and explainer frames that stay faithful to the brief instead of drifting into generic sci-fi wallpaper.
+            </p>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-kicker">Presets</div>
+            <div class="preset-grid">
+              <button class="preset-button is-active" data-preset="seal">Seal</button>
+              <button class="preset-button" data-preset="gate">Gate</button>
+              <button class="preset-button" data-preset="mobius">Mobius</button>
+              <button class="preset-button" data-preset="field">Field</button>
+            </div>
+          </section>
+
+          <section class="panel-section controls-grid">
+            <label class="control">
+              <span>Phase</span>
+              <input id="phase" type="range" min="0" max="1" step="0.001">
+              <output id="phase-value">0.000</output>
+            </label>
+            <label class="control">
+              <span>Gate Progress</span>
+              <input id="gate" type="range" min="0" max="1" step="0.001">
+              <output id="gate-value">0.000</output>
+            </label>
+            <label class="control">
+              <span>Orbit Radius</span>
+              <input id="orbit" type="range" min="0.65" max="1.35" step="0.001">
+              <output id="orbit-value">1.000</output>
+            </label>
+            <label class="control">
+              <span>Twist</span>
+              <input id="twist" type="range" min="0" max="1" step="0.001">
+              <output id="twist-value">0.420</output>
+            </label>
+            <label class="control">
+              <span>Glow</span>
+              <input id="glow" type="range" min="0" max="1.2" step="0.001">
+              <output id="glow-value">0.820</output>
+            </label>
+            <label class="control">
+              <span>Motion</span>
+              <input id="speed" type="range" min="0" max="1.4" step="0.001">
+              <output id="speed-value">0.220</output>
+            </label>
+          </section>
+
+          <section class="panel-section toggle-stack">
+            <label class="toggle">
+              <input id="autoplay" type="checkbox" checked>
+              <span>Autoplay phase walk</span>
+            </label>
+            <label class="toggle">
+              <input id="show-field" type="checkbox" checked>
+              <span>Show center-out field</span>
+            </label>
+            <label class="toggle">
+              <input id="show-labels" type="checkbox" checked>
+              <span>Show labels and node ids</span>
+            </label>
+            <label class="toggle">
+              <input id="show-bitframes" type="checkbox" checked>
+              <span>Show bitframe ledger</span>
+            </label>
+          </section>
+
+          <section class="panel-section action-row">
+            <button id="play-toggle" class="action-button">Pause motion</button>
+            <button id="export-button" class="action-button action-button-primary">Export PNG</button>
+            <button id="reset-button" class="action-button">Reset scene</button>
+          </section>
+
+          <section class="panel-section ledger-grid">
+            <article class="ledger-box">
+              <div class="section-kicker">Bitframe</div>
+              <strong>96-bit rope</strong>
+              <p>84 bodies + 10 witnesses + 2 in/out.</p>
+            </article>
+            <article class="ledger-box">
+              <div class="section-kicker">Turn-on</div>
+              <strong>100-bit</strong>
+              <p>96 + 3 spare + 1 on.</p>
+            </article>
+            <article class="ledger-box">
+              <div class="section-kicker">Full</div>
+              <strong>132-bit</strong>
+              <p>120 + 8 + 4 gatekeepers.</p>
+            </article>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>

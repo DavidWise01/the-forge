@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6-Layer Core Wired to O₃ Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto; background: radial-gradient(1200px 800px at 20% -10%, #0b1220 0%, #030712 45%, #02040a 100%); }
+  .font-mono { font-family: "JetBrains Mono", monospace; }
+  canvas { touch-action: none; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #1e293b; border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#22d3ee; margin-top:-5px; box-shadow:0 0 8px rgba(34,211,238,.6); }
+</style>
+</head>
+<body class="text-slate-200 min-h-screen selection:bg-cyan-500/30">
+<div class="max-w-[1800px] mx-auto p-3 md:p-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+    <div>
+      <h1 class="text-2xl md:text-[28px] font-semibold tracking-tight">6-Layer Core <span class="text-cyan-400">WIRED TO</span> O₃ Generator</h1>
+      <p class="text-slate-400 text-sm mt-1">Layer 3 exotic field directly drives plasma voltage • live coupled simulation</p>
+    </div>
+    <div class="flex gap-2">
+      <button id="maxOzone" class="px-4 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-200 text-sm font-medium transition">Max Ozone (+100)</button>
+      <button id="wormhole" class="px-4 py-2 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/30 text-violet-200 text-sm font-medium transition">Wormhole Mode (-100)</button>
+    </div>
+  </div>
+
+  <!-- Readouts -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+    <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 backdrop-blur">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">Core Layer 3 Field</div>
+      <div id="fieldReadout" class="font-mono text-2xl text-cyan-400 mt-1">+0</div>
+      <div class="text-[10px] text-slate-500">direct wire</div>
+    </div>
+    <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">Plasma Voltage</div>
+      <div id="voltageReadout" class="font-mono text-2xl text-violet-300 mt-1">5.0 kV</div>
+      <div class="text-[10px] text-slate-500">wired from core</div>
+    </div>
+    <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">O₃ Production</div>
+      <div id="o3Readout" class="font-mono text-2xl text-fuchsia-300 mt-1">0 ppm</div>
+      <div class="text-[10px] text-slate-500">real-time</div>
+    </div>
+    <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3">
+      <div class="text-[11px] uppercase tracking-wider text-slate-400">Transfer Efficiency</div>
+      <div id="effReadout" class="font-mono text-2xl text-emerald-300 mt-1">75%</div>
+      <div class="text-[10px] text-slate-500">core → plasma</div>
+    </div>
+  </div>
+
+  <!-- Main Split -->
+  <main class="relative flex flex-col xl:flex-row gap-5 bg-black/20 border border-white/5 rounded-[24px] p-4 md:p-5 backdrop-blur-xl shadow-2xl">
+    <canvas id="beam" class="absolute inset-0 w-full h-full pointer-events-none z-20"></canvas>
+    
+    <!-- LEFT 60% -->
+    <section class="xl:w-[60%] relative z-10">
+      <div class="relative aspect-[4/3] xl:aspect-[16/10] bg-[#050a14]/80 rounded-2xl border border-cyan-900/40 overflow-hidden">
+        <canvas id="coreCanvas" class="absolute inset-0 w-full h-full"></canvas>
+        <div class="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/60 border border-white/10 text-[10px] tracking-widest text-cyan-300">CLICK RING TO SELECT</div>
+        <div class="absolute bottom-3 right-3 px-2.5 py-1 rounded-md bg-black/60 border border-white/10 text-[11px] font-mono text-slate-300">LAYER 3 → PLASMA</div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="md:col-span-2 bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-medium text-slate-200">Layer <span id="layerNum" class="text-cyan-400">3</span> Tuning</h3>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">LIVE 60FPS</span>
+          </div>
+          <div class="space-y-3.5">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1"><span>Thickness</span><span id="thickVal" class="font-mono">22</span></div>
+              <input id="thicknessSlider" type="range" min="10" max="60" value="22" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1"><span>Field Strength</span><span id="fieldVal" class="font-mono text-cyan-400">+0</span></div>
+              <input id="fieldSlider" type="range" min="-100" max="100" value="0" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-400 mb-1"><span>Rotation</span><span id="rotVal" class="font-mono">0.5</span></div>
+              <input id="rotationSlider" type="range" min="-5" max="5" step="0.1" value="0.5" class="w-full">
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col">
+          <h4 class="text-xs uppercase tracking-wider text-slate-400 mb-2">Material</h4>
+          <select id="materialSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-sm outline-none focus:border-cyan-700">
+            <option>Exotic Matter</option>
+            <option>Dilithium</option>
+            <option>Trilithium</option>
+            <option>Neutronium</option>
+            <option>Dark Energy</option>
+            <option>Photonic Lattice</option>
+          </select>
+          <p class="text-[11px] text-slate-500 mt-3 leading-snug">Layer 3 is hard-wired. Positive fields → blue beam → high voltage. Negative → green beam → exotic stabilization.</p>
+          <div class="mt-auto pt-3 text-[10px] text-slate-500">Wiring: V = 5 + (F+100)/200 × 25 kV</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT 40% -->
+    <section class="xl:w-[40%] relative z-10 flex flex-col gap-4">
+      <div class="relative bg-[#050a14]/80 rounded-2xl border border-violet-900/40 overflow-hidden">
+        <div class="aspect-[16/10] relative">
+          <canvas id="plasmaCanvas" class="absolute inset-0 w-full h-full"></canvas>
+          <div id="exoticMsg" class="hidden absolute inset-0 bg-emerald-950/85 backdrop-blur-md flex items-center justify-center">
+            <div class="text-center px-6">
+              <div class="text-emerald-300 text-sm font-semibold tracking-[0.2em]">EXOTIC STABILIZATION ACTIVE</div>
+              <div class="text-emerald-200/70 text-xs mt-2 max-w-[260px]">Negative Layer 3 field suppresses ionization. O₃ pathway closed. Wormhole geometry stable.</div>
+            </div>
+          <div class="absolute top-2.5 left-2.5 px-2 py-1 rounded bg-black/60 border border-white/10 text-[10px] tracking-widest text-violet-300">DBD REACTOR</div>
+        </div>
+        <div class="p-3.5 border-t border-white/5 bg-black/40">
+          <div class="flex items-center gap-3 mb-2.5">
+            <span class="text-[11px] w-[110px] text-slate-400">Voltage (wired)</span>
+            <input id="voltageSlider" type="range" min="5" max="30" step="0.1" value="17.5" disabled class="flex-1 accent-violet-500 opacity-80">
+            <span id="voltageValue" class="font-mono text-xs w-14 text-right text-violet-300">17.5kV</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] w-[110px] text-slate-400">Frequency</span>
+            <div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="freqBar" class="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 w-[47%] transition-all duration-150"></div></div>
+            <span id="freqReadout" class="font-mono text-xs w-14 text-right text-slate-300">10.0kHz</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-[11px] uppercase tracking-wider text-slate-400">O₃ Production History</h4>
+          <span class="text-[10px] text-slate-500">last 30s • ppm</span>
+        </div>
+        <div class="h-[90px] relative">
+          <canvas id="graphCanvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+        <div class="flex gap-5 mt-2.5 text-[11px]">
+          <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,.8)]"></span><span class="text-slate-400">O₂</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,.8)]"></span><span class="text-slate-400">O</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,.8)]"></span><span class="text-slate-400">O₃</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <p class="text-center text-[11px] text-slate-600 mt-5">Conceptual simulator • Layer 3 field strength maps to V=5–30kV and f=1–20kHz • No real plasma generated</p>
+</div>
+
+<script>
+const dpr = Math.max(1, window.devicePixelRatio || 1);
+const coreCanvas = document.getElementById('coreCanvas');
+const coreCtx = coreCanvas.getContext('2d');
+const plasmaCanvas = document.getElementById('plasmaCanvas');
+const plasmaCtx = plasmaCanvas.getContext('2d');
+const beam = document.getElementById('beam');
+const beamCtx = beam.getContext('2d');
+const graphCanvas = document.getElementById('graphCanvas');
+const graphCtx = graphCanvas.getContext('2d');
+
+const layerNum = document.getElementById('layerNum');
+const thicknessSlider = document.getElementById('thicknessSlider');
+const fieldSlider = document.getElementById('fieldSlider');
+const rotationSlider = document.getElementById('rotationSlider');
+const materialSelect = document.getElementById('materialSelect');
+const thickVal = document.getElementById('thickVal');
+const fieldVal = document.getElementById('fieldVal');
+const rotVal = document.getElementById('rotVal');
+
+const fieldReadout = document.getElementById('fieldReadout');
+const voltageReadout = document.getElementById('voltageReadout');
+const o3Readout = document.getElementById('o3Readout');
+const effReadout = document.getElementById('effReadout');
+const voltageSlider = document.getElementById('voltageSlider');
+const voltageValue = document.getElementById('voltageValue');
+const freqReadout = document.getElementById('freqReadout');
+const freqBar = document.getElementById('freqBar');
+const exoticMsg = document.getElementById('exoticMsg');
+const maxOzoneBtn = document.getElementById('maxOzone');
+const wormholeBtn = document.getElementById('wormhole');
+
+let layers = [
+  {id:1, thickness:28, field:-12, rotation:-0.8, material:'Exotic Matter', radius:70, angle:0},
+  {id:2, thickness:24, field:18, rotation:1.2, material:'Dilithium', radius:110, angle:0},
+  {id:3, thickness:22, field:0, rotation:0.5, material:'Trilithium', radius:150, angle:0},
+  {id:4, thickness:20, field:-8, rotation:-1.5, material:'Neutronium', radius:188, angle:0},
+  {id:5, thickness:18, field:14, rotation:0.9, material:'Dark Energy', radius:224, angle:0},
+  {id:6, thickness:16, field:-5, rotation:-0.4, material:'Photonic Lattice', radius:258, angle:0},
+];
+let selected = 2;
+let time = 0;
+let particles = [];
+let o3History = [];
+let currentO3 = 0;
+let o3Target = 0;
+
+function resizeAll(){
+  [coreCanvas, plasmaCanvas, beam, graphCanvas].forEach(c=>{
+    const r = c.getBoundingClientRect();
+    c.width = Math.max(10, Math.floor(r.width * dpr));
+    c.height = Math.max(10, Math.floor(r.height * dpr));
+  });
+}
+window.addEventListener('resize', ()=>{ resizeAll(); });
+
+function selectLayer(i){
+  selected = i;
+  const l = layers[i];
+  layerNum.textContent = i+1;
+  thicknessSlider.value = l.thickness; thickVal.textContent = l.thickness;
+  fieldSlider.value = l.field; fieldVal.textContent = (l.field>=0?'+':'')+l.field;
+  rotationSlider.value = l.rotation; rotVal.textContent = (+l.rotation).toFixed(1);
+  materialSelect.value = l.material;
+}
+coreCanvas.addEventListener('click', (e)=>{
+  const r = coreCanvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const cx = r.width/2, cy = r.height/2;
+  const dist = Math.hypot(x-cx, y-cy);
+  let best = -1, md = 1e9;
+  layers.forEach((l,i)=>{ const d = Math.abs(dist - l.radius); if(d < l.thickness/2 + 12 && d < md){ md=d; best=i; } });
+  if(best>=0) selectLayer(best);
+});
+thicknessSlider.addEventListener('input', e=>{ layers[selected].thickness = +e.target.value; thickVal.textContent = e.target.value; });
+fieldSlider.addEventListener('input', e=>{ const v=+e.target.value; layers[selected].field=v; fieldVal.textContent=(v>=0?'+':'')+v; if(selected===2) updateWiring(); });
+rotationSlider.addEventListener('input', e=>{ layers[selected].rotation=+e.target.value; rotVal.textContent=(+e.target.value).toFixed(1); });
+materialSelect.addEventListener('change', e=>{ layers[selected].material = e.target.value; });
+
+function updateWiring(){
+  const f = layers[2].field;
+  const voltage = 5 + (f + 100)/200 * 25;
+  const freq = 1 + Math.abs(f)/100 * 19;
+  const efficiency = Math.max(5, 75 + Math.abs(f)/100*25 - (f<0?30:0));
+  o3Target = Math.pow(voltage/30, 2.8) * 850 * (f<0 ? 0.12 : 1);
+
+  fieldReadout.textContent = (f>=0?'+':'') + Math.round(f);
+  fieldReadout.className = 'font-mono text-2xl mt-1 ' + (f>=0 ? 'text-cyan-400' : 'text-emerald-400');
+  voltageReadout.textContent = voltage.toFixed(1) + ' kV';
+  voltageSlider.value = voltage;
+  voltageValue.textContent = voltage.toFixed(1)+'kV';
+  freqReadout.textContent = freq.toFixed(1)+'kHz';
+  freqBar.style.width = (freq/20*100)+'%';
+  effReadout.textContent = Math.round(efficiency)+'%';
+  exoticMsg.classList.toggle('hidden', f > -50);
+}
+maxOzoneBtn.onclick = ()=>{ layers[2].field=100; selectLayer(2); updateWiring(); pulseCore(1); };
+wormholeBtn.onclick = ()=>{ layers[2].field=-100; selectLayer(2); updateWiring(); pulseCore(-1); };
+
+let pulse = 0;
+function pulseCore(dir){ pulse = dir; setTimeout(()=>pulse=0, 400); }
+
+function drawCore(){
+  const ctx = coreCtx, w = coreCanvas.clientWidth, h = coreCanvas.clientHeight;
+  ctx.clearRect(0,0,coreCanvas.width,coreCanvas.height);
+  ctx.save(); ctx.scale(dpr,dpr);
+  const cx = w/2, cy = h/2 + 4;
+
+  // bg grid
+  ctx.strokeStyle = 'rgba(100,116,139,0.07)';
+  ctx.lineWidth = 1;
+  for(let r=40; r<300; r+=36){ ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); }
+
+  layers.forEach((layer,i)=>{
+    const fieldAbs = Math.min(1, Math.abs(layer.field)/100);
+    const hue = layer.field>=0 ? 195 : 148;
+    layer.angle += layer.rotation * 0.008;
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(layer.angle);
+
+    // glow ring
+    ctx.beginPath();
+    ctx.arc(0,0,layer.radius,0,Math.PI*2,false);
+    ctx.lineWidth = layer.thickness;
+    const alpha = 0.25 + fieldAbs*0.65 + (i===2?0.15:0);
+    ctx.strokeStyle = `hsla(${hue},85%,${58+fieldAbs*12}%,${alpha})`;
+    ctx.shadowBlur = 18 + fieldAbs*28 + (i===selected?10:0) + (pulse?20:0);
+    ctx.shadowColor = `hsla(${hue},100%,60%,0.9)`;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // ticks
+    const ticks = 24;
+    for(let t=0;t<ticks;t++){
+      const a = t/ticks * Math.PI*2;
+      const r1 = layer.radius - layer.thickness*0.52;
+      const r2 = layer.radius + layer.thickness*0.52;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*r1, Math.sin(a)*r1);
+      ctx.lineTo(Math.cos(a)*r2, Math.sin(a)*r2);
+      ctx.lineWidth = 1 + fieldAbs*1.5;
+      ctx.strokeStyle = `hsla(${hue},100%,70%,${0.15+fieldAbs*0.45})`;
+      ctx.stroke();
+    }
+
+    // selection
+    if(i===selected){
+      ctx.beginPath(); ctx.arc(0,0,layer.radius+ layer.thickness/2+6,0,Math.PI*2);
+      ctx.setLineDash([3,5]); ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.restore();
+
+    // label
+    ctx.fillStyle = i===2 ? 'rgba(103,232,249,0.9)' : 'rgba(148,163,184,0.55)';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('L'+(i+1), cx + Math.cos(-0.6)* (layer.radius), cy + Math.sin(-0.6)*(layer.radius) +3);
+  });
+
+  // center core (Layer 3 driver)
+  const cf = layers[2].field, ca = Math.abs(cf)/100, ch = cf>=0?190:145;
+  ctx.beginPath(); ctx.arc(cx,cy,30,0,Math.PI*2);
+  let grd = ctx.createRadialGradient(cx,cy,4,cx,cy,30);
+  grd.addColorStop(0, `hsla(${ch},100%,70%,1)`);
+  grd.addColorStop(1, `hsla(${ch},100%,55%,0.15)`);
+  ctx.fillStyle = grd;
+  ctx.shadowBlur = 30 + ca*45; ctx.shadowColor = `hsla(${ch},100%,60%,1)`;
+  ctx.fill(); ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.arc(cx,cy,12,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='11px JetBrains Mono'; ctx.fillText('CORE',cx,cy+52);
+  ctx.restore();
+}
+
+function drawPlasma(){
+  const ctx = plasmaCtx, w = plasmaCanvas.clientWidth, h = plasmaCanvas.clientHeight;
+  ctx.clearRect(0,0,plasmaCanvas.width,plasmaCanvas.height);
+  ctx.save(); ctx.scale(dpr,dpr);
+
+  const f = layers[2].field, voltage = 5 + (f+100)/200*25, intensity = Math.abs(f)/100, hue = f>=0?192:150;
+  ctx.fillStyle = 'rgba(2,6,23,0.7)'; ctx.fillRect(0,0,w,h);
+
+  const tx = Math.max(18, w/2 - 140), ty = h/2 - 46, tw = Math.min(280, w-36), th = 92;
+  // tube
+  ctx.save();
+  ctx.shadowBlur = 22 + intensity*28; ctx.shadowColor = `hsla(${hue},100%,60%,0.65)`;
+  ctx.fillStyle = 'rgba(10,15,28,0.95)';
+  ctx.strokeStyle = `hsla(${hue},70%,60%,0.55)`;
+  ctx.lineWidth = 2;
+  roundRect(ctx, tx, ty, tw, th, 18); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur=0; ctx.restore();
+
+  // electrodes
+  ctx.fillStyle='rgba(100,116,139,0.25)'; ctx.fillRect(tx+22, ty+th/2-2, tw-44,4);
+  ctx.fillStyle='rgba(148,163,184,0.18)'; ctx.fillRect(tx+22, ty+10, tw-44,2); ctx.fillRect(tx+22, ty+th-12, tw-44,2);
+
+  // filaments
+  const filamentCount = Math.floor(7 + voltage/30*17 + intensity*5);
+  for(let i=0;i<filamentCount;i++){
+    const fx = tx+28 + (i+0.5)*(tw-56)/filamentCount + Math.sin(time*2+i)*1.5;
+    ctx.beginPath(); ctx.moveTo(fx, ty+14);
+    for(let s=1;s<=5;s++){ const yy = ty+14 + (th-28)*s/5; ctx.lineTo(fx + (Math.random()-0.5)*7, yy); }
+    ctx.lineWidth = 1.1 + Math.random()*0.6;
+    ctx.strokeStyle = `hsla(${hue},100%,${65+intensity*15}%,${0.35 + voltage/30*0.55})`;
+    ctx.shadowBlur = 9 + intensity*12; ctx.shadowColor = `hsla(${hue},100%,65%,0.9)`; ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+
+  // particles spawn
+  if(particles.length < 280 && Math.random()<0.85){
+    particles.push({id:Math.random(), x:tx-8, y:ty+th/2 + (Math.random()-0.5)*28, vx:0.9+Math.random()*1.1, vy:(Math.random()-0.5)*0.35, type:'O2', life:0});
+  }
+  particles = particles.filter(p=>p.x < tx+tw+24 && p.y>ty-10 && p.y<ty+th+10 && p.life<700);
+  particles.forEach(p=>{
+    p.life++; p.x += p.vx * (0.7 + voltage/30*0.8); p.y += p.vy + Math.sin(time*1.7 + p.id*6.3)*0.18;
+    const inPlasma = p.x>tx+24 && p.x<tx+tw-24 && p.y>ty+12 && p.y<ty+th-12;
+    if(p.type==='O2' && inPlasma && Math.random() < 0.012 * (voltage/30) * (1+intensity*0.7)){
+      p.type='O'; p.vx*=0.9;
+      if(Math.random()<0.7) particles.push({id:Math.random(), x:p.x+2, y:p.y+1, vx:p.vx*0.95, vy:-p.vy, type:'O', life:0});
+    } else if(p.type==='O' && inPlasma && Math.random()<0.018){
+      if(Math.random()<0.5){ p.type='O3'; p.vx*=1.08; }
+    }
+    ctx.beginPath();
+    let col, r;
+    if(p.type==='O2'){ col=`hsla(200,100%,68%,0.92)`; r=3.1; }
+    else if(p.type==='O'){ col=`hsla(0,88%,66%,0.96)`; r=2.1; }
+    else { col=`hsla(280,90%,72%,0.97)`; r=3.5; }
+    ctx.arc(p.x, p.y, r, 0, Math.PI*2, false);
+    ctx.fillStyle = col; ctx.shadowBlur = p.type==='O3'?11:6; ctx.shadowColor = col; ctx.fill();
+  });
+  ctx.shadowBlur=0;
+
+  // labels
+  ctx.fillStyle='rgba(148,163,184,0.75)'; ctx.font='10px JetBrains Mono'; ctx.textAlign='left';
+  ctx.fillText('O₂ IN', tx+2, ty-6); ctx.textAlign='right'; ctx.fillText('O₃ OUT', tx+tw-2, ty-6);
+  ctx.textAlign='center'; ctx.fillStyle=`hsla(${hue},85%,72%,${0.6+intensity*0.35})`; ctx.font='bold 11px JetBrains Mono';
+  ctx.fillText(`${voltage.toFixed(1)} kV • ${(1+Math.abs(f)/100*19).toFixed(1)} kHz`, w/2, ty+th+18);
+  ctx.restore();
+}
+
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arc(x+w-r,y+r,r,-Math.PI/2,0); ctx.arc(x+w-r,y+h-r,r,0,Math.PI/2); ctx.arc(x+r,y+h-r,r,Math.PI/2,Math.PI); ctx.arc(x+r,y+r,r,Math.PI,Math.PI*1.5); ctx.closePath(); }
+
+function drawBeam(){
+  const ctx = beamCtx, w = beam.clientWidth, h = beam.clientHeight;
+  ctx.clearRect(0,0,beam.width,beam.height);
+  ctx.save(); ctx.scale(dpr,dpr);
+
+  const coreRect = coreCanvas.getBoundingClientRect();
+  const plasmaRect = plasmaCanvas.getBoundingClientRect();
+  const beamRect = beam.getBoundingClientRect();
+  const sx = coreRect.left - beamRect.left + coreRect.width*0.5;
+  const sy = coreRect.top - beamRect.top + coreRect.height*0.55;
+  const ex = plasmaRect.left - beamRect.left + 24;
+  const ey = plasmaRect.top - beamRect.top + plasmaRect.height*0.48;
+
+  const f = layers[2].field, intensity = Math.min(1, Math.abs(f)/100), hue = f>=0?192:148;
+  const col = `hsla(${hue},100%,62%,${0.45 + intensity*0.5})`;
+
+  // main curved beam
+  const mx = (sx+ex)/2, my = (sy+ey)/2 + Math.sin(time*1.2)*4;
+  for(let i=0;i<4;i++){
+    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.quadraticCurveTo(mx,my,ex,ey);
+    ctx.lineWidth = 14 - i*2.5 + intensity*10;
+    ctx.strokeStyle = `hsla(${hue},100%,${62+i*4}%,${0.06 + intensity*0.12 - i*0.015})`;
+    ctx.shadowBlur = 28 + intensity*38 - i*4; ctx.shadowColor = col; ctx.lineCap='round'; ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+
+  // traveling energy packets
+  const pulses = 3 + Math.floor(intensity*4);
+  for(let p=0;p<pulses;p++){
+    const t = ((time*0.7*(0.6+intensity) + p/pulses) % 1);
+    const px = sx + (ex-sx)*t + (mx - (sx+ex)/2)*Math.sin(t*Math.PI);
+    const py = sy + (ey-sy)*t + Math.sin(t*Math.PI)* (my - (sy+ey)/2);
+    ctx.beginPath(); ctx.arc(px, py, 3.2 + intensity*4.5, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.shadowBlur = 16 + intensity*22; ctx.shadowColor = col; ctx.fill();
+  }
+  ctx.shadowBlur=0;
+
+  // endpoints
+  [[sx,sy,26],[ex,ey,16]].forEach(([x,y,r])=>{
+    const g = ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0, `hsla(${hue},100%,68%,${0.55+intensity*0.35})`);
+    g.addColorStop(1, `hsla(${hue},100%,60%,0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawGraph(){
+  const ctx = graphCtx, w = graphCanvas.clientWidth, h = graphCanvas.clientHeight;
+  ctx.clearRect(0,0,graphCanvas.width,graphCanvas.height);
+  ctx.save(); ctx.scale(dpr,dpr);
+  if (Math.floor(time*60) % 5 === 0){ o3History.push(currentO3); if(o3History.length>200) o3History.shift(); }
+  ctx.fillStyle='rgba(5,10,20,0.6)'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(100,116,139,0.12)'; ctx.lineWidth=1;
+  for(let i=1;i<4;i++){ const y = (h/4)*i; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  if(o3History.length>2){
+    ctx.beginPath();
+    o3History.forEach((v,i)=>{ const x = 4 + (i/(199))*(w-8); const y = h-6 - Math.min(1, v/900)*(h-14); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.lineWidth=2; ctx.strokeStyle='rgba(192,132,252,0.95)'; ctx.shadowBlur=12; ctx.shadowColor='rgba(168,85,247,0.7)'; ctx.stroke(); ctx.shadowBlur=0;
+    ctx.lineTo(w-4,h-6); ctx.lineTo(4,h-6); ctx.closePath(); ctx.fillStyle='rgba(168,85,247,0.13)'; ctx.fill();
+  }
+  ctx.fillStyle='rgba(148,163,184,0.7)'; ctx.font='10px JetBrains Mono'; ctx.textAlign='left'; ctx.fillText('0',4,h-2); ctx.textAlign='right'; ctx.fillText('900 ppm', w-4, 10);
+  ctx.restore();
+}
+
+function animate(){
+  time += 0.016;
+  drawCore();
+  drawPlasma();
+  drawBeam();
+  drawGraph();
+  currentO3 += (o3Target - currentO3) * 0.06;
+  o3Readout.textContent = Math.round(currentO3) + ' ppm';
+  requestAnimationFrame(animate);
+}
+
+function init(){
+  resizeAll();
+  selectLayer(2);
+  updateWiring();
+  setTimeout(resizeAll, 100);
+  animate();
+}
+init();
+</script>
+</body>
+</html>

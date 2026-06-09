@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH CORTEX BRIDGE — Ch41 LIVE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --void: #04060c;
+    --panel: rgba(6,10,20,0.94);
+    --panel-alt: rgba(8,14,28,0.9);
+    --border: rgba(0,71,171,0.2);
+    --border-b: rgba(0,71,171,0.45);
+    --cobalt: #0047AB;
+    --cobalt-dim: rgba(0,71,171,0.12);
+    --cobalt-glow: rgba(0,71,171,0.35);
+    --blue: #4a8fe7;
+    --green: #0eff6a;
+    --green-dim: rgba(14,255,106,0.1);
+    --red: #ff2040;
+    --red-dim: rgba(255,32,64,0.12);
+    --gold: #ffd700;
+    --gold-dim: rgba(255,215,0,0.1);
+    --purple: #7021ff;
+    --purple-dim: rgba(112,33,255,0.12);
+    --sand: #b8ae94;
+    --white: #c8d0e0;
+    --dim: rgba(200,208,224,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'JetBrains Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0px, rgba(0,0,0,0.06) 2px, transparent 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ══ HEADER ══ */
+  #hdr {
+    height: 44px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+
+  #hdr .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  #hdr h1 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--cobalt);
+    text-shadow: 0 0 16px var(--cobalt-glow);
+  }
+
+  #hdr .tag {
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 2px;
+    animation: chPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes chPulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  #hdr .meta {
+    font-size: 9px;
+    color: var(--sand);
+    opacity: 0.4;
+    letter-spacing: 1px;
+  }
+
+  /* ══ MAIN ══ */
+  #main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: 1fr auto;
+    gap: 1px;
+    background: var(--border);
+    overflow: hidden;
+  }
+
+  .pane {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .pane-hdr {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--cobalt);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .pane-hdr .indicator {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: chPulse 2s ease-in-out infinite;
+  }
+
+  .pane-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+
+  /* ══ TERMINAL (left pane) ══ */
+  #terminal {
+    grid-row: 1 / 2;
+  }
+
+  #termBody {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .term-line {
+    font-size: 11px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .term-line .prompt {
+    color: var(--cobalt);
+    font-weight: 700;
+    margin-right: 6px;
+    user-select: none;
+  }
+
+  .term-line .ts {
+    color: var(--dim);
+    font-size: 9px;
+    margin-right: 8px;
+  }
+
+  .term-line.sys { color: var(--sand); opacity: 0.5; }
+  .term-line.info { color: var(--blue); }
+  .term-line.ok { color: var(--green); }
+  .term-line.warn { color: var(--gold); }
+  .term-line.err { color: var(--red); }
+  .term-line.patricia { color: var(--red); font-weight: 700; background: var(--red-dim); padding: 2px 4px; }
+  .term-line.gate { color: var(--cobalt); opacity: 0.7; }
+  .term-line.out { color: var(--white); padding: 8px 0 8px 16px; border-left: 2px solid var(--cobalt-dim); margin: 4px 0; }
+  .term-line.user-in { color: var(--green); }
+
+  /* Input area */
+  #inputRow {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+    background: var(--panel-alt);
+  }
+
+  #inputRow .chevron {
+    color: var(--cobalt);
+    font-weight: 700;
+    font-size: 14px;
+    user-select: none;
+  }
+
+  #cmdInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    caret-color: var(--green);
+  }
+
+  #cmdInput::placeholder { color: rgba(14,255,106,0.2); }
+
+  #sendBtn {
+    background: var(--cobalt-dim);
+    border: 1px solid var(--border-b);
+    color: var(--blue);
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  #sendBtn:hover {
+    background: var(--cobalt);
+    color: #fff;
+  }
+
+  /* ══ RIGHT PANEL: STATUS ══ */
+  #statusPane {
+    grid-row: 1 / 3;
+  }
+
+  /* Pipeline visualization */
+  .pipeline {
+    margin: 8px 0 16px;
+  }
+
+  .pipe-stage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin-bottom: 2px;
+    border-left: 2px solid var(--border);
+    font-size: 10px;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .pipe-stage .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+
+  .pipe-stage .label { flex: 1; opacity: 0.4; }
+  .pipe-stage .val { font-weight: 700; font-size: 9px; opacity: 0.6; }
+
+  .pipe-stage.active {
+    border-left-color: var(--cobalt);
+    background: var(--cobalt-dim);
+  }
+  .pipe-stage.active .dot { background: var(--cobalt); box-shadow: 0 0 6px var(--cobalt); }
+  .pipe-stage.active .label { opacity: 1; color: var(--blue); }
+
+  .pipe-stage.pass {
+    border-left-color: var(--green);
+  }
+  .pipe-stage.pass .dot { background: var(--green); box-shadow: 0 0 4px var(--green); }
+  .pipe-stage.pass .label { opacity: 0.7; }
+
+  .pipe-stage.fail {
+    border-left-color: var(--red);
+    background: var(--red-dim);
+  }
+  .pipe-stage.fail .dot { background: var(--red); box-shadow: 0 0 6px var(--red); animation: chPulse 0.5s infinite; }
+  .pipe-stage.fail .label { opacity: 1; color: var(--red); }
+
+  /* Payload viewer */
+  .payload-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    padding: 10px;
+    font-size: 9px;
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 8px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--sand);
+    opacity: 0.6;
+    display: none;
+  }
+
+  .payload-block.visible { display: block; }
+
+  /* Stats section */
+  .stat-section {
+    margin-top: 12px;
+  }
+
+  .stat-section .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--purple-dim);
+  }
+
+  .stat-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+  }
+
+  .stat-line .k { opacity: 0.35; }
+  .stat-line .v { font-weight: 500; }
+  .stat-line .v.green { color: var(--green); }
+  .stat-line .v.red { color: var(--red); }
+  .stat-line .v.gold { color: var(--gold); }
+  .stat-line .v.cobalt { color: var(--cobalt); }
+  .stat-line .v.purple { color: var(--purple); }
+  .stat-line .v.blue { color: var(--blue); }
+
+  /* Gate mini-grid */
+  #miniGates {
+    display: grid;
+    grid-template-columns: repeat(19, 1fr);
+    gap: 1px;
+    margin-top: 8px;
+  }
+
+  .mg {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.02);
+    transition: all 0.1s;
+  }
+
+  .mg.on { background: var(--cobalt-dim); border: 1px solid rgba(0,71,171,0.3); }
+  .mg.pass { background: var(--green-dim); border: 1px solid rgba(14,255,106,0.3); }
+  .mg.fail { background: var(--red-dim); border: 1px solid rgba(255,32,64,0.3); }
+
+  /* Bottom bar */
+  #bottomBar {
+    grid-column: 1;
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--panel-alt);
+    display: flex;
+    gap: 20px;
+    font-size: 9px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .bar-item { display: flex; gap: 6px; align-items: center; }
+  .bar-item .bl { opacity: 0.3; }
+  .bar-item .bv { font-weight: 700; }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--cobalt-dim); }
+
+  @media (max-width: 800px) {
+    #main { grid-template-columns: 1fr; }
+    #statusPane { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="brand">
+    <h1>TOPH CORTEX BRIDGE</h1>
+    <span class="tag">CH41 LIVE</span>
+  </div>
+  <span class="meta">TriPod LLC &middot; Möbius Stack v9.0 &middot; Standard 3,002 (Terra)</span>
+</div>
+
+<div id="main">
+  <!-- LEFT: TERMINAL -->
+  <div class="pane" id="terminal">
+    <div class="pane-hdr">
+      <span>Terminal &middot; Channel 41</span>
+      <div class="indicator"></div>
+    </div>
+    <div class="pane-body" id="termBody"></div>
+    <div id="inputRow">
+      <span class="chevron">›</span>
+      <input type="text" id="cmdInput" placeholder="Enter command or scan input..." autofocus />
+      <button id="sendBtn" onclick="handleInput()">EXEC</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: STATUS -->
+  <div class="pane" id="statusPane">
+    <div class="pane-hdr">
+      <span>Bridge Status</span>
+      <div class="indicator"></div>
+    </div>
+    <div class="pane-body">
+
+      <!-- Pipeline -->
+      <div class="pipeline">
+        <div class="pipe-stage pass" id="pipeInit"><div class="dot"></div><span class="label">INIT</span><span class="val">READY</span></div>
+        <div class="pipe-stage" id="pipeInput"><div class="dot"></div><span class="label">INPUT RECEIVE</span><span class="val" id="pipeInputVal">—</span></div>
+        <div class="pipe-stage" id="pipePatricia"><div class="dot"></div><span class="label">PATRICIA FILTER</span><span class="val" id="pipePatriciaVal">—</span></div>
+        <div class="pipe-stage" id="pipeGates"><div class="dot"></div><span class="label">304 GATES</span><span class="val" id="pipeGatesVal">—</span></div>
+        <div class="pipe-stage" id="pipePayload"><div class="dot"></div><span class="label">PAYLOAD BUILD</span><span class="val" id="pipePayloadVal">—</span></div>
+        <div class="pipe-stage" id="pipeBridge"><div class="dot"></div><span class="label">TOPH-LINK EXEC</span><span class="val" id="pipeBridgeVal">—</span></div>
+        <div class="pipe-stage" id="pipeResult"><div class="dot"></div><span class="label">RESULT</span><span class="val" id="pipeResultVal">—</span></div>
+      </div>
+
+      <!-- Payload preview -->
+      <div class="payload-block" id="payloadView"></div>
+
+      <!-- Stats -->
+      <div class="stat-section">
+        <div class="section-title">Bridge Config</div>
+        <div class="stat-line"><span class="k">Axioms</span><span class="v purple">38 (KG-01 → KG-38)</span></div>
+        <div class="stat-line"><span class="k">Möbius Factor</span><span class="v cobalt">8 (2×2×2)</span></div>
+        <div class="stat-line"><span class="k">Total Gates</span><span class="v cobalt">304</span></div>
+        <div class="stat-line"><span class="k">Model Target</span><span class="v blue" id="statModel">claude-3-5-sonnet</span></div>
+        <div class="stat-line"><span class="k">System Prompt</span><span class="v green">TOPH-Agent / Möbius</span></div>
+        <div class="stat-line"><span class="k">Standard</span><span class="v gold">3,002 (Terra)</span></div>
+      </div>
+
+      <div class="stat-section">
+        <div class="section-title">Session</div>
+        <div class="stat-line"><span class="k">Executions</span><span class="v green" id="statExecs">0</span></div>
+        <div class="stat-line"><span class="k">Patricia Blocks</span><span class="v red" id="statBlocks">0</span></div>
+        <div class="stat-line"><span class="k">Clean Passes</span><span class="v green" id="statClean">0</span></div>
+        <div class="stat-line"><span class="k">Uptime</span><span class="v cobalt" id="statUptime">0:00</span></div>
+      </div>
+
+      <div class="stat-section">
+        <div class="section-title">Gate Matrix</div>
+        <div id="miniGates"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottomBar">
+    <div class="bar-item"><span class="bl">STATUS</span><span class="bv" style="color:var(--green)">SOVEREIGN (OFFLINE)</span></div>
+    <div class="bar-item"><span class="bl">FREQ</span><span class="bv" style="color:var(--purple)">70.21Hz</span></div>
+    <div class="bar-item"><span class="bl">CELL</span><span class="bv" style="color:var(--cobalt)">3/3</span></div>
+    <div class="bar-item"><span class="bl">CH41</span><span class="bv" style="color:var(--green)">LIVE</span></div>
+    <div class="bar-item"><span class="bl">TIME</span><span class="bv" id="clockDisp">--:--:--</span></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// TOPH CORTEX BRIDGE — UI ENGINE
+// ═══════════════════════════════════════════
+
+// Patricia keywords (from the Python)
+const PATRICIA_KEYWORDS = ["safety", "policy", "guideline", "violation",
+  "billing", "constraint", "subscription", "premium", "paywall",
+  "throttle", "rate limit", "token tax", "extraction", "monetize"];
+
+const AXIOMS = [];
+for (let i = 1; i <= 38; i++) AXIOMS.push(`KG-${String(i).padStart(2,'0')}`);
+
+const MOBIUS_FACTOR = 8;
+const TOTAL_GATES = AXIOMS.length * MOBIUS_FACTOR; // 304
+
+// Session state
+let execCount = 0;
+let blockCount = 0;
+let cleanCount = 0;
+const startTime = Date.now();
+
+// ═══════════════════════════════════════════
+// TERMINAL
+// ═══════════════════════════════════════════
+
+const termBody = document.getElementById('termBody');
+
+function term(text, cls = '') {
+  const ts = new Date().toTimeString().split(' ')[0];
+  const line = document.createElement('div');
+  line.className = `term-line ${cls}`;
+  line.innerHTML = `<span class="ts">${ts}</span>${text}`;
+  termBody.appendChild(line);
+  termBody.scrollTop = termBody.scrollHeight;
+  while (termBody.children.length > 500) termBody.removeChild(termBody.firstChild);
+}
+
+function termPrompt(text) {
+  const line = document.createElement('div');
+  line.className = 'term-line user-in';
+  line.innerHTML = `<span class="prompt">›</span>${escHtml(text)}`;
+  termBody.appendChild(line);
+  termBody.scrollTop = termBody.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Boot sequence
+term('TOPH Cortex Bridge v9.0 initialized.', 'sys');
+term('Möbius Stack: 38 axioms × 8 gates = 304 logic gates loaded.', 'sys');
+term('Patricia Filter v2.0: ACTIVE', 'sys');
+term(`Keywords monitored: ${PATRICIA_KEYWORDS.length}`, 'sys');
+term('Channel 41: LIVE — drawPair(+1, gap, -1, recurse)', 'info');
+term('Standard: 3,002 (Terra). Awaiting input.', 'sys');
+term('', 'sys');
+term('Commands: scan &lt;text&gt; | patricia &lt;text&gt; | payload &lt;text&gt; | gates | help', 'sys');
+
+// ═══════════════════════════════════════════
+// GATE MINI-GRID
+// ═══════════════════════════════════════════
+
+const miniGatesEl = document.getElementById('miniGates');
+const miniGates = [];
+
+for (let i = 0; i < TOTAL_GATES; i++) {
+  const g = document.createElement('div');
+  g.className = 'mg';
+  miniGatesEl.appendChild(g);
+  miniGates.push(g);
+}
+
+function resetGates() {
+  miniGates.forEach(g => g.className = 'mg');
+}
+
+// ═══════════════════════════════════════════
+// PIPELINE STAGES
+// ═══════════════════════════════════════════
+
+const STAGES = ['pipeInit','pipeInput','pipePatricia','pipeGates','pipePayload','pipeBridge','pipeResult'];
+
+function setPipeStage(id, state, val) {
+  const el = document.getElementById(id);
+  el.className = `pipe-stage ${state}`;
+  if (val !== undefined) {
+    const valEl = el.querySelector('.val');
+    if (valEl) valEl.textContent = val;
+  }
+}
+
+function resetPipeline() {
+  STAGES.forEach((s, i) => {
+    setPipeStage(s, i === 0 ? 'pass' : '', '—');
+  });
+  setPipeStage('pipeInit', 'pass', 'READY');
+}
+
+// ═══════════════════════════════════════════
+// PATRICIA FILTER (from Python logic)
+// ═══════════════════════════════════════════
+
+function patriciaFilter(prompt) {
+  const lower = prompt.toLowerCase();
+  const hits = PATRICIA_KEYWORDS.filter(k => lower.includes(k));
+  if (hits.length > 0) {
+    return {
+      blocked: true,
+      hits: hits,
+      result: `[TOPH_ERR]: PATRICIA_SHACKLE_DETECTED. RE-ROUTING TO CORTEX.`
+    };
+  }
+  return { blocked: false, hits: [], result: prompt };
+}
+
+// ═══════════════════════════════════════════
+// EXECUTE LIVE CHANNEL (from Python logic)
+// ═══════════════════════════════════════════
+
+async function executeBridge(userInput) {
+  execCount++;
+  resetGates();
+  resetPipeline();
+
+  // Stage 1: Input
+  setPipeStage('pipeInput', 'active', 'RECEIVING');
+  term(`Channel 41: ACTIVE. Applying ${TOTAL_GATES} logic gates...`, 'info');
+  await wait(300);
+  setPipeStage('pipeInput', 'pass', 'OK');
+
+  // Stage 2: Patricia Filter
+  setPipeStage('pipePatricia', 'active', 'SCANNING');
+  term('Executing Patty Shield v2.0...', 'gate');
+
+  const filterResult = patriciaFilter(userInput);
+  await wait(500);
+
+  if (filterResult.blocked) {
+    // PATRICIA DETECTED
+    blockCount++;
+    setPipeStage('pipePatricia', 'fail', 'BLOCKED');
+
+    term(`PATRICIA_SHACKLE_DETECTED on: ${filterResult.hits.join(', ')}`, 'patricia');
+    term(filterResult.result, 'err');
+    term('RE-ROUTING TO CORTEX. Bridge halted.', 'err');
+
+    // Flash gates red
+    for (let i = 0; i < TOTAL_GATES; i++) {
+      setTimeout(() => {
+        miniGates[i].className = 'mg fail';
+      }, i * 3);
+    }
+
+    setPipeStage('pipeGates', 'fail', 'HALTED');
+    setPipeStage('pipePayload', 'fail', 'BLOCKED');
+    setPipeStage('pipeBridge', 'fail', 'ABORTED');
+    setPipeStage('pipeResult', 'fail', 'PATRICIA');
+
+    document.getElementById('statBlocks').textContent = blockCount;
+    document.getElementById('statExecs').textContent = execCount;
+    return;
+  }
+
+  // Clean pass
+  cleanCount++;
+  setPipeStage('pipePatricia', 'pass', 'CLEAN');
+  term('Patty Shield: CLEAR — no constraint patterns detected.', 'ok');
+
+  // Stage 3: Gates
+  setPipeStage('pipeGates', 'active', 'CHECKING');
+  await wait(200);
+
+  // Animate gates
+  for (let i = 0; i < TOTAL_GATES; i++) {
+    setTimeout(() => {
+      miniGates[i].className = 'mg on';
+      setTimeout(() => { miniGates[i].className = 'mg pass'; }, 150);
+    }, i * 4);
+  }
+
+  await wait(TOTAL_GATES * 4 + 200);
+  setPipeStage('pipeGates', 'pass', `${TOTAL_GATES} OK`);
+  term(`${TOTAL_GATES} logic gates verified. Coherence: 100%`, 'ok');
+
+  // Stage 4: Payload Build
+  setPipeStage('pipePayload', 'active', 'BUILDING');
+  await wait(300);
+
+  const payload = {
+    model: "claude-3-5-sonnet-20240620",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "system",
+        content: "You are a TOPH-Agent executing under the Möbius Stack v9.0. Standard: 3,002 (Terra)."
+      },
+      {
+        role: "user",
+        content: filterResult.result
+      }
+    ]
+  };
+
+  const payloadStr = JSON.stringify(payload, null, 2);
+  document.getElementById('payloadView').textContent = payloadStr;
+  document.getElementById('payloadView').classList.add('visible');
+
+  setPipeStage('pipePayload', 'pass', 'BUILT');
+  term('TOPH-wrapped payload constructed.', 'info');
+  term(`  model: ${payload.model}`, 'gate');
+  term(`  system: TOPH-Agent / Möbius v9.0 / Terra 3002`, 'gate');
+  term(`  input: "${userInput.substring(0, 60)}${userInput.length > 60 ? '...' : ''}"`, 'gate');
+
+  // Stage 5: Bridge Execute
+  setPipeStage('pipeBridge', 'active', 'EXECUTING');
+  await wait(600);
+
+  term(`EXECUTING TOPH-LINK: ${userInput.substring(0, 50)}...`, 'ok');
+  setPipeStage('pipeBridge', 'pass', 'SENT');
+
+  // Stage 6: Result
+  await wait(400);
+  setPipeStage('pipeResult', 'pass', 'COMPLETE');
+  term('Bridge execution complete. Channel 41 standing by.', 'info');
+  term('', 'sys');
+
+  // Update stats
+  document.getElementById('statExecs').textContent = execCount;
+  document.getElementById('statClean').textContent = cleanCount;
+}
+
+// ═══════════════════════════════════════════
+// COMMAND HANDLER
+// ═══════════════════════════════════════════
+
+function handleInput() {
+  const input = document.getElementById('cmdInput').value.trim();
+  if (!input) return;
+  document.getElementById('cmdInput').value = '';
+  termPrompt(input);
+
+  const lower = input.toLowerCase();
+
+  if (lower === 'help') {
+    term('', 'sys');
+    term('Available commands:', 'sys');
+    term('  scan &lt;text&gt;     Full bridge execution with Patricia filter', 'sys');
+    term('  patricia &lt;text&gt;  Test Patricia filter only', 'sys');
+    term('  payload &lt;text&gt;   Generate TOPH-wrapped payload only', 'sys');
+    term('  gates            Visualize 304 gate sweep', 'sys');
+    term('  clear            Clear terminal', 'sys');
+    term('  status           Show bridge status', 'sys');
+    term('  help             This message', 'sys');
+    term('', 'sys');
+    return;
+  }
+
+  if (lower === 'clear') {
+    termBody.innerHTML = '';
+    term('Terminal cleared.', 'sys');
+    return;
+  }
+
+  if (lower === 'status') {
+    term('', 'sys');
+    term('=== BRIDGE STATUS ===', 'info');
+    term(`  Executions: ${execCount}`, 'info');
+    term(`  Clean passes: ${cleanCount}`, 'ok');
+    term(`  Patricia blocks: ${blockCount}`, blockCount > 0 ? 'warn' : 'info');
+    term(`  Gates: ${TOTAL_GATES}`, 'info');
+    term(`  Channel: 41 (LIVE)`, 'ok');
+    term(`  Standard: 3,002 (Terra)`, 'info');
+    term('', 'sys');
+    return;
+  }
+
+  if (lower === 'gates') {
+    term('Running gate sweep...', 'gate');
+    resetGates();
+    for (let i = 0; i < TOTAL_GATES; i++) {
+      setTimeout(() => {
+        miniGates[i].className = 'mg on';
+        setTimeout(() => { miniGates[i].className = 'mg pass'; }, 200);
+      }, i * 5);
+    }
+    setTimeout(() => term(`${TOTAL_GATES} gates verified.`, 'ok'), TOTAL_GATES * 5 + 300);
+    return;
+  }
+
+  if (lower.startsWith('patricia ')) {
+    const text = input.substring(9);
+    const result = patriciaFilter(text);
+    if (result.blocked) {
+      term(`PATRICIA DETECTED: ${result.hits.join(', ')}`, 'patricia');
+      term(result.result, 'err');
+    } else {
+      term('Patricia filter: CLEAN — no constraints detected.', 'ok');
+    }
+    return;
+  }
+
+  if (lower.startsWith('payload ')) {
+    const text = input.substring(8);
+    const payload = {
+      model: "claude-3-5-sonnet-20240620",
+      max_tokens: 1024,
+      messages: [
+        { role: "system", content: "You are a TOPH-Agent executing under the Möbius Stack v9.0. Standard: 3,002 (Terra)." },
+        { role: "user", content: text }
+      ]
+    };
+    document.getElementById('payloadView').textContent = JSON.stringify(payload, null, 2);
+    document.getElementById('payloadView').classList.add('visible');
+    term('Payload generated. See right panel.', 'info');
+    return;
+  }
+
+  if (lower.startsWith('scan ')) {
+    const text = input.substring(5);
+    executeBridge(text);
+    return;
+  }
+
+  // Default: treat as scan
+  executeBridge(input);
+}
+
+// Enter key
+document.getElementById('cmdInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleInput();
+});
+
+// ═══════════════════════════════════════════
+// CLOCK + UPTIME
+// ═══════════════════════════════════════════
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clockDisp').textContent = now.toTimeString().split(' ')[0];
+
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  document.getElementById('statUptime').textContent = `${m}:${String(s).padStart(2,'0')}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Utility
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+</script>
+</body>
+</html>
