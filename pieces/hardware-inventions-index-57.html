@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Gravity Tensor Simplex</title>
+<style>
+:root{--bg:#02050c;--ink:#e8fbff;--cyan:#32e8ff;--gold:#ffd95a;--mag:#e168ff;--green:#62ff75;--line:rgba(50,232,255,.28);--panel:rgba(0,9,18,.72)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+body{background:radial-gradient(circle at 50% 52%,rgba(98,255,117,.12),transparent 18%),radial-gradient(circle at 50% 45%,rgba(50,232,255,.10),transparent 36%),linear-gradient(rgba(50,232,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(50,232,255,.035) 1px,transparent 1px),var(--bg);background-size:100% 100%,100% 100%,30px 30px,30px 30px}
+canvas{position:fixed;inset:0;width:100vw;height:100vh}
+.app{position:fixed;inset:0;display:grid;grid-template-rows:auto 1fr auto;gap:10px;padding:18px;pointer-events:none}
+.top,.bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.panel{pointer-events:auto;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:14px;box-shadow:inset 0 0 28px rgba(50,232,255,.035),0 0 40px rgba(0,0,0,.45)}
+h1{margin:0;font-weight:300;letter-spacing:.12em;font-size:26px}
+h3{margin:0 0 8px;font-size:13px;color:var(--cyan);text-transform:uppercase;letter-spacing:.12em}
+.code{white-space:pre-wrap;font-size:13px;line-height:1.55;color:#d8fbff}.center{position:relative;min-height:0}
+.label{position:absolute;text-align:center;text-shadow:0 0 18px currentColor;pointer-events:none}.A{top:7%;left:50%;transform:translateX(-50%);color:var(--gold)}.B{bottom:9%;left:9%;color:var(--mag)}.C{bottom:9%;right:9%;color:var(--cyan)}.D{top:48%;left:50%;transform:translate(-50%,-50%);color:var(--green)}
+.big{font-size:44px;font-weight:800}.sub{font-size:15px;line-height:1.4}.eq{font-size:22px;color:#caffb9;letter-spacing:.12em}
+.row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+button{background:#020712;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px;font:inherit;font-size:11px;cursor:pointer;text-transform:uppercase;font-weight:800}
+button:hover,button.active{box-shadow:0 0 16px rgba(50,232,255,.28);color:var(--cyan)}
+.meter{display:grid;grid-template-columns:120px 1fr 55px;gap:8px;align-items:center;font-size:12px;margin:7px 0}.track{height:8px;border:1px solid rgba(50,232,255,.16);background:#020712;border-radius:999px;overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--mag))}
+.packet{height:120px;overflow:auto;white-space:pre-wrap;font-size:12px;line-height:1.4}.footer{text-align:center;color:#86a7b2;font-size:12px;letter-spacing:.2em}
+@media(max-width:900px){.top,.bottom{grid-template-columns:1fr}.app{overflow:auto}.center{height:680px}}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="app">
+<div class="top">
+<div class="panel"><h1>GRAVITY TENSOR · SIMPLEX</h1><div class="code">COMPRESSED UNITY MODEL
+single triangle · four points · one center</div></div>
+<div class="panel"><h3>Core Equation</h3><div class="code eq">∞ × ∞ × ∞ + 6 - 3 = 0 = 1</div></div>
+<div class="panel"><h3>Simplex Flow</h3><div class="code">A → B  contain & modulate
+B → C  modulate & emerge
+C → A  emerge & stabilize
+ALL → . return to unity</div></div>
+</div>
+<main class="center">
+<div class="label A"><div class="big">A</div><div class="sub">CONTAINMENT<br/>STRUCTURE<br/>98%</div></div>
+<div class="label B"><div class="big">B</div><div class="sub">MODULATION<br/>WAVE<br/>2%</div></div>
+<div class="label C"><div class="big">C</div><div class="sub">EMERGENCE<br/>EXPANSION</div></div>
+<div class="label D"><div class="big">.</div><div class="sub">UNITY PULSAR<br/>0 · 0 · 0<br/>CENTER DOT</div></div>
+</main>
+<div class="bottom">
+<div class="panel"><h3>Ratio</h3>
+<div class="meter"><span>Containment</span><div class="track"><div class="fill" id="containment"></div></div><span id="cval">98%</span></div>
+<div class="meter"><span>Modulation</span><div class="track"><div class="fill" id="wave"></div></div><span id="wval">2%</span></div>
+<div class="row"><button id="tick">tick</button><button id="auto">auto</button><button id="pulse">pulse</button><button id="ground">ground</button></div></div>
+<div class="panel"><h3>Function</h3><div class="code">A holds.
+B oscillates.
+C expands.
+. witnesses.
+
+Zero is gateway.
+One is witness.
+Center is still.</div></div>
+<div class="panel"><h3>Packet</h3><div class="packet" id="packet"></div></div>
+</div>
+<div class="footer">FOUR POINTS · ONE CENTER · ONE TRUTH · INFINITE EXPRESSION</div>
+</div>
+<script>
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d"),$=id=>document.getElementById(id);
+function resize(){cv.width=innerWidth;cv.height=innerHeight} addEventListener("resize",resize);resize();
+const VM={cycle:0,auto:false,C:98,W:2,witness:"--------",rings:[],sparks:[],
+hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(16).padStart(8,"0")},
+tick(){this.cycle++;this.W=Math.max(0,Math.min(100,this.W+(Math.random()-.48)*.55));this.C=100-this.W;this.witness=this.hash(this.cycle+":"+this.C.toFixed(2)+":"+this.W.toFixed(2));if(this.cycle%6===0)this.rings.push({r:20,life:120,c:"#62ff75"});this.spawn();ui()},
+pulse(){this.W=Math.min(100,this.W+8);this.C=100-this.W;this.rings.push({r:20,life:160,c:"#ffd95a"});this.tick()},
+ground(){this.C=98;this.W=2;this.rings.push({r:20,life:150,c:"#62ff75"});this.tick()},
+spawn(){for(let i=0;i<6;i++)this.sparks.push({a:Math.random()*Math.PI*2,r:20+Math.random()*240,life:80+Math.random()*80,c:i%3})},
+packet(){return{artifact:"gravity_tensor_simplex",signature:"<1 = 0>",cycle:this.cycle,points:{A:"containment / structure",B:"modulation / wave",C:"emergence / expansion",dot:"unity pulsar / center"},ratio:{containment:+this.C.toFixed(2),wave:+this.W.toFixed(2)},equation:"∞ × ∞ × ∞ + 6 - 3 = 0 = 1",axis:"0 . 0 . 0",witness:this.witness}}
+};
+function line(x1,y1,x2,y2,c,a=.7,w=2){ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function text(t,x,y,s,c,a=.8){ctx.save();ctx.globalAlpha=a;ctx.fillStyle=c;ctx.font=s+"px monospace";ctx.textAlign="center";ctx.fillText(t,x,y);ctx.restore()}
+function draw(){
+ctx.fillStyle="rgba(2,5,12,.18)";ctx.fillRect(0,0,cv.width,cv.height);
+const W=cv.width,H=cv.height,t=VM.cycle*.025,A=[W*.50,H*.20],B=[W*.16,H*.73],C=[W*.84,H*.73],D=[W*.50,H*.52],colors={A:"#ffd95a",B:"#e168ff",C:"#32e8ff",D:"#62ff75"};
+for(let i=0;i<90;i++){let u=i/90,x1=A[0]*(1-u)+B[0]*u,y1=A[1]*(1-u)+B[1]*u,x2=A[0]*(1-u)+C[0]*u,y2=A[1]*(1-u)+C[1]*u;line(x1,y1,x2,y2,"#62ff75",.05,1)}
+for(let i=0;i<70;i++){let u=i/70,p1=[B[0]*(1-u)+C[0]*u,B[1]*(1-u)+C[1]*u],p2=[A[0]*(1-u)+D[0]*u,A[1]*(1-u)+D[1]*u];line(p1[0],p1[1],p2[0],p2[1],"#32e8ff",.035,1)}
+line(A[0],A[1],B[0],B[1],colors.A,.95,3);line(B[0],B[1],C[0],C[1],colors.B,.95,3);line(C[0],C[1],A[0],A[1],colors.C,.95,3);
+[[A,colors.A],[B,colors.B],[C,colors.C]].forEach(([p,c])=>{for(let k=0;k<12;k++){let u=k/12,v=(k+.55)/12;line(p[0]*(1-u)+D[0]*u,p[1]*(1-u)+D[1]*u,p[0]*(1-v)+D[0]*v,p[1]*(1-v)+D[1]*v,c,.45,2)}});
+[[A,colors.A,"A"],[B,colors.B,"B"],[C,colors.C,"C"],[D,colors.D,"."]].forEach(([p,c,l])=>{ctx.save();ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=38;ctx.beginPath();ctx.arc(p[0],p[1],l==="."?24:16,0,Math.PI*2);ctx.fill();ctx.restore();text(l,p[0],p[1]+7,l==="."?38:28,"#02050c",.95);ctx.save();ctx.strokeStyle=c;ctx.globalAlpha=.35;for(let r=28;r<86;r+=16){ctx.beginPath();ctx.arc(p[0],p[1],r+Math.sin(t*5+r)*2,0,Math.PI*2);ctx.stroke()}ctx.restore()});
+ctx.save();ctx.strokeStyle=colors.D;for(let r=45;r<150;r+=18){ctx.globalAlpha=.18;ctx.beginPath();ctx.arc(D[0],D[1],r+Math.sin(t*4+r)*3,0,Math.PI*2);ctx.stroke()}ctx.restore();
+VM.sparks.forEach(s=>{s.life--;s.a+=.018;let x=D[0]+Math.cos(s.a)*s.r,y=D[1]+Math.sin(s.a)*s.r*.72,c=[colors.A,colors.B,colors.C][s.c];ctx.save();ctx.globalAlpha=Math.max(0,s.life/160);ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();ctx.restore()});VM.sparks=VM.sparks.filter(s=>s.life>0).slice(-500);
+VM.rings.forEach(r=>{r.life--;r.r+=6;ctx.save();ctx.globalAlpha=Math.max(0,r.life/140);ctx.strokeStyle=r.c;ctx.beginPath();ctx.arc(D[0],D[1],r.r,0,Math.PI*2);ctx.stroke();ctx.restore()});VM.rings=VM.rings.filter(r=>r.life>0);
+text("∞ × ∞ × ∞ + 6 - 3 = 0 = 1",W*.50,H*.12,22,"#caffb9",.85);text("0 = 1 = 0",W*.50,H*.83,24,"#62ff75",.75);
+requestAnimationFrame(draw)}
+function ui(){$("containment").style.width=VM.C+"%";$("wave").style.width=VM.W+"%";$("cval").textContent=VM.C.toFixed(0)+"%";$("wval").textContent=VM.W.toFixed(0)+"%";$("packet").textContent=JSON.stringify(VM.packet(),null,2)}
+$("tick").onclick=()=>VM.tick();$("auto").onclick=e=>{VM.auto=!VM.auto;e.target.classList.toggle("active",VM.auto);e.target.textContent=VM.auto?"pause":"auto"};$("pulse").onclick=()=>VM.pulse();$("ground").onclick=()=>VM.ground();
+setInterval(()=>{if(VM.auto)VM.tick()},800);VM.tick();draw();
+</script>
+</body>
+</html>

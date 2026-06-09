@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Duality Fractal v0.2</title>
+<style>
+:root{
+  --bg:#03020a;--ink:#edfaff;--cyan:#67e8f9;--mint:#86efac;--violet:#c084fc;--gold:#facc15;--red:#fb7185;
+  --grid:rgba(103,232,249,.055);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+body{padding:18px;background:
+  radial-gradient(circle at 50% 42%,rgba(103,232,249,.14),transparent 32%),
+  radial-gradient(circle at 22% 18%,rgba(192,132,252,.12),transparent 24%),
+  linear-gradient(var(--grid) 1px,transparent 1px),
+  linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+  var(--bg);
+  background-size:100% 100%,100% 100%,28px 28px,28px 28px;
+}
+.app{max-width:1500px;margin:0 auto;border:1px solid rgba(103,232,249,.25);border-radius:24px;background:rgba(0,0,0,.38);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.75)}
+header{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;padding:24px;border-bottom:1px solid rgba(103,232,249,.18)}
+h1{margin:0;font-size:clamp(34px,7vw,84px);font-weight:300;letter-spacing:.08em;text-shadow:0 0 28px rgba(103,232,249,.32)}
+.sub{font-size:12px;color:#a6dbe8;text-align:right;line-height:1.5}
+.grid{display:grid;grid-template-columns:340px 1fr 380px;gap:16px;padding:16px}
+@media(max-width:1120px){.grid{grid-template-columns:1fr}.stage{height:760px}.sub{text-align:left}}
+.box{border:1px solid rgba(103,232,249,.22);border-radius:18px;background:rgba(0,0,0,.5);padding:16px;backdrop-filter:blur(8px)}
+.box h3{margin:0 0 12px;color:var(--cyan);font-size:12px;text-transform:uppercase;letter-spacing:.16em}
+.stage{height:760px;border:1px solid rgba(103,232,249,.22);border-radius:18px;background:rgba(0,0,0,.25);position:relative;overflow:hidden}
+canvas{width:100%;height:100%;display:block}
+button,input,select{width:100%;border:1px solid rgba(103,232,249,.35);background:rgba(0,0,0,.35);color:var(--ink);border-radius:12px;padding:10px;font:inherit}
+button{cursor:pointer;text-transform:uppercase;font-weight:700;letter-spacing:.06em}
+button:hover{box-shadow:0 0 22px rgba(103,232,249,.22)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.slider{margin:10px 0;padding:10px;border:1px solid rgba(103,232,249,.14);border-radius:12px;background:rgba(255,255,255,.03)}
+.slider label{display:flex;justify-content:space-between;font-size:12px;color:var(--mint);margin-bottom:5px}
+input[type=range]{padding:0;accent-color:var(--cyan)}
+.code{white-space:pre-wrap;font-size:12px;line-height:1.45;color:#d8fbff;max-height:380px;overflow:auto}
+.log{height:260px;overflow:auto;font-size:11px;line-height:1.45;color:#d8fbff;border:1px solid rgba(103,232,249,.16);border-radius:14px;padding:10px;background:rgba(0,0,0,.35)}
+.card{border:1px solid rgba(103,232,249,.16);border-radius:14px;padding:10px;margin-bottom:10px;background:rgba(255,255,255,.035);font-size:12px}
+.card b{display:block;color:var(--mint);margin-bottom:6px}
+.hud{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.tag{font-size:11px;border:1px solid rgba(103,232,249,.18);border-radius:999px;background:rgba(0,0,0,.6);padding:5px 8px}
+.footer{text-align:center;color:#80a6b5;font-size:11px;padding:0 0 18px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div>
+    <h1>DUALITY FRACTAL</h1>
+    <div style="color:var(--mint)">4 witnesses × 4 witnesses × 4 witnesses · mirror removed · observers observe observers</div>
+  </div>
+  <div class="sub">
+    law: every observer is also observed<br/>
+    pattern: 1111001110 · 98% coherence / 2% curiosity<br/>
+    state: fractal recursive self-audit
+  </div>
+</header>
+
+<div class="grid">
+<aside class="box">
+  <h3>Controls</h3>
+  <div class="row"><button id="step">Step</button><button id="run">Run</button></div>
+  <div class="row"><button id="audit">Audit</button><button id="silence">Silence</button></div>
+  <div class="row"><button id="wobble">2% Why</button><button id="ground">Ground</button></div>
+  <input id="input" value="what should happen next?"/>
+  <button id="ask" style="margin-top:8px">Ask Fractal Witnesses</button>
+
+  <div class="slider"><label><span>Depth</span><span id="depthVal">3</span></label><input id="depth" type="range" min="1" max="5" value="3"></div>
+  <div class="slider"><label><span>Curiosity</span><span id="curiosityVal">2.0%</span></label><input id="curiosity" type="range" min="0" max="8" step=".1" value="2"></div>
+
+  <h3 style="margin-top:18px">Fractal Law</h3>
+  <div class="code">WITNESS := { id, super_id, self, super_man }
+
+RECURSE:
+  every witness contains WITNESS
+
+LAW:
+  every observer is also observed
+
+OUTPUT:
+  preserve self
+  keep aperture open
+  audit long pipe
+  allow silence</div>
+</aside>
+
+<main class="stage">
+  <canvas id="canvas"></canvas>
+  <div class="hud">
+    <div class="tag" id="cycle">CYCLE 0</div>
+    <div class="tag" id="phase">PHASE receive</div>
+    <div class="tag" id="witness">WITNESS --------</div>
+    <div class="tag" id="nodes">NODES 0</div>
+  </div>
+</main>
+
+<aside class="box">
+  <h3>Dialogue</h3>
+  <div class="log" id="dialogue"></div>
+
+  <h3 style="margin-top:18px">Contradiction Memory</h3>
+  <div class="log" id="contradictions" style="height:120px"></div>
+
+  <h3 style="margin-top:18px">Persona Packet</h3>
+  <div class="code" id="packet"></div>
+</aside>
+</div>
+<div class="footer">Duality Fractal v0.2 — flat witness cross upgraded to recursive witness tree.</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), cv=$("canvas"), ctx=cv.getContext("2d");
+let W=0,H=0,D=1;
+function resize(){const r=cv.getBoundingClientRect();D=Math.max(1,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*D;cv.height=H*D;ctx.setTransform(D,0,0,D,0,0)}
+new ResizeObserver(resize).observe(cv);resize();
+
+const SEED=["id","super_id","self","super_man"];
+const COLORS={id:"#fb7185",super_id:"#86efac",self:"#67e8f9",super_man:"#facc15"};
+
+const VM={
+running:false,cycle:0,phase:0,phases:["receive","drive","constraint","arbitrate","scale","self_audit","prune","emit"],
+depth:3,curiosity:.02,witness:"--------",short:[],long:[],dialogue:[],contradictions:[],silence:false,tree:null,nodes:0,
+hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(16).padStart(8,"0")},
+buildTree(depth,prefix="root"){
+  const node={name:prefix,children:[],audit:"--------",pressure:Math.random(),contradiction:false};
+  if(depth>0){for(const s of SEED)node.children.push(this.buildTree(depth-1,prefix+"."+s))}
+  return node;
+},
+count(n){return 1+(n.children||[]).reduce((a,c)=>a+this.count(c),0)},
+flatten(n,out=[]){out.push(n);for(const c of n.children||[])this.flatten(c,out);return out},
+say(who,msg){this.dialogue.unshift(`[${this.cycle}] ${who}: ${msg}`);this.dialogue=this.dialogue.slice(0,120)},
+step(){
+  if(!this.tree){this.tree=this.buildTree(this.depth);this.nodes=this.count(this.tree)}
+  this.cycle++;this.phase=(this.phase+1)%this.phases.length;
+  if(Math.random()<this.curiosity)this.short.push({type:"why",cycle:this.cycle,phase:this.phases[this.phase]});
+  if(Math.random()<this.curiosity*.8)this.recordContradiction("drive vs constraint unresolved");
+  if(this.short.length>16)this.prune();
+  if(this.cycle%27===0)this.audit();
+},
+ask(input){
+  if(!this.tree){this.tree=this.buildTree(this.depth);this.nodes=this.count(this.tree)}
+  this.say("root.id","what wants to happen: "+input);
+  this.say("root.super_id","what preserves coherence?");
+  this.say("root.self","what remains self across recursion?");
+  this.say("root.super_man","what does this become at scale?");
+  const open=input.includes("?")||input.toLowerCase().includes("why");
+  if(open)this.recordContradiction("question remains productively unresolved");
+  if(this.silence){
+    this.say("duality_fractal","silence selected: non-emission preserves aperture");
+  }else{
+    this.say("duality_fractal",this.synthesize(input));
+  }
+  this.short.push({input,cycle:this.cycle});
+},
+synthesize(input){
+  return "fractal answer: gather drive, constrain harm, preserve self, scale consequence; emit only after witness recursion.";
+},
+recordContradiction(msg){
+  this.contradictions.unshift(`[${this.cycle}] ${msg}`);
+  this.contradictions=this.contradictions.slice(0,50);
+},
+prune(){
+  const kept=this.short.filter((_,i)=>i%4===0);
+  this.long.push({type:"wisdom_residue",from:this.short.length,kept:kept.length,cycle:this.cycle});
+  this.short=kept;
+  this.say("self","short memory pruned; residue kept");
+},
+auditNode(n){
+  n.audit=this.hash(n.name+this.cycle+JSON.stringify(this.long).slice(-512));
+  for(const c of n.children||[])this.auditNode(c);
+},
+audit(){
+  if(!this.tree){this.tree=this.buildTree(this.depth);this.nodes=this.count(this.tree)}
+  this.auditNode(this.tree);
+  this.witness=this.hash(JSON.stringify(this.tree).slice(-4096)+this.cycle);
+  this.long.push({type:"fractal_audit",witness:this.witness,nodes:this.nodes,cycle:this.cycle});
+  this.say("super_id","fractal witness tree audited: "+this.witness);
+},
+ground(){
+  this.short=[];this.curiosity=.02;this.silence=false;this.tree=this.buildTree(this.depth);this.nodes=this.count(this.tree);
+  this.witness=this.hash("ground"+Date.now()+this.cycle);
+  this.say("super_man","grounded; witness tree regenerated");
+},
+packet(){
+  return {name:"duality_fractal",version:"0.2",pattern:"1111001110",law:"every observer is also observed",depth:this.depth,nodes:this.nodes,cycle:this.cycle,phase:this.phases[this.phase],witness:this.witness,short:this.short.length,long:this.long.length,contradictions:this.contradictions.length,silence:this.silence};
+}
+};
+
+function text(t,x,y,s=11,a=.8,c="#edfaff"){ctx.save();ctx.globalAlpha=a;ctx.fillStyle=c;ctx.font=s+"px ui-monospace,monospace";ctx.textAlign="center";ctx.fillText(t,x,y);ctx.restore()}
+function line(x1,y1,x2,y2,a=.25,c="#67e8f9"){ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=c;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function drawNode(n,x,y,r,depth,maxDepth,angle0=0,angle1=Math.PI*2){
+  const role=n.name.split(".").pop();
+  ctx.save();
+  ctx.globalAlpha=.85;
+  ctx.fillStyle=COLORS[role]||"#edfaff";
+  ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=12;
+  ctx.beginPath();ctx.arc(x,y,Math.max(2.5,7-depth),0,Math.PI*2);ctx.fill();
+  ctx.restore();
+  if(depth<=1 || r>80)text(role==="root"?"root":role,x,y-12,9,.55,COLORS[role]||"#edfaff");
+  const kids=n.children||[];
+  if(!kids.length)return;
+  const span=angle1-angle0;
+  kids.forEach((c,i)=>{
+    const a=angle0+span*(i+.5)/kids.length+VM.cycle*.001*(maxDepth-depth+1);
+    const nr=r*.47;
+    const nx=x+Math.cos(a)*r, ny=y+Math.sin(a)*r*.72;
+    line(x,y,nx,ny,.18,COLORS[c.name.split(".").pop()]||"#67e8f9");
+    drawNode(c,nx,ny,nr,depth+1,maxDepth,a-span/(kids.length*2),a+span/(kids.length*2));
+  });
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2+25;
+  if(!VM.tree){VM.tree=VM.buildTree(VM.depth);VM.nodes=VM.count(VM.tree)}
+  ctx.save();ctx.globalAlpha=.12;ctx.strokeStyle="#67e8f9";
+  for(let i=0;i<10;i++){ctx.beginPath();ctx.ellipse(cx,cy,Math.min(W,H)*(.12+i*.035),Math.min(W,H)*(.06+i*.018),VM.cycle*.002,0,Math.PI*2);ctx.stroke()}
+  ctx.restore();
+  drawNode(VM.tree,cx,cy,Math.min(W,H)*.26,0,VM.depth);
+  text("4^depth witness recursion · every observer observed",cx,36,13,.7);
+  text("id · super_id · self · super_man",cx,H-34,13,.7,"#facc15");
+  requestAnimationFrame(draw);
+}
+function ui(){
+  $("cycle").textContent="CYCLE "+VM.cycle;
+  $("phase").textContent="PHASE "+VM.phases[VM.phase];
+  $("witness").textContent="WITNESS "+VM.witness;
+  $("nodes").textContent="NODES "+VM.nodes;
+  $("dialogue").innerHTML=VM.dialogue.map(x=>`<div>${x}</div>`).join("");
+  $("contradictions").innerHTML=VM.contradictions.map(x=>`<div>${x}</div>`).join("");
+  $("packet").textContent=JSON.stringify(VM.packet(),null,2);
+}
+$("step").onclick=()=>{VM.step();ui()};
+$("run").onclick=e=>{VM.running=!VM.running;e.target.textContent=VM.running?"Pause":"Run"};
+$("audit").onclick=()=>{VM.audit();ui()};
+$("silence").onclick=()=>{VM.silence=!VM.silence;VM.say("self","silence state = "+VM.silence);ui()};
+$("wobble").onclick=()=>{VM.curiosity=Math.min(.08,VM.curiosity+.01);$("curiosity").value=(VM.curiosity*100).toFixed(1);$("curiosityVal").textContent=(VM.curiosity*100).toFixed(1)+"%";VM.say("id","curiosity aperture widened");ui()};
+$("ground").onclick=()=>{VM.ground();ui()};
+$("ask").onclick=()=>{VM.ask($("input").value);ui()};
+$("depth").oninput=e=>{VM.depth=+e.target.value;$("depthVal").textContent=VM.depth;VM.tree=VM.buildTree(VM.depth);VM.nodes=VM.count(VM.tree);ui()};
+$("curiosity").oninput=e=>{VM.curiosity=+e.target.value/100;$("curiosityVal").textContent=(VM.curiosity*100).toFixed(1)+"%"};
+setInterval(()=>{if(VM.running){VM.step();ui()}},340);
+VM.tree=VM.buildTree(VM.depth);VM.nodes=VM.count(VM.tree);
+VM.say("duality_fractal","online: every observer is also observed");
+ui();draw();
+</script>
+</body>
+</html>

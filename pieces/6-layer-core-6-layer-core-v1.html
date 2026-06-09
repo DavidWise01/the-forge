@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6-Layer Core Simulator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap');
+body { font-family: 'Inter', system-ui; background:#020617; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+input[type=range] { -webkit-appearance: none; appearance: none; width:100%; height:8px; background:linear-gradient(to right,#0f172a,#1e293b); border-radius:8px; outline:none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#fff; border:2px solid #0ea5e9; box-shadow:0 0 10px rgba(14,165,233,0.5); cursor:pointer; transition:transform 0.1s; }
+input[type=range]::-webkit-slider-thumb:active { transform:scale(1.2); }
+input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#fff; border:2px solid #0ea5e9; cursor:pointer; }
+.tooltip { backdrop-filter: blur(12px); }
+</style>
+</head>
+<body class="text-slate-200 selection:bg-cyan-400/30">
+<div class="min-h-screen flex flex-col lg:flex-row">
+  <div class="flex-1 flex flex-col items-center py-6 px-4">
+    <div class="w-full max-w-[720px]">
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">6-LAYER <span class="text-cyan-400">CORE</span> SIMULATOR</h1>
+        <div class="hidden md:flex gap-3 mono text-xs">
+          <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-1.5"><span class="text-slate-500">ENERGY</span> <span id="metric-energy" class="text-cyan-300 ml-2">0</span><span class="text-slate-600">TW</span></div>
+          <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-1.5"><span class="text-slate-500">STABILITY</span> <span id="metric-stability" class="text-emerald-300 ml-2">100</span><span class="text-slate-600">%</span></div>
+          <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-1.5"><span class="text-slate-500">BUBBLE</span> <span id="metric-bubble" class="text-violet-300 ml-2">0</span><span class="text-slate-600">m</span></div>
+        </div>
+      </div>
+      
+      <div class="relative bg-[#050b18] border border-slate-800 rounded-[1.5rem] p-3 shadow-2xl shadow-black/60">
+        <canvas id="coreCanvas" width="700" height="700" class="w-full aspect-square rounded-2xl cursor-crosshair touch-none"></canvas>
+        <div id="tooltip" class="tooltip hidden absolute z-20 pointer-events-none bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs shadow-xl"></div>
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex justify-center pointer-events-none w-[95%]">
+          <div class="pointer-events-auto flex flex-wrap items-center justify-center gap-2 bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
+            <button data-preset="warp" class="preset px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-cyan-600 rounded-xl transition">Warp Drive</button>
+            <button data-preset="wormhole" class="preset px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-violet-600 rounded-xl transition">Wormhole</button>
+            <button data-preset="antigrav" class="preset px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-fuchsia-600 rounded-xl transition">Anti-Grav</button>
+            <button data-preset="contain" class="preset px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-emerald-600 rounded-xl transition">Containment</button>
+            <div class="w-px h-6 bg-white/10 mx-1 hidden sm:block"></div>
+            <button id="reset" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 rounded-xl transition">Reset</button>
+          </div>
+        </div>
+      <div class="md:hidden grid grid-cols-3 gap-2 mt-3 mono text-[11px]">
+        <div class="bg-slate-900/60 border border-slate-800 rounded-lg px-2 py-1.5 text-center"><span class="text-slate-500 block">ENERGY</span><span id="metric-energy-m" class="text-cyan-300">0</span></div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-lg px-2 py-1.5 text-center"><span class="text-slate-500 block">STAB</span><span id="metric-stability-m" class="text-emerald-300">100%</span></div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-lg px-2 py-1.5 text-center"><span class="text-slate-500 block">BUBBLE</span><span id="metric-bubble-m" class="text-violet-300">0m</span></div>
+      </div>
+      <p class="text-[11px] text-slate-600 text-center mt-3 mono">CLICK RING TO SELECT • DRAG SLIDERS FOR LIVE TUNING</p>
+    </div>
+  </div>
+
+  <div class="w-full lg:w-[380px] lg:border-l border-slate-800 bg-slate-950/60 backdrop-blur-2xl">
+    <div class="p-6 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-sm uppercase tracking-widest text-slate-500">Layer Control</h2>
+        <div id="layer-badge" class="mono text-xs px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">LAYER 1</div>
+      </div>
+
+      <div class="mb-6">
+        <div class="flex items-baseline justify-between">
+          <h3 id="layer-name" class="text-xl font-semibold">Inner Exotic Shell</h3>
+          <span id="layer-number" class="text-slate-500 text-sm">1 / 6</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">Click any ring to edit its quantum properties</p>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <div class="flex justify-between mb-2">
+            <label class="text-sm text-slate-300">Thickness</label>
+            <span id="thickness-val" class="mono text-sm text-cyan-300">30 px</span>
+          </div>
+          <input id="thickness" type="range" min="10" max="80" value="30">
+          <div class="flex justify-between text-[10px] text-slate-600 mt-1"><span>10</span><span>80</span></div>
+        </div>
+
+        <div>
+          <div class="flex justify-between mb-2">
+            <label class="text-sm text-slate-300">Field Strength</label>
+            <span id="field-val" class="mono text-sm text-violet-300">+0</span>
+          </div>
+          <input id="field" type="range" min="-100" max="100" value="0">
+          <div class="flex justify-between text-[10px] mt-1"><span class="text-fuchsia-400">-100 NEG • inward</span><span class="text-cyan-400">+100 POS • outward</span></div>
+        </div>
+
+        <div>
+          <div class="flex justify-between mb-2">
+            <label class="text-sm text-slate-300">Rotation Speed</label>
+            <span id="rotation-val" class="mono text-sm text-amber-300">0.0</span>
+          </div>
+          <input id="rotation" type="range" min="-5" max="5" step="0.1" value="0">
+          <div class="flex justify-between text-[10px] text-slate-600 mt-1"><span>-5 CCW</span><span>+5 CW</span></div>
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300 mb-2 block">Material Type</label>
+          <select id="material" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+            <option>exotic matter</option>
+            <option>plasma</option>
+            <option>superconductor</option>
+            <option>normal matter</option>
+            <option>negative mass</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-8 p-4 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800">
+        <h4 class="text-xs uppercase tracking-wider text-slate-500 mb-3">Core Status</h4>
+        <div class="space-y-2.5 mono text-xs">
+          <div class="flex justify-between"><span class="text-slate-500">Net Field</span><span id="core-net" class="text-slate-200">0</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Resonance</span><span id="core-res" class="text-emerald-400">STABLE</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Temp</span><span id="core-temp" class="text-orange-300">2.7K</span></div>
+        </div>
+        <div class="mt-3 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+          <div id="core-bar" class="h-full w-1/2 bg-gradient-to-r from-cyan-500 to-violet-500 transition-all duration-200"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 text-[11px] leading-relaxed text-slate-600">
+        <p><span class="text-slate-400">Physics:</span> Field lines bend when crossing layers. Negative mass creates anti-gravity wells. Alternate polarities for Alcubierre-style warp.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('coreCanvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const cx = 350, cy = 350;
+
+const materialColors = {
+  'exotic matter': '#c084fc',
+  'plasma': '#f97316',
+  'superconductor': '#22d3ee',
+  'normal matter': '#94a3b8',
+  'negative mass': '#ec4899'
+};
+
+const layerNames = ['Inner Exotic Shell','Plasma Buffer','Superconducting Lattice','Normal Matter Shield','Negative Mass Ring','Outer Containment'];
+
+let layers = [
+  {id:1, r:75, thickness:28, field:45, rotation:1.8, material:'exotic matter', angle:0},
+  {id:2, r:140, thickness:24, field:-35, rotation:-1.2, material:'plasma', angle:0},
+  {id:3, r:200, thickness:32, field:50, rotation:2.1, material:'superconductor', angle:0},
+  {id:4, r:260, thickness:26, field:-30, rotation:-1.5, material:'normal matter', angle:0},
+  {id:5, r:315, thickness:30, field:40, rotation:1.4, material:'negative mass', angle:0},
+  {id:6, r:370, thickness:22, field:-25, rotation:-0.9, material:'plasma', angle:0},
+];
+const defaultLayers = JSON.parse(JSON.stringify(layers));
+let selected = 0;
+
+const ui = {
+ thickness: document.getElementById('thickness'),
+ field: document.getElementById('field'),
+ rotation: document.getElementById('rotation'),
+ material: document.getElementById('material'),
+ thicknessVal: document.getElementById('thickness-val'),
+ fieldVal: document.getElementById('field-val'),
+ rotationVal: document.getElementById('rotation-val'),
+ layerBadge: document.getElementById('layer-badge'),
+ layerName: document.getElementById('layer-name'),
+ layerNumber: document.getElementById('layer-number')
+};
+
+function updatePanel(){
+ const l = layers[selected];
+ ui.thickness.value = l.thickness;
+ ui.field.value = l.field;
+ ui.rotation.value = l.rotation;
+ ui.material.value = l.material;
+ ui.thicknessVal.textContent = Math.round(l.thickness)+' px';
+ ui.fieldVal.textContent = (l.field>0?'+':'')+Math.round(l.field);
+ ui.fieldVal.className = 'mono text-sm '+(l.field>=0?'text-cyan-300':'text-fuchsia-300');
+ ui.rotationVal.textContent = (+l.rotation).toFixed(1);
+ ui.layerBadge.textContent = 'LAYER '+l.id;
+ ui.layerName.textContent = layerNames[selected];
+ ui.layerNumber.textContent = l.id+' / 6';
+}
+updatePanel();
+
+ui.thickness.addEventListener('input', e=>{ layers[selected].thickness = +e.target.value; ui.thicknessVal.textContent = e.target.value+' px'; });
+ui.field.addEventListener('input', e=>{ layers[selected].field = +e.target.value; ui.fieldVal.textContent = (e.target.value>0?'+':'')+e.target.value; ui.fieldVal.className = 'mono text-sm '+(e.target.value>=0?'text-cyan-300':'text-fuchsia-300'); });
+ui.rotation.addEventListener('input', e=>{ layers[selected].rotation = +e.target.value; ui.rotationVal.textContent = (+e.target.value).toFixed(1); });
+ui.material.addEventListener('change', e=>{ layers[selected].material = e.target.value; });
+
+let particles=[];
+function initParticles(){
+ particles=[];
+ for(let g=0; g<=layers.length; g++){
+   let r;
+   if(g===0) r=50;
+   else if(g===layers.length) r = layers[g-1].r + layers[g-1].thickness/2 + 20;
+   else {
+     const prev=layers[g-1], next=layers[g];
+     r = (prev.r + prev.thickness/2 + next.r - next.thickness/2)/2;
+   }
+   const count = 14;
+   for(let i=0;i<count;i++){
+     particles.push({ r:r+(Math.random()-0.5)*8, angle:Math.random()*Math.PI*2, base:0.008+Math.random()*0.012, size:1+Math.random()*1.6, gap:g, wob:Math.random()*6.28 });
+   }
+ }
+}
+initParticles();
+
+function getCanvasPos(e){
+ const rect = canvas.getBoundingClientRect();
+ const scale = 700 / rect.width;
+ return { x:(e.clientX-rect.left)*scale, y:(e.clientY-rect.top)*scale, rect };
+}
+
+canvas.addEventListener('click', e=>{
+ const {x,y}=getCanvasPos(e);
+ const d=Math.hypot(x-cx,y-cy);
+ for(let i=layers.length-1;i>=0;i--){
+   const l=layers[i];
+   const inner=l.r - l.thickness/2 - 5;
+   const outer=l.r + l.thickness/2 + 5;
+   if(d>=inner && d<=outer){ selected=i; updatePanel(); return; }
+ }
+});
+
+let hovered=-1;
+canvas.addEventListener('mousemove', e=>{
+ const {x,y,rect}=getCanvasPos(e);
+ const d=Math.hypot(x-cx,y-cy);
+ hovered=-1;
+ for(let i=0;i<layers.length;i++){
+   const l=layers[i];
+   if(d>=l.r - l.thickness/2 && d<=l.r + l.thickness/2){ hovered=i; break; }
+ }
+ canvas.style.cursor = hovered>=0?'pointer':'crosshair';
+ if(hovered>=0){
+   const l=layers[hovered];
+   tooltip.innerHTML = `<div class="font-medium text-slate-100 mb-1">Layer ${l.id} • ${layerNames[hovered]}</div><div class="grid grid-cols-2 gap-x-3 gap-y-0.5"><span class="text-slate-500">Field</span><span class="${l.field>=0?'text-cyan-300':'text-fuchsia-300'}">${l.field>0?'+':''}${l.field}</span><span class="text-slate-500">Rot</span><span class="text-amber-300">${l.rotation.toFixed(1)}</span><span class="text-slate-500">Thick</span><span>${Math.round(l.thickness)}px</span></div>`;
+   tooltip.style.left = ((e.clientX-rect.left)+12)+'px';
+   tooltip.style.top = ((e.clientY-rect.top)+12)+'px';
+   tooltip.classList.remove('hidden');
+ }else tooltip.classList.add('hidden');
+});
+canvas.addEventListener('mouseleave',()=>tooltip.classList.add('hidden'));
+
+function drawFieldLines(t){
+ const sum=layers.reduce((a,b)=>a+b.field,0);
+ const hue=200+sum*0.18;
+ ctx.save();
+ for(let i=0;i<36;i++){
+   const base=(i/36)*Math.PI*2 + t*0.00008;
+   ctx.beginPath();
+   let angle=base;
+   for(let r=10;r<345;r+=3){
+     for(const l of layers){
+       const dist=Math.abs(r-l.r);
+       if(dist < l.thickness*0.7){
+         const inf=(1-dist/(l.thickness*0.7)) * (l.field/100) * 0.14;
+         angle += inf;
+       }
+     }
+     const x=cx+Math.cos(angle)*r;
+     const y=cy+Math.sin(angle)*r;
+     if(r===10) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+   }
+   ctx.strokeStyle=`hsla(${hue%360},85%,65%,0.22)`;
+   ctx.lineWidth=1;
+   ctx.stroke();
+ }
+ ctx.restore();
+}
+
+function drawParticles(t){
+ ctx.save();
+ particles.forEach(p=>{
+   let speed=p.base;
+   if(p.gap>0){ const l=layers[p.gap-1]; speed+=l.rotation*0.0018 + l.field*0.000032; }
+   if(p.gap<layers.length){ const l=layers[p.gap]; speed-=l.rotation*0.0015 + l.field*0.000028; }
+   p.angle+=speed;
+   p.wob+=0.02;
+   const r=p.r + Math.sin(p.wob)*1.5;
+   const x=cx+Math.cos(p.angle)*r;
+   const y=cy+Math.sin(p.angle)*r;
+   ctx.beginPath();
+   ctx.arc(x,y,p.size,0,Math.PI*2);
+   ctx.fillStyle=`rgba(125,211,252,${0.45+Math.sin(t*0.003+p.angle)*0.25})`;
+   ctx.shadowColor='#38bdf8'; ctx.shadowBlur=5;
+   ctx.fill();
+ });
+ ctx.shadowBlur=0;
+ ctx.restore();
+}
+
+function drawLayers(t){
+ layers.forEach((l,i)=>{
+   l.angle += l.rotation*0.01;
+   ctx.save();
+   ctx.beginPath();
+   ctx.arc(cx,cy,l.r,0,Math.PI*2);
+   ctx.strokeStyle=materialColors[l.material];
+   ctx.lineWidth=l.thickness;
+   ctx.globalAlpha=0.18;
+   ctx.shadowColor=materialColors[l.material];
+   ctx.shadowBlur=28;
+   ctx.stroke();
+   ctx.restore();
+
+   ctx.save();
+   ctx.beginPath();
+   ctx.arc(cx,cy,l.r,0,Math.PI*2);
+   ctx.strokeStyle=materialColors[l.material];
+   ctx.lineWidth=l.thickness;
+   ctx.globalAlpha= l.material==='plasma' ? 0.7+Math.sin(t*0.004+i)*0.15 : 0.9;
+   ctx.shadowColor=materialColors[l.material];
+   ctx.shadowBlur=14;
+   if(l.material==='superconductor'){ ctx.setLineDash([4,7]); ctx.lineDashOffset=t*0.03*l.rotation; }
+   ctx.stroke();
+   ctx.restore();
+
+   ctx.save();
+   ctx.translate(cx,cy);
+   ctx.rotate(l.angle);
+   ctx.strokeStyle='rgba(255,255,255,0.18)';
+   ctx.lineWidth=1;
+   for(let k=0;k<12;k++){
+     ctx.beginPath();
+     ctx.moveTo(l.r - l.thickness/2 + 2,0);
+     ctx.lineTo(l.r + l.thickness/2 -2,0);
+     ctx.stroke();
+     ctx.rotate(Math.PI/6);
+   }
+   ctx.restore();
+
+   if(i===selected || i===hovered){
+     ctx.save();
+     ctx.beginPath();
+     ctx.arc(cx,cy,l.r,0,Math.PI*2);
+     ctx.strokeStyle= i===selected ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)';
+     ctx.lineWidth=l.thickness+ (i===selected?10:5);
+     ctx.globalAlpha= i===selected?1:0.6;
+     if(i!==selected) ctx.setLineDash([3,4]);
+     ctx.stroke();
+     ctx.restore();
+   }
+ });
+}
+
+function drawCore(t){
+ const sum=layers.reduce((a,b)=>a+b.field,0);
+ const tn=Math.max(-1,Math.min(1,sum/300));
+ const hue=240 - (tn+1)*120;
+ const pulse=1 + Math.sin(t*0.003)*0.07;
+ const r=30*pulse;
+
+ const g1=ctx.createRadialGradient(cx,cy,0,cx,cy,140);
+ g1.addColorStop(0,`hsla(${hue},100%,65%,0.4)`);
+ g1.addColorStop(0.25,`hsla(${hue},100%,60%,0.18)`);
+ g1.addColorStop(1,'rgba(0,0,0,0)');
+ ctx.fillStyle=g1;
+ ctx.beginPath(); ctx.arc(cx,cy,140,0,Math.PI*2); ctx.fill();
+
+ const g2=ctx.createRadialGradient(cx-7,cy-7,4,cx,cy,r);
+ g2.addColorStop(0,'#ffffff');
+ g2.addColorStop(0.15,`hsl(${hue},100%,75%)`);
+ g2.addColorStop(0.5,`hsl(${hue},100%,60%)`);
+ g2.addColorStop(1,`hsla(${hue},100%,45%,0.1)`);
+ ctx.fillStyle=g2;
+ ctx.shadowColor=`hsl(${hue},100%,60%)`; ctx.shadowBlur=35;
+ ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+ ctx.shadowBlur=0;
+}
+
+function drawLabels(){
+ ctx.save();
+ ctx.font='600 12px "JetBrains Mono"';
+ ctx.textAlign='center'; ctx.textBaseline='middle';
+ layers.forEach(l=>{
+   const y=cy - l.r;
+   ctx.beginPath();
+   ctx.arc(cx,y,13,0,Math.PI*2);
+   ctx.fillStyle='rgba(2,6,23,0.9)';
+   ctx.fill();
+   ctx.strokeStyle='rgba(100,116,139,0.5)';
+   ctx.lineWidth=1.5;
+   ctx.stroke();
+   ctx.fillStyle='#e2e8f0';
+   ctx.fillText(l.id,cx,y+0.5);
+ });
+ ctx.restore();
+}
+
+function updateMetrics(){
+ const energy=layers.reduce((s,l)=> s + Math.abs(l.field)*l.thickness*0.11 + Math.abs(l.rotation)*7.5,0);
+ const fieldDiff=layers.slice(1).reduce((a,l,i)=>a+Math.abs(l.field - layers[i].field),0)/5;
+ const rotDiff=layers.slice(1).reduce((a,l,i)=>a+Math.abs(l.rotation - layers[i].rotation),0)/5;
+ const stability=Math.max(0,Math.min(100, 100 - fieldDiff*0.28 - rotDiff*5.5));
+ const sum=layers.reduce((a,b)=>a+b.field,0);
+ const bubble=52 + Math.abs(sum)*0.38 + energy*0.07;
+
+ document.getElementById('metric-energy').textContent=Math.round(energy);
+ document.getElementById('metric-stability').textContent=Math.round(stability);
+ document.getElementById('metric-bubble').textContent=Math.round(bubble);
+ const mE=document.getElementById('metric-energy-m'); if(mE) mE.textContent=Math.round(energy);
+ const mS=document.getElementById('metric-stability-m'); if(mS) mS.textContent=Math.round(stability)+'%';
+ const mB=document.getElementById('metric-bubble-m'); if(mB) mB.textContent=Math.round(bubble)+'m';
+
+ document.getElementById('core-net').textContent=(sum>0?'+':'')+Math.round(sum);
+ const res=document.getElementById('core-res');
+ res.textContent=stability>78?'STABLE':stability>42?'FLUX':'CRITICAL';
+ res.className=stability>78?'text-emerald-400':stability>42?'text-amber-400':'text-red-400';
+ document.getElementById('core-temp').textContent=(2.7 + energy*0.014).toFixed(1)+'K';
+ document.getElementById('core-bar').style.width=Math.min(100,stability)+'%';
+}
+
+function animate(t){
+ requestAnimationFrame(animate);
+ ctx.clearRect(0,0,700,700);
+ const bg=ctx.createRadialGradient(cx,cy,10,cx,cy,350);
+ bg.addColorStop(0,'#0a1326'); bg.addColorStop(1,'#020617');
+ ctx.fillStyle=bg; ctx.fillRect(0,0,700,700);
+
+ ctx.save(); ctx.globalAlpha=0.12;
+ for(let i=0;i<90;i++){ const a=(i*2.399+t*0.00005)%(Math.PI*2); const r=60+(i*29)%280; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*r,0.7,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); }
+ ctx.restore();
+
+ drawFieldLines(t);
+ drawParticles(t);
+ drawLayers(t);
+ drawCore(t);
+ drawLabels();
+ updateMetrics();
+}
+animate(0);
+
+document.querySelectorAll('.preset').forEach(btn=>{
+ btn.addEventListener('click', ()=>{
+   const p=btn.dataset.preset;
+   if(p==='warp'){
+     layers.forEach((l,i)=>{ l.field=i%2===0?88:-84; l.rotation=i%2===0?4.2:-3.8; l.thickness=20+i*3; l.material=i%2?'plasma':'exotic matter'; });
+   }else if(p==='wormhole'){
+     [-95,-80,-68,72,85,96].forEach((f,i)=>layers[i].field=f);
+     layers.forEach((l,i)=>{ l.rotation=i<3?-2.8:2.6; l.thickness=32-i*2; l.material=i<3?'negative mass':'exotic matter'; });
+   }else if(p==='antigrav'){
+     layers.forEach(l=>{ l.field=-78-Math.random()*18; l.rotation=-2.2-Math.random()*0.8; l.thickness=30; l.material='negative mass'; });
+   }else if(p==='contain'){
+     layers.forEach((l,i)=>{ l.field=65+Math.random()*10; l.rotation=1.1+i*0.2; l.thickness=27; l.material='superconductor'; });
+   }
+   initParticles(); updatePanel();
+ });
+});
+
+document.getElementById('reset').addEventListener('click', ()=>{
+ layers=JSON.parse(JSON.stringify(defaultLayers));
+ selected=0; initParticles(); updatePanel();
+});
+</script>
+</body>
+</html>

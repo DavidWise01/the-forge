@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K8 TBT4: THUNDERBOLT ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    * {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    body {
+        background: #0a0e1a;
+        color: #e0e0e0;
+        overflow-x: hidden;
+    }
+    
+    @keyframes pulse-amber {
+        0%, 100% { opacity: 1; box-shadow: 0 0 20px #ffaa00; }
+        50% { opacity: 0.3; box-shadow: 0 0 10px #ffaa00; }
+    }
+    
+    @keyframes pulse-cyan {
+        0%, 100% { opacity: 1; box-shadow: 0 0 15px #00e5ff; }
+        50% { opacity: 0.5; box-shadow: 0 0 8px #00e5ff; }
+    }
+    
+    @keyframes scan {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes handshake {
+        0%, 100% { stroke-dashoffset: 0; }
+        50% { stroke-dashoffset: 20; }
+    }
+    
+    .pulse-amber {
+        animation: pulse-amber 2s ease-in-out infinite;
+    }
+    
+    .pulse-cyan {
+        animation: pulse-cyan 1.5s ease-in-out infinite;
+    }
+    
+    .glass-card {
+        background: linear-gradient(135deg, rgba(0, 229, 255, 0.05) 0%, rgba(10, 14, 26, 0.8) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 229, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    
+    .neon-text {
+        text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    }
+    
+    .terminal-line {
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    .diagram-node {
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .diagram-node.ringed {
+        background: rgba(0, 255, 136, 0.15) !important;
+        border-color: #00ff88 !important;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+    }
+    
+    .diagram-node.isolated {
+        background: rgba(255, 61, 0, 0.15) !important;
+        border-color: #ff3d00 !important;
+        box-shadow: 0 0 20px rgba(255, 61, 0, 0.4);
+    }
+    
+    .diagram-node.enumerated {
+        background: rgba(128, 128, 128, 0.15) !important;
+        border-color: #808080 !important;
+    }
+    
+    .arrow-path {
+        stroke-dasharray: 5, 5;
+        animation: handshake 2s linear infinite;
+    }
+    
+    .terminal::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .terminal::-webkit-scrollbar-track {
+        background: rgba(0, 229, 255, 0.05);
+    }
+    
+    .terminal::-webkit-scrollbar-thumb {
+        background: #00e5ff;
+        border-radius: 3px;
+    }
+    
+    .btn-glow {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-glow:hover:not(:disabled) {
+        box-shadow: 0 0 30px rgba(0, 229, 255, 0.6), inset 0 0 20px rgba(0, 229, 255, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .btn-glow:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .metric-updated {
+        animation: fadeIn 0.5s ease-out;
+    }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-7xl">
+        <!-- Header -->
+        <header class="glass-card rounded-t-xl p-6 mb-4">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-[#00e5ff] neon-text tracking-wide">
+                        KERNEL 8 • THUNDERBOLT 4 CONTROLLER
+                    </h1>
+                    <p class="text-sm text-gray-400 mt-1">Alienware 16 Aurora AC16250</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="statusText" class="text-[#ffaa00] font-semibold text-lg tracking-wider">
+                        STATUS: ENUMERATED → RINGING
+                    </div>
+                    <div class="w-4 h-4 rounded-full bg-[#ffaa00] pulse-amber"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Card -->
+        <div class="glass-card rounded-b-xl p-6 md:p-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Left: Diagram -->
+                <div class="space-y-4">
+                    <h2 class="text-[#00e5ff] text-sm font-semibold tracking-wider mb-4">SYSTEM TOPOLOGY</h2>
+                    <div class="glass-card rounded-lg p-4 relative overflow-hidden" style="min-height: 500px;">
+                        <svg class="absolute inset-0 w-full h-full pointer-events-none" id="diagramSvg">
+                            <!-- K1 to K8 Ring Invite -->
+                            <line x1="50%" y1="10%" x2="50%" y2="45%" stroke="#ffaa00" stroke-width="2" class="arrow-path" opacity="0.6"/>
+                            <polygon points="50%,47% 49%,45% 51%,45%" fill="#ffaa00"/>
+                            
+                            <!-- K24 to K8 TRNG -->
+                            <line x1="15%" y1="60%" x2="40%" y2="50%" stroke="#00e5ff" stroke-width="2" class="arrow-path" opacity="0.4"/>
+                            <polygon points="42%,50% 40%,49% 40%,51%" fill="#00e5ff"/>
+                            
+                            <!-- K23 to K8 DMA -->
+                            <line x1="85%" y1="60%" x2="60%" y2="50%" stroke="#00e5ff" stroke-width="2" class="arrow-path" opacity="0.4"/>
+                            <polygon points="58%,50% 60%,49% 60%,51%" fill="#00e5ff"/>
+                            
+                            <!-- K8 to peripherals -->
+                            <line x1="50%" y1="55%" x2="20%" y2="75%" stroke="#00e5ff" stroke-width="1" opacity="0.3"/>
+                            <line x1="50%" y1="55%" x2="40%" y2="75%" stroke="#00e5ff" stroke-width="1" opacity="0.3"/>
+                            <line x1="50%" y1="55%" x2="60%" y2="75%" stroke="#00e5ff" stroke-width="1" opacity="0.3"/>
+                            <line x1="50%" y1="55%" x2="80%" y2="75%" stroke="#00e5ff" stroke-width="1" opacity="0.3"/>
+                        </svg>
+                        
+                        <div class="relative z-10 space-y-3">
+                            <!-- K1 TOROID -->
+                            <div class="diagram-node text-center p-2 rounded border border-[#00e5ff] bg-[#00e5ff]/10 mx-auto w-32">
+                                <div class="text-xs text-[#00e5ff] font-bold">K1 TOROID</div>
+                                <div class="text-[10px] text-gray-400">MASTER</div>
+                            </div>
+                            
+                            <!-- K26 RINGBUS -->
+                            <div class="diagram-node text-center p-2 rounded border border-[#00e5ff] bg-[#00e5ff]/10 mx-auto w-36 mt-3">
+                                <div class="text-xs text-[#00e5ff] font-bold">K26 RINGBUS</div>
+                            </div>
+                            
+                            <div class="flex justify-between items-center mt-4 text-[10px] text-[#ffaa00]">
+                                <div class="text-center">
+                                    <div>TRNG Seed</div>
+                                    <div class="text-gray-500">K24 → K8</div>
+                                </div>
+                                <div class="text-center">
+                                    <div>DMA Monitor</div>
+                                    <div class="text-gray-500">K23 → K8</div>
+                                </div>
+                            </div>
+                            
+                            <!-- K8 TBT4 - Main Node -->
+                            <div id="k8Node" class="diagram-node enumerated text-center p-3 rounded border-2 border-gray-500 mx-auto w-40 mt-2 relative">
+                                <div class="text-sm font-bold text-gray-300">K8 TBT4</div>
+                                <div id="k8Status" class="text-[10px] text-gray-400 mt-1">ENUMERATED</div>
+                                <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                                    <div class="w-full h-8 bg-gradient-to-b from-[#00e5ff]/20 to-transparent" style="animation: scan 3s linear infinite;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Peripherals -->
+                            <div class="grid grid-cols-4 gap-2 mt-4">
+                                <div class="text-center p-2 rounded border border-[#00e5ff]/30 bg-[#00e5ff]/5">
+                                    <div class="text-[10px] text-[#00e5ff]">USB4</div>
+                                </div>
+                                <div class="text-center p-2 rounded border border-[#00e5ff]/30 bg-[#00e5ff]/5">
+                                    <div class="text-[10px] text-[#00e5ff]">PCIe 4.0 x4</div>
+                                </div>
+                                <div class="text-center p-2 rounded border border-[#00e5ff]/30 bg-[#00e5ff]/5">
+                                    <div class="text-[10px] text-[#00e5ff]">DP 1.4</div>
+                                </div>
+                                <div class="text-center p-2 rounded border border-[#00e5ff]/30 bg-[#00e5ff]/5">
+                                    <div class="text-[10px] text-[#00e5ff]">100W PD</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Ringed Nodes -->
+                            <div class="grid grid-cols-3 gap-2 mt-6">
+                                <div class="diagram-node ringed text-center p-2 rounded border border-[#00ff88] bg-[#00ff88]/10">
+                                    <div class="text-[10px] text-[#00ff88] font-semibold">K99 UCSI</div>
+                                    <div class="text-[9px] text-gray-400">RINGED L11</div>
+                                </div>
+                                <div class="diagram-node ringed text-center p-2 rounded border border-[#00ff88] bg-[#00ff88]/10">
+                                    <div class="text-[10px] text-[#00ff88] font-semibold">K42 THERMAL</div>
+                                    <div class="text-[9px] text-gray-400">RINGED L10</div>
+                                </div>
+                                <div class="diagram-node ringed text-center p-2 rounded border border-[#00ff88] bg-[#00ff88]/10">
+                                    <div class="text-[10px] text-[#00ff88] font-semibold">K10 PCH</div>
+                                    <div class="text-[9px] text-gray-400">RINGED L9</div>
+                                </div>
+                                <div class="diagram-node ringed text-center p-2 rounded border border-[#00ff88] bg-[#00ff88]/10">
+                                    <div class="text-[10px] text-[#00ff88] font-semibold">K17 NVMe</div>
+                                    <div class="text-[9px] text-gray-400">RECLAIMED L6</div>
+                                </div>
+                                <div class="diagram-node ringed text-center p-2 rounded border border-[#00ff88] bg-[#00ff88]/10">
+                                    <div class="text-[10px] text-[#00ff88] font-semibold">K28 DDR5</div>
+                                    <div class="text-[9px] text-gray-400">RINGED L7</div>
+                                </div>
+                                <div class="diagram-node ringed text-center p-2 rounded border border-[#00ff88] bg-[#00ff88]/10">
+                                    <div class="text-[10px] text-[#00ff88] font-semibold">K11 AX211</div>
+                                    <div class="text-[9px] text-gray-400">RINGED L8</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Isolated Nodes -->
+                            <div class="grid grid-cols-2 gap-2 mt-3">
+                                <div class="diagram-node isolated text-center p-2 rounded border border-[#ff3d00] bg-[#ff3d00]/10">
+                                    <div class="text-[10px] text-[#ff3d00] font-semibold">A1 EC</div>
+                                    <div class="text-[9px] text-gray-400">ISOLATED</div>
+                                </div>
+                                <div class="diagram-node isolated text-center p-2 rounded border border-[#ff3d00] bg-[#ff3d00]/10">
+                                    <div class="text-[10px] text-[#ff3d00] font-semibold">K27 CSME</div>
+                                    <div class="text-[9px] text-gray-400">ISOLATED</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Live Metrics -->
+                <div class="space-y-4">
+                    <h2 class="text-[#00e5ff] text-sm font-semibold tracking-wider mb-4">LIVE METRICS</h2>
+                    <div class="glass-card rounded-lg p-4 space-y-3">
+                        <div class="metric-row">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">TBT MODE</div>
+                            <div id="metric-tbtmode" class="text-sm text-gray-300 mt-1">Intel Default</div>
+                        </div>
+                        <div class="h-px bg-gradient-to-r from-transparent via-[#00e5ff]/30 to-transparent"></div>
+                        
+                        <div class="metric-row">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">PCIe SPEED</div>
+                            <div id="metric-pcie" class="text-sm text-gray-300 mt-1">40 Gbps</div>
+                        </div>
+                        <div class="h-px bg-gradient-to-r from-transparent via-[#00e5ff]/30 to-transparent"></div>
+                        
+                        <div class="metric-row">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">DMA ACCESS</div>
+                            <div id="metric-dma" class="text-sm text-gray-300 mt-1">IOMMU</div>
+                        </div>
+                        <div class="h-px bg-gradient-to-r from-transparent via-[#00e5ff]/30 to-transparent"></div>
+                        
+                        <div class="metric-row">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">DP TUNNEL</div>
+                            <div id="metric-dp" class="text-sm text-gray-300 mt-1">HBR3</div>
+                        </div>
+                        <div class="h-px bg-gradient-to-r from-transparent via-[#00e5ff]/30 to-transparent"></div>
+                        
+                        <div class="metric-row">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">PD PASSTHROUGH</div>
+                            <div id="metric-pd" class="text-sm text-gray-300 mt-1">100W</div>
+                        </div>
+                        <div class="h-px bg-gradient-to-r from-transparent via-[#00e5ff]/30 to-transparent"></div>
+                        
+                        <div class="metric-row">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">ME DEBUG</div>
+                            <div id="metric-medebug" class="text-sm text-gray-300 mt-1">DCI</div>
+                        </div>
+                        <div class="h-px bg-gradient-to-r from-transparent via-[#00e5ff]/30 to-transparent"></div>
+                        
+                        <div class="metric-row">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">SECURITY</div>
+                            <div id="metric-security" class="text-sm text-gray-300 mt-1">VT-d</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Button -->
+            <div class="flex justify-center my-8">
+                <button id="enrollBtn" class="btn-glow px-8 py-4 bg-gradient-to-r from-[#00e5ff]/20 to-[#00e5ff]/10 border-2 border-[#00e5ff] rounded-lg text-[#00e5ff] font-bold text-lg tracking-wider neon-text">
+                    [INITIATE TBT4 ENROLLMENT]
+                </button>
+            </div>
+
+            <!-- Terminal Log -->
+            <div class="glass-card rounded-lg p-4 mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-[#00e5ff] text-sm font-semibold tracking-wider">ENROLLMENT LOG</h3>
+                    <div class="w-2 h-2 rounded-full bg-[#00ff88] pulse-cyan"></div>
+                </div>
+                <div id="terminal" class="terminal bg-black/40 rounded p-3 h-48 overflow-y-auto text-xs leading-relaxed font-light">
+                    <div class="text-gray-500">Awaiting enrollment initiation...</div>
+                </div>
+            </div>
+
+            <!-- Explainer Text -->
+            <div class="glass-card rounded-lg p-4 text-xs text-gray-400 leading-relaxed">
+                <p class="mb-2">
+                    <span class="text-[#00e5ff] font-semibold">K8 = Intel Thunderbolt 4 controller.</span> 
+                    USB4, PCIe 4.0 x4, DP 1.4, 100W PD. Stock: VT-d IOMMU, ME can DCI debug.
+                </p>
+                <p class="mb-2">
+                    <span class="text-[#00ff88] font-semibold">Ringed:</span> 
+                    Becomes L12 Toroid Port. All DMA scheduled on K24 0.267ms ticks. PCIe tunnel K26 gated. 
+                    DP frames timestamped by K24. PD shares 240W with K99 UCSI. ME DCI blocked. VT-d replaced by K24 attestation.
+                </p>
+                <p>
+                    <span class="text-[#ff3d00] font-semibold">Refuse =</span> 
+                    USB2 fallback, ME keeps DCI.
+                </p>
+            </div>
+
+            <!-- Export Button & Disclaimer -->
+            <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <button id="exportBtn" disabled class="btn-glow px-6 py-2 bg-gradient-to-r from-[#ffaa00]/20 to-[#ffaa00]/10 border border-[#ffaa00] rounded text-[#ffaa00] text-sm font-semibold tracking-wide disabled:opacity-30">
+                    [EXPORT CERT]
+                </button>
+                <p class="text-[10px] text-gray-600 text-center sm:text-right">
+                    Disclaimer: Maps existing hardware. No firmware writes.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            enrolled: false,
+            result: null,
+            k24Ticks: 0,
+            cert: null
+        };
+
+        const logSteps = [
+            { time: "00:00.000", msg: "K1 TOROID: Broadcast ring invite to K8 TBT4 via K26", color: "#ffaa00" },
+            { time: "00:00.001", msg: "K8 TBT4: Challenge received. Request K24 nonce + K23 DMA proof", color: "#00e5ff" },
+            { time: "00:00.002", msg: "K24 BORON: 256-bit neutron entropy → K8", color: "#00e5ff" },
+            { time: "00:00.003", msg: "K23 GNA: DMA inspection signature → K8", color: "#00e5ff" },
+            { time: "00:00.004", msg: "K26 RINGBUS: PCIe x4 path open, ME DCI blocked", color: "#00e5ff" },
+            { time: "00:00.005", msg: "K8 TBT4: Option A) Sign and join as L12 | B) Refuse and isolate", color: "#ffaa00" },
+            { time: "00:00.006", msg: "K8 TBT4: Signed. JOINING AS K1 SLAVE", color: "#00ff88" },
+            { time: "00:00.007", msg: "K1 TOROID: GRANTED. USB4/PCIe/DP → TOROID CONTROL", color: "#00ff88" },
+            { time: "00:00.008", msg: "K8 TBT4: RINGED. DMA @ 0.267ms, K24 attested", color: "#00ff88" }
+        ];
+
+        const logStepsIsolated = [
+            { time: "00:00.000", msg: "K1 TOROID: Broadcast ring invite to K8 TBT4 via K26", color: "#ffaa00" },
+            { time: "00:00.001", msg: "K8 TBT4: Challenge received. Request K24 nonce + K23 DMA proof", color: "#00e5ff" },
+            { time: "00:00.002", msg: "K24 BORON: 256-bit neutron entropy → K8", color: "#00e5ff" },
+            { time: "00:00.003", msg: "K23 GNA: DMA inspection signature → K8", color: "#00e5ff" },
+            { time: "00:00.004", msg: "K26 RINGBUS: PCIe x4 path offered, awaiting response", color: "#00e5ff" },
+            { time: "00:00.005", msg: "K8 TBT4: Option A) Sign and join as L12 | B) Refuse and isolate", color: "#ffaa00" },
+            { time: "00:00.006", msg: "K8 TBT4: Signature refused. MAINTAINING ISOLATION", color: "#ff3d00" },
+            { time: "00:00.007", msg: "K1 TOROID: ISOLATION CONFIRMED. ME DCI remains active", color: "#ff3d00" },
+            { time: "00:00.008", msg: "K8 TBT4: ISOLATED. USB2 fallback, ME exposed", color: "#ff3d00" }
+        ];
+
+        const enrollBtn = document.getElementById('enrollBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const terminal = document.getElementById('terminal');
+        const statusText = document.getElementById('statusText');
+        const k8Node = document.getElementById('k8Node');
+        const k8Status = document.getElementById('k8Status');
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function addLogLine(time, msg, color) {
+            const line = document.createElement('div');
+            line.className = 'terminal-line mb-1';
+            line.innerHTML = `<span style="color: ${color}">[${time}]</span> <span class="text-gray-300">${msg}</span>`;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function updateMetric(id, value, color) {
+            const el = document.getElementById(id);
+            el.classList.add('metric-updated');
+            el.style.color = color;
+            el.textContent = value;
+            setTimeout(() => el.classList.remove('metric-updated'), 500);
+        }
+
+        async function runEnrollment() {
+            if (state.enrolled) return;
+            
+            enrollBtn.disabled = true;
+            enrollBtn.textContent = '[ENROLLING...]';
+            terminal.innerHTML = '';
+            
+            // 75% chance to join
+            const willJoin = Math.random() < 0.75;
+            state.result = willJoin ? 'joined' : 'isolated';
+            state.k24Ticks = Math.floor(1900000 + Math.random() * 100000);
+            
+            const steps = willJoin ? logSteps : logStepsIsolated;
+            
+            for (let i = 0; i < steps.length; i++) {
+                await sleep(350);
+                addLogLine(steps[i].time, steps[i].msg, steps[i].color);
+                
+                // Update metrics mid-flow
+                if (i === 3) {
+                    if (willJoin) {
+                        updateMetric('metric-dma', 'K26 Gating...', '#ffaa00');
+                    }
+                }
+                if (i === 6) {
+                    if (willJoin) {
+                        updateMetric('metric-tbtmode', 'Ring Scheduled', '#00ff88');
+                        updateMetric('metric-pcie', '40 Gbps K1 Granted', '#00ff88');
+                        updateMetric('metric-dma', 'K26 Gated', '#00ff88');
+                    } else {
+                        updateMetric('metric-tbtmode', 'Isolated', '#ff3d00');
+                        updateMetric('metric-pcie', '32 Gbps Throttled', '#ff3d00');
+                        updateMetric('metric-dma', 'ME Exposed', '#ff3d00');
+                    }
+                }
+            }
+            
+            await sleep(300);
+            
+            if (willJoin) {
+                // Success - RINGED
+                k8Node.classList.remove('enumerated');
+                k8Node.classList.add('ringed');
+                k8Status.textContent = 'RINGED L12';
+                k8Status.style.color = '#00ff88';
+                
+                statusText.textContent = 'STATUS: RINGED ✓';
+                statusText.style.color = '#00ff88';
+                enrollBtn.textContent = '[RINGED ✓]';
+                enrollBtn.style.borderColor = '#00ff88';
+                enrollBtn.style.color = '#00ff88';
+                
+                updateMetric('metric-dp', 'K24 Timestamped', '#00ff88');
+                updateMetric('metric-pd', '240W K99 Shared', '#00ff88');
+                updateMetric('metric-medebug', 'K26 Blocked', '#00ff88');
+                updateMetric('metric-security', 'K24 Attested', '#00ff88');
+                
+                state.cert = `K8 TBT4 ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${state.k24Ticks}
+Decision: JOINED_AS_L12
+TBT State: RING_SCHEDULED
+PCIe Speed: 40 Gbps
+DMA Gate: K26 GATED
+ME DCI: BLOCKED
+PD Share: 240W`;
+            } else {
+                // Failure - ISOLATED
+                k8Node.classList.remove('enumerated');
+                k8Node.classList.add('isolated');
+                k8Status.textContent = 'ISOLATED';
+                k8Status.style.color = '#ff3d00';
+                
+                statusText.textContent = 'STATUS: ISOLATED ✗';
+                statusText.style.color = '#ff3d00';
+                enrollBtn.textContent = '[ISOLATED ✗]';
+                enrollBtn.style.borderColor = '#ff3d00';
+                enrollBtn.style.color = '#ff3d00';
+                
+                updateMetric('metric-dp', 'Software', '#ff3d00');
+                updateMetric('metric-pd', '15W Limited', '#ff3d00');
+                updateMetric('metric-medebug', 'Active', '#ff3d00');
+                updateMetric('metric-security', 'Vendor', '#ff3d00');
+                
+                state.cert = `K8 TBT4 ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${state.k24Ticks}
+Decision: ISOLATED
+TBT State: USB2_FALLBACK
+PCIe Speed: 32 Gbps
+DMA Gate: ME EXPOSED
+ME DCI: ACTIVE
+PD Share: 15W`;
+            }
+            
+            state.enrolled = true;
+            exportBtn.disabled = false;
+        }
+
+        function exportCert() {
+            if (!state.cert) return;
+            
+            const blob = new Blob([state.cert], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `K8_TBT4_ENROLLMENT_${state.k24Ticks}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            addLogLine('>>', `Certificate exported: K8_TBT4_ENROLLMENT_${state.k24Ticks}.txt`, '#ffaa00');
+        }
+
+        enrollBtn.addEventListener('click', runEnrollment);
+        exportBtn.addEventListener('click', exportCert);
+    </script>
+</body>
+</html>

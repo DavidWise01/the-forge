@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K27 CSME: ENCLAVE ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+  
+  :root {
+    --bg: #0a0e1a;
+    --cyan: #00e5ff;
+    --amber: #ffaa00;
+    --red: #ff3d00;
+    --green: #00ff88;
+    --gray: #1a1f2e;
+    --gray-light: #2a2f3e;
+  }
+  
+  * {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  body {
+    background: var(--bg);
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255, 170, 0, 0.02) 0%, transparent 50%);
+  }
+  
+  .glass {
+    background: linear-gradient(135deg, rgba(26, 31, 46, 0.6) 0%, rgba(10, 14, 26, 0.8) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 229, 255, 0.1);
+  }
+  
+  @keyframes pulse-amber {
+    0%, 100% { opacity: 1; box-shadow: 0 0 20px var(--amber), 0 0 40px rgba(255, 170, 0, 0.3); }
+    50% { opacity: 0.6; box-shadow: 0 0 10px var(--amber), 0 0 20px rgba(255, 170, 0, 0.2); }
+  }
+  
+  .pulse-indicator {
+    animation: pulse-amber 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes flow {
+    0% { stroke-dashoffset: 20; }
+    100% { stroke-dashoffset: 0; }
+  }
+  
+  .flow-line {
+    stroke-dasharray: 4, 4;
+    animation: flow 1s linear infinite;
+  }
+  
+  @keyframes glow-green {
+    0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), inset 0 0 20px rgba(0, 255, 136, 0.1); }
+    50% { box-shadow: 0 0 30px rgba(0, 255, 136, 0.6), inset 0 0 30px rgba(0, 255, 136, 0.2); }
+  }
+  
+  @keyframes glow-red {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 61, 0, 0.4), inset 0 0 20px rgba(255, 61, 0, 0.1); }
+    50% { box-shadow: 0 0 30px rgba(255, 61, 0, 0.6), inset 0 0 30px rgba(255, 61, 0, 0.2); }
+  }
+  
+  .ringed {
+    animation: glow-green 2s ease-in-out infinite;
+    border-color: var(--green) !important;
+  }
+  
+  .isolated {
+    animation: glow-red 2s ease-in-out infinite;
+    border-color: var(--red) !important;
+  }
+  
+  .terminal {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  
+  .terminal::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .terminal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  .terminal::-webkit-scrollbar-thumb {
+    background: var(--cyan);
+    border-radius: 3px;
+  }
+  
+  .metric-row {
+    transition: all 0.3s ease;
+  }
+  
+  .metric-update {
+    animation: flash 0.5s ease;
+  }
+  
+  @keyframes flash {
+    0%, 100% { background: transparent; }
+    50% { background: rgba(0, 229, 255, 0.1); }
+  }
+  
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .scanline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    animation: scan 3s linear infinite;
+  }
+  
+  @keyframes scan {
+    0% { transform: translateY(0); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(400px); opacity: 0; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 text-gray-100">
+  
+  <div class="w-full max-w-7xl glass rounded-lg shadow-2xl overflow-hidden relative scanline">
+    <!-- Header -->
+    <div class="border-b border-cyan-500/20 px-6 py-4 md:px-8 md:py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-gradient-to-r from-[#0a0e1a] to-[#0f1420]">
+      <div>
+        <h1 class="text-cyan-400 text-lg md:text-xl font-bold tracking-wider">KERNEL 27 • CSME CONVERGED SECURITY ENGINE</h1>
+        <p class="text-xs text-gray-400 mt-1">Alienware 16 Aurora AC16250</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="statusText" class="text-xs md:text-sm font-semibold text-amber-400 tracking-widest">STATUS: ENUMERATED → RINGING</span>
+        <div id="statusIndicator" class="w-3 h-3 rounded-full bg-amber-400 pulse-indicator"></div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="p-6 md:p-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        
+        <!-- Left: Diagram -->
+        <div class="glass rounded-lg p-6 border border-cyan-500/10">
+          <h2 class="text-sm font-semibold text-cyan-400 mb-4 tracking-wider">FABRIC TOPOLOGY</h2>
+          <svg viewBox="0 0 400 320" class="w-full h-auto">
+            <!-- K1 TOROID -->
+            <g id="k1-node">
+              <rect x="140" y="20" width="120" height="50" rx="4" fill="#1a1f2e" stroke="#00e5ff" stroke-width="2"/>
+              <text x="200" y="40" text-anchor="middle" fill="#00e5ff" font-size="12" font-weight="600">K1 TOROID</text>
+              <text x="200" y="55" text-anchor="middle" fill="#00e5ff" font-size="9">MASTER</text>
+            </g>
+
+            <!-- K26 RINGBUS -->
+            <g id="k26-node">
+              <rect x="140" y="100" width="120" height="50" rx="4" fill="#1a1f2e" stroke="#00e5ff" stroke-width="2"/>
+              <text x="200" y="120" text-anchor="middle" fill="#00e5ff" font-size="12" font-weight="600">K26 RINGBUS</text>
+              <text x="200" y="135" text-anchor="middle" fill="#00e5ff" font-size="9">FABRIC GATE</text>
+            </g>
+
+            <!-- K27 CSME -->
+            <g id="k27-node">
+              <rect id="k27-rect" x="140" y="220" width="120" height="60" rx="4" fill="#1a1f2e" stroke="#6b7280" stroke-width="2" class="transition-all duration-500"/>
+              <text x="200" y="245" text-anchor="middle" fill="#9ca3af" font-size="12" font-weight="600" id="k27-label">K27 CSME</text>
+              <text x="200" y="262" text-anchor="middle" fill="#6b7280" font-size="10" id="k27-status">ENUMERATED</text>
+            </g>
+
+            <!-- K24 BORON -->
+            <g id="k24-node">
+              <rect x="20" y="220" width="100" height="50" rx="4" fill="#1a1f2e" stroke="#ffaa00" stroke-width="2"/>
+              <text x="70" y="240" text-anchor="middle" fill="#ffaa00" font-size="11" font-weight="600">K24 BORON</text>
+              <text x="70" y="254" text-anchor="middle" fill="#ffaa00" font-size="8">TRNG</text>
+            </g>
+
+            <!-- Arrows -->
+            <path id="k1-to-k27" d="M 200 70 L 200 220" stroke="#ffaa00" stroke-width="2" fill="none" marker-end="url(#arrow-amber)" opacity="0.7"/>
+            <path id="k24-to-k27" d="M 120 245 L 140 245" stroke="#ffaa00" stroke-width="2" fill="none" marker-end="url(#arrow-amber)" opacity="0.7"/>
+            <path id="k26-block" d="M 200 150 L 200 220" stroke="#ff3d00" stroke-width="3" fill="none" marker-end="url(#arrow-red)" stroke-dasharray="4,4" class="flow-line"/>
+            
+            <defs>
+              <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#ffaa00"/>
+              </marker>
+              <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <polygon points="0 0, 10 3, 0 6" fill="#ff3d00"/>
+              </marker>
+            </defs>
+
+            <!-- Labels -->
+            <text x="210" y="150" fill="#ffaa00" font-size="9">RING INVITE</text>
+            <text x="70" y="215" fill="#ffaa00" font-size="9">TRNG Required</text>
+            <text x="210" y="185" fill="#ff3d00" font-size="9">DMA BLOCK</text>
+          </svg>
+        </div>
+
+        <!-- Right: Metrics -->
+        <div class="glass rounded-lg p-6 border border-cyan-500/10">
+          <h2 class="text-sm font-semibold text-cyan-400 mb-4 tracking-wider">LIVE METRICS</h2>
+          <div class="space-y-3">
+            <div class="metric-row flex justify-between items-center py-2 px-3 rounded bg-black/20" data-metric="mode">
+              <span class="text-xs text-gray-400">ME MODE:</span>
+              <span class="text-sm font-semibold text-cyan-400" data-value>Active</span>
+            </div>
+            <div class="metric-row flex justify-between items-center py-2 px-3 rounded bg-black/20" data-metric="dma">
+              <span class="text-xs text-gray-400">DMA ACCESS:</span>
+              <span class="text-sm font-semibold text-amber-400" data-value>Unrestricted</span>
+            </div>
+            <div class="metric-row flex justify-between items-center py-2 px-3 rounded bg-black/20" data-metric="entropy">
+              <span class="text-xs text-gray-400">ENTROPY SOURCE:</span>
+              <span class="text-sm font-semibold text-amber-400" data-value>Intel RNG</span>
+            </div>
+            <div class="metric-row flex justify-between items-center py-2 px-3 rounded bg-black/20" data-metric="amt">
+              <span class="text-xs text-gray-400">AMT/vPro:</span>
+              <span class="text-sm font-semibold text-amber-400" data-value>Enabled</span>
+            </div>
+            <div class="metric-row flex justify-between items-center py-2 px-3 rounded bg-black/20" data-metric="backdoor">
+              <span class="text-xs text-gray-400">BACKDOOR STATUS:</span>
+              <span class="text-sm font-semibold text-red-500" data-value>Present</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Button + Terminal -->
+      <div class="mb-6">
+        <button id="enrollBtn" class="w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-bold text-sm tracking-widest rounded transition-all duration-300 shadow-lg hover:shadow-amber-500/50 transform hover:scale-[1.02] active:scale-[0.98]">
+          [ INITIATE ME ENROLLMENT ]
+        </button>
+        
+        <div class="mt-4 glass rounded-lg border border-cyan-500/10 overflow-hidden">
+          <div class="bg-black/40 px-4 py-2 border-b border-cyan-500/10">
+            <span class="text-xs text-cyan-400 font-semibold">TERMINAL LOG</span>
+          </div>
+          <div id="terminal" class="terminal h-48 overflow-y-auto p-4 bg-black/60 text-green-400">
+            <div class="text-gray-500">Awaiting enrollment initiation...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: Explainer + Export -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+        <div class="md:col-span-2 glass rounded-lg p-4 border border-cyan-500/10">
+          <p class="text-xs text-gray-300 leading-relaxed">
+            <span class="text-cyan-400 font-semibold">CSME</span> has ARC CPU, 1.5MB SRAM, DMA to all RAM. 
+            <span class="text-amber-400">Stock:</span> Runs outside OS, Intel backdoor. 
+            <span class="text-green-400">Ringed:</span> Becomes Toroid TPM slave. All keys derived from K24 BORON. AMT/vPro disabled. 
+            ME cannot access RAM without K1 grant every 0.302ms. 
+            <span class="text-red-400">Refuse = fabric isolation.</span>
+          </p>
+        </div>
+        <button id="exportBtn" class="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 border border-cyan-500/30 text-cyan-400 font-semibold text-xs tracking-wider rounded transition-all duration-300 disabled:opacity-30" disabled>
+          [ EXPORT CERT ]
+        </button>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="mt-4 text-center">
+        <p class="text-[10px] text-gray-500">Maps existing hardware. No ME writes. Simulation only.</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const state = {
+    enrolled: false,
+    decision: null,
+    k24Ticks: 0,
+    meVersion: Math.random() > 0.2 ? '11.x' : '9.x', // 80% chance modern ME
+    certData: null
+  };
+
+  const el = {
+    enrollBtn: document.getElementById('enrollBtn'),
+    exportBtn: document.getElementById('exportBtn'),
+    terminal: document.getElementById('terminal'),
+    statusText: document.getElementById('statusText'),
+    statusIndicator: document.getElementById('statusIndicator'),
+    k27Rect: document.getElementById('k27-rect'),
+    k27Label: document.getElementById('k27-label'),
+    k27Status: document.getElementById('k27-status')
+  };
+
+  function logTerminal(msg, color = 'text-green-400') {
+    const timestamp = `[${state.k24Ticks.toFixed(3).padStart(7, '0')}]`;
+    const line = document.createElement('div');
+    line.className = color;
+    line.textContent = `${timestamp} ${msg}`;
+    el.terminal.appendChild(line);
+    el.terminal.scrollTop = el.terminal.scrollHeight;
+  }
+
+  function updateMetric(key, value, color) {
+    const row = document.querySelector(`[data-metric="${key}"]`);
+    const valEl = row.querySelector('[data-value]');
+    valEl.textContent = value;
+    valEl.className = `text-sm font-semibold ${color}`;
+    row.classList.add('metric-update');
+    setTimeout(() => row.classList.remove('metric-update'), 500);
+  }
+
+  function updateDiagram(ringed) {
+    if (ringed) {
+      el.k27Rect.setAttribute('stroke', '#00ff88');
+      el.k27Rect.classList.add('ringed');
+      el.k27Label.setAttribute('fill', '#00ff88');
+      el.k27Status.textContent = 'RINGED SLAVE';
+      el.k27Status.setAttribute('fill', '#00ff88');
+      el.statusText.textContent = 'STATUS: RINGED ✓';
+      el.statusText.className = 'text-xs md:text-sm font-semibold text-green-400 tracking-widest';
+      el.statusIndicator.className = 'w-3 h-3 rounded-full bg-green-400';
+      el.statusIndicator.style.boxShadow = '0 0 20px #00ff88';
+    } else {
+      el.k27Rect.setAttribute('stroke', '#ff3d00');
+      el.k27Rect.classList.add('isolated');
+      el.k27Label.setAttribute('fill', '#ff3d00');
+      el.k27Status.textContent = 'ISOLATED';
+      el.k27Status.setAttribute('fill', '#ff3d00');
+      el.statusText.textContent = 'STATUS: ISOLATED ✗';
+      el.statusText.className = 'text-xs md:text-sm font-semibold text-red-500 tracking-widest';
+      el.statusIndicator.className = 'w-3 h-3 rounded-full bg-red-500';
+      el.statusIndicator.style.boxShadow = '0 0 20px #ff3d00';
+    }
+  }
+
+  async function runEnrollment() {
+    if (state.enrolled) return;
+    state.enrolled = true;
+    el.enrollBtn.disabled = true;
+    el.enrollBtn.textContent = '[ ENROLLING... ]';
+    el.terminal.innerHTML = '';
+
+    const logs = [
+      ['K1 TOROID: Broadcast ring invite to K27 CSME', 400],
+      ['K27 CSME: Challenge received. Provide K24 nonce.', 300],
+      ['K24 BORON: 256-bit neutron entropy → K27', 400],
+      ['K27 CSME: Option A) Sign and join as slave | B) Refuse and isolate', 500],
+      ['K26 RINGBUS: Blocking ME DMA until decision', 300]
+    ];
+
+    for (const [msg, delay] of logs) {
+      state.k24Ticks += 0.001;
+      logTerminal(msg);
+      await new Promise(r => setTimeout(r, delay));
+    }
+
+    // Decision: 80% join, 20% refuse based on ME version
+    const joins = state.meVersion === '11.x' && Math.random() < 0.8;
+    state.decision = joins ? 'JOINED_AS_SLAVE' : 'ISOLATED';
+    
+    state.k24Ticks += 0.001;
+    if (joins) {
+      logTerminal('K27 CSME: Signed. JOINING AS K1 SLAVE', 'text-green-400');
+      await new Promise(r => setTimeout(r, 400));
+      state.k24Ticks += 0.001;
+      logTerminal('K1 TOROID: GRANTED. ME BYPASS → ME CONTROL', 'text-green-400');
+      await new Promise(r => setTimeout(r, 400));
+      state.k24Ticks += 0.001;
+      logTerminal('K27 CSME: RINGED. TPM keys → K24 derived', 'text-green-400');
+      
+      // Update metrics
+      updateMetric('mode', 'Ring Slave', 'text-green-400');
+      updateMetric('dma', 'K1 Mediated', 'text-cyan-400');
+      updateMetric('entropy', 'K24 BORON', 'text-green-400');
+      updateMetric('amt', 'Disabled', 'text-green-400');
+      updateMetric('backdoor', 'Revoked', 'text-green-400');
+      
+      updateDiagram(true);
+      el.enrollBtn.textContent = '[ RINGED ✓ ]';
+      el.enrollBtn.className = 'w-full py-4 px-6 bg-gradient-to-r from-green-500 to-green-600 text-black font-bold text-sm tracking-widest rounded shadow-lg';
+    } else {
+      logTerminal('K27 CSME: REFUSED. SIGNATURE INVALID', 'text-red-500');
+      await new Promise(r => setTimeout(r, 400));
+      state.k24Ticks += 0.001;
+      logTerminal('K26 RINGBUS: PERMANENT DMA BLOCK ENGAGED', 'text-red-500');
+      await new Promise(r => setTimeout(r, 400));
+      state.k24Ticks += 0.001;
+      logTerminal('K27 CSME: ISOLATED FROM FABRIC', 'text-red-500');
+      
+      // Update metrics
+      updateMetric('mode', 'Isolated', 'text-red-500');
+      updateMetric('dma', 'Blocked', 'text-red-500');
+      updateMetric('entropy', 'None', 'text-red-500');
+      updateMetric('amt', 'Inaccessible', 'text-gray-500');
+      updateMetric('backdoor', 'Inaccessible', 'text-gray-500');
+      
+      updateDiagram(false);
+      el.enrollBtn.textContent = '[ ISOLATED ✗ ]';
+      el.enrollBtn.className = 'w-full py-4 px-6 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold text-sm tracking-widest rounded shadow-lg';
+    }
+
+    state.k24Ticks = 1928847 + Math.floor(Math.random() * 10000);
+    state.certData = {
+      timestamp: state.k24Ticks,
+      decision: state.decision,
+      meState: joins ? 'RING_CONTROLLED' : 'FABRIC_BLOCKED',
+      tpmSeed: 'K24 BORON 0x8d4f' + Math.floor(Math.random()*0xffff).toString(16),
+      backdoor: joins ? 'REVOKED' : 'INACCESSIBLE'
+    };
+    
+    el.exportBtn.disabled = false;
+  }
+
+  function exportCert() {
+    if (!state.certData) return;
+    const cert = `K27 CSME ENROLLMENT CERTIFICATE
+=====================================
+Timestamp: K24 Ticks: ${state.certData.timestamp}
+Decision: ${state.certData.decision}
+ME State: ${state.certData.meState}
+TPM Seed: ${state.certData.tpmSeed}
+Intel Backdoor: ${state.certData.backdoor}
+=====================================
+Platform: Alienware 16 Aurora AC16250
+Engine: CSME ${state.meVersion}
+Status: ${state.decision === 'JOINED_AS_SLAVE' ? 'RING OPERATIONAL' : 'FABRIC ISOLATED'}
+
+Maps existing hardware. No ME writes.`;
+
+    const blob = new Blob([cert], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `K27_CSME_CERT_${state.certData.timestamp}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    logTerminal('EXPORT: Certificate downloaded', 'text-cyan-400');
+  }
+
+  el.enrollBtn.addEventListener('click', runEnrollment);
+  el.exportBtn.addEventListener('click', exportCert);
+</script>
+</body>
+</html>

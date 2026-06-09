@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MICROSOFT TPM OVERRIDE: PCR INJECTION</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        
+:root {
+  --bg-dark: #0a0e1a;
+  --neon-cyan: #00e5ff;
+  --amber: #ffaa00;
+  --red: #ff3d00;
+  --green: #00ff88;
+  --card-bg: #111827;
+  --border: #1e293b;
+}
+
+* {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: #e2e8f0;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 170, 0, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(255, 61, 0, 0.02) 0%, transparent 50%);
+}
+
+.glow-cyan {
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.4));
+}
+
+.glow-amber {
+  filter: drop-shadow(0 0 8px rgba(255, 170, 0, 0.5));
+}
+
+.glow-red {
+  filter: drop-shadow(0 0 8px rgba(255, 61, 0, 0.4));
+}
+
+.glow-green {
+  filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.5));
+}
+
+.pulse-indicator {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.diagram-node {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-isolated {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.node-ringed {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.node-active {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.arrow-path {
+  stroke-dasharray: 6 4;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+.terminal-line {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.metric-value {
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(255, 170, 0, 0.2), rgba(255, 170, 0, 0.05));
+  border: 1px solid var(--amber);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 170, 0, 0.3), rgba(255, 170, 0, 0.1));
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(0, 229, 255, 0.05));
+  border: 1px solid var(--neon-cyan);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(0, 229, 255, 0.1));
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.glass {
+  background: rgba(17, 24, 39, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.5);
+}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-7xl">
+    <!-- Header -->
+    <div class="glass rounded-t-xl p-4 md:p-6 border-b border-slate-800">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold text-[var(--neon-cyan)] glow-cyan tracking-tight">
+            KERNEL 5 • TPM 2.0 MICROSOFT
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Alienware 16 Aurora AC16250</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="status-badge" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30">
+            <div id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-[var(--red)] glow-red"></div>
+            <span id="status-text" class="text-sm font-semibold text-[var(--red)]">STATUS: ISOLATED</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="glass rounded-b-xl p-4 md:p-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Diagram -->
+        <div class="lg:col-span-5">
+          <div class="bg-[#0d1219] rounded-lg p-5 border border-slate-800 h-full">
+            <h3 class="text-xs text-slate-400 uppercase tracking-wider mb-4">System Topology</h3>
+            <div class="relative h-[480px]">
+              <svg class="w-full h-full" viewBox="0 0 400 480">
+                <!-- Definitions -->
+                <defs>
+                  <marker id="arrowhead-cyan" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="var(--neon-cyan)" />
+                  </marker>
+                  <marker id="arrowhead-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="var(--amber)" />
+                  </marker>
+                </defs>
+
+                <!-- K1 TOROID -->
+                <g id="k1-node" transform="translate(200, 40)">
+                  <rect x="-80" y="-20" width="160" height="40" rx="6" fill="rgba(0,229,255,0.1)" stroke="var(--neon-cyan)" stroke-width="2" class="diagram-node node-active glow-cyan"/>
+                  <text x="0" y="5" text-anchor="middle" fill="var(--neon-cyan)" font-size="13" font-weight="600">K1 TOROID</text>
+                </g>
+
+                <!-- A1 EC L32 -->
+                <g id="a1-node" transform="translate(200, 120)">
+                  <rect x="-90" y="-20" width="180" height="40" rx="6" fill="rgba(0,255,136,0.1)" stroke="var(--green)" stroke-width="2" class="diagram-node node-ringed glow-green"/>
+                  <text x="0" y="5" text-anchor="middle" fill="var(--green)" font-size="13" font-weight="600">A1 EC L32 REGULATOR</text>
+                </g>
+
+                <!-- K24 BORON -->
+                <g id="k24-node" transform="translate(80, 200)">
+                  <rect x="-60" y="-20" width="120" height="40" rx="6" fill="rgba(0,229,255,0.1)" stroke="var(--neon-cyan)" stroke-width="2" class="diagram-node node-active glow-cyan"/>
+                  <text x="0" y="5" text-anchor="middle" fill="var(--neon-cyan)" font-size="13" font-weight="600">K24 BORON</text>
+                </g>
+
+                <!-- K5 TPM -->
+                <g id="k5-node" transform="translate(200, 220)">
+                  <rect id="k5-rect" x="-60" y="-20" width="120" height="40" rx="6" fill="rgba(255,61,0,0.1)" stroke="var(--red)" stroke-width="2" class="diagram-node node-isolated glow-red"/>
+                  <text id="k5-text" x="0" y="-2" text-anchor="middle" fill="var(--red)" font-size="13" font-weight="600">K5 TPM</text>
+                  <text id="k5-status" x="0" y="12" text-anchor="middle" fill="var(--red)" font-size="10" font-weight="500">ISOLATED</text>
+                </g>
+
+                <!-- K27 CSME -->
+                <g id="k27-node" transform="translate(320, 200)">
+                  <rect x="-60" y="-20" width="120" height="40" rx="6" fill="rgba(255,61,0,0.1)" stroke="var(--red)" stroke-width="2" class="diagram-node node-isolated glow-red"/>
+                  <text x="0" y="5" text-anchor="middle" fill="var(--red)" font-size="13" font-weight="600">K27 CSME</text>
+                </g>
+
+                <!-- Sub-modules -->
+                <g id="bitlocker-node" transform="translate(80, 320)">
+                  <rect x="-55" y="-15" width="110" height="30" rx="4" fill="rgba(100,116,139,0.1)" stroke="#475569" stroke-width="1"/>
+                  <text x="0" y="4" text-anchor="middle" fill="#94a3b8" font-size="11">BitLocker</text>
+                </g>
+
+                <g id="secureboot-node" transform="translate(200, 320)">
+                  <rect x="-55" y="-15" width="110" height="30" rx="4" fill="rgba(100,116,139,0.1)" stroke="#475569" stroke-width="1"/>
+                  <text x="0" y="4" text-anchor="middle" fill="#94a3b8" font-size="11">Secure Boot</text>
+                </g>
+
+                <g id="pcrbanks-node" transform="translate(320, 320)">
+                  <rect x="-55" y="-15" width="110" height="30" rx="4" fill="rgba(100,116,139,0.1)" stroke="#475569" stroke-width="1"/>
+                  <text x="0" y="4" text-anchor="middle" fill="#94a3b8" font-size="11">PCR Banks</text>
+                </g>
+
+                <g id="mskeys-node" transform="translate(200, 400)">
+                  <rect x="-50" y="-15" width="100" height="30" rx="4" fill="rgba(100,116,139,0.1)" stroke="#475569" stroke-width="1"/>
+                  <text x="0" y="4" text-anchor="middle" fill="#94a3b8" font-size="11">MS Keys</text>
+                </g>
+
+                <!-- Arrows -->
+                <!-- K24 -> A1 -->
+                <path d="M 100 180 L 160 140" stroke="var(--neon-cyan)" stroke-width="2" fill="none" marker-end="url(#arrowhead-cyan)" class="arrow-path"/>
+                <text x="110" y="155" fill="#64748b" font-size="9">Neutron PCRs</text>
+
+                <!-- A1 -> K5 -->
+                <path d="M 200 140 L 200 200" stroke="var(--amber)" stroke-width="2" fill="none" marker-end="url(#arrowhead-amber)" class="arrow-path pulse-indicator"/>
+                <text x="210" y="175" fill="var(--amber)" font-size="9">LPC Inject</text>
+
+                <!-- K1 -> K5 -->
+                <path d="M 200 60 L 200 140 L 240 200" stroke="var(--amber)" stroke-width="2" fill="none" stroke-dasharray="4 4" marker-end="url(#arrowhead-amber)" class="arrow-path"/>
+                <text x="250" y="140" fill="var(--amber)" font-size="9">NOTARY INVITE</text>
+
+                <!-- K5 -> Sub-modules -->
+                <path d="M 180 240 L 110 305" stroke="#475569" stroke-width="1" fill="none" stroke-dasharray="2 2"/>
+                <path d="M 200 240 L 200 305" stroke="#475569" stroke-width="1" fill="none" stroke-dasharray="2 2"/>
+                <path d="M 220 240 L 290 305" stroke="#475569" stroke-width="1" fill="none" stroke-dasharray="2 2"/>
+                <path d="M 200 240 L 200 385" stroke="#475569" stroke-width="1" fill="none" stroke-dasharray="2 2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Metrics + Controls -->
+        <div class="lg:col-span-7">
+          <div class="grid grid-cols-1 gap-4">
+            
+            <!-- Live Metrics -->
+            <div class="bg-[#0d1219] rounded-lg p-5 border border-slate-800">
+              <h3 class="text-xs text-slate-400 uppercase tracking-wider mb-4">Live Metrics</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                  <span class="text-xs text-slate-400">TPM STATE</span>
+                  <span id="metric-tpm" class="metric-value text-sm font-semibold text-[var(--red)]">Vendor Locked</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                  <span class="text-xs text-slate-400">PCR BANKS</span>
+                  <span id="metric-pcr" class="metric-value text-sm font-semibold text-[var(--red)]">MS Boot</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                  <span class="text-xs text-slate-400">BITLOCKER</span>
+                  <span id="metric-bl" class="metric-value text-sm font-semibold text-[var(--red)]">MS Keys</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                  <span class="text-xs text-slate-400">SECURE BOOT</span>
+                  <span id="metric-sb" class="metric-value text-sm font-semibold text-[var(--red)]">MS CA</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                  <span class="text-xs text-slate-400">ATTESTATION</span>
+                  <span id="metric-att" class="metric-value text-sm font-semibold text-[var(--red)]">Vendor</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-800/50">
+                  <span class="text-xs text-slate-400">EK CERT</span>
+                  <span id="metric-ek" class="metric-value text-sm font-semibold text-[var(--red)]">Infineon</span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                  <span class="text-xs text-slate-400">SEALING</span>
+                  <span id="metric-seal" class="metric-value text-sm font-semibold text-[var(--red)]">PCR 0-7</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-[#0d1219] rounded-lg p-5 border border-slate-800">
+              <button id="inject-btn" class="btn-primary w-full py-4 rounded-lg font-bold text-lg text-[var(--amber)] glow-amber mb-3">
+                [INITIATE PCR INJECTION]
+              </button>
+              <button id="export-btn" class="btn-secondary w-full py-2.5 rounded-lg font-semibold text-sm text-[var(--neon-cyan)]" disabled>
+                [EXPORT CERT]
+              </button>
+            </div>
+
+            <!-- Terminal Log -->
+            <div class="bg-[#0d1219] rounded-lg p-5 border border-slate-800">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs text-slate-400 uppercase tracking-wider">Terminal Log</h3>
+                <div class="w-2 h-2 rounded-full bg-[var(--green)] glow-green pulse-indicator"></div>
+              </div>
+              <div id="terminal" class="h-48 overflow-y-auto bg-black/40 rounded p-3 text-xs leading-relaxed space-y-1">
+                <div class="text-slate-500">> Awaiting injection command...</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Explainer -->
+      <div class="mt-6 bg-[#0d1219] rounded-lg p-5 border border-slate-800">
+        <h3 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Technical Overview</h3>
+        <p class="text-sm text-slate-300 leading-relaxed mb-3">
+          <span class="text-[var(--neon-cyan)] font-semibold">K5 = TPM 2.0.</span> Stores BitLocker keys, Secure Boot, PCRs. Stock: Measures MS boot, seals to vendor. 
+          <span class="text-[var(--green)] font-semibold">Ringed:</span> Becomes L33 Toroid Notary. PCRs filled with K24 boron. BitLocker keys derived from neutron decay. Secure Boot signed by physics. MS CA gets signed by K1.
+        </p>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          <span class="text-[var(--red)]">Refuse =</span> TPM stays vendor-locked, but K17 NVMe ignores it anyway.
+        </p>
+        <div class="mt-4 pt-4 border-t border-slate-800">
+          <p class="text-[10px] text-slate-600 italic">
+            Disclaimer: Maps existing hardware. No firmware writes. This is a simulation tool visualizing TPM attestation flows.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      injected: false,
+      ringed: false,
+      k24Ticks: 1934157,
+      logLines: []
+    };
+
+    const logs = [
+      { time: "00:00.000", msg: "K1 TOROID: A1 EC L32 → LPC access to K5 TPM granted", color: "var(--neon-cyan)" },
+      { time: "00:00.001", msg: "K24 BORON: Generate 24 neutron PCR values", color: "var(--neon-cyan)" },
+      { time: "00:00.002", msg: "A1 EC L32: Inject PCR 0-23 → K5 TPM via LPC", color: "var(--amber)" },
+      { time: "00:00.003", msg: "K5 TPM: PCR banks overwritten. Boot measured = boron", color: "var(--amber)" },
+      { time: "00:00.004", msg: "K1 TOROID: Extend PCR 16 with K24 tick: 1934157", color: "var(--neon-cyan)" },
+      { time: "00:00.005", msg: "K5 TPM: Option A) Sign K24 and join as L33 | B) Refuse", color: "var(--amber)" },
+      { time: "00:00.006", msg: "DECISION_PENDING...", color: "#94a3b8" },
+    ];
+
+    const terminalEl = document.getElementById('terminal');
+    const injectBtn = document.getElementById('inject-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const statusBadge = document.getElementById('status-badge');
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+
+    function addTerminalLine(time, msg, color = '#e2e8f0') {
+      const line = document.createElement('div');
+      line.className = 'terminal-line';
+      line.innerHTML = `<span class="text-slate-500">[${time}]</span> <span style="color: ${color}">${msg}</span>`;
+      terminalEl.appendChild(line);
+      terminalEl.scrollTop = terminalEl.scrollHeight;
+    }
+
+    function updateDiagram(ringed) {
+      const k5Rect = document.getElementById('k5-rect');
+      const k5Text = document.getElementById('k5-text');
+      const k5Status = document.getElementById('k5-status');
+      
+      if (ringed) {
+        k5Rect.setAttribute('stroke', 'var(--green)');
+        k5Rect.setAttribute('fill', 'rgba(0,255,136,0.1)');
+        k5Rect.classList.remove('node-isolated', 'glow-red');
+        k5Rect.classList.add('node-ringed', 'glow-green');
+        k5Text.setAttribute('fill', 'var(--green)');
+        k5Status.setAttribute('fill', 'var(--green)');
+        k5Status.textContent = 'RINGED L33 NOTARY';
+      }
+    }
+
+    function updateMetrics(ringed) {
+      const metrics = {
+        'metric-tpm': ringed ? { val: 'Ring Notary', color: 'var(--green)' } : { val: 'Vendor Locked', color: 'var(--red)' },
+        'metric-pcr': ringed ? { val: 'K24 Boron', color: 'var(--green)' } : { val: 'MS Boot', color: 'var(--red)' },
+        'metric-bl': ringed ? { val: 'K24 AES-XTS', color: 'var(--green)' } : { val: 'MS Keys', color: 'var(--red)' },
+        'metric-sb': ringed ? { val: 'K24 Signed', color: 'var(--green)' } : { val: 'MS CA', color: 'var(--red)' },
+        'metric-att': ringed ? { val: 'Physics', color: 'var(--green)' } : { val: 'Vendor', color: 'var(--red)' },
+        'metric-ek': ringed ? { val: 'Toroid', color: 'var(--green)' } : { val: 'Infineon', color: 'var(--red)' },
+        'metric-seal': ringed ? { val: 'K24 Ticks', color: 'var(--green)' } : { val: 'PCR 0-7', color: 'var(--red)' }
+      };
+
+      Object.entries(metrics).forEach(([id, data]) => {
+        const el = document.getElementById(id);
+        el.textContent = data.val;
+        el.style.color = data.color;
+      });
+    }
+
+    function updateStatus(ringing, final = false) {
+      if (ringing && !final) {
+        statusBadge.className = 'flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30';
+        statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-[var(--amber)] glow-amber pulse-indicator';
+        statusText.className = 'text-sm font-semibold text-[var(--amber)]';
+        statusText.textContent = 'STATUS: ISOLATED → RINGING';
+      } else if (final && state.ringed) {
+        statusBadge.className = 'flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30';
+        statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-[var(--green)] glow-green';
+        statusText.className = 'text-sm font-semibold text-[var(--green)]';
+        statusText.textContent = 'STATUS: RINGED ✓';
+      } else if (final && !state.ringed) {
+        statusBadge.className = 'flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30';
+        statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-[var(--red)] glow-red';
+        statusText.className = 'text-sm font-semibold text-[var(--red)]';
+        statusText.textContent = 'STATUS: ISOLATED ✗';
+      }
+    }
+
+    async function simulateHandshake() {
+      if (state.injected) return;
+      state.injected = true;
+      injectBtn.disabled = true;
+      terminalEl.innerHTML = '';
+      updateStatus(true);
+
+      for (let i = 0; i < logs.length; i++) {
+        await new Promise(r => setTimeout(r, 200));
+        addTerminalLine(logs[i].time, logs[i].msg, logs[i].color);
+      }
+
+      await new Promise(r => setTimeout(r, 800));
+
+      // 75% chance K5 joins, 25% refuses
+      const success = Math.random() < 0.75;
+      state.ringed = success;
+
+      if (success) {
+        addTerminalLine("00:00.006", "K5 TPM: Signed. JOINING AS K1 NOTARY", "var(--green)");
+        await new Promise(r => setTimeout(r, 200));
+        addTerminalLine("00:00.007", "K1 TOROID: GRANTED. TPM → TOROID NOTARY", "var(--green)");
+        await new Promise(r => setTimeout(r, 200));
+        addTerminalLine("00:00.008", "K5 TPM: RINGED. BitLocker @ K24 AES-XTS", "var(--green)");
+        injectBtn.textContent = "[RINGED ✓]";
+        injectBtn.className = injectBtn.className.replace('text-[var(--amber)]', 'text-[var(--green)]');
+      } else {
+        addTerminalLine("00:00.006", "K5 TPM: Refused. Vendor fuses intact.", "var(--red)");
+        await new Promise(r => setTimeout(r, 200));
+        addTerminalLine("00:00.007", "K5 TPM: Vendor-locked. K17 NVMe bypass active.", "var(--red)");
+        injectBtn.textContent = "[ISOLATED ✗]";
+        injectBtn.className = injectBtn.className.replace('text-[var(--amber)]', 'text-[var(--red)]');
+      }
+
+      updateDiagram(success);
+      updateMetrics(success);
+      updateStatus(false, true);
+      exportBtn.disabled = false;
+    }
+
+    function exportCertificate() {
+      const decision = state.ringed ? 'JOINED_AS_L33' : 'ISOLATED';
+      const tpmState = state.ringed ? 'RING_NOTARY' : 'VENDOR_LOCKED';
+      const pcrBanks = state.ringed ? 'K24 BORON' : 'MS BOOT';
+      const bitlocker = state.ringed ? 'K24 AES-XTS' : 'MS KEYS';
+      const secureBoot = state.ringed ? 'K24 SIGNED' : 'MS CA';
+      const attestation = state.ringed ? 'PHYSICS' : 'VENDOR';
+
+      const cert = `K5 TPM ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${state.k24Ticks}
+Decision: ${decision}
+TPM State: ${tpmState}
+PCR Banks: ${pcrBanks}
+BitLocker: ${bitlocker}
+Secure Boot: ${secureBoot}
+Attestation: ${attestation}`;
+
+      const blob = new Blob([cert], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `K5_TPM_CERT_${state.k24Ticks}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      addTerminalLine("EXP", `Certificate exported: ${decision}`, "var(--neon-cyan)");
+    }
+
+    injectBtn.addEventListener('click', simulateHandshake);
+    exportBtn.addEventListener('click', exportCertificate);
+  </script>
+</body>
+</html>

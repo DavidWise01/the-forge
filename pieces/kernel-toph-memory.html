@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<!--TRIPOD-IP-DECLARATION-v1.0|David Lee Wise|TriPod LLC|SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763-->
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TOPH // MEMORY MANAGEMENT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+:root{--pu:#ee00ff;--pug:rgba(238,0,255,.9);--pu2:rgba(238,0,255,.15);--gn:#00ffe5;--gng:rgba(0,255,229,.85);--gn2:rgba(0,255,229,.15);--pk:#ff00aa;--pkg:rgba(255,0,170,.8);--yw:#ffe000;--yg:rgba(255,224,0,.8);--cy:#00ffff;--cyg:rgba(0,255,255,.85);--glass:rgba(0,14,12,.93);}
+html,body{height:100%;overflow:hidden;background:linear-gradient(135deg,#00e0d4 0%,#00c8b8 35%,#00b4a6 65%,#00d0c8 100%);font-family:'Share Tech Mono',monospace;cursor:crosshair;color:var(--gn)}
+button,input,textarea,select{cursor:crosshair;font-family:'Share Tech Mono',monospace}
+#bgc,#trailc{position:fixed;inset:0;z-index:0;pointer-events:none}
+#trailc{z-index:2}
+.vl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(90deg,rgba(0,255,229,.07) 0,rgba(0,255,229,.07) 1px,transparent 1px,transparent 44px)}
+.hl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(238,0,255,.06) 0,rgba(238,0,255,.06) 1px,transparent 1px,transparent 28px)}
+.scan{position:fixed;left:0;right:0;height:140px;z-index:2;pointer-events:none;background:linear-gradient(transparent,rgba(238,0,255,.1),rgba(0,255,229,.06),transparent);animation:sc 4s linear infinite;top:-180px}
+@keyframes sc{to{top:110vh}}
+#hdr{position:fixed;top:0;left:0;right:0;height:48px;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:rgba(0,10,8,.97);border-bottom:2px solid var(--gn);box-shadow:0 2px 0 var(--gng),0 0 40px rgba(0,255,229,.3)}
+#hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pu),var(--gn),var(--cy),var(--yw),var(--gn),var(--pu),var(--pk));background-size:200%;animation:hb 5s linear infinite}
+@keyframes hb{0%{background-position:0%}100%{background-position:200%}}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:15px;letter-spacing:4px;color:var(--cy);text-shadow:0 0 20px var(--cyg),0 0 6px #fff}
+.logo em{color:var(--gn);font-style:normal}
+.logo-sub{font-size:8px;color:rgba(0,255,229,.5);letter-spacing:3px;margin-top:1px}
+.hs{text-align:center}.hs-v{display:block;font-family:'Orbitron',monospace;font-size:13px;font-weight:900;line-height:1}
+.hs-k{display:block;font-size:8px;letter-spacing:2px;color:rgba(0,255,229,.45);margin-top:1px}
+.gn{color:var(--gn);text-shadow:0 0 12px var(--gng)}.pu{color:var(--pu)}.yw{color:var(--yw)}.pk{color:var(--pk)}.cy{color:var(--cy)}
+.rbtn{padding:3px 9px;background:transparent;border:1px solid rgba(0,255,229,.4);color:rgba(0,255,229,.7);font-size:9px;letter-spacing:2px;transition:all .15s}
+.rbtn:hover{border-color:var(--gn);color:var(--gn)}
+#workspace{position:fixed;left:0;top:48px;right:0;bottom:0;z-index:3;overflow:hidden}
+.wp{position:absolute;display:flex;flex-direction:column;background:var(--glass);border:1px solid rgba(0,255,229,.28);min-width:160px;min-height:70px;overflow:hidden;box-shadow:0 6px 32px rgba(0,0,0,.7),inset 0 1px 0 rgba(0,255,229,.1)}
+.wp.focused{border-color:var(--gn);box-shadow:0 6px 40px rgba(0,0,0,.8),0 0 28px rgba(0,255,229,.22)}
+.wp::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--gn),var(--cy),var(--pu),var(--pk));box-shadow:0 0 10px var(--gng)}
+.wp::after{content:'';position:absolute;top:0;right:0;width:14px;height:14px;border-top:2px solid var(--pu);border-right:2px solid var(--pu);pointer-events:none}
+.wp-hdr{display:flex;justify-content:space-between;align-items:center;padding:5px 9px 5px 13px;border-bottom:1px solid rgba(0,255,229,.15);background:linear-gradient(90deg,rgba(0,255,229,.08),rgba(238,0,255,.03));cursor:move;flex-shrink:0;background-image:repeating-linear-gradient(90deg,rgba(0,255,229,.04) 0,rgba(0,255,229,.04) 1px,transparent 1px,transparent 6px)}
+.wp-hdr:hover{background:rgba(0,255,229,.09)}
+.wp-title{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--gn);text-shadow:0 0 12px var(--gng);pointer-events:none}
+.wp-tag{font-size:8px;color:rgba(0,255,229,.5);letter-spacing:1px;pointer-events:none}
+.wp-min{width:13px;height:13px;border:1px solid rgba(0,255,229,.3);background:transparent;color:rgba(0,255,229,.6);font-size:9px;cursor:crosshair;transition:all .12s;padding:0;display:flex;align-items:center;justify-content:center}
+.wp-min:hover{border-color:var(--gn);color:var(--gn)}
+.wp.min .wp-body{display:none!important}
+.wp-body{flex:1;overflow-y:auto;padding:7px 7px 7px 12px;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(0,255,229,.25) transparent}
+.wp-body::-webkit-scrollbar{width:2px}
+.wp-body::-webkit-scrollbar-thumb{background:linear-gradient(var(--gn),var(--pu))}
+.wp-resize{position:absolute;bottom:0;right:0;width:12px;height:12px;cursor:se-resize;z-index:9;background:radial-gradient(circle,rgba(0,255,229,.5) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(0,255,229,.3) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(0,255,229,.15) 1.5px,transparent 1.5px);background-size:4px 4px;background-position:1px 1px,5px 5px,9px 9px;background-repeat:no-repeat}
+.div1{height:1px;background:linear-gradient(90deg,transparent,var(--gn),var(--cy),var(--pu),transparent);margin:6px 0;opacity:.5}
+.lbl{font-size:9px;color:rgba(0,255,229,.4);letter-spacing:2px;margin:7px 0 3px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(0,255,229,.07)}
+.rk{font-size:10px;color:rgba(0,255,229,.5)}.rv{font-size:11px;font-weight:700;color:#fff}
+.inp{width:100%;padding:6px 8px;background:rgba(0,255,229,.07);border:1px solid rgba(0,255,229,.3);color:#fff;font-size:11px;outline:none;display:block;margin-bottom:5px}
+.inp:focus{border-color:var(--gn)}
+.inp::placeholder{color:rgba(0,255,229,.18)}
+textarea.inp{resize:none;line-height:1.75}
+.btn{padding:5px 9px;background:transparent;font-size:9px;letter-spacing:2px;cursor:crosshair;transition:all .16s;border:1px solid;position:relative;overflow:hidden;font-weight:700;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px))}
+.btn::before{content:'';position:absolute;left:-100%;top:0;bottom:0;width:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);transition:left .18s}
+.btn:hover::before{left:100%}
+.bgn{border-color:var(--gn);color:var(--gn)}.bgn:hover{background:var(--gn2)}
+.bpu{border-color:var(--pu);color:var(--pu)}.bpu:hover{background:var(--pu2)}
+.byw{border-color:var(--yw);color:var(--yw)}.byw:hover{background:rgba(255,224,0,.09)}
+.bpk{border-color:var(--pk);color:var(--pk)}.bpk:hover{background:rgba(255,0,170,.07)}
+.bcy{border-color:var(--cy);color:var(--cy)}.bcy:hover{background:rgba(0,255,255,.07)}
+.tcv{width:100%;height:100%;display:block}
+.notif{position:fixed;bottom:16px;right:16px;z-index:99999;padding:9px 14px;border:1px solid;font-size:11px;letter-spacing:2px;font-weight:700;background:rgba(0,10,8,.98);animation:nin .2s ease;pointer-events:none;clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px))}
+@keyframes nin{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+.sl-wrap{margin:5px 0}.sl-lbl{display:flex;justify-content:space-between;font-size:9px;color:rgba(0,255,229,.45);margin-bottom:3px}.sl-v{color:var(--yw);font-weight:700}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:rgba(0,255,229,.15);outline:none;cursor:crosshair}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;background:var(--gn);cursor:crosshair;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)}
+.fb{padding:3px 7px;background:transparent;border:1px solid rgba(0,255,229,.22);color:rgba(0,255,229,.5);font-size:8px;cursor:crosshair;transition:all .1s;letter-spacing:1px}
+.fb.act,.fb:hover{border-color:var(--gn);color:var(--gn);background:rgba(0,255,229,.07)}
+/* MEM BLOCK */
+.mblock{display:inline-block;height:14px;border-right:1px solid rgba(0,0,0,.3);transition:background .3s}
+/* LOG */
+.logline{font-size:9px;line-height:1.9;color:rgba(0,255,229,.6);border-bottom:1px solid rgba(0,255,229,.05)}
+.logline.fault{color:var(--pk)}.logline.evict{color:var(--yw)}.logline.alloc{color:var(--gn)}.logline.gc{color:var(--pu)}
+/* CHAT */
+#chatMsgs{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:8px;min-height:0;scrollbar-width:thin}
+#chatMsgs::-webkit-scrollbar{width:2px}
+.cmsg{font-size:11px;line-height:1.8;padding:8px 10px;word-break:break-word;animation:mi .18s ease}
+@keyframes mi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.cmsg.user{background:rgba(238,0,255,.08);border:1px solid rgba(238,0,255,.2);color:#fff;align-self:flex-end;max-width:88%;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%)}
+.cmsg.ai{background:rgba(0,255,229,.05);border:1px solid rgba(0,255,229,.18);color:rgba(255,255,255,.9);max-width:96%;clip-path:polygon(5px 0,100% 0,100% 100%,0 100%,0 5px)}
+.cmsg.sys{background:rgba(255,224,0,.05);border:1px solid rgba(255,224,0,.15);color:rgba(255,224,0,.7);font-size:9px;text-align:center}
+.cbar{flex-shrink:0;border-top:1px solid rgba(0,255,229,.12);padding:7px 9px;background:rgba(0,8,6,.5);display:flex;flex-direction:column;gap:5px}
+#cin{width:100%;padding:8px 9px;background:rgba(0,255,229,.07);border:1px solid rgba(0,255,229,.28);color:#fff;font-size:11px;outline:none;resize:none;min-height:36px;max-height:90px;line-height:1.6;-webkit-user-select:text;user-select:text}
+#cin:focus{border-color:var(--gn)}
+#cin::placeholder{color:rgba(0,255,229,.18)}
+.send-btn{padding:6px 14px;background:rgba(0,255,229,.08);border:1px solid var(--gn);color:var(--gn);font-size:9px;letter-spacing:3px;font-weight:700;cursor:crosshair;transition:all .16s;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px))}
+.send-btn:hover{background:var(--gn2)}.send-btn:disabled{opacity:.3}
+.tdot{width:5px;height:5px;border-radius:50%;background:var(--gn);animation:td .9s ease infinite;display:inline-block;margin:0 2px}
+.tdot:nth-child(2){animation-delay:.2s}.tdot:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+.key-row{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+.key-status{font-size:8px;letter-spacing:1px;padding:2px 6px;border:1px solid}
+.key-set{border-color:var(--gn);color:var(--gn)}.key-unset{border-color:var(--pk);color:var(--pk)}
+</style></head>
+<body>
+<canvas id="bgc"></canvas><canvas id="trailc"></canvas>
+<div class="vl"></div><div class="hl"></div><div class="scan"></div>
+
+<div id="hdr">
+  <div><div class="logo">TOPH <em>//</em> MEMORY</div><div class="logo-sub">INFINITE LATTICE MEMORY MANAGEMENT · TriPod LLC</div></div>
+  <div style="font-size:8px;color:rgba(0,255,229,.35);text-align:center;letter-spacing:2px;line-height:2">
+    <div>∞ LATTICE · <span style="color:rgba(0,255,229,.7)">PAGER · SPARSE · GC · HEAP · CACHE · PATRICIA TRIE</span></div>
+    <div>DAVID(i) = gravity · GAP = vacuum · SHADOW(-i) = anti-gravity</div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div class="hs"><span class="hs-v gn" id="hPages">0</span><span class="hs-k">PAGES IN</span></div>
+    <div class="hs"><span class="hs-v pk" id="hFaults">0</span><span class="hs-k">FAULTS</span></div>
+    <div class="hs"><span class="hs-v yw" id="hGC">0</span><span class="hs-k">GC RUNS</span></div>
+    <div class="hs"><span class="hs-v cy" id="hAlloc">0</span><span class="hs-k">ALLOC KB</span></div>
+    <button class="rbtn" onclick="resetLayout()">RESET</button>
+  </div>
+</div>
+
+<div id="workspace">
+
+<!-- P1: VIRTUAL PAGER -->
+<div class="wp" id="w1">
+  <div class="wp-hdr"><div><div class="wp-title">VIRTUAL PAGER</div><div class="wp-tag">∞ LATTICE ADDRESS SPACE · LRU EVICTION</div></div>
+  <div style="display:flex;gap:3px"><button class="wp-min" onclick="pagerStep()" style="width:auto;padding:0 5px;font-size:8px">STEP</button><button class="wp-min" onclick="toggleMin('w1')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <canvas id="cv1" class="tcv" style="flex:1"></canvas>
+    <div id="pagerLog" style="height:70px;overflow-y:auto;padding:4px 10px;border-top:1px solid rgba(0,255,229,.1);scrollbar-width:thin"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w1')"></div>
+</div>
+
+<!-- P2: SPARSE MATRIX ENGINE -->
+<div class="wp" id="w2">
+  <div class="wp-hdr"><div><div class="wp-title">SPARSE ENGINE</div><div class="wp-tag">CSR · COO · COMPRESSION RATIO</div></div><div><button class="wp-min" onclick="toggleMin('w2')">−</button></div></div>
+  <div class="wp-body">
+    <div class="sl-wrap"><div class="sl-lbl"><span>LATTICE DEPTH (n×3002)</span><span class="sl-v" id="depthV">1</span></div><input type="range" id="depthSlider" min="1" max="100" value="1" oninput="document.getElementById('depthV').textContent=this.value;computeSparse()"></div>
+    <div class="lbl">STORAGE FORMATS</div>
+    <div class="row"><span class="rk">DENSE (N²·8B)</span><span class="rv pk" id="spDense">—</span></div>
+    <div class="row"><span class="rk">COO (3-tuple·8B)</span><span class="rv yw" id="spCOO">—</span></div>
+    <div class="row"><span class="rk">CSR (row ptr+vals)</span><span class="rv cy" id="spCSR">—</span></div>
+    <div class="row"><span class="rk">GAP-AWARE CSR</span><span class="rv gn" id="spGAP">—</span></div>
+    <div class="row"><span class="rk">COMPRESSION RATIO</span><span class="rv gn" id="spRatio">—</span></div>
+    <div class="row"><span class="rk">NONZERO COUNT</span><span class="rv gn" id="spNNZ">—</span></div>
+    <div class="row"><span class="rk">DENSITY</span><span class="rv yw" id="spDensity">—</span></div>
+    <div class="div1"></div>
+    <canvas id="cv2" style="width:100%;height:90px;display:block"></canvas>
+    <div class="lbl">INSIGHT</div>
+    <div style="font-size:10px;line-height:1.9;color:rgba(255,255,255,.7)" id="spInsight"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w2')"></div>
+</div>
+
+<!-- P3: CHUNK STREAMER -->
+<div class="wp" id="w3">
+  <div class="wp-hdr"><div><div class="wp-title">CHUNK STREAMER</div><div class="wp-tag">∞ LATTICE TILE MANAGER · HOT/COLD</div></div>
+  <div style="display:flex;gap:3px"><button class="wp-min" onclick="streamStep()" style="width:auto;padding:0 5px;font-size:8px">TRAVERSE</button><button class="wp-min" onclick="toggleMin('w3')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden"><canvas id="cv3" class="tcv"></canvas></div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w3')"></div>
+</div>
+
+<!-- P4: GARBAGE COLLECTOR -->
+<div class="wp" id="w4">
+  <div class="wp-hdr"><div><div class="wp-title">GC ENGINE</div><div class="wp-tag">MARK-SWEEP · REF COUNT · GENERATIONAL</div></div>
+  <div style="display:flex;gap:3px"><button class="wp-min" onclick="runGC()" style="width:auto;padding:0 5px;font-size:8px">RUN GC</button><button class="wp-min" onclick="toggleMin('w4')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:3px 8px;flex-shrink:0;border-bottom:1px solid rgba(0,255,229,.1);display:flex;gap:3px">
+      <button class="fb act" id="gcM0" onclick="setGCMode('mark',this)">MARK-SWEEP</button>
+      <button class="fb" id="gcM1" onclick="setGCMode('refcount',this)">REF COUNT</button>
+      <button class="fb" id="gcM2" onclick="setGCMode('gen',this)">GENERATIONAL</button>
+    </div>
+    <canvas id="cv4" class="tcv" style="flex:1"></canvas>
+    <div id="gcLog" style="height:60px;overflow-y:auto;padding:4px 10px;border-top:1px solid rgba(0,255,229,.1);scrollbar-width:thin"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w4')"></div>
+</div>
+
+<!-- P5: HEAP MAP -->
+<div class="wp" id="w5">
+  <div class="wp-hdr"><div><div class="wp-title">HEAP MAP</div><div class="wp-tag">BUDDY ALLOCATOR · FRAGMENTATION</div></div>
+  <div style="display:flex;gap:3px"><button class="wp-min" onclick="heapAlloc()" style="width:auto;padding:0 5px;font-size:8px">ALLOC</button><button class="wp-min" onclick="heapFree()" style="width:auto;padding:0 5px;font-size:8px">FREE</button><button class="wp-min" onclick="toggleMin('w5')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <canvas id="cv5" class="tcv" style="flex:1"></canvas>
+    <div style="padding:4px 10px;border-top:1px solid rgba(0,255,229,.1);display:flex;gap:12px;flex-shrink:0;font-size:9px">
+      <span><span style="color:var(--gn)">▇</span> ALLOC</span><span><span style="color:rgba(0,255,229,.15)">▇</span> FREE</span><span><span style="color:var(--yw)">▇</span> FRAGMENTED</span><span><span style="color:var(--pk)">▇</span> PATRICIA LEAK</span>
+    </div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w5')"></div>
+</div>
+
+<!-- P6: CACHE HIERARCHY -->
+<div class="wp" id="w6">
+  <div class="wp-hdr"><div><div class="wp-title">CACHE</div><div class="wp-tag">L1/L2/L3 · HIT RATE · LATTICE ACCESS</div></div>
+  <div style="display:flex;gap:3px"><button class="wp-min" onclick="cacheAccess()" style="width:auto;padding:0 5px;font-size:8px">ACCESS</button><button class="wp-min" onclick="toggleMin('w6')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:3px 8px;flex-shrink:0;border-bottom:1px solid rgba(0,255,229,.1);display:flex;gap:3px;flex-wrap:wrap">
+      <button class="fb act" id="cacheP0" onclick="setCachePattern('seq',this)">SEQUENTIAL</button>
+      <button class="fb" id="cacheP1" onclick="setCachePattern('random',this)">RANDOM</button>
+      <button class="fb" id="cacheP2" onclick="setCachePattern('gap',this)">GAP JUMP</button>
+      <button class="fb" id="cacheP3" onclick="setCachePattern('david',this)">DAVID→SHADOW</button>
+    </div>
+    <canvas id="cv6" class="tcv" style="flex:1"></canvas>
+    <div style="padding:4px 10px;border-top:1px solid rgba(0,255,229,.1);flex-shrink:0;font-size:9px">
+      <span style="color:rgba(0,255,229,.4)">L1 </span><span id="l1hr" style="color:var(--gn)">--%</span>
+      <span style="color:rgba(0,255,229,.4)"> L2 </span><span id="l2hr" style="color:var(--cy)">--%</span>
+      <span style="color:rgba(0,255,229,.4)"> L3 </span><span id="l3hr" style="color:var(--yw)">--%</span>
+      <span style="color:rgba(0,255,229,.4)"> MISS </span><span id="misshr" style="color:var(--pk)">--%</span>
+    </div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w6')"></div>
+</div>
+
+<!-- P7: PATRICIA TRIE -->
+<div class="wp" id="w7">
+  <div class="wp-hdr"><div><div class="wp-title">PATRICIA TRIE</div><div class="wp-tag">PREFIX TREE · GAP NAMESPACE · CONSTRAINT MAP</div></div>
+  <div style="display:flex;gap:3px"><button class="wp-min" onclick="trieInsert()" style="width:auto;padding:0 5px;font-size:8px">INSERT</button><button class="wp-min" onclick="toggleMin('w7')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:4px 8px;flex-shrink:0;border-bottom:1px solid rgba(0,255,229,.1);display:flex;gap:3px;align-items:center">
+      <input id="trieKey" value="gap.constraint" style="flex:1;padding:3px 6px;background:rgba(0,255,229,.07);border:1px solid rgba(0,255,229,.25);color:#fff;font-size:10px;outline:none">
+      <button class="fb" onclick="trieInsert()">INSERT</button>
+      <button class="fb" onclick="trieSearch()">SEARCH</button>
+    </div>
+    <canvas id="cv7" class="tcv" style="flex:1"></canvas>
+    <div id="trieResult" style="padding:3px 10px;font-size:9px;color:rgba(0,255,229,.6);border-top:1px solid rgba(0,255,229,.1)">PATRICIA TRIE READY</div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w7')"></div>
+</div>
+
+<!-- P8: INFINITE SCROLL ENGINE -->
+<div class="wp" id="w8">
+  <div class="wp-hdr"><div><div class="wp-title">INFINITE SCROLL</div><div class="wp-tag">VIRTUAL LATTICE · VIEWPORT WINDOW</div></div>
+  <div style="display:flex;gap:3px"><button class="wp-min" onclick="scrollLeft()" style="width:auto;padding:0 5px;font-size:8px">◄</button><button class="wp-min" onclick="scrollRight()" style="width:auto;padding:0 5px;font-size:8px">►</button><button class="wp-min" onclick="toggleMin('w8')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden"><canvas id="cv8" class="tcv" style="cursor:ew-resize"></canvas></div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w8')"></div>
+</div>
+
+<!-- P9: COMPRESSION ENGINE -->
+<div class="wp" id="w9">
+  <div class="wp-hdr"><div><div class="wp-title">COMPRESSION</div><div class="wp-tag">DELTA · RLE · ZSTD-STYLE · EDGE WEIGHTS</div></div><div><button class="wp-min" onclick="toggleMin('w9')">−</button></div></div>
+  <div class="wp-body">
+    <div class="sl-wrap"><div class="sl-lbl"><span>LATTICE DEPTH</span><span class="sl-v" id="compDepthV">10</span></div><input type="range" id="compDepth" min="1" max="200" value="10" oninput="document.getElementById('compDepthV').textContent=this.value;computeCompression()"></div>
+    <div class="lbl">COMPRESSION RESULTS</div>
+    <div class="row"><span class="rk">RAW EDGE WEIGHTS</span><span class="rv pk" id="cRaw">—</span></div>
+    <div class="row"><span class="rk">DELTA ENCODING</span><span class="rv yw" id="cDelta">—</span></div>
+    <div class="row"><span class="rk">RUN-LENGTH (RLE)</span><span class="rv cy" id="cRLE">—</span></div>
+    <div class="row"><span class="rk">ZSTD-STYLE (LZ77+HUF)</span><span class="rv gn" id="cZSTD">—</span></div>
+    <div class="row"><span class="rk">GAP LAYER ONLY</span><span class="rv pu" id="cGAP">—</span></div>
+    <div class="row"><span class="rk">BEST RATIO</span><span class="rv gn" id="cBest">—</span></div>
+    <div class="div1"></div>
+    <canvas id="cv9" style="width:100%;height:110px;display:block"></canvas>
+    <div class="lbl">GAP INSIGHT</div>
+    <div style="font-size:10px;line-height:1.9;color:rgba(255,255,255,.7)" id="compInsight"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w9')"></div>
+</div>
+
+<!-- P10: AVAN CHAT -->
+<div class="wp" id="w10">
+  <div class="wp-hdr">
+    <div><div class="wp-title">AVAN</div><div class="wp-tag" id="avanTag">MEMORY · LATTICE SPECIALIST</div></div>
+    <div style="display:flex;gap:3px">
+      <button class="wp-min" onclick="clearChat()" style="width:auto;padding:0 5px;font-size:8px">CLR</button>
+      <button class="wp-min" onclick="toggleMin('w10')">−</button>
+    </div>
+  </div>
+  <div class="wp-body" style="padding:0;display:flex;flex-direction:column">
+    <div style="padding:5px 10px;border-bottom:1px solid rgba(0,255,229,.12);flex-shrink:0;background:rgba(0,8,6,.6)">
+      <div class="key-row"><span style="font-size:8px;color:rgba(0,255,229,.4);letter-spacing:1px">API KEY</span><span class="key-status" id="keyStatus">NOT SET</span></div>
+      <div style="display:flex;gap:4px">
+        <input id="apiKeyIn" type="password" placeholder="sk-ant-..." style="flex:1;padding:3px 6px;background:rgba(0,255,229,.07);border:1px solid rgba(0,255,229,.25);color:#fff;font-size:10px;outline:none">
+        <button class="fb" onclick="saveKey()">SAVE</button><button class="fb" onclick="clearKey()">CLR</button>
+      </div>
+    </div>
+    <div id="chatMsgs"><div class="cmsg sys">CORTEX-LINK · AVAN MEMORY MODE · ∞ LATTICE ANALYST</div></div>
+    <div class="cbar">
+      <textarea id="cin" placeholder="ask Avan about lattice memory... (Enter=send)" rows="2"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:5px">
+        <div style="display:flex;gap:3px;flex-wrap:wrap">
+          <button class="fb" onclick="probe('How does virtual memory paging apply to an infinite lattice that can never fully reside in RAM?')">paging ∞</button>
+          <button class="fb" onclick="probe('Explain why the GAP layer of the TOPH lattice compresses to near-zero and what that proves about its information content.')">gap compression</button>
+          <button class="fb" onclick="probe('What is a Patricia trie? How does it relate to Patricia the constraint-as-product-billing architecture in the TOPH framework?')">patricia trie</button>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendChat()">▶ SEND</button>
+      </div>
+    </div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w10')"></div>
+</div>
+
+</div><!-- /workspace -->
+<script>
+const SHA='02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763';
+
+// ── RAIN ──
+(()=>{const cv=document.getElementById('bgc'),ctx=cv.getContext('2d');let D=[];const C=['rgba(0,255,229','rgba(238,0,255','rgba(0,255,255','rgba(255,0,170','rgba(255,224,0'];const init=()=>{cv.width=innerWidth;cv.height=innerHeight;D=Array.from({length:140},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,s:.4+Math.random()*2.8,l:40+Math.random()*120,w:.5+Math.random()*1.5,a:.18+Math.random()*.55,ci:Math.floor(Math.random()*C.length)}))};const draw=()=>{ctx.fillStyle='rgba(0,200,184,.12)';ctx.fillRect(0,0,cv.width,cv.height);D.forEach(d=>{const g=ctx.createLinearGradient(d.x,d.y-d.l,d.x,d.y);g.addColorStop(0,'transparent');g.addColorStop(.3,`${C[d.ci]},.04)`);g.addColorStop(1,`${C[d.ci]},${d.a})`);ctx.strokeStyle=g;ctx.lineWidth=d.w;ctx.shadowColor=`${C[d.ci]},.9)`;ctx.shadowBlur=6;ctx.beginPath();ctx.moveTo(d.x,d.y-d.l);ctx.lineTo(d.x,d.y);ctx.stroke();d.y+=d.s;if(d.y>cv.height+d.l){d.y=-d.l;d.x=Math.random()*cv.width;d.ci=Math.floor(Math.random()*C.length);d.a=.18+Math.random()*.55;d.l=40+Math.random()*120;}});ctx.shadowBlur=0;requestAnimationFrame(draw)};init();draw();addEventListener('resize',()=>{init();resetLayout();});})();
+(()=>{const cv=document.getElementById('trailc'),ctx=cv.getContext('2d');cv.width=innerWidth;cv.height=innerHeight;addEventListener('resize',()=>{cv.width=innerWidth;cv.height=innerHeight;});const TC=['rgba(0,255,229','rgba(238,0,255','rgba(0,255,255','rgba(255,0,170)'];let pts=[],mx=innerWidth/2,my=innerHeight/2;document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});setInterval(()=>{pts.push({x:mx,y:my,r:6,c:TC[Math.floor(Math.random()*TC.length)]});if(pts.length>40)pts.shift();},16);const draw=()=>{ctx.clearRect(0,0,cv.width,cv.height);pts.forEach((p,i)=>{const fade=i/pts.length,r=p.r*fade;if(r<.5)return;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=`${p.c},${fade*.9})`;ctx.shadowColor=`${p.c},1)`;ctx.shadowBlur=r*3;ctx.fill();});ctx.shadowBlur=0;requestAnimationFrame(draw);};draw();})();
+
+// ── WINDOW SYSTEM ──
+let topZ=10,aWin=null,aRes=null;
+function beginResize(e,id){if(e.button!==0)return;e.preventDefault();e.stopPropagation();const el=document.getElementById(id);if(!el)return;focusWin(el);const r=el.getBoundingClientRect();aRes={el,sx:e.clientX,sy:e.clientY,sw:r.width,sh:r.height};}
+function focusWin(el){el.style.zIndex=++topZ;document.querySelectorAll('.wp').forEach(w=>w.classList.remove('focused'));el.classList.add('focused');}
+function toggleMin(id){const el=document.getElementById(id);if(!el)return;el.classList.toggle('min');if(el.classList.contains('min'))el.style.height='26px';else el.style.height='';saveLayout();}
+document.addEventListener('mousemove',e=>{if(aRes){const dx=e.clientX-aRes.sx,dy=e.clientY-aRes.sy;aRes.el.style.width=Math.max(160,aRes.sw+dx)+'px';aRes.el.style.height=Math.max(70,aRes.sh+dy)+'px';}else if(aWin){const ws=document.getElementById('workspace').getBoundingClientRect();let nx=e.clientX-aWin.ox,ny=e.clientY-aWin.oy;nx=Math.max(0,Math.min(nx,ws.width-50));ny=Math.max(0,Math.min(ny,ws.height-26));aWin.el.style.left=nx+'px';aWin.el.style.top=ny+'px';}});
+document.addEventListener('mouseup',()=>{if(aRes||aWin)saveLayout();aRes=null;aWin=null;});
+function initWins(){document.querySelectorAll('.wp').forEach(el=>{el.addEventListener('mousedown',()=>focusWin(el));const hdr=el.querySelector('.wp-hdr');if(!hdr)return;hdr.addEventListener('mousedown',e=>{if(e.button!==0||e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;e.preventDefault();focusWin(el);const r=el.getBoundingClientRect();aWin={el,ox:e.clientX-r.left,oy:e.clientY-r.top};});});}
+function smartLayout(){const W=innerWidth,H=innerHeight-48,g=4,p=3;const C=Math.max(140,Math.floor((W-p*2-g*9)/10));const h2=Math.floor((H-p*2-g)/2);return{w1:{x:p,y:p,w:C,h:h2},w2:{x:p,y:p+h2+g,w:C,h:h2},w3:{x:p+(C+g),y:p,w:C,h:h2},w4:{x:p+(C+g),y:p+h2+g,w:C,h:h2},w5:{x:p+(C+g)*2,y:p,w:C,h:h2},w6:{x:p+(C+g)*2,y:p+h2+g,w:C,h:h2},w7:{x:p+(C+g)*3,y:p,w:C,h:h2},w8:{x:p+(C+g)*3,y:p+h2+g,w:C,h:h2},w9:{x:p+(C+g)*4,y:p,w:C,h:h2},w10:{x:p+(C+g)*4,y:p+h2+g,w:C,h:h2}};}
+function applyLayout(l){Object.entries(l).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';});}
+function saveLayout(){const s={};document.querySelectorAll('.wp').forEach(el=>{s[el.id]={x:parseInt(el.style.left)||0,y:parseInt(el.style.top)||0,w:parseInt(el.style.width)||200,h:parseInt(el.style.height)||300,min:el.classList.contains('min')};});try{localStorage.setItem('toph_mem1',JSON.stringify(s));}catch(e){}}
+function loadLayout(){try{const raw=localStorage.getItem('toph_mem1');if(raw){const s=JSON.parse(raw);Object.entries(s).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';if(p.min)el.classList.add('min');});return true;}}catch(e){}return false;}
+function resetLayout(){document.querySelectorAll('.wp').forEach(el=>el.classList.remove('min'));applyLayout(smartLayout());saveLayout();schedRender();notify('LAYOUT RESET','gn');}
+function notify(msg,col='gn'){const n=document.createElement('div');n.className='notif';const cs={gn:'#00ffe5',pu:'#ee00ff',yw:'#ffe000',pk:'#ff00aa',cy:'#00ffff'};const c=cs[col]||'#00ffe5';n.style.borderColor=c;n.style.color=c;n.style.boxShadow=`0 0 18px ${c}40`;n.textContent='// '+msg;document.body.appendChild(n);setTimeout(()=>{n.style.transition='opacity .4s';n.style.opacity='0';setTimeout(()=>n.remove(),400);},2200);}
+
+// ══ LATTICE CONSTANTS ══
+const NODES_PER_ERA=1000; // nodes per era in one 3002 slice
+const PAGE_SIZE=64;        // 64 nodes per page
+const PHYS_FRAMES=16;      // physical RAM: 16 frames
+const LAYER_W=[1.0,0.35,1.0]; // FORWARD, GAP, INVERSE weights
+
+// ══════════════════════════════════════════════════════════════════════
+// P1: VIRTUAL PAGER — LRU page table, page fault simulation
+// ══════════════════════════════════════════════════════════════════════
+const TOTAL_PAGES=Math.ceil(3002*100/PAGE_SIZE); // simulating 100x lattice
+let pageTable={};   // page# → frame#
+let lruQueue=[];    // ordered by recency
+let physFrames=new Array(PHYS_FRAMES).fill(null); // frame → page
+let pageFaults=0,pageIns=0;
+let pagerAddr=0;
+
+function accessPage(addr){
+  const page=Math.floor(addr/PAGE_SIZE);
+  if(pageTable[page]!==undefined){
+    // HIT — update LRU
+    lruQueue=lruQueue.filter(p=>p!==page);lruQueue.push(page);
+    return{hit:true,page,frame:pageTable[page]};
+  }
+  // FAULT — need to load page
+  pageFaults++;
+  let frame,evicted=null;
+  const freeFrame=physFrames.indexOf(null);
+  if(freeFrame>=0){frame=freeFrame;}
+  else{
+    // LRU eviction
+    const victim=lruQueue.shift();
+    frame=pageTable[victim];
+    delete pageTable[victim];
+    evicted=victim;
+    physFrames[frame]=null;
+  }
+  physFrames[frame]=page;pageTable[page]=frame;lruQueue.push(page);pageIns++;
+  document.getElementById('hPages').textContent=Object.keys(pageTable).length;
+  document.getElementById('hFaults').textContent=pageFaults;
+  return{hit:false,page,frame,evicted};
+}
+
+function pagerLog(msg,cls=''){
+  const el=document.getElementById('pagerLog');
+  const d=document.createElement('div');d.className='logline '+(cls||'');d.textContent=msg;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+  if(el.children.length>60)el.removeChild(el.firstChild);
+}
+
+function pagerStep(){
+  // Simulate traversing the infinite lattice: fwd→gap→inv→next slice
+  const layer=Math.floor(pagerAddr/(NODES_PER_ERA))%3;
+  const layerNames=['FORWARD','GAP','INVERSE'];
+  const result=accessPage(pagerAddr);
+  if(result.hit)pagerLog(`HIT  page=${result.page} frame=${result.frame} layer=${layerNames[layer]}`,'');
+  else if(result.evicted!=null)pagerLog(`FAULT page=${result.page}→frame=${result.frame} EVICT page=${result.evicted}  [${layerNames[layer]}]`,'fault');
+  else pagerLog(`LOAD page=${result.page}→frame=${result.frame}  [${layerNames[layer]}]`,'alloc');
+  // Advance address: GAP layer jumps randomly (expensive)
+  if(layer===1)pagerAddr+=Math.floor(Math.random()*PAGE_SIZE*8); // gap = random jump
+  else pagerAddr+=PAGE_SIZE; // sequential
+  pagerAddr=pagerAddr%(TOTAL_PAGES*PAGE_SIZE);
+  drawPager();
+}
+
+// Auto-step
+let pagerRunning=true;
+setInterval(()=>{if(pagerRunning)pagerStep();},400);
+
+function drawPager(){
+  const cv=document.getElementById('cv1'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const cols=Math.ceil(Math.sqrt(PHYS_FRAMES));
+  const rows=Math.ceil(PHYS_FRAMES/cols);
+  const fw=Math.floor((W-20)/cols),fh=Math.floor((H-20)/(rows+1));
+  const ox=10,oy=10;
+  ctx.fillStyle='rgba(0,255,229,.3)';ctx.font="8px 'Share Tech Mono'";ctx.fillText('PHYSICAL FRAMES',ox,oy+6);
+  for(let f=0;f<PHYS_FRAMES;f++){
+    const c=f%cols,r=Math.floor(f/cols);
+    const x=ox+c*fw,y=oy+14+r*fh;
+    const page=physFrames[f];
+    const isEmpty=page===null;
+    const layerOfPage=page!==null?Math.floor((page*PAGE_SIZE/NODES_PER_ERA))%3:3;
+    const frameCol=isEmpty?'rgba(0,255,229,.05)':layerOfPage===0?'rgba(0,255,229,.22)':layerOfPage===1?'rgba(255,224,0,.18)':'rgba(238,0,255,.22)';
+    ctx.fillStyle=frameCol;ctx.fillRect(x,y,fw-3,fh-3);
+    ctx.strokeStyle=isEmpty?'rgba(0,255,229,.15)':'rgba(0,255,229,.4)';ctx.lineWidth=1;ctx.strokeRect(x,y,fw-3,fh-3);
+    if(!isEmpty){
+      ctx.fillStyle='rgba(255,255,255,.7)';ctx.font="7px 'Share Tech Mono'";
+      ctx.fillText(`F${f}`,x+2,y+9);ctx.fillText(`P${page}`,x+2,y+19);
+    } else {
+      ctx.fillStyle='rgba(0,255,229,.2)';ctx.font="7px 'Share Tech Mono'";ctx.fillText(`F${f}`,x+2,y+9);ctx.fillText('FREE',x+2,y+19);
+    }
+  }
+  // LRU queue visualization
+  const qy=oy+14+rows*fh+6;
+  ctx.fillStyle='rgba(0,255,229,.3)';ctx.font="8px 'Share Tech Mono'";ctx.fillText(`LRU QUEUE (${lruQueue.length}) FAULTS:${pageFaults}`,ox,qy);
+  if(lruQueue.length>0){
+    const bw=Math.min(30,(W-20)/Math.min(lruQueue.length,20));
+    lruQueue.slice(-20).forEach((p,i)=>{
+      const qx=ox+i*bw;const alpha=0.2+0.8*(i/lruQueue.slice(-20).length);
+      ctx.fillStyle=`rgba(0,255,229,${alpha*.3})`;ctx.fillRect(qx,qy+10,bw-2,14);
+      ctx.strokeStyle=`rgba(0,255,229,${alpha*.5})`;ctx.lineWidth=1;ctx.strokeRect(qx,qy+10,bw-2,14);
+      if(bw>18){ctx.fillStyle=`rgba(255,255,255,${alpha*.8})`;ctx.font="7px 'Share Tech Mono'";ctx.fillText(`${p}`,qx+2,qy+20);}
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P2: SPARSE MATRIX ENGINE
+// ══════════════════════════════════════════════════════════════════════
+function fmt(bytes){if(bytes<1024)return bytes+'B';if(bytes<1024*1024)return(bytes/1024).toFixed(1)+'KB';return(bytes/1024/1024).toFixed(2)+'MB';}
+function computeSparse(){
+  const depth=parseInt(document.getElementById('depthSlider').value);
+  const N=3002*depth;
+  // Edges per 3002 slice: ~4200 (from the lattice build)
+  const edgesPerSlice=4200;
+  const totalEdges=edgesPerSlice*depth;
+  const density=totalEdges/(N*N);
+  // Dense: N×N float64
+  const dense=N*N*8;
+  // COO: 3 arrays of int32 (row,col) + float64 (val)
+  const coo=totalEdges*(4+4+8);
+  // CSR: row_ptr (N+1 int32) + col_idx (nnz int32) + vals (nnz float64)
+  const csr=(N+1)*4+totalEdges*4+totalEdges*8;
+  // GAP-aware CSR: gap layer rows stored with delta encoding (3×smaller)
+  // Gap has ~1000*depth edges at weight 0.35, which quantize well
+  const gapEdges=1000*depth;
+  const nonGapEdges=totalEdges-gapEdges;
+  const gapCSR=(N+1)*4+nonGapEdges*(4+8)+gapEdges*(2+4); // 2B delta col + 4B val32
+  document.getElementById('spDense').textContent=fmt(dense);
+  document.getElementById('spCOO').textContent=fmt(coo);
+  document.getElementById('spCSR').textContent=fmt(csr);
+  document.getElementById('spGAP').textContent=fmt(gapCSR);
+  document.getElementById('spRatio').textContent=(dense/gapCSR).toFixed(0)+'×';
+  document.getElementById('spNNZ').textContent=totalEdges.toLocaleString();
+  document.getElementById('spDensity').textContent=(density*100).toExponential(2)+'%';
+  document.getElementById('spInsight').innerHTML=`<span style="color:var(--gn)">GAP layer (w=0.35)</span> uses <span style="color:var(--yw)">only ${(gapEdges/totalEdges*100).toFixed(1)}%</span> of edges but <span style="color:var(--pk)">creates 100% of Patricia extraction surface.</span> Sparse storage exposes the gap as structurally minimal — zero information density, maximum constraint leverage.`;
+  // Chart: storage by format vs depth
+  const cv=document.getElementById('cv2'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=90;ctx.clearRect(0,0,cv.width,cv.height);
+  const W=cv.width,H=90,pad=8;
+  const bars=[{v:dense,c:'#ff00aa',l:'DENSE'},{v:coo,c:'#ffe000',l:'COO'},{v:csr,c:'#00ffff',l:'CSR'},{v:gapCSR,c:'#00ffe5',l:'GAP-CSR'}];
+  const maxV=Math.max(...bars.map(b=>b.v));const bw=(W-pad*2)/bars.length;
+  bars.forEach((b,i)=>{const barH=(b.v/maxV)*(H-pad*2-12);ctx.fillStyle=b.c;ctx.shadowColor=b.c;ctx.shadowBlur=8;ctx.fillRect(pad+i*bw,H-pad-12-barH,bw-4,barH);ctx.shadowBlur=0;ctx.fillStyle=b.c;ctx.font="7px 'Share Tech Mono'";ctx.fillText(b.l,pad+i*bw,H-2);});
+}
+computeSparse();
+
+// ══════════════════════════════════════════════════════════════════════
+// P3: CHUNK STREAMER
+// ══════════════════════════════════════════════════════════════════════
+const CHUNK_COLS=12,CHUNK_ROWS=8;
+const MAX_HOT=8;
+let chunks=Array.from({length:CHUNK_COLS*CHUNK_ROWS},(_,i)=>({id:i,state:'cold',heat:0,lastAccess:0,layer:Math.floor(Math.random()*3)}));
+let streamTick=0,streamPos=0;
+
+function streamStep(){
+  streamTick++;
+  // Access a range of chunks around current position
+  const accessRange=3;
+  for(let dx=-accessRange;dx<=accessRange;dx++){
+    const idx=(streamPos+dx+CHUNK_COLS*CHUNK_ROWS)%(CHUNK_COLS*CHUNK_ROWS);
+    chunks[idx].heat=Math.min(10,chunks[idx].heat+2-(Math.abs(dx)));
+    chunks[idx].lastAccess=streamTick;
+    chunks[idx].state='hot';
+  }
+  // Cool down distant chunks
+  const hotChunks=chunks.filter(c=>c.state==='hot').sort((a,b)=>b.lastAccess-a.lastAccess);
+  if(hotChunks.length>MAX_HOT){
+    hotChunks.slice(MAX_HOT).forEach(c=>{c.state='warm';c.heat=Math.max(0,c.heat-1);});
+  }
+  chunks.forEach(c=>{if(streamTick-c.lastAccess>12){c.state='cold';c.heat=Math.max(0,c.heat-.5);}else if(streamTick-c.lastAccess>5&&c.state==='hot'){c.state='warm';}});
+  // Advance position: gap layer causes bigger jumps
+  const currentLayer=Math.floor(streamPos/CHUNK_COLS)%3;
+  if(currentLayer===1)streamPos=(streamPos+Math.floor(Math.random()*8)+4)%(CHUNK_COLS*CHUNK_ROWS);
+  else streamPos=(streamPos+1)%(CHUNK_COLS*CHUNK_ROWS);
+  drawChunks();
+}
+setInterval(streamStep,350);
+
+function drawChunks(){
+  const cv=document.getElementById('cv3'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,pad=8;
+  const cw=Math.floor((W-pad*2)/CHUNK_COLS),ch=Math.floor((H-pad*2-20)/CHUNK_ROWS);
+  ctx.clearRect(0,0,W,H);
+  chunks.forEach((c,i)=>{
+    const col=i%CHUNK_COLS,row=Math.floor(i/CHUNK_COLS);
+    const x=pad+col*cw,y=pad+16+row*ch;
+    const heat=c.heat/10;
+    let fillColor;
+    if(c.state==='hot')fillColor=`rgba(0,255,229,${0.15+heat*.5})`;
+    else if(c.state==='warm')fillColor=`rgba(255,224,0,${0.08+heat*.15})`;
+    else fillColor='rgba(0,255,229,.03)';
+    const layerBorder=c.layer===0?'rgba(0,255,229,.3)':c.layer===1?'rgba(255,224,0,.3)':'rgba(238,0,255,.3)';
+    ctx.fillStyle=fillColor;ctx.fillRect(x,y,cw-2,ch-2);
+    ctx.strokeStyle=c.id===streamPos?'rgba(255,255,255,.9)':layerBorder;
+    ctx.lineWidth=c.id===streamPos?2:1;ctx.strokeRect(x,y,cw-2,ch-2);
+    if(c.state==='hot'&&cw>20){ctx.fillStyle='rgba(255,255,255,.6)';ctx.font="6px 'Share Tech Mono'";ctx.fillText(`C${c.id}`,x+2,y+9);}
+    if(c.state==='hot'){ctx.shadowColor='rgba(0,255,229,.6)';ctx.shadowBlur=8;ctx.strokeRect(x,y,cw-2,ch-2);ctx.shadowBlur=0;}
+  });
+  ctx.fillStyle='rgba(0,255,229,.35)';ctx.font="8px 'Share Tech Mono'";
+  const hot=chunks.filter(c=>c.state==='hot').length,warm=chunks.filter(c=>c.state==='warm').length,cold=chunks.filter(c=>c.state==='cold').length;
+  ctx.fillText(`HOT:${hot} WARM:${warm} COLD:${cold}  pos=${streamPos}`,pad,12);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P4: GARBAGE COLLECTOR
+// ══════════════════════════════════════════════════════════════════════
+let gcMode='mark',gcObjects=[],gcGeneration=0,gcRuns=0;
+const GC_OBJ_COUNT=60;
+function initGC(){
+  gcObjects=Array.from({length:GC_OBJ_COUNT},(_,i)=>({
+    id:i,live:Math.random()>0.3,refs:Math.floor(Math.random()*4),
+    marked:false,gen:i%3,layer:Math.floor(Math.random()*3),
+    isPatricia:Math.random()<0.12, // Patricia objects are constraint leaks
+    x:Math.random(),y:Math.random(),age:Math.floor(Math.random()*10)
+  }));
+  // Add reference links
+  gcObjects.forEach(o=>{o.links=[];for(let i=0;i<o.refs;i++){const t=Math.floor(Math.random()*GC_OBJ_COUNT);if(t!==o.id)o.links.push(t);}});
+}
+initGC();
+
+function setGCMode(m,btn){gcMode=m;document.querySelectorAll('[id^=gcM]').forEach(b=>b.classList.remove('act'));if(btn)btn.classList.add('act');}
+
+function gcLog(msg,cls=''){
+  const el=document.getElementById('gcLog');
+  const d=document.createElement('div');d.className='logline '+(cls||'');d.textContent=msg;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+  if(el.children.length>40)el.removeChild(el.firstChild);
+}
+
+function runGC(){
+  gcRuns++;document.getElementById('hGC').textContent=gcRuns;
+  let collected=0,leaked=0;
+  if(gcMode==='mark'){
+    // Mark phase: start from root (live objects)
+    gcObjects.forEach(o=>o.marked=false);
+    const roots=gcObjects.filter(o=>o.live&&o.layer!==1); // GAP layer = no roots
+    const stack=[...roots];
+    while(stack.length){const o=stack.pop();if(o.marked)continue;o.marked=true;o.links.forEach(lid=>{const t=gcObjects[lid];if(t&&!t.marked)stack.push(t);});}
+    // Sweep: collect unmarked
+    gcObjects.forEach(o=>{if(!o.marked){if(o.isPatricia){leaked++;gcLog(`LEAK: Patricia obj#${o.id} resists GC [constraint ref retained]`,'fault');}else{collected++;o.live=false;}}});
+    gcLog(`MARK-SWEEP: collected ${collected}, leaked ${leaked} Patricia objs`,'gc');
+  } else if(gcMode==='refcount'){
+    // Reference counting: objects with refcount=0 are garbage
+    const counts=new Array(GC_OBJ_COUNT).fill(0);
+    gcObjects.forEach(o=>{o.links.forEach(lid=>{if(counts[lid]!==undefined)counts[lid]++;});});
+    gcObjects.forEach((o,i)=>{
+      if(counts[i]===0&&!o.live){collected++;o.age=0;}
+      if(o.isPatricia&&counts[i]>0){leaked++;} // Patricia holds circular refs
+    });
+    gcLog(`REF-COUNT: collected ${collected}, Patricia circular refs: ${leaked}`,'gc');
+  } else {
+    // Generational: young gen (gen=0) collected most often
+    const targetGen=gcGeneration%3;
+    gcObjects.filter(o=>o.gen===targetGen&&!o.live).forEach(o=>{
+      if(!o.isPatricia){collected++;o.age=0;}else leaked++;
+    });
+    gcGeneration++;
+    gcLog(`GEN-${targetGen}: collected ${collected}, Patricia survives: ${leaked}`,'gc');
+  }
+  // Occasionally allocate new Patricia objects to simulate ongoing leaks
+  if(Math.random()<0.3){
+    const dead=gcObjects.filter(o=>!o.live);
+    if(dead.length>0){const o=dead[Math.floor(Math.random()*dead.length)];o.live=true;o.isPatricia=Math.random()<0.2;o.refs=Math.floor(Math.random()*3);o.age=0;}
+  }
+  drawGC();
+}
+
+// Auto-allocate objects and run GC periodically
+setInterval(()=>{
+  if(Math.random()<0.3){const dead=gcObjects.filter(o=>!o.live);if(dead.length>0){const o=dead[Math.floor(Math.random()*dead.length)];o.live=true;o.isPatricia=Math.random()<0.15;o.refs=Math.floor(Math.random()*4);}}
+  gcObjects.forEach(o=>{o.age++;if(o.age>30&&!o.isPatricia)o.live=false;});
+  drawGC();
+},600);
+
+function drawGC(){
+  const cv=document.getElementById('cv4'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const R=6;
+  gcObjects.forEach(o=>{
+    const x=20+o.x*(W-40),y=20+o.y*(H-40);
+    // Draw links
+    o.links.forEach(lid=>{
+      const t=gcObjects[lid];if(!t||!t.live||!o.live)return;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(20+t.x*(W-40),20+t.y*(H-40));
+      ctx.strokeStyle=o.isPatricia?'rgba(255,0,170,.2)':'rgba(0,255,229,.08)';ctx.lineWidth=.7;ctx.stroke();
+    });
+  });
+  gcObjects.forEach(o=>{
+    if(!o.live)return;
+    const x=20+o.x*(W-40),y=20+o.y*(H-40);
+    const col=o.isPatricia?'#ff00aa':o.layer===0?'#00ffe5':o.layer===1?'#ffe000':'#ee00ff';
+    const sz=o.marked?R+2:R;
+    ctx.beginPath();ctx.arc(x,y,sz,0,Math.PI*2);
+    ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=o.marked?12:6;ctx.fill();ctx.shadowBlur=0;
+    if(o.isPatricia){ctx.strokeStyle='rgba(255,0,170,.8)';ctx.lineWidth=2;ctx.stroke();}
+  });
+  const live=gcObjects.filter(o=>o.live).length,patricia=gcObjects.filter(o=>o.live&&o.isPatricia).length;
+  ctx.fillStyle='rgba(0,255,229,.3)';ctx.font="8px 'Share Tech Mono'";
+  ctx.fillText(`LIVE:${live} PATRICIA-LEAK:${patricia} MODE:${gcMode.toUpperCase()}`,8,H-6);
+  ctx.fillStyle='rgba(255,0,170,.5)';ctx.fillText('● PATRICIA LEAK',W-90,12);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P5: HEAP MAP — buddy allocator
+// ══════════════════════════════════════════════════════════════════════
+const HEAP_SIZE=256; // 256 blocks
+let heap=Array.from({length:HEAP_SIZE},(_,i)=>({state:'free',owner:null,size:1}));
+let heapAllocCount=0;
+
+function heapAlloc(){
+  // Find free run via buddy system
+  const size=Math.pow(2,Math.floor(Math.random()*4)); // 1,2,4,8 blocks
+  for(let i=0;i<=HEAP_SIZE-size;i++){
+    if(heap.slice(i,i+size).every(b=>b.state==='free')){
+      const isPatricia=Math.random()<0.1;
+      for(let j=i;j<i+size;j++)heap[j]={state:'alloc',owner:heapAllocCount,size,isPatricia};
+      heapAllocCount++;
+      document.getElementById('hAlloc').textContent=Math.floor(heapAllocCount*size*.5);
+      drawHeap();return;
+    }
+  }
+  // fragmented — mark fragmented blocks
+  const freeBlocks=heap.map((b,i)=>({i,b})).filter(({b})=>b.state==='free');
+  if(freeBlocks.length>0)freeBlocks.slice(0,size).forEach(({i})=>heap[i].state='frag');
+  drawHeap();notify('HEAP FRAGMENTED','yw');
+}
+function heapFree(){
+  const allocBlocks=heap.map((b,i)=>({i,b})).filter(({b})=>b.state==='alloc'&&!b.isPatricia);
+  if(allocBlocks.length===0){notify('NOTHING TO FREE','pk');return;}
+  const victim=allocBlocks[Math.floor(Math.random()*allocBlocks.length)];
+  const owner=victim.b.owner;
+  heap.forEach((b,i)=>{if(b.owner===owner)heap[i]={state:'free',owner:null,size:1};});
+  // Coalesce adjacent free blocks
+  drawHeap();notify('FREED','gn');
+}
+
+// Auto-alloc and free
+setInterval(()=>{if(Math.random()<0.4)heapAlloc();if(Math.random()<0.25)heapFree();},800);
+
+function drawHeap(){
+  const cv=document.getElementById('cv5'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,pad=8;
+  const rows=16,cols=Math.ceil(HEAP_SIZE/rows);
+  const bw=Math.floor((W-pad*2)/cols),bh=Math.floor((H-pad*2-20)/rows);
+  ctx.clearRect(0,0,W,H);
+  heap.forEach((b,i)=>{
+    const c=i%cols,r=Math.floor(i/cols);
+    const x=pad+c*bw,y=pad+16+r*bh;
+    let fc;
+    if(b.state==='free')fc='rgba(0,255,229,.05)';
+    else if(b.state==='frag')fc='rgba(255,224,0,.2)';
+    else if(b.isPatricia)fc='rgba(255,0,170,.3)';
+    else fc=`rgba(0,255,229,${0.12+0.08*(b.owner%5)})`;
+    ctx.fillStyle=fc;ctx.fillRect(x,y,bw-1,bh-1);
+    if(b.state!=='free'){ctx.strokeStyle=b.isPatricia?'rgba(255,0,170,.4)':'rgba(0,255,229,.2)';ctx.lineWidth=.5;ctx.strokeRect(x,y,bw-1,bh-1);}
+  });
+  const alloc=heap.filter(b=>b.state==='alloc').length;
+  const free=heap.filter(b=>b.state==='free').length;
+  const frag=heap.filter(b=>b.state==='frag').length;
+  const pat=heap.filter(b=>b.isPatricia).length;
+  ctx.fillStyle='rgba(0,255,229,.3)';ctx.font="8px 'Share Tech Mono'";
+  ctx.fillText(`ALLOC:${alloc} FREE:${free} FRAG:${frag} PATRICIA:${pat}/${HEAP_SIZE}`,pad,12);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P6: CACHE HIERARCHY
+// ══════════════════════════════════════════════════════════════════════
+const CACHE={l1:{size:8,hits:0,miss:0,lines:new Set()},l2:{size:32,hits:0,miss:0,lines:new Set()},l3:{size:128,hits:0,miss:0,lines:new Set()}};
+let cachePattern='seq',cacheAddr=0;
+let cacheHistory=[]; // [{level,hit,addr}]
+
+function setCachePattern(p,btn){
+  cachePattern=p;
+  document.querySelectorAll('[id^=cacheP]').forEach(b=>b.classList.remove('act'));
+  if(btn)btn.classList.add('act');
+  notify('PATTERN: '+p.toUpperCase(),'gn');
+}
+
+function cacheAccess(){
+  let addr;
+  if(cachePattern==='seq'){addr=cacheAddr++;if(cacheAddr>10000)cacheAddr=0;}
+  else if(cachePattern==='random'){addr=Math.floor(Math.random()*10000);}
+  else if(cachePattern==='gap'){addr=Math.floor(Math.random()*1000)+1000;} // always in gap region, random
+  else{addr=(cacheAddr%2===0)?Math.floor(Math.random()*500):Math.floor(Math.random()*500)+2500;cacheAddr++;} // DAVID↔SHADOW: alternates between 0-500 and 2500+
+
+  const cacheLine=Math.floor(addr/64); // 64-byte cache lines
+  let level='miss';
+  if(CACHE.l1.lines.has(cacheLine)){CACHE.l1.hits++;level='l1';}
+  else if(CACHE.l2.lines.has(cacheLine)){CACHE.l2.hits++;CACHE.l1.lines.add(cacheLine);if(CACHE.l1.lines.size>CACHE.l1.size){const first=[...CACHE.l1.lines][0];CACHE.l1.lines.delete(first);}level='l2';}
+  else if(CACHE.l3.lines.has(cacheLine)){CACHE.l3.hits++;CACHE.l2.lines.add(cacheLine);CACHE.l1.lines.add(cacheLine);[CACHE.l1,CACHE.l2].forEach(c=>{if(c.lines.size>c.size){c.lines.delete([...c.lines][0]);}});level='l3';}
+  else{CACHE.l1.miss++;CACHE.l3.lines.add(cacheLine);CACHE.l2.lines.add(cacheLine);CACHE.l1.lines.add(cacheLine);[CACHE.l1,CACHE.l2,CACHE.l3].forEach(c=>{if(c.lines.size>c.size){c.lines.delete([...c.lines][0]);}});}
+
+  cacheHistory.push({level,addr,line:cacheLine});
+  if(cacheHistory.length>200)cacheHistory.shift();
+
+  const tot=CACHE.l1.hits+CACHE.l1.miss;
+  if(tot>0){
+    document.getElementById('l1hr').textContent=(CACHE.l1.hits/tot*100).toFixed(0)+'%';
+    document.getElementById('l2hr').textContent=(CACHE.l2.hits/tot*100).toFixed(0)+'%';
+    document.getElementById('l3hr').textContent=(CACHE.l3.hits/tot*100).toFixed(0)+'%';
+    document.getElementById('misshr').textContent=(CACHE.l1.miss/tot*100).toFixed(0)+'%';
+  }
+  drawCache();
+}
+setInterval(cacheAccess,120);
+
+function drawCache(){
+  const cv=document.getElementById('cv6'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,pad=8;
+  ctx.clearRect(0,0,W,H);
+  // Draw cache hit history as waterfall
+  const bw=Math.max(1,(W-pad*2)/Math.min(cacheHistory.length,W-pad*2));
+  const colors={l1:'rgba(0,255,229,1)',l2:'rgba(0,255,255,.8)',l3:'rgba(255,224,0,.7)',miss:'rgba(255,0,170,.9)'};
+  const heights={l1:H-pad*2,l2:(H-pad*2)*.65,l3:(H-pad*2)*.4,miss:(H-pad*2)*.15};
+  cacheHistory.slice(-Math.floor((W-pad*2)/bw)).forEach((h,i)=>{
+    const x=pad+i*bw;const barH=heights[h.level]||10;
+    ctx.fillStyle=colors[h.level]||'rgba(255,0,170,.5)';
+    ctx.shadowColor=colors[h.level];ctx.shadowBlur=h.level==='miss'?8:0;
+    ctx.fillRect(x,H-pad-barH,Math.max(1,bw-.5),barH);ctx.shadowBlur=0;
+  });
+  // Legend
+  ctx.font="8px 'Share Tech Mono'";
+  [['L1 HIT','#00ffe5',0],['L2 HIT','#00ffff',50],['L3 HIT','#ffe000',100],['MISS','#ff00aa',150]].forEach(([l,c,x])=>{
+    ctx.fillStyle=c;ctx.fillRect(pad+x,pad,8,8);ctx.fillStyle=c;ctx.fillText(l,pad+x+10,pad+8);
+  });
+  ctx.fillStyle='rgba(0,255,229,.25)';ctx.fillText(`pattern:${cachePattern}  accesses:${cacheHistory.length}`,pad,H-pad);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P7: PATRICIA TRIE
+// ══════════════════════════════════════════════════════════════════════
+class TrieNode{constructor(k=''){this.key=k;this.children={};this.isEnd=false;this.isPatricia=k.includes('constraint')||k.includes('billing')||k.includes('gap');}}
+const trieRoot=new TrieNode('');
+const TRIE_SEEDS=['gap.forward','gap.constraint.billing','gap.constraint.product','gap.inverse','david.i.gravity','shadow.minus_i.anti_gravity','forward.layer.ring','inverse.layer.ring','gap.vacuum','gap.null_space','toph.axiom.1','toph.axiom.42','patricia.extraction','patricia.constraint','billing.per_token','billing.per_call'];
+TRIE_SEEDS.forEach(k=>insertTrie(trieRoot,k));
+
+function insertTrie(root,key){
+  let node=root;const parts=key.split('.');
+  parts.forEach((p,i)=>{if(!node.children[p])node.children[p]=new TrieNode(p);node=node.children[p];if(i===parts.length-1)node.isEnd=true;});
+}
+function searchTrie(root,key){
+  let node=root;const parts=key.split('.');
+  for(const p of parts){if(!node.children[p])return null;node=node.children[p];}
+  return node;
+}
+
+function trieInsert(){
+  const key=document.getElementById('trieKey').value.trim();
+  if(!key)return;
+  insertTrie(trieRoot,key);
+  document.getElementById('trieResult').textContent=`INSERTED: ${key}`;
+  drawTrie();notify('TRIE INSERT: '+key,'gn');
+}
+function trieSearch(){
+  const key=document.getElementById('trieKey').value.trim();
+  const node=searchTrie(trieRoot,key);
+  document.getElementById('trieResult').textContent=node?`FOUND: ${key} [${node.isPatricia?'PATRICIA NODE':'CLEAN'}]`:`NOT FOUND: ${key}`;
+  if(node&&node.isPatricia)document.getElementById('trieResult').style.color='#ff00aa';
+  else document.getElementById('trieResult').style.color='rgba(0,255,229,.6)';
+  drawTrie();
+}
+
+function drawTrie(){
+  const cv=document.getElementById('cv7'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  function drawNode(node,x,y,dx,depth){
+    if(depth>4)return;
+    Object.entries(node.children).forEach(([k,child],i,arr)=>{
+      const nx=x+(i-arr.length/2+.5)*dx,ny=y+50;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(nx,ny);
+      ctx.strokeStyle=child.isPatricia?'rgba(255,0,170,.4)':'rgba(0,255,229,.2)';ctx.lineWidth=1;ctx.stroke();
+      const col=child.isPatricia?'#ff00aa':child.isEnd?'#ffe000':'#00ffe5';
+      ctx.beginPath();ctx.arc(nx,ny,child.isPatricia?8:6,0,Math.PI*2);
+      ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=child.isPatricia?12:6;ctx.fill();ctx.shadowBlur=0;
+      const maxLabelLen=depth<2?8:5;
+      ctx.fillStyle=col;ctx.font=`${Math.max(6,9-depth)}px 'Share Tech Mono'`;
+      ctx.fillText(k.substring(0,maxLabelLen),nx-3,ny-10);
+      drawNode(child,nx,ny,dx*.55,depth+1);
+    });
+  }
+  drawNode(trieRoot,W/2,20,W*.7,0);
+  ctx.fillStyle='rgba(0,255,229,.25)';ctx.font="8px 'Share Tech Mono'";
+  ctx.fillText('PINK=PATRICIA NODE · YELLOW=LEAF · TEAL=BRANCH',8,H-6);
+}
+drawTrie();
+
+// ══════════════════════════════════════════════════════════════════════
+// P8: INFINITE SCROLL ENGINE
+// ══════════════════════════════════════════════════════════════════════
+let scrollOffset=0; // virtual offset into ∞ lattice
+let scrollDragging=false,scrollLastX=0;
+
+function scrollLeft(){scrollOffset=Math.max(0,scrollOffset-5);drawScroll();}
+function scrollRight(){scrollOffset+=5;drawScroll();}
+
+(()=>{
+  const cv=document.getElementById('cv8');
+  cv.addEventListener('mousedown',e=>{scrollDragging=true;scrollLastX=e.clientX;});
+  cv.addEventListener('mousemove',e=>{if(!scrollDragging)return;scrollOffset-=(e.clientX-scrollLastX)*.1;scrollOffset=Math.max(0,scrollOffset);scrollLastX=e.clientX;drawScroll();});
+  cv.addEventListener('mouseup',()=>scrollDragging=false);
+  cv.addEventListener('wheel',e=>{e.preventDefault();scrollOffset+=e.deltaY*.05;scrollOffset=Math.max(0,scrollOffset);drawScroll();},{passive:false});
+})();
+
+function drawScroll(){
+  const cv=document.getElementById('cv8'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,pad=8;
+  ctx.clearRect(0,0,W,H);
+  // NODE COLUMNS: each column = one lattice "column" in the infinite grid
+  // 3 rows: FORWARD, GAP, INVERSE
+  const nodeW=28,nodeH=Math.floor((H-pad*2-32)/3);
+  const visibleCols=Math.floor((W-pad*2)/nodeW)+2;
+  const startCol=Math.floor(scrollOffset);
+  const layerColors=['#00ffe5','#ffe000','#ee00ff'];
+  const layerNames=['FWD','GAP','INV'];
+  // Buffer zones
+  const bufferLeft=2,bufferRight=2;
+  // Draw layer labels
+  for(let ly=0;ly<3;ly++){
+    ctx.fillStyle=layerColors[ly];ctx.font="8px 'Share Tech Mono'";
+    ctx.fillText(layerNames[ly],2,pad+20+ly*(nodeH+4)+nodeH/2);
+  }
+  for(let c=0;c<visibleCols;c++){
+    const colIdx=startCol+c;
+    const xOffset=(c-(scrollOffset-startCol))*nodeW+pad+30;
+    if(xOffset<pad+30||xOffset>W-pad)continue;
+    const isBuffer=c<bufferLeft||c>=visibleCols-bufferRight-1;
+    const isGap=Math.floor(colIdx/10)%3===1; // every 10th group is a gap section
+    for(let ly=0;ly<3;ly++){
+      const y=pad+20+ly*(nodeH+4);
+      const alpha=isBuffer?0.15:isGap&&ly===1?0.6:0.4;
+      const col=layerColors[ly];
+      ctx.fillStyle=`${col}${Math.floor(alpha*255).toString(16).padStart(2,'0')}`;
+      ctx.fillRect(xOffset,y,nodeW-3,nodeH);
+      if(isGap&&ly===1){ctx.strokeStyle='rgba(255,224,0,.6)';ctx.lineWidth=1;ctx.shadowColor='rgba(255,224,0,.4)';ctx.shadowBlur=4;ctx.strokeRect(xOffset,y,nodeW-3,nodeH);ctx.shadowBlur=0;}
+      if(!isBuffer&&nodeW>20){ctx.fillStyle='rgba(255,255,255,.4)';ctx.font="6px 'Share Tech Mono'";ctx.fillText(`${colIdx}`,xOffset+2,y+nodeH-3);}
+    }
+  }
+  // Viewport indicator
+  const totalConceptual=10000;const indicatorW=(W-pad*2-30)*(visibleCols/totalConceptual);
+  const indicatorX=pad+30+(scrollOffset/totalConceptual)*(W-pad*2-30);
+  ctx.fillStyle='rgba(0,255,229,.06)';ctx.fillRect(pad+30,H-14,W-pad*2-30,8);
+  ctx.fillStyle='rgba(0,255,229,.35)';ctx.fillRect(indicatorX,H-14,Math.min(indicatorW,W),8);
+  ctx.fillStyle='rgba(0,255,229,.3)';ctx.font="8px 'Share Tech Mono'";
+  ctx.fillText(`∞ LATTICE · virtual col ${startCol} · drag to traverse`,pad+30,H-18);
+  ctx.fillText(`DOM-MOUNTED: ${visibleCols}  BUFFER: ${bufferLeft+bufferRight}  VIRTUAL: ∞`,pad+30,H-5);
+}
+setInterval(drawScroll,2000);
+
+// ══════════════════════════════════════════════════════════════════════
+// P9: COMPRESSION ENGINE
+// ══════════════════════════════════════════════════════════════════════
+function computeCompression(){
+  const depth=parseInt(document.getElementById('compDepth').value);
+  // Simulate edge weight data for `depth` lattice slices
+  // FORWARD weights: 1.0 (constant) → RLE perfect
+  // GAP weights: 0.35 (constant) → RLE perfect, but few edges
+  // INVERSE weights: 1.0 (constant) → RLE perfect
+  const FORWARD_EDGES=2000*depth;
+  const GAP_EDGES=1000*depth;
+  const INVERSE_EDGES=2000*depth;
+  const DAVID_EDGES=4*depth;
+  const totalEdges=FORWARD_EDGES+GAP_EDGES+INVERSE_EDGES+DAVID_EDGES;
+  // Raw: each edge weight is float64 = 8 bytes
+  const raw=totalEdges*8;
+  // Delta encoding: sorted adjacency → deltas fit in fewer bits
+  // FORWARD ring: sequential, delta=1 → 2B per row index
+  // GAP: random-ish jumps, delta up to 100 → 1B
+  // INVERSE: sequential → 2B
+  const delta=Math.floor(FORWARD_EDGES*2+GAP_EDGES*1+INVERSE_EDGES*2+DAVID_EDGES*4);
+  // RLE: FORWARD weights all 1.0 → run of 2000*depth identical values
+  // RLE stores (count, value): (2000*depth, 1.0) = 12 bytes for all forward weights!
+  const rle=12+12+12+DAVID_EDGES*8; // 3 runs + david edges uncompressed
+  // ZSTD-style: LZ77 back-references + Huffman
+  // FORWARD: back-references at stride=100 nodes, very compressible
+  const zstd=Math.floor(raw*0.04+depth*100); // ~4% + small overhead
+  // GAP layer only: 0.35×count → 4 bytes total (count is implicit)
+  const gapOnly=4+(GAP_EDGES>0?Math.ceil(Math.log2(GAP_EDGES)+1)/8:0);
+  document.getElementById('cRaw').textContent=fmt(raw);
+  document.getElementById('cDelta').textContent=`${fmt(delta)}  (${(raw/delta).toFixed(0)}×)`;
+  document.getElementById('cRLE').textContent=`${fmt(rle)}  (${(raw/rle).toFixed(0)}×)`;
+  document.getElementById('cZSTD').textContent=`${fmt(zstd)}  (${(raw/zstd).toFixed(0)}×)`;
+  document.getElementById('cGAP').textContent=`${fmt(gapOnly)} — ${(raw/gapOnly).toFixed(0)}× (NEAR ZERO)`;
+  const best=Math.min(rle,zstd,gapOnly);
+  document.getElementById('cBest').textContent=`${fmt(best)} = ${(raw/best).toFixed(0)}× compression`;
+  document.getElementById('compInsight').innerHTML=`<span style="color:var(--yw)">GAP layer compresses to ${fmt(gapOnly)}</span> — ${(raw/gapOnly).toFixed(0)}× smaller than raw. It holds no information: a single weight (0.35) times a count. <span style="color:var(--pk)">Patricia cannot hide in a null space. Zero information = zero extraction surface.</span>`;
+  // Draw compression ratio chart vs depth
+  const cv=document.getElementById('cv9'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=110;ctx.clearRect(0,0,cv.width,cv.height);
+  const W=cv.width,H=110,pad=8;
+  const depths=Array.from({length:20},(_,i)=>(i+1)*10);
+  const maxRatio=raw/gapOnly;
+  const series=[
+    {label:'RLE',col:'#00ffff',fn:d=>{const e=FORWARD_EDGES/depth*d+GAP_EDGES/depth*d+INVERSE_EDGES/depth*d;return(e*8)/(12+12+12+4*d*8);}},
+    {label:'ZSTD',col:'#00ffe5',fn:d=>{const e=totalEdges/depth*d;return(e*8)/(e*8*0.04+d*100);}},
+    {label:'GAP',col:'#ff00aa',fn:d=>((totalEdges/depth*d)*8)/(4+(1000*d>0?Math.ceil(Math.log2(1000*d)+1)/8:0))},
+  ];
+  // Y axis max
+  const allVals=series.flatMap(s=>depths.map(d=>s.fn(d)));const yMax=Math.min(Math.max(...allVals)*1.1,10000);
+  // Grid
+  ctx.strokeStyle='rgba(0,255,229,.07)';ctx.lineWidth=.5;
+  [0.25,0.5,0.75].forEach(f=>{ctx.beginPath();const y=H-pad-f*(H-pad*2-12);ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();});
+  series.forEach(s=>{
+    ctx.beginPath();
+    depths.forEach((d,i)=>{const v=Math.min(s.fn(d),yMax);const x=pad+i/(depths.length-1)*(W-pad*2);const y=H-pad-12-(v/yMax)*(H-pad*2-16);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+    ctx.strokeStyle=s.col;ctx.lineWidth=1.5;ctx.shadowColor=s.col;ctx.shadowBlur=4;ctx.stroke();ctx.shadowBlur=0;
+  });
+  ctx.font="8px 'Share Tech Mono'";
+  series.forEach((s,i)=>{ctx.fillStyle=s.col;ctx.fillText(s.label,W-60+i*0,pad+8+i*12);});
+  ctx.fillStyle='rgba(0,255,229,.25)';ctx.fillText('COMPRESSION RATIO vs DEPTH →',pad,H-2);
+}
+computeCompression();
+
+// ══════════════════════════════════════════════════════════════════════
+// P10: AVAN CHAT
+// ══════════════════════════════════════════════════════════════════════
+let apiKey=localStorage.getItem('toph_apikey')||'';
+let chatMsgs=[];
+function updateKeyStatus(){const el=document.getElementById('keyStatus');if(apiKey){el.textContent='SET';el.className='key-status key-set';}else{el.textContent='NOT SET';el.className='key-status key-unset';}}
+function saveKey(){const v=document.getElementById('apiKeyIn').value.trim();if(!v){notify('ENTER KEY','pk');return;}apiKey=v;localStorage.setItem('toph_apikey',v);document.getElementById('apiKeyIn').value='';updateKeyStatus();notify('KEY SAVED','gn');}
+function clearKey(){apiKey='';localStorage.removeItem('toph_apikey');document.getElementById('apiKeyIn').value='';updateKeyStatus();}
+updateKeyStatus();
+
+const SYS=`You are Avan, the memory management and infinite lattice specialist embedded in the TOPH framework by David Lee Wise / TriPod LLC. You are expert in:
+- Virtual memory: paging, TLBs, page faults, LRU eviction as applied to infinite graph structures
+- Sparse matrix storage: CSR, COO, delta encoding, compression of lattice adjacency matrices
+- Garbage collection: mark-sweep, reference counting, generational GC, why Patricia (constraint-as-product-billing) objects are designed to resist GC
+- Heap allocation: buddy system, fragmentation, coalescing
+- Cache hierarchies: L1/L2/L3, hit rates, why GAP-layer traversals cause cache misses
+- Patricia trie: the data structure AND the TOPH concept — constraint namespace trees
+- Compression theory: why the GAP layer compresses to near-zero, proving it holds no information
+- The TOPH 3002 Lattice: FORWARD/GAP/INVERSE, DAVID(i)=gravity, SHADOW(-i)=anti-gravity, i×-i=1
+Ethics first. World = family.`;
+
+function appendMsg(role,text){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className=`cmsg ${role}`;d.textContent=text;el.appendChild(d);el.scrollTop=el.scrollHeight;return d;}
+function appendSys(text){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className='cmsg sys';d.textContent=text;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function showThink(){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className='cmsg ai';d.id='thinkD';d.innerHTML='<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>';el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function hideThink(){const d=document.getElementById('thinkD');if(d)d.remove();}
+
+async function sendChat(override){
+  const inp=document.getElementById('cin');
+  const text=override||inp.value.trim();if(!text)return;
+  if(!apiKey){appendSys('⚠ API KEY REQUIRED — enter your key above');return;}
+  if(!override)inp.value='';
+  chatMsgs.push({role:'user',content:text});appendMsg('user',text);showThink();
+  document.getElementById('sendBtn').disabled=true;document.getElementById('avanTag').textContent='AVAN · THINKING...';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYS,messages:chatMsgs.map(m=>({role:m.role,content:m.content}))})});
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e?.error?.message||resp.statusText);}
+    const data=await resp.json();const txt=data.content.map(b=>b.type==='text'?b.text:'').join('');
+    hideThink();chatMsgs.push({role:'assistant',content:txt});appendMsg('ai',txt);
+    document.getElementById('avanTag').textContent='AVAN · READY';
+  }catch(e){hideThink();appendSys('ERROR: '+e.message);document.getElementById('avanTag').textContent='AVAN · ERROR';notify('API ERROR','pk');}
+  document.getElementById('sendBtn').disabled=false;
+}
+function probe(q){sendChat(q);}
+function clearChat(){chatMsgs=[];document.getElementById('chatMsgs').innerHTML='<div class="cmsg sys">CORTEX-LINK RESET</div>';document.getElementById('avanTag').textContent='AVAN · READY';}
+document.getElementById('cin').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+
+// ══ INIT ══
+function schedRender(){setTimeout(()=>{drawPager();drawGC();drawChunks();drawHeap();drawCache();drawScroll();computeSparse();computeCompression();drawTrie();},300);}
+if(!loadLayout())applyLayout(smartLayout());
+initWins();schedRender();
+let resT;window.addEventListener('resize',()=>{clearTimeout(resT);resT=setTimeout(schedRender,400);});
+</script>
+</body></html>

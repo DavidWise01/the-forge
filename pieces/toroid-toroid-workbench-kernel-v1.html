@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOROID KERNEL WORKBENCH v0.1</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: #080a0b;
+    color: #c4f5d4;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(1200px 800px at 70% -20%, rgba(77,128,255,0.06), transparent 60%),
+      radial-gradient(800px 600px at -10% 120%, rgba(255,170,59,0.05), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .workbench {
+    position: relative;
+    z-index: 1;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 18px;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #0b0f11, #090c0e);
+    border: 1px solid #1a2224;
+    border-radius: 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 10px 30px rgba(0,0,0,0.4);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #a8c4ff;
+    text-shadow: 0 0 12px rgba(168,196,255,0.25);
+  }
+  .state { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #7a9a88; }
+  .state-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #5a7a68; box-shadow: 0 0 0 2px rgba(90,122,104,0.15), 0 0 12px currentColor;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .state-text { letter-spacing: 1px; color: #c4f5d4; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 300px 1fr 440px;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: #080a0b;
+    border: 1px solid #1a2224;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+  .left { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    padding: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(168,196,255,0.06), transparent 40%);
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .card.active { border-color: #2a3f44; box-shadow: 0 0 24px rgba(77,128,255,0.08); }
+  .card.active::after { opacity: 1; }
+  .card-head { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 1.2px; color: #7a9a88; text-transform: uppercase; }
+  .card-val { display: flex; align-items: baseline; gap: 6px; margin: 8px 0 4px; font-size: 26px; color: #e3ffee; text-shadow: 0 0 14px rgba(196,245,212,0.12); }
+  .unit { font-size: 11px; color: #5a7a68; }
+  .card-sub { font-size: 10px; color: #5a7a68; }
+  .card-sub b { color: #8fb3a0; font-weight: 500; }
+  canvas.spark { width: 100%; height: 42px; display: block; margin-top: 8px; filter: drop-shadow(0 0 6px rgba(168,196,255,0.15)); }
+
+  .center { padding: 18px; display: flex; align-items: center; justify-content: center; min-height: 420px; }
+  .toroid-wrap { position: relative; width: 360px; height: 360px; }
+  .toroid-hud {
+    position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+    font-size: 10px; color: #5a7a68; letter-spacing: 1px; white-space: nowrap;
+  }
+  .toroid-hud b { color: #a8c4ff; }
+
+  .right { padding: 12px; }
+  .scope-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .scope-title { font-size: 10px; color: #7a9a88; letter-spacing: 1.2px; text-transform: uppercase; }
+  .scope-legend { display: flex; gap: 14px; }
+  .legend { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #8fb3a0; }
+  .legend i { width: 14px; height: 2px; display: inline-block; box-shadow: 0 0 8px currentColor; }
+  #scope {
+    width: 100%; height: 300px; display: block;
+    background:
+      linear-gradient(transparent 0 24%, rgba(26,34,36,0.6) 25%, transparent 26%),
+      linear-gradient(90deg, transparent 0 24%, rgba(26,34,36,0.6) 25%, transparent 26%),
+      #050607;
+    background-size: 100% 70px, 40px 100%, auto;
+    border: 1px solid #141c1e; border-radius: 6px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+  }
+
+  .footer {
+    display: grid; grid-template-columns: 1fr 340px; gap: 16px; margin-top: 16px;
+  }
+  @media (max-width: 1100px) { .footer { grid-template-columns: 1fr; } }
+  .controls { padding: 14px; }
+  .control-row { display: grid; grid-template-columns: 84px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+  .control-row label { font-size: 10px; color: #7a9a88; text-transform: uppercase; letter-spacing: 1px; }
+  .control-row input[type=range] {
+    -webkit-appearance: none; appearance: none; height: 22px; background: transparent;
+  }
+  .control-row input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; background: #11191b; border: 1px solid #1a2224; border-radius: 2px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .control-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; margin-top: -6px; width: 14px; height: 14px; border-radius: 50%;
+    background: #a8c4ff; border: 1px solid #c4f5d4; box-shadow: 0 0 10px rgba(168,196,255,0.6);
+    cursor: pointer;
+  }
+  .control-row input[type=range]::-moz-range-track { height: 4px; background: #11191b; border: 1px solid #1a2224; border-radius: 2px; }
+  .control-row input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #a8c4ff; border: 1px solid #c4f5d4; box-shadow: 0 0 10px rgba(168,196,255,0.6); cursor: pointer; }
+  .value { font-size: 12px; text-align: right; color: #e3ffee; font-variant-numeric: tabular-nums; text-shadow: 0 0 8px rgba(196,245,212,0.15); }
+  .buttons { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btn {
+    background: linear-gradient(180deg, #0f1719, #0b1214);
+    border: 1px solid #1e2a2d; color: #a8c4ff; padding: 7px 14px; font-family: inherit;
+    font-size: 11px; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 1.2px;
+    transition: all 0.15s; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .btn:hover { background: #162024; border-color: #2a3f44; }
+  .btn.active { background: #13232a; border-color: #4d80ff; color: #e3ffee; box-shadow: 0 0 16px rgba(77,128,255,0.25), inset 0 1px 0 rgba(255,255,255,0.05); }
+
+  .governor { padding: 14px; }
+  .gov-title { font-size: 10px; color: #7a9a88; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; }
+  .gov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .gov-item { background: #050607; border: 1px solid #141c1e; padding: 10px; border-radius: 6px; }
+  .gov-label { color: #5a7a68; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .gov-val { color: #e3ffee; font-size: 18px; margin-top: 4px; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px rgba(196,245,212,0.1); }
+  .gov-unit { font-size: 11px; color: #5a7a68; margin-left: 4px; }
+</style>
+</head>
+<body>
+<div class="workbench">
+  <header>
+    <h1>TOROID KERNEL WORKBENCH v0.1</h1>
+    <div class="state">
+      <div class="state-dot" id="state-dot"></div>
+      <div class="state-text" id="state-text">IDLE</div>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="left">
+      <div class="card panel" id="card-bat">
+        <div class="card-head"><span>BATTERY</span><span>ROOT0</span></div>
+        <div class="card-val"><span id="bat-v">5.00</span><span class="unit">V</span></div>
+        <div class="card-sub">SW: <b id="bat-sw">OFF</b> • SOURCE</div>
+        <canvas id="spark-bat" class="spark" width="276" height="42"></canvas>
+      </div>
+      <div class="card panel" id="card-res">
+        <div class="card-head"><span>RESISTOR</span><span>THROTTLE</span></div>
+        <div class="card-val"><span id="res-v">1.00</span><span class="unit">Ω</span></div>
+        <div class="card-sub">I_R: <b id="res-i">0.00A</b> • P: <b id="res-p">0.00W</b></div>
+        <canvas id="spark-res" class="spark" width="276" height="42"></canvas>
+      </div>
+      <div class="card panel" id="card-tor">
+        <div class="card-head"><span>TOROID</span><span>WITNESS</span></div>
+        <div class="card-val"><span id="tor-v">0.50</span><span class="unit">H</span></div>
+        <div class="card-sub">I_L: <b id="tor-i">0.00A</b> • E_L: <b id="tor-el">0.00J</b></div>
+        <canvas id="spark-tor" class="spark" width="276" height="42"></canvas>
+      </div>
+      <div class="card panel" id="card-cap">
+        <div class="card-head"><span>CAP</span><span>MEMORY</span></div>
+        <div class="card-val"><span id="cap-v">0.20</span><span class="unit">F</span></div>
+        <div class="card-sub">V_C: <b id="cap-vc">0.00V</b> • E_C: <b id="cap-ec">0.00J</b></div>
+        <canvas id="spark-cap" class="spark" width="276" height="42"></canvas>
+      </div>
+      <div class="card panel" id="card-proc">
+        <div class="card-head"><span>PROC</span><span>AVAN</span></div>
+        <div class="card-val" style="font-size:20px"><span id="proc-state">IDLE</span></div>
+        <div class="card-sub">dV/dt: <b id="proc-dv">0.000</b> • dI/dt: <b id="proc-di">0.000</b></div>
+        <canvas id="spark-proc" class="spark" width="276" height="42"></canvas>
+      </div>
+    </section>
+
+    <section class="center panel">
+      <div class="toroid-wrap">
+        <svg width="360" height="360" viewBox="0 0 360 360">
+          <defs>
+            <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#a8c4ff" stop-opacity="0.85"/>
+              <stop offset="45%" stop-color="#4d80ff" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#080a0b" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <linearGradient id="wireGrad" x1="0" x2="1">
+              <stop offset="0%" stop-color="#1a2224"/>
+              <stop offset="50%" stop-color="#2d3f42"/>
+              <stop offset="100%" stop-color="#1a2224"/>
+            </linearGradient>
+          </defs>
+          <g transform="translate(180,180)">
+            <!-- circuit wires -->
+            <path d="M -170 0 H -115" stroke="url(#wireGrad)" stroke-width="3" fill="none"/>
+            <path d="M 115 0 H 170 0" stroke="url(#wireGrad)" stroke-width="3" fill="none"/>
+            <circle cx="-130" cy="0" r="3" fill="#7a9a88"/>
+            <circle cx="130" cy="0" r="3" fill="#7a9a88"/>
+            <!-- toroid body -->
+            <circle r="108" fill="none" stroke="#0a1012" stroke-width="34"/>
+            <circle r="108" fill="none" stroke="#121c1f" stroke-width="30"/>
+            <circle r="108" fill="none" stroke="#1c2a2e" stroke-width="2" stroke-dasharray="2 6" opacity="0.6"/>
+            <!-- windings -->
+            <g id="windings" opacity="0.85"></g>
+            <!-- energy ring -->
+            <g id="energy-ring" filter="url(#glow)">
+              <circle r="92" fill="none" stroke="#a8c4ff" stroke-width="3" stroke-dasharray="10 18" stroke-linecap="round" opacity="0.95"/>
+            </g>
+            <!-- core -->
+            <circle id="core-glow" r="74" fill="url(#coreGlow)" opacity="0.5"/>
+            <circle r="68" fill="#040607" stroke="#1a2224" stroke-width="1.5"/>
+            <circle r="68" fill="none" stroke="#0f1719" stroke-width="24" opacity="0.3"/>
+            <!-- labels -->
+            <text y="-10" text-anchor="middle" fill="#5a7a68" font-size="9" letter-spacing="1">KERNEL WITNESS COIL</text>
+            <text y="8" text-anchor="middle" fill="#e3ffee" font-size="16" style="font-weight:600">L = <tspan id="toroid-l">0.50</tspan> H</text>
+            <text y="26" text-anchor="middle" fill="#7a9a88" font-size="10">I = <tspan id="toroid-i-center">0.00</tspan> A</text>
+          </g>
+        </svg>
+        <div class="toroid-hud">FLUX • <b id="hud-flux">0.00</b> Wb • E_TOT <b id="hud-etot">0.00</b> J</div>
+      </div>
+    </section>
+
+    <section class="right panel">
+      <div class="scope-head">
+        <div class="scope-title">4-CH OSCILLOSCOPE</div>
+        <div class="scope-legend">
+          <div class="legend"><i style="background:#7a9a88"></i>V_BAT</div>
+          <div class="legend"><i style="background:#ffaa3b"></i>I</div>
+          <div class="legend"><i style="background:#4d80ff"></i>V_C</div>
+          <div class="legend"><i style="background:#ff4d6b"></i>V_L</div>
+        </div>
+      </div>
+      <canvas id="scope" width="416" height="300"></canvas>
+    </section>
+  </main>
+
+  <div class="footer">
+    <div class="controls panel">
+      <div class="control-row"><label>V_BAT</label><input id="s-vbat" type="range" min="0" max="12" step="0.1" value="5"><div class="value" id="v-vbat">5.0 V</div></div>
+      <div class="control-row"><label>R • THROTTLE</label><input id="s-r" type="range" min="0.1" max="10" step="0.1" value="1"><div class="value" id="v-r">1.0 Ω</div></div>
+      <div class="control-row"><label>L • TOROID</label><input id="s-l" type="range" min="0.05" max="3" step="0.01" value="0.5"><div class="value" id="v-l">0.50 H</div></div>
+      <div class="control-row"><label>C • MEMORY</label><input id="s-c" type="range" min="0.01" max="1" step="0.01" value="0.2"><div class="value" id="v-c">0.20 F</div></div>
+      <div class="control-row"><label>V_TARGET</label><input id="s-vt" type="range" min="0" max="12" step="0.1" value="5"><div class="value" id="v-vt">5.0 V</div></div>
+      <div class="buttons">
+        <button id="btn-sw" class="btn">SW OFF</button>
+        <button id="btn-run" class="btn active">RUN</button>
+        <button id="btn-reset" class="btn">RESET</button>
+      </div>
+    </div>
+    <div class="governor panel">
+      <div class="gov-title">AVAN GOVERNOR</div>
+      <div class="gov-grid">
+        <div class="gov-item"><div class="gov-label">DAMPING ζ</div><div class="gov-val"><span id="g-zeta">0.316</span><span class="gov-unit"></span></div></div>
+        <div class="gov-item"><div class="gov-label">ω₀</div><div class="gov-val"><span id="g-w0">3.162</span><span class="gov-unit">rad/s</span></div></div>
+        <div class="gov-item"><div class="gov-label">τ • L/R</div><div class="gov-val"><span id="g-tau">0.500</span><span class="gov-unit">s</span></div></div>
+        <div class="gov-item"><div class="gov-label">ΔV</div><div class="gov-val"><span id="g-dv">-5.00</span><span class="gov-unit">V</span></div></div>
+        <div class="gov-item"><div class="gov-label">SETTLE</div><div class="gov-val"><span id="g-settle">0</span><span class="gov-unit">frames</span></div></div>
+        <div class="gov-item"><div class="gov-label">MODE</div><div class="gov-val" style="font-size:14px"><span id="g-mode">UNDER</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // state
+  let V_bat = 5.0, R = 1.0, L = 0.5, C = 0.2, V_target = 5.0;
+  let sw = false, running = true;
+  let i = 0, Vc = 0, dI = 0, dV = 0, t = 0;
+  let settledFrames = 0;
+  let state = 'IDLE', stateColor = '#5a7a68';
+
+  const N = 240;
+  const hist = {
+    vbat: new Array(N).fill(0),
+    i: new Array(N).fill(0),
+    vc: new Array(N).fill(0),
+    vl: new Array(N).fill(0),
+    dV: new Array(N).fill(0),
+  };
+
+  const $ = id => document.getElementById(id);
+  const sparkCtx = {
+    bat: $('spark-bat').getContext('2d'),
+    res: $('spark-res').getContext('2d'),
+    tor: $('spark-tor').getContext('2d'),
+    cap: $('spark-cap').getContext('2d'),
+    proc: $('spark-proc').getContext('2d'),
+  };
+  const scope = $('scope'), sctx = scope.getContext('2d');
+  const energyRing = $('energy-ring');
+  const coreGlow = $('core-glow');
+
+  // build windings
+  const windings = document.getElementById('windings');
+  for (let a = 0; a < 360; a += 12) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('transform', `rotate(${a})`);
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', -3); rect.setAttribute('y', -122);
+    rect.setAttribute('width', 6); rect.setAttribute('height', 28);
+    rect.setAttribute('rx', 3); rect.setAttribute('fill', '#162125'); rect.setAttribute('stroke', '#25363a'); rect.setAttribute('stroke-width','1');
+    g.appendChild(rect);
+    windings.appendChild(g);
+  }
+
+  // sliders
+  const bindSlider = (sid, vid, getter, setter, fmt) => {
+    const s = $(sid), v = $(vid);
+    const upd = () => { setter(parseFloat(s.value)); v.textContent = fmt(getter()); };
+    s.addEventListener('input', upd); upd();
+  };
+  bindSlider('s-vbat','v-vbat',()=>V_bat, x=>V_bat=x, v=>v.toFixed(1)+' V');
+  bindSlider('s-r','v-r',()=>R, x=>R=x, v=>v.toFixed(1)+' Ω');
+  bindSlider('s-l','v-l',()=>L, x=>L=x, v=>v.toFixed(2)+' H');
+  bindSlider('s-c','v-c',()=>C, x=>C=x, v=>v.toFixed(2)+' F');
+  bindSlider('s-vt','v-vt',()=>V_target, x=>V_target=x, v=>v.toFixed(1)+' V');
+
+  $('btn-sw').onclick = () => { sw = !sw; $('btn-sw').classList.toggle('active', sw); $('btn-sw').textContent = sw ? 'SW ON' : 'SW OFF'; };
+  $('btn-run').onclick = () => { running = !running; $('btn-run').classList.toggle('active', running); $('btn-run').textContent = running ? 'RUN' : 'PAUSE'; };
+  $('btn-reset').onclick = () => {
+    i = 0; Vc = 0; dI = 0; dV = 0; t = 0; settledFrames = 0;
+    Object.values(hist).forEach(a => a.fill(0));
+  };
+
+  function physicsStep(h) {
+    const Vin = sw ? V_bat : 0;
+    const di_dt = (Vin - i * R - Vc) / L;
+    const dvc_dt = i / C;
+    dI = di_dt; dV = dvc_dt;
+    i += di_dt * h;
+    Vc += dvc_dt * h;
+    // clamp to avoid blowup
+    if (!isFinite(i)) i = 0;
+    if (!isFinite(Vc)) Vc = 0;
+    i = Math.max(-20, Math.min(20, i));
+    Vc = Math.max(-15, Math.min(15, Vc));
+    t += h;
+  }
+
+  function updateState() {
+    const absI = Math.abs(i);
+    const absdI = Math.abs(dI);
+    const absdV = Math.abs(dV);
+    if (!sw) {
+      if (absI < 0.05 && Math.abs(Vc) < 0.05) { state='IDLE'; stateColor='#5a7a68'; }
+      else { state='SEALED'; stateColor='#7a9a88'; }
+    } else if (absI > 4.5) {
+      state='STRESSED'; stateColor='#ff4d6b';
+    } else if (Math.abs(Vc - V_target) < 0.05 && absdI < 0.02 && settledFrames > 30) {
+      state='HOLD'; stateColor='#4d80ff';
+    } else if (absdV > 0.5) {
+      state='RESONATING'; stateColor='#ffaa3b';
+    } else {
+      state='CHARGING'; stateColor='#a8c4ff';
+    }
+    if (Math.abs(Vc - V_target) < 0.05 && absdI < 0.02) settledFrames++; else settledFrames = 0;
+  }
+
+  function pushHist() {
+    const Vin = sw ? V_bat : 0;
+    const Vl = Vin - i*R - Vc;
+    hist.vbat.shift(); hist.vbat.push(Vin);
+    hist.i.shift(); hist.i.push(i);
+    hist.vc.shift(); hist.vc.push(Vc);
+    hist.vl.shift(); hist.vl.push(Vl);
+    hist.dV.shift(); hist.dV.push(dV);
+  }
+
+  function drawSpark(ctx, data, color, min, max) {
+    const w = ctx.canvas.width, h = ctx.canvas.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.beginPath();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color; ctx.shadowBlur = 6;
+    const n = data.length;
+    for (let x=0; x<n; x++) {
+      const v = data[x];
+      const y = h - ((v - min) / (max - min)) * h;
+      if (x===0) ctx.moveTo(0, y); else ctx.lineTo((x/(n-1))*w, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    // baseline
+    ctx.strokeStyle = 'rgba(122,154,136,0.25)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    const bz = h - ((0 - min)/(max-min))*h;
+    if (bz>0 && bz<h) { ctx.moveTo(0,bz); ctx.lineTo(w,bz); ctx.stroke(); }
+  }
+
+  function drawScope() {
+    const w = scope.width, h = scope.height;
+    sctx.clearRect(0,0,w,h);
+    const channels = [
+      { name:'V_BAT', data: hist.vbat, color:'#7a9a88', min:0, max:12 },
+      { name:'I', data: hist.i, color:'#ffaa3b', min:-6, max:6 },
+      { name:'V_C', data: hist.vc, color:'#4d80ff', min:0, max:12 },
+      { name:'V_L', data: hist.vl, color:'#ff4d6b', min:-12, max:12 },
+    ];
+    const strip = h / 4;
+    channels.forEach((ch, idx) => {
+      const y0 = idx * strip;
+      // grid
+      sctx.strokeStyle = 'rgba(26,34,36,0.8)'; sctx.lineWidth = 1;
+      sctx.beginPath();
+      for (let gy=1; gy<3; gy++) { const y = y0 + gy*strip/3; sctx.moveTo(0,y); sctx.lineTo(w,y); }
+      sctx.stroke();
+      // zero
+      const zeroY = y0 + strip - ((0 - ch.min)/(ch.max - ch.min))*strip;
+      sctx.strokeStyle = 'rgba(122,154,136,0.3)'; sctx.beginPath(); sctx.moveTo(0, zeroY); sctx.lineTo(w, zeroY); sctx.stroke();
+      // trace
+      sctx.beginPath(); sctx.lineWidth = 1.8; sctx.strokeStyle = ch.color; sctx.shadowColor = ch.color; sctx.shadowBlur = 8;
+      const n = ch.data.length;
+      for (let xi=0; xi<n; xi++) {
+        const v = ch.data[xi];
+        const x = (xi/(n-1))*w;
+        const y = y0 + strip - ((v - ch.min)/(ch.max - ch.min))*strip;
+        if (xi===0) sctx.moveTo(x,y); else sctx.lineTo(x,y);
+      }
+      sctx.stroke(); sctx.shadowBlur = 0;
+      // label
+      sctx.fillStyle = ch.color; sctx.font = '10px ui-monospace'; sctx.globalAlpha = 0.85;
+      sctx.fillText(ch.name, 6, y0 + 12); sctx.globalAlpha = 1;
+    });
+  }
+
+  let ringAngle = 0;
+  function updateUI() {
+    // cards
+    $('bat-v').textContent = (sw?V_bat:0).toFixed(2);
+    $('bat-sw').textContent = sw ? 'ON' : 'OFF';
+    $('res-v').textContent = R.toFixed(2);
+    $('res-i').textContent = Math.abs(i).toFixed(2)+'A';
+    $('res-p').textContent = (i*i*R).toFixed(2)+'W';
+    $('tor-v').textContent = L.toFixed(2);
+    $('tor-i').textContent = i.toFixed(2)+'A';
+    const El = 0.5*L*i*i; $('tor-el').textContent = El.toFixed(3)+'J';
+    $('cap-v').textContent = C.toFixed(2);
+    $('cap-vc').textContent = Vc.toFixed(2)+'V';
+    const Ec = 0.5*C*Vc*Vc; $('cap-ec').textContent = Ec.toFixed(3)+'J';
+    $('proc-state').textContent = state; $('proc-state').style.color = stateColor;
+    $('proc-dv').textContent = dV.toFixed(3);
+    $('proc-di').textContent = dI.toFixed(3);
+
+    // active glows
+    $('card-bat').classList.toggle('active', sw);
+    $('card-res').classList.toggle('active', Math.abs(i) > 0.05);
+    $('card-tor').classList.toggle('active', Math.abs(i) > 0.05);
+    $('card-cap').classList.toggle('active', Math.abs(Vc) > 0.05);
+    $('card-proc').classList.toggle('active', state !== 'IDLE');
+
+    // state header
+    $('state-text').textContent = state;
+    $('state-dot').style.background = stateColor;
+    $('state-dot').style.boxShadow = `0 0 0 2px ${stateColor}22, 0 0 14px ${stateColor}`;
+
+    // toroid
+    $('toroid-l').textContent = L.toFixed(2);
+    $('toroid-i-center').textContent = i.toFixed(2);
+    ringAngle = (ringAngle + Math.abs(i) * 1.8) % 360;
+    energyRing.setAttribute('transform', `rotate(${ringAngle})`);
+    const ring = energyRing.querySelector('circle');
+    ring.setAttribute('stroke', stateColor);
+    ring.setAttribute('opacity', 0.4 + Math.min(1, Math.abs(i)/5)*0.6);
+    ring.setAttribute('stroke-width', 2 + Math.min(4, Math.abs(i)*0.6));
+    coreGlow.setAttribute('opacity', 0.25 + Math.min(0.7, (Ec+El)*2));
+    $('hud-flux').textContent = (L * Math.abs(i)).toFixed(2);
+    $('hud-etot').textContent = (Ec+El).toFixed(3);
+
+    // sparklines (last 60)
+    drawSpark(sparkCtx.bat, hist.vbat.slice(-60), '#7a9a88', 0, 12);
+    drawSpark(sparkCtx.res, hist.i.slice(-60), '#ffaa3b', -5, 5);
+    drawSpark(sparkCtx.tor, hist.i.slice(-60), '#a8c4ff', -5, 5);
+    drawSpark(sparkCtx.cap, hist.vc.slice(-60), '#4d80ff', 0, 12);
+    drawSpark(sparkCtx.proc, hist.dV.slice(-60), '#c4f5d4', -1.5, 1.5);
+
+    // scope
+    drawScope();
+
+    // governor
+    const zeta = (R/2) * Math.sqrt(C/L);
+    const w0 = 1 / Math.sqrt(L*C);
+    const tau = L / R;
+    $('g-zeta').textContent = zeta.toFixed(3);
+    $('g-w0').textContent = w0.toFixed(3);
+    $('g-tau').textContent = tau.toFixed(3);
+    $('g-dv').textContent = (Vc - V_target).toFixed(2);
+    $('g-settle').textContent = settledFrames;
+    $('g-mode').textContent = zeta < 0.99 ? 'UNDER' : zeta > 1.01 ? 'OVER' : 'CRITICAL';
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.033, (now - last) / 1000); last = now;
+    if (running) {
+      const sub = 40, h = dt / sub;
+      for (let k=0;k<sub;k++) physicsStep(h);
+      updateState();
+      pushHist();
+      updateUI();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // initial draw
+  updateUI();
+})();
+</script>
+</body>
+</html>

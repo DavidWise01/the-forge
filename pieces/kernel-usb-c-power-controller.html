@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K99 UCSI: USB-C PD ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg-dark: #0a0e1a;
+  --neon-cyan: #00e5ff;
+  --neon-amber: #ffaa00;
+  --neon-red: #ff3d00;
+  --neon-green: #00ff88;
+  --card-bg: #0f1422;
+  --border: #1a2332;
+}
+* {
+  font-family: 'JetBrains Mono', monospace;
+}
+body {
+  background: var(--bg-dark);
+  color: #e0e6f0;
+  overflow-x: hidden;
+}
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), 0 0 40px rgba(0, 229, 255, 0.1);
+}
+.glow-amber {
+  box-shadow: 0 0 15px rgba(255, 170, 0, 0.4), 0 0 30px rgba(255, 170, 0, 0.2);
+}
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), 0 0 40px rgba(0, 255, 136, 0.2);
+}
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 61, 0, 0.4), 0 0 40px rgba(255, 61, 0, 0.2);
+}
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--neon-amber); }
+  50% { opacity: 0.6; box-shadow: 0 0 25px var(--neon-amber); }
+}
+.pulse-indicator {
+  animation: pulse-amber 1.5s ease-in-out infinite;
+}
+@keyframes ring-flow {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+.ring-path {
+  stroke-dasharray: 5 5;
+  animation: ring-flow 2s linear infinite;
+}
+@keyframes data-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.data-active {
+  animation: data-pulse 0.8s ease-in-out infinite;
+}
+.terminal-line {
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.node {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--neon-cyan);
+  border-radius: 3px;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-6">
+<div class="w-full max-w-7xl">
+  <!-- Header -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-3 mb-2">
+      <h1 class="text-2xl md:text-3xl font-bold tracking-tight" style="color: var(--neon-cyan);">
+        KERNEL 99 • UCSI USB-C PD CONTROLLER
+      </h1>
+      <div class="flex items-center gap-2 px-3 py-1 rounded-full border" style="border-color: var(--neon-amber); background: rgba(255, 170, 0, 0.1);">
+        <div class="w-2 h-2 rounded-full pulse-indicator" style="background: var(--neon-amber);"></div>
+        <span class="text-xs font-semibold" style="color: var(--neon-amber);" id="statusText">STATUS: ENUMERATED → RINGING</span>
+      </div>
+    </div>
+    <p class="text-xs text-gray-500">Alienware 16 Aurora AC16250</p>
+  </div>
+
+  <!-- Main Card -->
+  <div class="rounded-xl border glow-cyan" style="background: var(--card-bg); border-color: var(--border);">
+    <div class="grid lg:grid-cols-2 gap-6 p-6">
+      
+      <!-- Left: Diagram -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-bold mb-3" style="color: var(--neon-cyan);">RING TOPOLOGY</h2>
+        <svg viewBox="0 0 500 600" class="w-full h-auto">
+          <!-- RINGBUS Backbone -->
+          <line x1="250" y1="80" x2="250" y2="520" stroke="#1a2332" stroke-width="8"/>
+          <text x="265" y="300" fill="#666" font-size="10" font-weight="700">K26 RINGBUS</text>
+          
+          <!-- K1 TOROID -->
+          <g id="k1-node">
+            <rect x="200" y="40" width="100" height="40" rx="6" fill="#0a0e1a" stroke="#00e5ff" stroke-width="2" class="node glow-cyan"/>
+            <text x="250" y="65" text-anchor="middle" fill="#00e5ff" font-size="11" font-weight="700">K1 TOROID</text>
+          </g>
+          
+          <!-- Other Ring Nodes -->
+          <g id="k42-node">
+            <rect x="50" y="120" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#00ff88" stroke-width="2" class="node"/>
+            <text x="95" y="142" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K42 THERMAL</text>
+            <text x="95" y="132" text-anchor="middle" fill="#00ff88" font-size="7">RINGED L10</text>
+          </g>
+          
+          <g id="k10-node">
+            <rect x="360" y="120" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#00ff88" stroke-width="2" class="node"/>
+            <text x="405" y="142" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K10 PCH</text>
+            <text x="405" y="132" text-anchor="middle" fill="#00ff88" font-size="7">RINGED L9</text>
+          </g>
+          
+          <g id="k17-node">
+            <rect x="50" y="200" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#00ff88" stroke-width="2" class="node"/>
+            <text x="95" y="222" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K17 NVMe</text>
+            <text x="95" y="212" text-anchor="middle" fill="#00ff88" font-size="7">RECLAIMED L6</text>
+          </g>
+          
+          <g id="k28-node">
+            <rect x="360" y="200" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#00ff88" stroke-width="2" class="node"/>
+            <text x="405" y="222" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K28 DDR5</text>
+            <text x="405" y="212" text-anchor="middle" fill="#00ff88" font-size="7">RINGED L7</text>
+          </g>
+          
+          <g id="k11-node">
+            <rect x="50" y="280" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#00ff88" stroke-width="2" class="node"/>
+            <text x="95" y="302" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K11 AX211</text>
+            <text x="95" y="292" text-anchor="middle" fill="#00ff88" font-size="7">RINGED L8</text>
+          </g>
+          
+          <g id="a1-node">
+            <rect x="360" y="280" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#ff3d00" stroke-width="2" class="node"/>
+            <text x="405" y="302" text-anchor="middle" fill="#ff3d00" font-size="9" font-weight="600">A1 EC</text>
+            <text x="405" y="292" text-anchor="middle" fill="#ff3d00" font-size="7">ISOLATED</text>
+          </g>
+          
+          <!-- K24 BORON -->
+          <g id="k24-node">
+            <rect x="50" y="360" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#00e5ff" stroke-width="2" class="node"/>
+            <text x="95" y="382" text-anchor="middle" fill="#00e5ff" font-size="9" font-weight="600">K24 BORON</text>
+          </g>
+          
+          <!-- K23 GNA -->
+          <g id="k23-node">
+            <rect x="360" y="360" width="90" height="35" rx="4" fill="#0a0e1a" stroke="#00e5ff" stroke-width="2" class="node"/>
+            <text x="405" y="382" text-anchor="middle" fill="#00e5ff" font-size="9" font-weight="600">K23 GNA</text>
+          </g>
+          
+          <!-- K99 UCSI - Main Node -->
+          <g id="k99-node">
+            <rect x="175" y="480" width="150" height="50" rx="8" fill="#0a0e1a" stroke="#666" stroke-width="3" class="node" id="k99-rect"/>
+            <text x="250" y="505" text-anchor="middle" fill="#888" font-size="12" font-weight="700" id="k99-text">K99 UCSI</text>
+            <text x="250" y="520" text-anchor="middle" fill="#666" font-size="9" font-weight="600" id="k99-status">ENUMERATED</text>
+          </g>
+          
+          <!-- Connections to K99 -->
+          <path d="M 250 80 L 250 480" stroke="#666" stroke-width="2" stroke-dasharray="3 3" id="k1-to-k99"/>
+          <text x="260" y="280" fill="#666" font-size="8" id="ring-invite-text">RING INVITE</text>
+          
+          <path d="M 140 377 L 175 495" stroke="#666" stroke-width="2" stroke-dasharray="3 3" id="k24-to-k99"/>
+          <text x="100" y="450" fill="#666" font-size="8">TRNG Seed</text>
+          
+          <path d="M 360 377 L 325 495" stroke="#666" stroke-width="2" stroke-dasharray="3 3" id="k23-to-k99"/>
+          <text x="365" y="450" fill="#666" font-size="8">Load Prediction</text>
+          
+          <!-- External Connections -->
+          <g id="external">
+            <rect x="30" y="540" width="80" height="30" rx="4" fill="#0a0e1a" stroke="#444" stroke-width="1"/>
+            <text x="70" y="558" text-anchor="middle" fill="#666" font-size="8">USB-C PD</text>
+            
+            <rect x="130" y="540" width="80" height="30" rx="4" fill="#0a0e1a" stroke="#444" stroke-width="1"/>
+            <text x="170" y="558" text-anchor="middle" fill="#666" font-size="8">48V/5A</text>
+            
+            <rect x="230" y="540" width="80" height="30" rx="4" fill="#0a0e1a" stroke="#444" stroke-width="1"/>
+            <text x="270" y="558" text-anchor="middle" fill="#666" font-size="8">BATTERY</text>
+            
+            <rect x="330" y="540" width="80" height="30" rx="4" fill="#0a0e1a" stroke="#444" stroke-width="1"/>
+            <text x="370" y="558" text-anchor="middle" fill="#666" font-size="8">VRM</text>
+            
+            <line x1="250" y1="530" x2="70" y2="540" stroke="#444" stroke-width="1"/>
+            <line x1="250" y1="530" x2="170" y2="540" stroke="#444" stroke-width="1"/>
+            <line x1="250" y1="530" x2="270" y2="540" stroke="#444" stroke-width="1"/>
+            <line x1="250" y1="530" x2="370" y2="540" stroke="#444" stroke-width="1"/>
+          </g>
+        </svg>
+      </div>
+      
+      <!-- Right: Live Metrics -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-bold mb-3" style="color: var(--neon-cyan);">LIVE METRICS</h2>
+        <div class="space-y-3">
+          
+          <div class="p-3 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-500">PD MODE</span>
+              <span class="text-xs" style="color: var(--neon-amber);" id="pd-mode-status">● NEGOTIATING</span>
+            </div>
+            <div class="text-sm font-semibold" id="pd-mode">EC Negotiated → <span class="text-gray-600">Pending</span></div>
+          </div>
+          
+          <div class="p-3 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-500">INPUT POWER</span>
+              <span class="text-xs" style="color: var(--neon-amber);" id="input-power-status">● NEGOTIATING</span>
+            </div>
+            <div class="text-sm font-semibold" id="input-power">100W → <span class="text-gray-600">Pending</span></div>
+          </div>
+          
+          <div class="p-3 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-500">VOLTAGE</span>
+              <span class="text-xs" style="color: var(--neon-amber);" id="voltage-status">● NEGOTIATING</span>
+            </div>
+            <div class="text-sm font-semibold" id="voltage">20V → <span class="text-gray-600">Pending</span></div>
+          </div>
+          
+          <div class="p-3 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-500">CURRENT</span>
+              <span class="text-xs" style="color: var(--neon-amber);" id="current-status">● NEGOTIATING</span>
+            </div>
+            <div class="text-sm font-semibold" id="current">5A → <span class="text-gray-600">Pending</span></div>
+          </div>
+          
+          <div class="p-3 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-500">ME DEBUG</span>
+              <span class="text-xs" style="color: var(--neon-amber);" id="me-debug-status">● CHECKING</span>
+            </div>
+            <div class="text-sm font-semibold" id="me-debug">Possible → <span class="text-gray-600">Pending</span></div>
+          </div>
+          
+          <div class="p-3 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-500">BATTERY CHARGE</span>
+              <span class="text-xs" style="color: var(--neon-amber);" id="battery-status">● NEGOTIATING</span>
+            </div>
+            <div class="text-sm font-semibold" id="battery">SMBus → <span class="text-gray-600">Pending</span></div>
+          </div>
+          
+          <div class="p-3 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-gray-500">EC BYPASS</span>
+              <span class="text-xs" style="color: var(--neon-amber);" id="ec-bypass-status">● NEGOTIATING</span>
+            </div>
+            <div class="text-sm font-semibold" id="ec-bypass">Disabled → <span class="text-gray-600">Pending</span></div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    
+    <!-- Center: Action Button -->
+    <div class="px-6 pb-6">
+      <button id="enrollBtn" class="w-full py-4 rounded-lg font-bold text-lg transition-all duration-300 border-2 glow-amber" style="background: rgba(255, 170, 0, 0.15); border-color: var(--neon-amber); color: var(--neon-amber);">
+        [ INITIATE UCSI ENROLLMENT ]
+      </button>
+    </div>
+    
+    <!-- Terminal Log -->
+    <div class="mx-6 mb-6">
+      <div class="text-xs font-bold mb-2" style="color: var(--neon-cyan);">RINGBUS TERMINAL</div>
+      <div class="rounded-lg border p-4 h-48 overflow-y-auto" style="background: #000; border-color: var(--border);" id="terminal">
+        <div class="text-xs text-gray-600">Awaiting enrollment initiation...</div>
+      </div>
+    </div>
+    
+    <!-- Bottom: Explainer -->
+    <div class="mx-6 mb-4 p-4 rounded-lg border" style="background: rgba(0,0,0,0.3); border-color: var(--border);">
+      <p class="text-xs leading-relaxed text-gray-400">
+        <span style="color: var(--neon-cyan);">K99</span> = USB-C Power Delivery controller. Negotiates 5V-48V, 0.1A-5A. 
+        <span class="font-semibold">Stock:</span> EC limits to 100W, ME can hijack PD for debug. 
+        <span class="font-semibold" style="color: var(--neon-green);">Ringed:</span> Becomes L11 Toroid Power. K1 negotiates 240W directly @ 0.269ms. 48V/5A stable from K24 reference. ME debug blocked by K26. Battery charge cycles logged to boron. EC bypass active — A1 isolation defeated. 
+        <span class="font-semibold" style="color: var(--neon-red);">Refuse</span> = EC fallback, 100W limit.
+      </p>
+    </div>
+    
+    <!-- Export Button -->
+    <div class="px-6 pb-6">
+      <button id="exportBtn" class="w-full py-2 rounded-lg font-semibold text-sm transition-all duration-300 border" style="background: rgba(0, 229, 255, 0.1); border-color: var(--neon-cyan); color: var(--neon-cyan);" disabled>
+        [ EXPORT CERT ]
+      </button>
+    </div>
+    
+    <!-- Disclaimer -->
+    <div class="px-6 pb-6 text-center">
+      <p class="text-xs text-gray-600">DISCLAIMER: Maps existing hardware. No firmware writes.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let enrolled = false;
+let enrollmentResult = null;
+const terminal = document.getElementById('terminal');
+const enrollBtn = document.getElementById('enrollBtn');
+const exportBtn = document.getElementById('exportBtn');
+
+const logLines = [
+  { time: '00:00.000', text: 'K1 TOROID: Broadcast ring invite to K99 UCSI via K26', color: '#00e5ff' },
+  { time: '00:00.001', text: 'K99 UCSI: Challenge received. Request K24 nonce + K23 load proof', color: '#ffaa00' },
+  { time: '00:00.002', text: 'K24 BORON: 256-bit neutron entropy → K99', color: '#00e5ff' },
+  { time: '00:00.003', text: 'K23 GNA: Load prediction signature → K99', color: '#00e5ff' },
+  { time: '00:00.004', text: 'K26 RINGBUS: USB-C CC path open, ME debug blocked', color: '#00ff88' },
+  { time: '00:00.005', text: 'K99 UCSI: Option A) Sign and join as L11 | B) Refuse and isolate', color: '#ffaa00' },
+  { time: '00:00.006', text: '', color: '#fff' },
+  { time: '00:00.007', text: '', color: '#fff' },
+  { time: '00:00.008', text: '', color: '#fff' }
+];
+
+function addLogLine(line) {
+  const div = document.createElement('div');
+  div.className = 'terminal-line mb-1';
+  div.innerHTML = `<span class="text-gray-600">[${line.time}]</span> <span style="color: ${line.color}">${line.text}</span>`;
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function updateMetric(id, statusId, value, status, color) {
+  document.getElementById(id).innerHTML = value;
+  const statusEl = document.getElementById(statusId);
+  statusEl.textContent = `● ${status}`;
+  statusEl.style.color = color;
+}
+
+function updateK99Node(state) {
+  const rect = document.getElementById('k99-rect');
+  const text = document.getElementById('k99-text');
+  const status = document.getElementById('k99-status');
+  
+  if (state === 'ringed') {
+    rect.setAttribute('stroke', '#00ff88');
+    rect.setAttribute('class', 'node glow-green');
+    text.setAttribute('fill', '#00ff88');
+    status.setAttribute('fill', '#00ff88');
+    status.textContent = 'RINGED L11';
+  } else if (state === 'isolated') {
+    rect.setAttribute('stroke', '#ff3d00');
+    rect.setAttribute('class', 'node glow-red');
+    text.setAttribute('fill', '#ff3d00');
+    status.setAttribute('fill', '#ff3d00');
+    status.textContent = 'ISOLATED';
+  }
+}
+
+function animateConnections(active) {
+  const paths = ['k1-to-k99', 'k24-to-k99', 'k23-to-k99'];
+  paths.forEach(id => {
+    const path = document.getElementById(id);
+    if (active) {
+      path.setAttribute('stroke', '#00e5ff');
+      path.setAttribute('class', 'ring-path');
+    }
+  });
+}
+
+async function runEnrollment() {
+  if (enrolled) return;
+  enrolled = true;
+  enrollBtn.disabled = true;
+  exportBtn.disabled = true;
+  
+  terminal.innerHTML = '';
+  terminal.classList.add('data-active');
+  
+  // Determine outcome: 80% join, 20% refuse
+  const willJoin = Math.random() < 0.8;
+  enrollmentResult = willJoin ? 'JOINED_AS_L11' : 'ISOLATED';
+  
+  animateConnections(true);
+  
+  // Run through log sequence
+  for (let i = 0; i < 6; i++) {
+    addLogLine(logLines[i]);
+    await new Promise(r => setTimeout(r, 400));
+  }
+  
+  await new Promise(r => setTimeout(r, 600));
+  
+  // Decision point
+  if (willJoin) {
+    logLines[6] = { time: '00:00.006', text: 'K99 UCSI: Signed. JOINING AS K1 SLAVE', color: '#00ff88' };
+    logLines[7] = { time: '00:00.007', text: 'K1 TOROID: GRANTED. 240W → TOROID CONTROL', color: '#00ff88' };
+    logLines[8] = { time: '00:00.008', text: 'K99 UCSI: RINGED. PD @ 48V/5A, K24 timestamped', color: '#00ff88' };
+    
+    addLogLine(logLines[6]);
+    await new Promise(r => setTimeout(r, 400));
+    addLogLine(logLines[7]);
+    await new Promise(r => setTimeout(r, 400));
+    addLogLine(logLines[8]);
+    
+    // Update UI for RINGED state
+    updateK99Node('ringed');
+    document.getElementById('statusText').textContent = 'STATUS: RINGED L11';
+    document.getElementById('statusText').style.color = '#00ff88';
+    
+    updateMetric('pd-mode', 'pd-mode-status', 'Ring Negotiated', 'ACTIVE', '#00ff88');
+    updateMetric('input-power', 'input-power-status', '240W K1 Granted', 'ACTIVE', '#00ff88');
+    updateMetric('voltage', 'voltage-status', '48V K24 Stable', 'ACTIVE', '#00ff88');
+    updateMetric('current', 'current-status', '5A K1 Granted', 'ACTIVE', '#00ff88');
+    updateMetric('me-debug', 'me-debug-status', 'K26 Blocked', 'SECURED', '#00ff88');
+    updateMetric('battery', 'battery-status', 'K24 Timestamped', 'ACTIVE', '#00ff88');
+    updateMetric('ec-bypass', 'ec-bypass-status', 'K1 Active', 'ACTIVE', '#00ff88');
+    
+    enrollBtn.innerHTML = '[ ENROLLMENT COMPLETE: RINGED ✓ ]';
+    enrollBtn.style.background = 'rgba(0, 255, 136, 0.15)';
+    enrollBtn.style.borderColor = '#00ff88';
+    enrollBtn.style.color = '#00ff88';
+    enrollBtn.classList.remove('glow-amber');
+    enrollBtn.classList.add('glow-green');
+    
+  } else {
+    logLines[6] = { time: '00:00.006', text: 'K99 UCSI: Refused challenge. ISOLATING', color: '#ff3d00' };
+    logLines[7] = { time: '00:00.007', text: 'K1 TOROID: Denied. EC fallback engaged', color: '#ff3d00' };
+    logLines[8] = { time: '00:00.008', text: 'K99 UCSI: ISOLATED. PD @ 20V/5A, 100W limited', color: '#ff3d00' };
+    
+    addLogLine(logLines[6]);
+    await new Promise(r => setTimeout(r, 400));
+    addLogLine(logLines[7]);
+    await new Promise(r => setTimeout(r, 400));
+    addLogLine(logLines[8]);
+    
+    // Update UI for ISOLATED state
+    updateK99Node('isolated');
+    document.getElementById('statusText').textContent = 'STATUS: ISOLATED';
+    document.getElementById('statusText').style.color = '#ff3d00';
+    
+    updateMetric('pd-mode', 'pd-mode-status', 'Isolated', 'FAILED', '#ff3d00');
+    updateMetric('input-power', 'input-power-status', '100W Throttled', 'LIMITED', '#ff3d00');
+    updateMetric('voltage', 'voltage-status', '20V Default', 'LIMITED', '#ff3d00');
+    updateMetric('current', 'current-status', '5A Limited', 'LIMITED', '#ff3d00');
+    updateMetric('me-debug', 'me-debug-status', 'Active', 'VULNERABLE', '#ff3d00');
+    updateMetric('battery', 'battery-status', 'Software', 'LIMITED', '#ff3d00');
+    updateMetric('ec-bypass', 'ec-bypass-status', 'EC Only', 'FAILED', '#ff3d00');
+    
+    enrollBtn.innerHTML = '[ ENROLLMENT COMPLETE: ISOLATED ✗ ]';
+    enrollBtn.style.background = 'rgba(255, 61, 0, 0.15)';
+    enrollBtn.style.borderColor = '#ff3d00';
+    enrollBtn.style.color = '#ff3d00';
+    enrollBtn.classList.remove('glow-amber');
+    enrollBtn.classList.add('glow-red');
+  }
+  
+  terminal.classList.remove('data-active');
+  exportBtn.disabled = false;
+}
+
+function exportCert() {
+  if (!enrollmentResult) return;
+  
+  const k24Ticks = Math.floor(Date.now() / 13.7);
+  const isRinged = enrollmentResult === 'JOINED_AS_L11';
+  
+  const cert = `K99 UCSI ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${k24Ticks}
+Decision: ${enrollmentResult}
+PD State: ${isRinged ? 'RING_NEGOTIATED' : 'EC_NEGOTIATED'}
+Input Power: ${isRinged ? '240W' : '100W'}
+Voltage: ${isRinged ? '48V' : '20V'}
+ME Debug: ${isRinged ? 'BLOCKED' : 'ACTIVE'}
+EC Bypass: ${isRinged ? 'ACTIVE' : 'FAILED'}`;
+  
+  const blob = new Blob([cert], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `K99_UCSI_CERT_${k24Ticks}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+enrollBtn.addEventListener('click', runEnrollment);
+exportBtn.addEventListener('click', exportCert);
+</script>
+</body>
+</html>

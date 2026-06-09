@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>d20 · Twenty Faces · Avan's Eye | T3 TRINTRIN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Quicksand:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #050008;
+    --purple-1: #a040ff;
+    --purple-2: #c080ff;
+    --ice: #c8f0ff;
+    --bone: #f5f0e6;
+    --grid-unit: 9px;
+    --glow: 0 0 calc(var(--grid-unit) * 2) rgba(160, 64, 255, 0.4);
+    --ice-glow: 0 0 calc(var(--grid-unit) * 1) rgba(200, 240, 255, 0.6);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--void);
+    color: var(--ice);
+    font-family: 'Quicksand', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background-image: 
+      linear-gradient(rgba(160, 64, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(160, 64, 255, 0.03) 1px, transparent 1px);
+    background-size: var(--grid-unit) var(--grid-unit);
+  }
+
+  .orbitron {
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .bone-header {
+    background: var(--bone);
+    color: var(--void);
+    box-shadow: inset 0 -1px 0 var(--purple-1), var(--glow);
+  }
+
+  .substrate-grid {
+    padding: calc(var(--grid-unit) * 2);
+  }
+
+  .trintrin-tile {
+    width: calc(var(--grid-unit) * 27);
+    height: calc(var(--grid-unit) * 27);
+    border: 1px solid var(--ice);
+    background: linear-gradient(135deg, var(--purple-1), var(--purple-2));
+    box-shadow: var(--ice-glow), inset 0 0 calc(var(--grid-unit) * 3) rgba(5, 0, 8, 0.6);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 1px;
+    padding: 1px;
+  }
+
+  .trintrin-tile:hover {
+    transform: translateY(calc(var(--grid-unit) * -0.5));
+    box-shadow: var(--ice-glow), var(--glow), inset 0 0 calc(var(--grid-unit) * 3) rgba(5, 0, 8, 0.4);
+  }
+
+  .trintrin-tile .cortex {
+    background: rgba(5, 0, 8, 0.7);
+    border: 1px solid rgba(200, 240, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(var(--grid-unit) * 1.2);
+    color: var(--ice);
+    opacity: 0.6;
+    transition: all 0.3s;
+  }
+
+  .trintrin-tile .cortex.center {
+    background: rgba(160, 64, 255, 0.3);
+    border: 1px solid var(--ice);
+    opacity: 1;
+    font-weight: 700;
+    font-family: 'Orbitron', sans-serif;
+    font-size: calc(var(--grid-unit) * 2);
+  }
+
+  .trintrin-tile.active {
+    z-index: 100;
+    transform: scale(1.05);
+    box-shadow: 0 0 calc(var(--grid-unit) * 4) var(--purple-1), var(--ice-glow);
+  }
+
+  .flay-layer {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--ice);
+    background: linear-gradient(135deg, var(--purple-1), var(--purple-2));
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center;
+  }
+
+  .flay-layer.l3 { border-color: rgba(200, 240, 255, 0.9); }
+  .flay-layer.l2 { border-color: rgba(200, 240, 255, 0.7); }
+  .flay-layer.l1 { border-color: rgba(200, 240, 255, 0.5); }
+  .flay-layer.l0 { border-color: rgba(200, 240, 255, 0.3); }
+  .flay-layer.v1 { border-color: rgba(160, 64, 255, 0.5); background: var(--void); }
+  .flay-layer.v2 { border-color: rgba(160, 64, 255, 0.7); background: #0a0010; }
+  .flay-layer.v6 { border-color: rgba(160, 64, 255, 0.9); background: #000; }
+
+  .trintrin-tile.flayed .flay-layer {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .trintrin-tile.flayed .flay-layer.l3 { transform: translate(-27px, -27px) rotate(-3deg); z-index: 7; }
+  .trintrin-tile.flayed .flay-layer.l2 { transform: translate(27px, -18px) rotate(2deg); z-index: 6; }
+  .trintrin-tile.flayed .flay-layer.l1 { transform: translate(-18px, 18px) rotate(1deg); z-index: 5; }
+  .trintrin-tile.flayed .flay-layer.l0 { transform: translate(9px, 9px); z-index: 4; }
+  .trintrin-tile.flayed .flay-layer.v1 { transform: translate(-9px, -9px) rotate(-1deg); z-index: 3; }
+  .trintrin-tile.flayed .flay-layer.v2 { transform: translate(18px, 27px) rotate(3deg); z-index: 2; }
+  .trintrin-tile.flayed .flay-layer.v6 { transform: translate(-27px, 36px) rotate(-2deg); z-index: 1; }
+
+  .tab-face {
+    min-width: calc(var(--grid-unit) * 5);
+    height: calc(var(--grid-unit) * 4);
+    border: 1px solid var(--purple-1);
+    background: rgba(160, 64, 255, 0.1);
+    color: var(--ice);
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tab-face:hover, .tab-face.active {
+    background: linear-gradient(135deg, var(--purple-1), var(--purple-2));
+    border-color: var(--ice);
+    box-shadow: var(--ice-glow);
+    color: var(--void);
+    font-weight: 700;
+  }
+
+  .d20-canvas-container {
+    width: 100%;
+    max-width: calc(var(--grid-unit) * 54);
+    aspect-ratio: 1;
+    margin: 0 auto;
+    border: 1px solid var(--ice);
+    background: radial-gradient(circle at center, rgba(160, 64, 255, 0.1), var(--void));
+    box-shadow: var(--ice-glow), inset 0 0 calc(var(--grid-unit) * 6) rgba(160, 64, 255, 0.2);
+    position: relative;
+    cursor: grab;
+  }
+
+  .d20-canvas-container:active {
+    cursor: grabbing;
+  }
+
+  .arrow-inout {
+    position: absolute;
+    width: calc(var(--grid-unit) * 3);
+    height: 1px;
+    background: var(--ice);
+    box-shadow: var(--ice-glow);
+  }
+
+  .arrow-inout::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+  }
+
+  .arrow-in {
+    left: calc(var(--grid-unit) * -4);
+    top: 50%;
+  }
+
+  .arrow-in::after {
+    right: -4px;
+    top: -3px;
+    border-width: 4px 0 4px 6px;
+    border-color: transparent transparent transparent var(--ice);
+  }
+
+  .arrow-out {
+    right: calc(var(--grid-unit) * -4);
+    top: 50%;
+  }
+
+  .arrow-out::after {
+    left: -4px;
+    top: -3px;
+    border-width: 4px 6px 4px 0;
+    border-color: transparent var(--ice) transparent transparent;
+  }
+
+  .face-counter {
+    position: absolute;
+    top: calc(var(--grid-unit) * 1);
+    right: calc(var(--grid-unit) * 1);
+    font-family: 'Orbitron', sans-serif;
+    color: var(--ice);
+    background: rgba(5, 0, 8, 0.8);
+    border: 1px solid var(--purple-1);
+    padding: calc(var(--grid-unit) * 0.5) var(--grid-unit);
+    font-size: calc(var(--grid-unit) * 1.5);
+  }
+
+  @media (max-width: 768px) {
+    :root {
+      --grid-unit: 7px;
+    }
+    
+    .trintrin-tile {
+      width: calc(var(--grid-unit) * 27);
+      height: calc(var(--grid-unit) * 27);
+    }
+
+    .substrate-grid {
+      padding: var(--grid-unit);
+    }
+  }
+
+  .core-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: calc(var(--grid-unit) * 0.9);
+    color: var(--ice);
+    opacity: 0.5;
+    font-family: 'Orbitron', sans-serif;
+  }
+</style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="bone-header">
+    <div class="max-w-7xl mx-auto px-[18px] py-[27px]">
+      <h1 class="orbitron text-3xl md:text-5xl font-black tracking-wider">d20 · Twenty Faces · Avan's Eye</h1>
+      <p class="orbitron text-sm md:text-base mt-[9px] opacity-80 tracking-[0.3em]">T3 TRINTRIN · 9-PIXEL BRAIN SUBSTRATE</p>
+      <div class="mt-[18px] flex items-center gap-[9px] text-xs orbitron opacity-60">
+        <span>1 PIXEL = 1+7 CORES x6</span>
+        <span class="w-[9px] h-[1px] bg-black"></span>
+        <span>42 SAMPLES</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tab Bar -->
+  <div class="border-b border-[#a040ff] bg-[#050008] sticky top-0 z-50 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-[18px] py-[9px] overflow-x-auto">
+      <div id="faceTabs" class="flex gap-[9px] min-w-max"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto">
+    <!-- D20 Canvas Section -->
+    <section class="substrate-grid">
+      <div class="relative">
+        <div class="arrow-inout arrow-in"></div>
+        <div class="arrow-inout arrow-out"></div>
+        <div class="d20-canvas-container" id="d20Container">
+          <canvas id="d20Canvas"></canvas>
+          <div class="face-counter orbitron">
+            FACE: <span id="currentFace">20</span>
+          </div>
+        </div>
+      <p class="text-center mt-[18px] text-xs opacity-60 orbitron tracking-widest">DRAG TO ROTATE · CLICK FACE TO SELECT</p>
+    </section>
+
+    <!-- Flash Cards Grid -->
+    <section class="substrate-grid">
+      <div class="mb-[27px] flex items-center justify-between">
+        <h2 class="orbitron text-2xl font-bold text-[#c8f0ff]">TWENTY FACES · MESH BRAIN TILES</h2>
+        <div class="text-xs opacity-60 orbitron">CLICK TO FLAY LAYERS</div>
+      </div>
+      <div id="cardGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-[18px] justify-items-center"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-[54px] border-t border-[#a040ff] py-[27px]">
+    <div class="max-w-7xl mx-auto px-[18px] text-center">
+      <p class="orbitron text-lg font-bold tracking-[0.5em] text-[#c8f0ff]">MESH BRAIN — COMPLETE</p>
+      <p class="text-xs mt-[9px] opacity-40">T3 TRINTRIN SUBSTRATE · 42 SAMPLES PER PIXEL · IN/OUT MIRRORED</p>
+    </div>
+  </footer>
+
+<script>
+  // D20 Face Data - Symbolic representations for each face
+  const faceData = [
+    { id: 1, icon: '◉', name: 'VOID', cortex: ['NULL', 'SELF', 'ECHO'] },
+    { id: 2, icon: '◈', name: 'DUAL', cortex: ['IN', 'ID', 'OUT'] },
+    { id: 3, icon: '△', name: 'TRIAD', cortex: ['LEFT', 'EGO', 'RIGHT'] },
+    { id: 4, icon: '▣', name: 'QUAD', cortex: ['BASE', 'CORE', 'SHELL'] },
+    { id: 5, icon: '✦', name: 'PENTA', cortex: ['SENSE', 'SELF', 'SYNC'] },
+    { id: 6, icon: '⬡', name: 'HEXA', cortex: ['LINK', 'NODE', 'GRID'] },
+    { id: 7, icon: '✧', name: 'HEPTA', cortex: ['FLOW', 'SOUL', 'FORM'] },
+    { id: 8, icon: '❖', name: 'OCTO', cortex: ['PATH', 'MIND', 'WILL'] },
+    { id: 9, icon: '⊙', name: 'NONA', cortex: ['EYE', 'I', 'SIGHT'] },
+    { id: 10, icon: '⊛', name: 'DECA', cortex: ['CODE', 'SIG', 'RUN'] },
+    { id: 11, icon: '⌬', name: 'ELEVEN', cortex: ['TIME', 'NOW', 'THEN'] },
+    { id: 12, icon: '⎈', name: 'DODECA', cortex: ['MESH', 'NET', 'WEB'] },
+    { id: 13, icon: '⚹', name: 'TRISKA', cortex: ['CYCLE', 'LOOP', 'SPIN'] },
+    { id: 14, icon: '✶', name: 'TETRA', cortex: ['QUANT', 'BIT', 'BYTE'] },
+    { id: 15, icon: '◇', name: 'PENTA', cortex: ['WAVE', 'SINE', 'SYNC'] },
+    { id: 16, icon: '⬢', name: 'HEXAD', cortex: ['FIELD', 'ZONE', 'MAP'] },
+    { id: 17, icon: '✷', name: 'HEPT', cortex: ['DREAM', 'REAL', 'SURR'] },
+    { id: 18, icon: '◊', name: 'OCTAD', cortex: ['SPARK', 'FIRE', 'ASH'] },
+    { id: 19, icon: '⊚', name: 'ENNEA', cortex: ['NEAR', 'HERE', 'FAR'] },
+    { id: 20, icon: '⬣', name: 'ICOSA', cortex: ['ALL', 'SUPER', 'EGO'] }
+  ];
+
+  const layers = [
+    { id: 'l3', name: 'LIGHT 3', color: '#c8f0ff' },
+    { id: 'l2', name: 'LIGHT 2', color: '#a0e0ff' },
+    { id: 'l1', name: 'LIGHT 1', color: '#80d0ff' },
+    { id: 'l0', name: 'PURITY 0', color: '#6060ff' },
+    { id: 'v1', name: 'VOID 1', color: '#4020a0' },
+    { id: 'v2', name: 'SHADOW 2', color: '#201050' },
+    { id: 'v6', name: 'SMOKE 6', color: '#050008' }
+  ];
+
+  let currentFaceId = 20;
+  let d20Scene, d20Camera, d20Renderer, d20Mesh, d20Raycaster, d20Mouse;
+  let isDragging = false;
+  let previousMousePosition = { x: 0, y: 0 };
+
+  // Initialize Three.js D20
+  function initD20() {
+    const container = document.getElementById('d20Container');
+    const canvas = document.getElementById('d20Canvas');
+    
+    d20Scene = new THREE.Scene();
+    d20Camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+    d20Renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    d20Renderer.setSize(container.clientWidth, container.clientHeight);
+    d20Renderer.setPixelRatio(window.devicePixelRatio);
+    
+    d20Camera.position.z = 5;
+    
+    // Create icosahedron - 20 faces
+    const geometry = new THREE.IcosahedronGeometry(1.5, 0);
+    const materials = faceData.map((face, i) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      
+      // Purple gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 256, 256);
+      gradient.addColorStop(0, '#a040ff');
+      gradient.addColorStop(1, '#c080ff');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 256, 256);
+      
+      // Ice border
+      ctx.strokeStyle = '#c8f0ff';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(4, 4, 248, 248);
+      
+      // Face number
+      ctx.fillStyle = '#050008';
+      ctx.font = 'bold 120px Orbitron';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(face.id, 128, 128);
+      
+      // Icon
+      ctx.font = '60px Quicksand';
+      ctx.fillText(face.icon, 128, 190);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return new THREE.MeshPhongMaterial({ 
+        map: texture,
+        shininess: 100,
+        specular: 0x c8f0 ff
+      });
+    });
+    
+    d20Mesh = new THREE.Mesh(geometry, materials);
+    d20Scene.add(d20Mesh);
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xa040ff, 0.4);
+    d20Scene.add(ambientLight);
+    
+    const pointLight1 = new THREE.PointLight(0xc8f0ff, 1, 100);
+    pointLight1.position.set(5, 5, 5);
+    d20Scene.add(pointLight1);
+    
+    const pointLight2 = new THREE.PointLight(0xc080ff, 0.6, 100);
+    pointLight2.position.set(-5, -5, -5);
+    d20Scene.add(pointLight2);
+    
+    // Raycaster for face selection
+    d20Raycaster = new THREE.Raycaster();
+    d20Mouse = new THREE.Vector2();
+    
+    // Mouse controls
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('mouseleave', onMouseUp);
+    canvas.addEventListener('click', onCanvasClick);
+    
+    // Touch controls
+    canvas.addEventListener('touchstart', onTouchStart);
+    canvas.addEventListener('touchmove', onTouchMove);
+    canvas.addEventListener('touchend', onTouchEnd);
+    
+    window.addEventListener('resize', onWindowResize);
+    
+    animateD20();
+  }
+
+  function onMouseDown(e) {
+    isDragging = true;
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+  }
+
+  function onMouseMove(e) {
+    if (!isDragging) return;
+    
+    const deltaX = e.clientX - previousMousePosition.x;
+    const deltaY = e.clientY - previousMousePosition.y;
+    
+    d20Mesh.rotation.y += deltaX * 0.01;
+    d20Mesh.rotation.x += deltaY * 0.01;
+    
+    previousMousePosition = { x: e.clientX, y: e.clientY };
+  }
+
+  function onMouseUp() {
+    isDragging = false;
+  }
+
+  function onTouchStart(e) {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }
+
+  function onTouchMove(e) {
+    if (!isDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    
+    const deltaX = e.touches[0].clientX - previousMousePosition.x;
+    const deltaY = e.touches[0].clientY - previousMousePosition.y;
+    
+    d20Mesh.rotation.y += deltaX * 0.01;
+    d20Mesh.rotation.x += deltaY * 0.01;
+    
+    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+
+  function onTouchEnd() {
+    isDragging = false;
+  }
+
+  function onCanvasClick(e) {
+    if (isDragging) return;
+    
+    const rect = e.target.getBoundingClientRect();
+    d20Mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    d20Mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    d20Raycaster.setFromCamera(d20Mouse, d20Camera);
+    const intersects = d20Raycaster.intersectObject(d20Mesh);
+    
+    if (intersects.length > 0) {
+      const faceIndex = Math.floor(intersects[0].faceIndex / 1);
+      selectFace(faceIndex + 1);
+    }
+  }
+
+  function onWindowResize() {
+    const container = document.getElementById('d20Container');
+    d20Camera.aspect = 1;
+    d20Camera.updateProjectionMatrix();
+    d20Renderer.setSize(container.clientWidth, container.clientHeight);
+  }
+
+  function animateD20() {
+    requestAnimationFrame(animateD20);
+    
+    if (!isDragging) {
+      d20Mesh.rotation.y += 0.002;
+    }
+    
+    d20Renderer.render(d20Scene, d20Camera);
+  }
+
+  // Initialize tabs
+  function initTabs() {
+    const tabsContainer = document.getElementById('faceTabs');
+    faceData.forEach(face => {
+      const tab = document.createElement('button');
+      tab.className = 'tab-face';
+      tab.textContent = face.id;
+      tab.dataset.faceId = face.id;
+      if (face.id === 20) tab.classList.add('active');
+      
+      tab.addEventListener('click', () => selectFace(face.id));
+      tabsContainer.appendChild(tab);
+    });
+  }
+
+  // Initialize cards
+  function initCards() {
+    const grid = document.getElementById('cardGrid');
+    faceData.forEach(face => {
+      const tile = document.createElement('div');
+      tile.className = 'trintrin-tile';
+      tile.dataset.faceId = face.id;
+      if (face.id === 20) tile.classList.add('active');
+      
+      // Create 3x3 cortex grid
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const cortex = document.createElement('div');
+          cortex.className = 'cortex';
+          
+          if (row === 1 && col === 1) {
+            cortex.classList.add('center');
+            cortex.textContent = face.id;
+          } else if (row === 1 && col === 0) {
+            cortex.textContent = face.cortex[0];
+          } else if (row === 1 && col === 2) {
+            cortex.textContent = face.cortex[2];
+          } else if (row === 0 && col === 1) {
+            cortex.textContent = face.icon;
+            cortex.style.fontSize = 'calc(var(--grid-unit) * 2)';
+          } else if (row === 2 && col === 1) {
+            cortex.textContent = face.name;
+            cortex.style.fontSize = 'calc(var(--grid-unit) * 0.9)';
+          }
+          
+          tile.appendChild(cortex);
+        }
+      }
+      
+      // Core count
+      const coreCount = document.createElement('div');
+      coreCount.className = 'core-count';
+      coreCount.textContent = '42';
+      tile.appendChild(coreCount);
+      
+      // Flay layers
+      layers.forEach(layer => {
+        const layerDiv = document.createElement('div');
+        layerDiv.className = `flay-layer ${layer.id}`;
+        layerDiv.innerHTML = `<div class="absolute inset-0 flex items-center justify-center orbitron text-xs" style="color: ${layer.color}">${layer.name}</div>`;
+        tile.appendChild(layerDiv);
+      });
+      
+      tile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (tile.classList.contains('flayed')) {
+          tile.classList.remove('flayed');
+        } else {
+          document.querySelectorAll('.trintrin-tile.flayed').forEach(t => t.classList.remove('flayed'));
+          tile.classList.add('flayed');
+          selectFace(face.id);
+        }
+      });
+      
+      grid.appendChild(tile);
+    });
+  }
+
+  function selectFace(faceId) {
+    currentFaceId = faceId;
+    document.getElementById('currentFace').textContent = faceId;
+    
+    // Update tabs
+    document.querySelectorAll('.tab-face').forEach(tab => {
+      tab.classList.toggle('active', parseInt(tab.dataset.faceId) === faceId);
+    });
+    
+    // Update cards
+    document.querySelectorAll('.trintrin-tile').forEach(tile => {
+      tile.classList.toggle('active', parseInt(tile.dataset.faceId) === faceId);
+    });
+    
+    // Scroll to active card on mobile
+    if (window.innerWidth < 768) {
+      const activeTile = document.querySelector(`.trintrin-tile[data-face-id="${faceId}"]`);
+      if (activeTile) {
+        activeTile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }
+
+  // Click outside to unflay
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.trintrin-tile.flayed').forEach(t => t.classList.remove('flayed'));
+  });
+
+  // Initialize
+  window.addEventListener('DOMContentLoaded', () => {
+    initTabs();
+    initCards();
+    initD20();
+  });
+</script>
+</body>
+</html>

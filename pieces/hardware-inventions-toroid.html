@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Toroid &amp; Coil Bench</title>
+<title>Toroid & Coil Bench</title>
 <style>
 :root{
   --bg:#0c0f15;--panel:#141a24;--panel2:#0f141d;--ink:#eaf0f7;--body:#a9b6c6;--dim:#6a788d;--dimmer:#28323f;
@@ -39,15 +39,12 @@ input,select{width:100%;font-family:var(--mono);font-size:14px;color:var(--ink);
 input:focus,select:focus{outline:none}
 .unit{font-family:var(--mono);font-size:12px;color:var(--dim);padding:10px 12px;border-left:1px solid var(--line);background:rgba(255,255,255,.02);white-space:nowrap}
 select{background:var(--panel2);border:1px solid var(--line);border-radius:8px}
-.result{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;position:sticky;top:78px;max-height:calc(100vh - 100px);overflow-y:auto}
+.result{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;position:sticky;top:78px}
 .result h3{margin:0 0 12px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.sec{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dimmer);
-  margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--dimmer)}
 .big{font-family:var(--mono);font-size:42px;font-weight:700;line-height:1;color:var(--cu);margin:2px 0}
 .big .u{font-size:18px;color:var(--body);font-weight:500}
 .subval{font-family:var(--mono);font-size:13px;color:var(--body);margin-top:4px}
-.kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;
-  border-bottom:1px dashed var(--line);font-family:var(--mono);font-size:12.5px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-family:var(--mono);font-size:12.5px}
 .kv:last-child{border-bottom:none}.kv .k{color:var(--dim)}.kv .v{color:var(--ink);text-align:right}
 .kv .v.warn{color:var(--warn)}.kv .v.bad{color:var(--bad)}.kv .v.ok{color:var(--ok)}
 .flag{margin-top:12px;font-family:var(--mono);font-size:11px;line-height:1.5;padding:10px 12px;border-radius:8px;border:1px solid var(--line)}
@@ -74,9 +71,8 @@ svg{display:block;margin:0 auto}
 "use strict";
 const $=s=>document.querySelector(s);
 const TOOLS=[];
-
 function field(label,id,val,unit,opts){
-  if(opts){
+  if(opts){ // select
     return `<div class="field"><label>${label}</label>
       <select id="${id}">${opts.map(o=>`<option value="${o.v}" ${o.v==val?"selected":""}>${o.t}</option>`).join("")}</select></div>`;
   }
@@ -84,76 +80,42 @@ function field(label,id,val,unit,opts){
     <div class="inwrap"><input type="number" id="${id}" value="${val}" step="any"><span class="unit">${unit}</span></div></div>`;
 }
 
-/* Core AL presets (nH/turn²) — Amidon/Micrometals catalog values */
+/* common core presets: AL in nH/turn^2 */
 const CORES=[
-  {t:"T50-6 iron (AL 4.0)",  v:4.0},
-  {t:"T50-2 iron (AL 4.9)",  v:4.9},
-  {t:"T37-6 iron (AL 3.0)",  v:3.0},
-  {t:"T68-2 iron (AL 5.7)",  v:5.7},
-  {t:"FT50-43 ferrite (AL 523)", v:523},
-  {t:"FT37-43 ferrite (AL 420)", v:420},
-  {t:"FT82-43 ferrite (AL 557)", v:557},
-  {t:"FT50-61 ferrite (AL 69)",  v:69},
+  {t:"T50-6 iron (AL 4.0)",v:4.0},
+  {t:"T50-2 iron (AL 4.9)",v:4.9},
+  {t:"T37-6 iron (AL 3.0)",v:3.0},
+  {t:"T68-2 iron (AL 5.7)",v:5.7},
+  {t:"FT50-43 ferrite (AL 523)",v:523},
+  {t:"FT37-43 ferrite (AL 420)",v:420},
+  {t:"FT82-43 ferrite (AL 557)",v:557},
+  {t:"FT50-61 ferrite (AL 69)",v:69},
 ];
 
-/* Wire table: outer diameter (mm), AWG, copper resistivity (mΩ/m at 20 °C) */
-const WIRES=[
-  {d:0.32,awg:30,t:"30 AWG (0.27mm)",rho:338.6},
-  {d:0.36,awg:28,t:"28 AWG (0.34mm)",rho:212.9},
-  {d:0.45,awg:26,t:"26 AWG (0.43mm)",rho:134.0},
-  {d:0.55,awg:24,t:"24 AWG (0.53mm)",rho: 84.22},
-  {d:0.66,awg:22,t:"22 AWG (0.65mm)",rho: 53.48},
-  {d:0.81,awg:20,t:"20 AWG (0.81mm)",rho: 33.31},
-];
-
-function addPresets(container,inputId,el){
-  CORES.forEach(c=>{
-    const b=document.createElement("span");b.className="chip";
-    b.textContent=c.t.split(" (")[0];b.title=c.t;
-    b.onclick=()=>{el.querySelector("#"+inputId).value=c.v;
-      el.querySelectorAll("input,select").forEach(i=>i.dispatchEvent(new Event("input")));};
-    container.appendChild(b);
-  });
-}
-
-function fmtL(uH){
-  return uH>=1000?`${(uH/1000).toFixed(3)} <span class="u">mH</span>`:
-         uH>=1   ?`${uH.toFixed(3)} <span class="u">µH</span>`:
-                  `${(uH*1000).toFixed(1)} <span class="u">nH</span>`;
-}
-function fmtWire(mm){
-  return mm>=100?`${(mm/10).toFixed(1)} cm`:`${mm.toFixed(0)} mm`;
-}
-function fmtFreq(MHz){
-  return MHz>=1000?`${(MHz/1000).toFixed(2)} GHz`:
-         MHz>=1  ?`${MHz.toFixed(1)} MHz`:
-                  `${(MHz*1000).toFixed(0)} kHz`;
-}
-
-/* ───────────────────────────────────────────────────────────────
-   TAB 1 — Turns for a target inductance (AL method, EXACT)
-   ─────────────────────────────────────────────────────────────── */
+/* ---- TAB 1: turns from target L (AL method, EXACT) ---- */
 TOOLS.push({id:"turns",name:"Turns ⟶ L (AL)",render(el){
   el.innerHTML=`<h2>Turns for a target inductance</h2>
-    <p class="desc">The A<sub>L</sub> method. If you know your core's A<sub>L</sub> from its datasheet, this is exact: N = √(L / A<sub>L</sub>).</p>
+    <p class="desc">The AL method. If you know your core's A<sub>L</sub> (from its datasheet), this is exact: N = √(L / A<sub>L</sub>).</p>
     <div class="layout"><div>
       <div class="preset" id="t-presets"></div>
       ${field("core A_L","t-al",4.0,"nH/N²")}
       ${field("target inductance","t-L",1.0,"µH")}
-      <div class="note">A<sub>L</sub> is the core's inductance per turn squared, from the datasheet (here in nH/turn²). Iron-powder cores are single-digit; type-43 ferrite is hundreds. The result is rounded to whole turns, and the achieved inductance shows what those exact turns actually give.</div>
+      <div class="note">A<sub>L</sub> is the core's inductance per turn squared, printed on the datasheet (here in nH/turn²). Iron-powder cores are single-digit; type-43 ferrite is hundreds. The result is rounded to whole turns, and the achieved inductance shows what those exact turns actually give.</div>
     </div>
     <div class="result"><h3>turns required</h3>
       <div class="big" id="t-N">—<span class="u"> turns</span></div>
       <div class="subval" id="t-exact"></div>
-      <div class="kv"><span class="k">achieved L (rounded turns)</span><span class="v" id="t-achieved">—</span></div>
+      <div class="kv"><span class="k">achieved L (rounded)</span><span class="v" id="t-achieved">—</span></div>
       <div class="kv"><span class="k">error vs target</span><span class="v" id="t-err">—</span></div>
       <div class="flag ok">A<sub>L</sub> method — exact for a known core.</div>
     </div></div>`;
-  addPresets(el.querySelector("#t-presets"),"t-al",el);
+  const ps=el.querySelector("#t-presets");
+  CORES.forEach(c=>{const b=document.createElement("span");b.className="chip";b.textContent=c.t.split(" (")[0];
+    b.title=c.t;b.onclick=()=>{el.querySelector("#t-al").value=c.v;calc();};ps.appendChild(b);});
   function calc(){
-    const AL=+el.querySelector("#t-al").value,L=+el.querySelector("#t-L").value;
+    const AL=+el.querySelector("#t-al").value, L=+el.querySelector("#t-L").value;
     if(AL>0&&L>0){
-      const Nexact=Math.sqrt(L*1000/AL),N=Math.round(Nexact);
+      const Nexact=Math.sqrt(L*1000/AL), N=Math.round(Nexact);
       const achieved=AL*N*N/1000;
       el.querySelector("#t-N").innerHTML=`${N}<span class="u"> turns</span>`;
       el.querySelector("#t-exact").textContent=`exact: ${Nexact.toFixed(2)} turns`;
@@ -166,9 +128,7 @@ TOOLS.push({id:"turns",name:"Turns ⟶ L (AL)",render(el){
   el.querySelectorAll("input").forEach(i=>i.oninput=calc);calc();
 }});
 
-/* ───────────────────────────────────────────────────────────────
-   TAB 2 — Inductance from a winding (AL method, EXACT)
-   ─────────────────────────────────────────────────────────────── */
+/* ---- TAB 2: L from turns (AL) ---- */
 TOOLS.push({id:"Lfromn",name:"L ⟵ Turns",render(el){
   el.innerHTML=`<h2>Inductance from a winding</h2>
     <p class="desc">You wound N turns on a known core — what inductance did you get? L = A<sub>L</sub>·N².</p>
@@ -183,273 +143,98 @@ TOOLS.push({id:"Lfromn",name:"L ⟵ Turns",render(el){
       <div class="kv"><span class="k">reactance @ 10 MHz</span><span class="v" id="l-x10">—</span></div>
       <div class="flag ok">A<sub>L</sub> method — exact for a known core.</div>
     </div></div>`;
-  addPresets(el.querySelector("#l-presets"),"l-al",el);
+  const ps=el.querySelector("#l-presets");
+  CORES.forEach(c=>{const b=document.createElement("span");b.className="chip";b.textContent=c.t.split(" (")[0];
+    b.title=c.t;b.onclick=()=>{el.querySelector("#l-al").value=c.v;calc();};ps.appendChild(b);});
+  function fmtL(uH){return uH>=1000?`${(uH/1000).toFixed(3)} <span class="u">mH</span>`:uH>=1?`${uH.toFixed(3)} <span class="u">µH</span>`:`${(uH*1000).toFixed(1)} <span class="u">nH</span>`;}
   function Xl(uH,f){const X=2*Math.PI*f*uH*1e-6;return X>=1000?`${(X/1000).toFixed(2)} kΩ`:`${X.toFixed(1)} Ω`;}
-  function calc(){
-    const AL=+el.querySelector("#l-al").value,N=+el.querySelector("#l-N").value;
+  function calc(){const AL=+el.querySelector("#l-al").value,N=+el.querySelector("#l-N").value;
     const uH=AL*N*N/1000;
     el.querySelector("#l-out").innerHTML=fmtL(uH);
     el.querySelector("#l-x1").textContent=Xl(uH,1e6);
-    el.querySelector("#l-x10").textContent=Xl(uH,10e6);
-  }
+    el.querySelector("#l-x10").textContent=Xl(uH,10e6);}
   el.querySelectorAll("input").forEach(i=>i.oninput=calc);calc();
 }});
 
-/* ───────────────────────────────────────────────────────────────
-   TAB 3 — AL from geometry (ESTIMATE) + saturation current
-   ─────────────────────────────────────────────────────────────── */
+/* ---- TAB 3: geometry estimate (ESTIMATE) ---- */
 TOOLS.push({id:"geom",name:"Geometry est.",render(el){
-  el.innerHTML=`<h2>A<sub>L</sub> from core geometry + saturation</h2>
-    <p class="desc">No datasheet? Estimate A<sub>L</sub> from dimensions and µ<sub>r</sub>. Also calculates mean path length and saturation current.</p>
+  el.innerHTML=`<h2>A<sub>L</sub> from core geometry</h2>
+    <p class="desc">No datasheet? Estimate from physical dimensions + material permeability. L = µ₀µ<sub>r</sub>N²·h·ln(OD/ID) / 2π.</p>
     <div class="layout"><div>
       ${field("relative permeability µ_r","g-mu",850,"")}
       ${field("outer diameter OD","g-od",12.7,"mm")}
       ${field("inner diameter ID","g-id",7.15,"mm")}
       ${field("height h","g-h",4.9,"mm")}
       ${field("turns N","g-N",16,"turns")}
-      ${field("B_sat (core material)","g-bsat",0.27,"T")}
-      <div class="note">
-        µ<sub>r</sub>: type-43 ferrite ≈ 850 · type-61 ≈ 125 · iron powder type-6 ≈ 8 · type-2 ≈ 10<br>
-        B<sub>sat</sub>: type-43 ferrite ≈ 0.27 T (drops to ~0.20 T at 100 °C) · type-61 ≈ 0.35 T · iron powder type-2/6 ≈ 1.4 T<br>
-        Geometry formula: L = µ₀µ<sub>r</sub>N²·h·ln(OD/ID) / 2π — assumes rectangular cross-section, uniform µ<sub>r</sub>.
-      </div>
+      <div class="note">µ<sub>r</sub> examples: type-43 ferrite ≈ 850, type-61 ≈ 125, iron powder type-6 ≈ 8, type-2 ≈ 10. This assumes a rectangular cross-section and a single µ<sub>r</sub> value.</div>
     </div>
     <div class="result"><h3>estimated</h3>
       <div class="kv"><span class="k">A_L (per N²)</span><span class="v" id="g-al">—</span></div>
       <div class="big" id="g-L">—</div>
       <div class="subval">for N = <span id="g-Nv">16</span> turns</div>
-      <div class="sec">Magnetics</div>
-      <div class="kv"><span class="k">mean path l<sub>e</sub></span><span class="v" id="g-le">—</span></div>
-      <div class="kv"><span class="k">cross-section area A<sub>e</sub></span><span class="v" id="g-ae">—</span></div>
-      <div class="kv"><span class="k">I<sub>sat</sub> (at B<sub>sat</sub>)</span><span class="v" id="g-isat">—</span></div>
-      <div class="kv"><span class="k">flux density @ 1 A</span><span class="v" id="g-b1a">—</span></div>
-      <div class="flag est">⚠ Estimate only. Real µ<sub>r</sub> varies with frequency, flux density, and temperature — often ±20 % or more. I<sub>sat</sub> is for DC; AC saturation depends on waveform and frequency. Use datasheet values when available.</div>
+      <div class="flag est">⚠ Estimate only. Real µ<sub>r</sub> varies with frequency, flux density, and temperature — often ±20% or more. Use the datasheet A<sub>L</sub> when you have it.</div>
     </div></div>`;
   function calc(){
-    const mu=+el.querySelector("#g-mu").value;
-    const OD=+el.querySelector("#g-od").value/1000;  // m
-    const ID=+el.querySelector("#g-id").value/1000;
-    const h =+el.querySelector("#g-h").value/1000;
-    const N =+el.querySelector("#g-N").value;
-    const bsat=+el.querySelector("#g-bsat").value;
+    const mu=+el.querySelector("#g-mu").value,OD=+el.querySelector("#g-od").value/1000,
+      ID=+el.querySelector("#g-id").value/1000,h=+el.querySelector("#g-h").value/1000,N=+el.querySelector("#g-N").value;
     if(OD>ID&&ID>0&&h>0&&mu>0){
       const mu0=4*Math.PI*1e-7;
-      const AL_H=mu0*mu*h*Math.log(OD/ID)/(2*Math.PI); // H/turn²
-      const AL_nH=AL_H*1e9;
-      const uH=AL_H*N*N*1e6;
+      const AL1=mu0*mu*h*Math.log(OD/ID)/(2*Math.PI); // L per turn^2, in H
+      const AL_nH=AL1*1e9;
+      const uH=AL1*N*N*1e6;
       el.querySelector("#g-al").textContent=`${AL_nH.toFixed(1)} nH/N²`;
-      el.querySelector("#g-L").innerHTML=fmtL(uH);
+      el.querySelector("#g-L").innerHTML=uH>=1?`${uH.toFixed(2)} <span class="u">µH</span>`:`${(uH*1000).toFixed(0)} <span class="u">nH</span>`;
       el.querySelector("#g-Nv").textContent=N;
-
-      // Mean path length  le = π(OD+ID)/2
-      const le=Math.PI*(OD+ID)/2;  // m
-      el.querySelector("#g-le").textContent=`${(le*1000).toFixed(1)} mm`;
-
-      // Cross-section area  Ae = h·(OD-ID)/2
-      const Ae=h*(OD-ID)/2;  // m²
-      el.querySelector("#g-ae").textContent=`${(Ae*1e6).toFixed(2)} mm²`;
-
-      // Saturation current  I_sat = B_sat·le / (µ₀·µr·N)
-      if(bsat>0&&N>0){
-        const isat=bsat*le/(mu0*mu*N);
-        const ie=el.querySelector("#g-isat");
-        ie.textContent=`${isat.toFixed(2)} A`;
-        ie.className="v "+(isat>5?"ok":isat>1?"warn":"bad");
-
-        // Flux density per ampere  B = µ₀·µr·N·I / le
-        const B1A=mu0*mu*N*1/le;  // T at I=1A
-        const b1=el.querySelector("#g-b1a");
-        b1.textContent=`${(B1A*1000).toFixed(1)} mT/A`;
-        b1.className="v "+(B1A<bsat*0.1?"ok":B1A<bsat*0.5?"warn":"bad");
-      }
     }
   }
   el.querySelectorAll("input").forEach(i=>i.oninput=calc);calc();
 }});
 
-/* ───────────────────────────────────────────────────────────────
-   TAB 4 — Wire, DCR, layers, Q, SRF
-   ─────────────────────────────────────────────────────────────── */
+/* ---- TAB 4: wire & fill ---- */
 TOOLS.push({id:"wire",name:"Wire & Fill",render(el){
-  const wireOpts=WIRES.map(w=>`<option value="${w.d}" ${w.d===0.45?"selected":""}>${w.t}</option>`).join("");
-
-  el.innerHTML=`<h2>Wire, DCR, layers &amp; RF performance</h2>
-    <p class="desc">Wire length, DC resistance, single/dual-layer fit. Provide A<sub>L</sub> to unlock inductance, Q, and self-resonant frequency.</p>
+  el.innerHTML=`<h2>Wire length &amp; single-layer fill</h2>
+    <p class="desc">How much wire to cut, and whether your turns fit in one layer on the core's inner circumference.</p>
     <div class="layout"><div>
-      <div class="preset" id="w-presets"></div>
-      ${field("core A_L (0 = skip RF calcs)","w-al",0,"nH/N²")}
       ${field("outer diameter OD","w-od",12.7,"mm")}
       ${field("inner diameter ID","w-id",7.15,"mm")}
       ${field("height h","w-h",4.9,"mm")}
       ${field("turns N","w-N",16,"turns")}
-      <div class="field"><label>wire gauge</label>
-        <select id="w-awg">${wireOpts}</select></div>
+      ${field("wire gauge","w-awg",26,"",[
+        {v:0.32,t:"30 AWG (0.27mm)"},{v:0.36,t:"28 AWG (0.34mm)"},{v:0.45,t:"26 AWG (0.43mm)"},
+        {v:0.55,t:"24 AWG (0.53mm)"},{v:0.66,t:"22 AWG (0.65mm)"},{v:0.81,t:"20 AWG (0.81mm)"}])}
       ${field("lead allowance (each end)","w-lead",25,"mm")}
-      ${field("operating frequency","w-freq",7,"MHz")}
-      ${field("stray capacitance C stray","w-cs",5,"pF")}
-      <div class="note">
-        <b>C<sub>stray</sub></b> = inter-winding capacitance. Measure with an LCR meter for best accuracy. Typical for T50-size: 2–8 pF (10–20 turns). More turns, tighter winding, or bifilar wind raises it significantly.<br><br>
-        <b>Q shown is the DCR floor</b> — no core loss included. Iron-powder type-6/2 at HF: real Q ≈ 100–300. Type-43 ferrite is intentionally lossy (EMI absorption): expect real Q &lt; 30.
-      </div>
+      <div class="note">Turn length uses the core cross-section perimeter ≈ 2·(width + height), width = (OD−ID)/2. Single-layer max turns = inner circumference ÷ wire outer diameter. Real winding needs slightly more; treat as a close estimate plus your leads.</div>
     </div>
-
-    <div class="result"><h3>results</h3>
-
-      <div class="sec">Wire</div>
+    <div class="result"><h3>wire needed</h3>
       <div class="big" id="w-total">—</div>
       <div class="kv"><span class="k">per turn</span><span class="v" id="w-perturn">—</span></div>
       <div class="kv"><span class="k">winding only</span><span class="v" id="w-wind">—</span></div>
-      <div class="kv"><span class="k">leads (2×)</span><span class="v" id="w-leadv">—</span></div>
-
-      <div class="sec">DC Resistance</div>
-      <div class="kv"><span class="k">DCR at 20 °C</span><span class="v" id="w-dcr">—</span></div>
-
-      <div class="sec">Layer Check</div>
+      <div class="kv"><span class="k">+ leads (2×)</span><span class="v" id="w-leadv">—</span></div>
+      <hr style="border:none;border-top:1px dashed var(--line);margin:12px 0">
       <div class="kv"><span class="k">max single-layer turns</span><span class="v" id="w-max">—</span></div>
       <div class="kv"><span class="k">your N fits?</span><span class="v" id="w-fit">—</span></div>
-
-      <div id="w-l2block" style="display:none">
-        <div class="sec">Two-Layer Winding</div>
-        <div class="kv"><span class="k">layer 1</span><span class="v" id="w-l1">—</span></div>
-        <div class="kv"><span class="k">layer 2</span><span class="v" id="w-l2">—</span></div>
-        <div class="kv"><span class="k">layer 2 max (reduced bore)</span><span class="v" id="w-l2max">—</span></div>
-        <div class="kv"><span class="k">layer 2 per turn</span><span class="v" id="w-l2pt">—</span></div>
-        <div class="kv"><span class="k">total wire (2 layers)</span><span class="v" id="w-l2tot">—</span></div>
-        <div class="kv"><span class="k">DCR (2 layers)</span><span class="v" id="w-l2dcr">—</span></div>
-      </div>
-
-      <div id="w-rfblock" style="display:none">
-        <div class="sec">Inductance &amp; RF</div>
-        <div class="kv"><span class="k">L (A_L · N²)</span><span class="v" id="w-L">—</span></div>
-        <div class="kv"><span class="k">Q @ <span id="w-flab">—</span> (DCR floor)</span><span class="v" id="w-Q">—</span></div>
-        <div class="kv"><span class="k">X<sub>L</sub></span><span class="v" id="w-XL">—</span></div>
-        <div class="kv"><span class="k">SRF (C = <span id="w-cslab">—</span> pF)</span><span class="v" id="w-srf">—</span></div>
-        <div class="kv"><span class="k">usable limit (~SRF / 5)</span><span class="v" id="w-flim">—</span></div>
-        <div class="kv"><span class="k">margin at f<sub>op</sub></span><span class="v" id="w-margin">—</span></div>
-      </div>
-
     </div></div>`;
-
-  addPresets(el.querySelector("#w-presets"),"w-al",el);
-
   function calc(){
-    const OD  =+el.querySelector("#w-od").value;
-    const ID  =+el.querySelector("#w-id").value;
-    const h   =+el.querySelector("#w-h").value;
-    const N   =+el.querySelector("#w-N").value;
-    const wd  =+el.querySelector("#w-awg").value;   // outer dia mm
-    const lead=+el.querySelector("#w-lead").value;
-    const AL  =+el.querySelector("#w-al").value;
-    const freq=+el.querySelector("#w-freq").value;  // MHz
-    const Cs  =+el.querySelector("#w-cs").value;    // pF
-
-    if(!(OD>ID&&ID>0&&h>0&&N>0&&wd>0)) return;
-
-    /* ── Wire geometry ─────────────────────── */
-    const wWidth=(OD-ID)/2;                 // mm
-    const perTurn=2*(wWidth+h);             // mm per turn, rectangular path
-    const wind=perTurn*N;                   // mm winding
-    const total=wind+2*lead;               // mm total
-
+    const OD=+el.querySelector("#w-od").value,ID=+el.querySelector("#w-id").value,h=+el.querySelector("#w-h").value,
+      N=+el.querySelector("#w-N").value,wd=+el.querySelector("#w-awg").value,lead=+el.querySelector("#w-lead").value;
+    const wWidth=(OD-ID)/2;
+    const perTurn=2*(wWidth+h);          // mm
+    const wind=perTurn*N;                // mm
+    const total=wind+2*lead;             // mm
     el.querySelector("#w-perturn").textContent=`${perTurn.toFixed(1)} mm`;
-    el.querySelector("#w-wind").textContent=fmtWire(wind);
-    el.querySelector("#w-leadv").textContent=fmtWire(2*lead);
+    el.querySelector("#w-wind").textContent=`${(wind/10).toFixed(1)} cm`;
+    el.querySelector("#w-leadv").textContent=`${(2*lead/10).toFixed(1)} cm`;
     el.querySelector("#w-total").innerHTML=`${(total/10).toFixed(1)} <span class="u">cm</span>`;
-
-    /* ── DC resistance ─────────────────────── */
-    const wire=WIRES.find(w=>Math.abs(w.d-wd)<0.01)||WIRES[2];
-    const len_m=total/1000;
-    const dcr=len_m*(wire.rho/1000);  // Ω  (m × Ω/m)
-    const dcrEl=el.querySelector("#w-dcr");
-    dcrEl.textContent=dcr<1?`${(dcr*1000).toFixed(1)} mΩ`:`${dcr.toFixed(3)} Ω`;
-
-    /* ── Layer check ───────────────────────── */
-    const maxN1=Math.floor(Math.PI*ID/wd);
-    el.querySelector("#w-max").textContent=`${maxN1} turns`;
-    const fitEl=el.querySelector("#w-fit");
-    const l2block=el.querySelector("#w-l2block");
-
-    if(N<=maxN1){
-      fitEl.textContent=`✓ yes (${maxN1-N} spare)`;
-      fitEl.className="v ok";
-      l2block.style.display="none";
-    } else {
-      fitEl.textContent=`✗ needs 2 layers`;
-      fitEl.className="v bad";
-      l2block.style.display="";
-
-      // Layer 1 fills the inner bore, layer 2 wraps over it.
-      // Effective bore for layer 2 shrinks by one wire diameter on each side.
-      const l1turns=maxN1;
-      const l2turns=N-maxN1;
-      const id2=ID-2*wd;                            // mm, reduced bore
-      const maxN2=id2>0?Math.floor(Math.PI*id2/wd):0;
-      const wWidth2=wWidth+wd;                       // layer 2 is one wire-dia thicker
-      const perTurn2=2*(wWidth2+h);
-      const wind2=l2turns*perTurn2;
-      const total2=wind+wind2+2*lead;               // combined wire
-      const dcr2=total2/1000*(wire.rho/1000);
-
-      el.querySelector("#w-l1").textContent=`${l1turns} turns`;
-      el.querySelector("#w-l2").textContent=`${l2turns} turns`;
-      const l2maxEl=el.querySelector("#w-l2max");
-      l2maxEl.textContent=`${maxN2} turns — ${l2turns<=maxN2?"fits ✓":"OVERFLOW ✗"}`;
-      l2maxEl.className="v "+(l2turns<=maxN2?"ok":"bad");
-      el.querySelector("#w-l2pt").textContent=`${perTurn2.toFixed(1)} mm`;
-      el.querySelector("#w-l2tot").textContent=fmtWire(total2);
-      const dcr2El=el.querySelector("#w-l2dcr");
-      dcr2El.textContent=dcr2<1?`${(dcr2*1000).toFixed(1)} mΩ`:`${dcr2.toFixed(3)} Ω`;
-    }
-
-    /* ── RF performance (only when AL > 0) ── */
-    const rfblock=el.querySelector("#w-rfblock");
-    if(AL>0&&N>0){
-      rfblock.style.display="";
-      const L_uH=AL*N*N/1000;
-      el.querySelector("#w-L").innerHTML=fmtL(L_uH);
-
-      // Q = XL / DCR  (DCR floor, no core loss)
-      if(freq>0&&dcr>0){
-        const XL=2*Math.PI*freq*L_uH;  // Ω  (MHz and µH cancel)
-        const Q=XL/dcr;
-        el.querySelector("#w-flab").textContent=`${freq} MHz`;
-        const Qel=el.querySelector("#w-Q");
-        Qel.textContent=Q>=1000?`>${Math.round(Q/100)*100}`:Q.toFixed(0);
-        Qel.className="v "+(Q>200?"ok":Q>50?"warn":"bad");
-        const xlEl=el.querySelector("#w-XL");
-        xlEl.textContent=XL>=1000?`${(XL/1000).toFixed(2)} kΩ`:`${XL.toFixed(1)} Ω`;
-      }
-
-      // SRF = 1 / (2π√LC)
-      // With L in µH and C in pF: SRF[MHz] = 1000 / (2π√(L·C))
-      if(Cs>0){
-        const srf=1000/(2*Math.PI*Math.sqrt(L_uH*Cs));  // MHz
-        const flim=srf/5;
-        el.querySelector("#w-cslab").textContent=Cs;
-        const srfEl=el.querySelector("#w-srf");
-        srfEl.textContent=fmtFreq(srf);
-        srfEl.className="v "+(freq<flim?"ok":"bad");
-        el.querySelector("#w-flim").textContent=fmtFreq(flim);
-        const margin=(flim/freq-1)*100;
-        const marginEl=el.querySelector("#w-margin");
-        if(freq<flim){
-          marginEl.textContent=`+${margin.toFixed(0)}% headroom`;
-          marginEl.className="v ok";
-        } else {
-          marginEl.textContent=`f_op exceeds usable limit`;
-          marginEl.className="v bad";
-        }
-      }
-    } else {
-      rfblock.style.display="none";
-    }
+    const maxN=Math.floor(Math.PI*ID/wd);
+    el.querySelector("#w-max").textContent=`${maxN} turns`;
+    const fit=el.querySelector("#w-fit");
+    if(N<=maxN){fit.textContent=`✓ yes (${maxN-N} spare)`;fit.className="v ok";}
+    else{fit.textContent=`✗ no — needs 2 layers`;fit.className="v bad";}
   }
-
-  el.querySelectorAll("input,select").forEach(i=>i.oninput=calc);
-  calc();
+  el.querySelectorAll("input,select").forEach(i=>i.oninput=calc);calc();
 }});
 
-/* ── Tab wiring ──────────────────────────────────────────────── */
+/* ---- tab wiring ---- */
 const tabsEl=$("#tabs"),mainEl=$("#main"),panels={};
 TOOLS.forEach(tool=>{
   const tab=document.createElement("button");tab.className="tab";tab.textContent=tool.name;
@@ -458,12 +243,8 @@ TOOLS.forEach(tool=>{
   panels[tool.id]={tab,wrap,tool,built:false};
 });
 function activate(id){
-  Object.values(panels).forEach(p=>{
-    p.tab.classList.toggle("active",p.tool.id===id);
-    p.wrap.classList.toggle("active",p.tool.id===id);
-  });
-  const p=panels[id];if(!p.built){p.tool.render(p.wrap);p.built=true;}
-  location.hash=id;
+  Object.values(panels).forEach(p=>{p.tab.classList.toggle("active",p.tool.id===id);p.wrap.classList.toggle("active",p.tool.id===id);});
+  const p=panels[id];if(!p.built){p.tool.render(p.wrap);p.built=true;}location.hash=id;
 }
 const start=(location.hash||"").replace("#","");
 activate(panels[start]?start:TOOLS[0].id);

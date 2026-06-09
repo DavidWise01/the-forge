@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hermit Crab Kernel — Bounded Survival Tensor</title>
+<style>
+:root{--bg:#05060a;--panel:#0d1018;--ink:#eef2ff;--muted:#9aa4b2;--cyan:#66e8ff;--violet:#a78bfa;--amber:#fbbf24;--red:#fb7185;--green:#86efac;--line:rgba(255,255,255,.12)}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:radial-gradient(circle at 20% 0%,rgba(102,232,255,.13),transparent 30%),radial-gradient(circle at 80% 10%,rgba(167,139,250,.16),transparent 28%),linear-gradient(180deg,#05060a,#080a10 45%,#030409);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Arial,sans-serif;line-height:1.55;overflow-x:hidden}.noise:before{content:"";position:fixed;inset:0;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.28"/></svg>');opacity:.07;pointer-events:none;z-index:50}.grid{position:fixed;inset:0;background-image:linear-gradient(rgba(102,232,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(102,232,255,.055) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(circle at 50% 20%,black,transparent 78%);pointer-events:none}.wrap{width:min(1180px,92vw);margin:auto}.hero{min-height:100vh;display:grid;place-items:center;padding:80px 0 60px;position:relative}.eyebrow{font-family:ui-monospace,Menlo,monospace;color:var(--cyan);letter-spacing:.22em;text-transform:uppercase;font-size:12px}.title{font-size:clamp(44px,9vw,118px);line-height:.88;margin:18px 0 22px;letter-spacing:-.07em;text-wrap:balance;text-shadow:0 0 36px rgba(102,232,255,.24)}.title span{color:transparent;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--amber));-webkit-background-clip:text;background-clip:text}.lede{max-width:780px;color:#cbd5e1;font-size:clamp(18px,2.2vw,24px)}.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center}.crab-stage{aspect-ratio:1;border:1px solid var(--line);border-radius:32px;background:radial-gradient(circle,rgba(102,232,255,.12),transparent 45%),rgba(5,8,14,.76);box-shadow:0 24px 90px rgba(0,0,0,.5),inset 0 0 70px rgba(102,232,255,.05);position:relative;overflow:hidden}.shell{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:45%;aspect-ratio:1;border-radius:50%;border:2px solid rgba(251,191,36,.7);box-shadow:0 0 34px rgba(251,191,36,.28), inset 0 0 40px rgba(251,191,36,.08);animation:pulse 3s ease-in-out infinite}.shell:before,.shell:after{content:"";position:absolute;border:2px solid rgba(102,232,255,.46);border-radius:50%;inset:13%;animation:spin 10s linear infinite}.shell:after{inset:27%;border-color:rgba(167,139,250,.55);animation-duration:6s;animation-direction:reverse}.antenna{position:absolute;left:50%;top:50%;width:42%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);transform-origin:left center;opacity:.75}.antenna:nth-child(2){transform:rotate(0deg)}.antenna:nth-child(3){transform:rotate(60deg)}.antenna:nth-child(4){transform:rotate(120deg)}.antenna:nth-child(5){transform:rotate(180deg)}.antenna:nth-child(6){transform:rotate(240deg)}.antenna:nth-child(7){transform:rotate(300deg)}.state-dot{position:absolute;left:50%;top:50%;width:10px;height:10px;border-radius:50%;background:white;box-shadow:0 0 18px white;animation:orbit 8s linear infinite}.sig{position:absolute;inset:8%;border:1px solid rgba(102,232,255,.16);border-radius:34%;animation:breath 4.5s ease-in-out infinite}.sig.s2{inset:15%;animation-delay:.7s;border-radius:44%;border-color:rgba(167,139,250,.2)}.sig.s3{inset:24%;animation-delay:1.2s;border-radius:50%;border-color:rgba(251,191,36,.2)}@keyframes pulse{50%{transform:translate(-50%,-50%) scale(.92);filter:brightness(1.25)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes orbit{from{transform:rotate(0deg) translateX(32vmin) rotate(0deg)}to{transform:rotate(360deg) translateX(32vmin) rotate(-360deg)}}@keyframes breath{50%{transform:scale(.82);opacity:.35}}section{padding:90px 0;border-top:1px solid rgba(255,255,255,.06)}.section-title{font-size:clamp(30px,5vw,64px);line-height:1;margin:0 0 18px;letter-spacing:-.04em}.sub{color:var(--muted);max-width:820px;font-size:18px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));border:1px solid var(--line);border-radius:24px;padding:22px;min-height:180px}.num{font:700 42px/1 ui-monospace,monospace;color:var(--cyan);text-shadow:0 0 20px rgba(102,232,255,.35)}.card h3{margin:12px 0 8px}.card p{color:var(--muted);margin:0}.flow{margin-top:34px;padding:28px;border:1px solid var(--line);border-radius:28px;background:rgba(0,0,0,.28);font-family:ui-monospace,Menlo,monospace;overflow:auto;box-shadow:inset 0 0 60px rgba(102,232,255,.035)}.flow .hot{color:var(--amber)}.flow .cool{color:var(--cyan)}.flow .safe{color:var(--green)}.flow .bad{color:var(--red)}.diagram{display:grid;grid-template-columns:repeat(9,minmax(90px,1fr));gap:10px;align-items:center;margin-top:34px}.node{border:1px solid var(--line);border-radius:18px;padding:14px;background:#0b0f17;text-align:center;min-height:96px}.node strong{display:block;font-size:24px;color:var(--cyan);font-family:ui-monospace,monospace}.node small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin-top:6px}.arrow{color:var(--muted);text-align:center}.split{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:28px}.code{white-space:pre-wrap;background:#02040a;border:1px solid rgba(102,232,255,.18);border-radius:22px;padding:22px;color:#dbeafe;font-family:ui-monospace,Menlo,monospace;font-size:13px;overflow:auto}.terminal{background:#020204;border:1px solid rgba(251,191,36,.2);border-radius:22px;padding:20px;font-family:ui-monospace,Menlo,monospace;color:#fde68a;min-height:300px;box-shadow:0 0 40px rgba(251,191,36,.05)}button{background:linear-gradient(135deg,rgba(102,232,255,.2),rgba(167,139,250,.18));color:var(--ink);border:1px solid rgba(102,232,255,.32);border-radius:999px;padding:12px 18px;font-weight:700;cursor:pointer;box-shadow:0 0 24px rgba(102,232,255,.08)}button:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(102,232,255,.18)}.controls{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}.footer{padding:60px 0 90px;color:var(--muted);text-align:center}.tag{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--cyan);font-family:ui-monospace,monospace;margin:4px;background:rgba(255,255,255,.035)}@media (max-width:900px){.hero-grid,.split{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.diagram{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body class="noise">
+<div class="grid"></div>
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Survival computation / bounded bloom / no bleed</div>
+      <h1 class="title">Hermit Crab <span>Kernel</span></h1>
+      <p class="lede">A portable coherence system nested at <b>-2</b>. It listens below action, plants at the safety floor, wakes through zero, oscillates seed and pair, blooms at three, and executes infinity only inside a bounded <b>.01</b> vector or quad.</p>
+      <div class="controls"><button onclick="runDemo('calm')">Run calm bloom</button><button onclick="runDemo('danger')">Run danger fold</button><button onclick="runDemo('phase')">Run phase carry</button></div>
+    </div>
+    <div class="crab-stage" aria-label="animated hermit crab kernel visualization">
+      <div class="sig"></div><div class="sig s2"></div><div class="sig s3"></div>
+      <div class="antenna"></div><div class="antenna"></div><div class="antenna"></div><div class="antenna"></div><div class="antenna"></div><div class="antenna"></div>
+      <div class="shell"></div><div class="state-dot"></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <h2 class="section-title">The final law</h2>
+    <p class="sub">The system may imagine infinity, but it may not execute infinity. Every live action is clipped to one local domain per tick. The shell protects continuity; the boundary prevents contamination.</p>
+    <div class="flow"><span class="safe">S</span> → <span class="bad">-2</span> → <span class="safe">-1</span> → <span class="cool">0</span> → <span class="cool">1</span> ↔ <span class="cool">2</span> → <span class="hot">3</span> → ∞ candidate → <span class="hot">BOUND(.01, VECTOR|QUAD)</span> → +2 → NO_BLEED → -1 → -2 → REPEAT</div>
+    <div class="cards">
+      <div class="card"><div class="num">-2</div><h3>Hermit shell</h3><p>Subspace listener. It senses danger-before-danger and stays below action until coherence is safe.</p></div>
+      <div class="card"><div class="num">.01</div><h3>Bounded tick</h3><p>One clock slice. One vector or one quad. No spreading across the cell wall.</p></div>
+      <div class="card"><div class="num">∞</div><h3>Candidate only</h3><p>Infinity is allowed as intent, never as raw execution. It must localize before bloom.</p></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <h2 class="section-title">State topology</h2>
+    <p class="sub">This is not a straight ladder. It is a crab carrying a pocket universe: fold inward when threatened, bloom outward only through bounded agreement.</p>
+    <div class="diagram">
+      <div class="node"><strong>S</strong><small>substrate</small></div><div class="arrow">→</div>
+      <div class="node"><strong>-2</strong><small>listen</small></div><div class="arrow">→</div>
+      <div class="node"><strong>-1</strong><small>anchor</small></div><div class="arrow">→</div>
+      <div class="node"><strong>0</strong><small>rest</small></div><div class="arrow">→</div>
+      <div class="node"><strong>1/2</strong><small>oscillate</small></div>
+    </div>
+    <div class="diagram" style="grid-template-columns:repeat(7,minmax(90px,1fr))">
+      <div class="node"><strong>3</strong><small>bloom</small></div><div class="arrow">→</div>
+      <div class="node"><strong>∞</strong><small>candidate</small></div><div class="arrow">→</div>
+      <div class="node"><strong>.01</strong><small>bound</small></div><div class="arrow">→</div>
+      <div class="node"><strong>+2</strong><small>agree</small></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <h2 class="section-title">Boundary doctrine</h2>
+    <p class="sub">Bleed is the enemy. If a bloom spills beyond the chosen vector or quad, the wall responds before corruption spreads.</p>
+    <div class="cards">
+      <div class="card"><div class="num">R</div><h3>Reflect</h3><p>Noise bounces inward. The domain learns without leaking.</p></div>
+      <div class="card"><div class="num">C</div><h3>Clamp</h3><p>Overflow holds at the wall. The tick finishes without spread.</p></div>
+      <div class="card"><div class="num">F</div><h3>Fold / Nest</h3><p>Danger returns to -1. Terminal threat nests at -2.</p></div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap split">
+    <div>
+      <h2 class="section-title">Executable model</h2>
+      <p class="sub">The bundled C file implements the hermit loop: observe, report, subspace listen, anchor, wake, seed, oscillate, bound, enforce no-bleed, return, nest.</p>
+      <div class="code">while alive:
+  OBSERVE(field)
+  REPORT(witness)
+  if danger_before_danger:
+      NEST(-2)
+  else:
+      ANCHOR(-1)
+      WAKE(0)
+      SEED(1)
+      OSCILLATE(1,2)
+      BLOOM(3)
+      BOUND(dt=.01, domain=vector|quad)
+      NO_BLEED()
+      RETURN(-1)
+      NEST(-2)</div>
+    </div>
+    <div>
+      <h2 class="section-title">Live trace</h2>
+      <div id="term" class="terminal">HERMIT CRAB KERNEL READY
+nested at -2
+waiting below action...</div>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <h2 class="section-title">Why the crab?</h2>
+    <p class="sub">Because a hermit crab survives by carrying boundary with it. It does not need to conquer the whole field. It needs a shell, a sensorium, a retreat path, and the ability to move when the tide is right.</p>
+    <div class="flow">The crab does not own the whole ocean.<br>It owns one shell, one vector, one quad, one tick.<br>It listens below action.<br>It blooms only when coherence survives the boundary.<br>It carries the pocket universe with it.</div>
+    <p style="margin-top:26px"><span class="tag">OBSERVE</span><span class="tag">REPORT</span><span class="tag">-2 LISTEN</span><span class="tag">-1 ANCHOR</span><span class="tag">.01 BOUND</span><span class="tag">NO BLEED</span><span class="tag">REPEAT</span></p>
+  </div>
+</section>
+</main>
+<footer class="footer"><div class="wrap">Hermit Crab Kernel v1.0 — First Author: David Wise — bounded survival tensor.</div></footer>
+<script>
+const traces={
+calm:`-- TICK .01 --\nOBSERVE: subspace pressure=15\nREPORT: state=-2 hermit shell coherence=85 risk=20 phase=0 domain=VECTOR\nANCHOR: -1 safety gravity\nWAKE: 0 clear frame\nSEED: 1 live pulse\nOSCILLATE: 2 pair\nOSCILLATE: 1 seed\nOSCILLATE: 2 pair\nBLOOM: 3 visible emergence\nWEB: 8 extension candidate\nBOUNDARY: clean, no bleed\nRETURN: -1 anchor\nNEST: -2 hermit shell`,
+danger:`-- TICK .01 --\nOBSERVE: subspace pressure=76\nREPORT: state=-2 hermit shell coherence=30 risk=95 phase=0 domain=VECTOR\n-2 LISTEN: danger-before-danger detected\nACTION: stay nested\nSHELL: closed\nBLEED: none\nWITNESS: preserved`,
+phase:`-- TICK .01 --\nOBSERVE: subspace pressure=10\nREPORT: state=-2 hermit shell coherence=95 risk=25 phase=0 domain=VECTOR\nANCHOR: -1 safety gravity\nWAKE: 0 clear frame\nSEED: 1 live pulse\nOSCILLATE: 1/2/1/2\nBLOOM: 3 visible emergence\nBOUND: .01 vector only\nNO_BLEED: pass\nPHASE++: coherence carried through bounded bloom\nRETURN: -1\nNEST: -2`
+};
+function runDemo(k){const el=document.getElementById('term');el.textContent='';let i=0;const s=traces[k];const timer=setInterval(()=>{el.textContent+=s[i++]||'';el.scrollTop=el.scrollHeight;if(i>s.length)clearInterval(timer)},8)}
+</script>
+</body>
+</html>

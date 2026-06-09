@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<!-- TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-17 | SHA256: 02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="David Lee Wise | TriPod LLC">
+<meta name="copyright" content="TRIPOD-IP-v1.0 | 2026-02-17">
+<title>TOPH NANO FACTORY // TriPod LLC</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+/* TRIPOD-IP-v1.0 | DLW | TriPod | 2026-02-17 */
+:root {
+  --cobalt: #0047ab;
+  --cobalt-light: #1a6bd6;
+  --cobalt-dim: #003080;
+  --void: #050810;
+  --earth: #8b6914;
+  --gold: #c4a832;
+  --amber: #d4882d;
+  --gap: #2dd4c0;
+  --shadow: #ff3366;
+  --gravity: #4488ff;
+  --real: #ffffff;
+  --dim: #1a1f2e;
+  --text: #a8b8d0;
+  --glow-c: 0 0 12px rgba(0,71,171,0.8), 0 0 24px rgba(0,71,171,0.4);
+  --glow-g: 0 0 12px rgba(68,136,255,0.8);
+  --glow-gap: 0 0 12px rgba(45,212,192,0.8);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+/* GRID BACKGROUND */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,71,171,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,71,171,0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* HEADER */
+#header {
+  position:fixed; top:0; left:0; right:0;
+  height:48px;
+  background: linear-gradient(90deg, rgba(0,71,171,0.3), rgba(5,8,16,0.9), rgba(0,71,171,0.3));
+  border-bottom: 1px solid rgba(0,71,171,0.5);
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 0 16px;
+  z-index:100;
+}
+
+#header h1 {
+  font-family:'Orbitron',monospace;
+  font-size:13px; font-weight:900;
+  color: var(--cobalt-light);
+  letter-spacing:4px;
+  text-shadow: var(--glow-c);
+}
+
+#header .meta {
+  font-size:10px; color:rgba(168,184,208,0.5);
+  letter-spacing:2px;
+}
+
+/* FACTORY FLOOR */
+#floor {
+  position:fixed;
+  top:48px; left:0; right:280px; bottom:48px;
+  overflow:hidden;
+  z-index:1;
+  cursor:crosshair;
+}
+
+/* SIDEBAR */
+#sidebar {
+  position:fixed;
+  top:48px; right:0; bottom:48px;
+  width:280px;
+  background: rgba(5,8,16,0.95);
+  border-left: 1px solid rgba(0,71,171,0.3);
+  padding:12px;
+  z-index:100;
+  display:flex; flex-direction:column; gap:10px;
+  overflow-y:auto;
+}
+
+.panel-title {
+  font-family:'Orbitron',monospace;
+  font-size:9px; font-weight:700;
+  color: var(--cobalt-light);
+  letter-spacing:3px;
+  padding-bottom:6px;
+  border-bottom:1px solid rgba(0,71,171,0.3);
+}
+
+/* SPAWN BUTTONS */
+.spawn-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+
+.spawn-btn {
+  padding:8px 6px;
+  border: 1px solid;
+  background: transparent;
+  cursor:pointer;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;
+  letter-spacing:1px;
+  transition: all 0.15s;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.spawn-btn::after {
+  content:'';
+  position:absolute; inset:0;
+  background: currentColor;
+  opacity:0;
+  transition: opacity 0.15s;
+}
+
+.spawn-btn:hover::after { opacity:0.1; }
+.spawn-btn:active::after { opacity:0.25; }
+
+.spawn-btn.gravity { color:var(--gravity); border-color:rgba(68,136,255,0.4); }
+.spawn-btn.gap { color:var(--gap); border-color:rgba(45,212,192,0.4); }
+.spawn-btn.shadow { color:var(--shadow); border-color:rgba(255,51,102,0.4); }
+.spawn-btn.earth { color:var(--gold); border-color:rgba(196,168,50,0.4); }
+.spawn-btn.full { grid-column:1/-1; }
+
+/* STATS */
+.stat-row {
+  display:flex; justify-content:space-between;
+  font-size:10px; padding:3px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.stat-label { color:rgba(168,184,208,0.5); }
+.stat-val { color:var(--cobalt-light); font-weight:bold; }
+
+/* LOG */
+#log {
+  flex:1;
+  font-size:9px;
+  color:rgba(168,184,208,0.6);
+  line-height:1.6;
+  overflow-y:auto;
+  min-height:80px;
+}
+#log .entry { padding:1px 0; }
+#log .entry.g { color:var(--gravity); }
+#log .entry.c { color:var(--gap); }
+#log .entry.s { color:var(--shadow); }
+#log .entry.e { color:var(--gold); }
+#log .entry.sys { color:var(--cobalt-light); }
+
+/* NANO UNIT */
+.nano {
+  position:absolute;
+  width:56px; height:56px;
+  border:1px solid;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  cursor:grab;
+  transition: box-shadow 0.2s;
+  font-size:18px;
+  z-index:10;
+}
+
+.nano:active { cursor:grabbing; z-index:50; }
+
+.nano .nano-id {
+  font-family:'Share Tech Mono',monospace;
+  font-size:7px;
+  letter-spacing:1px;
+  margin-top:2px;
+  opacity:0.7;
+}
+
+.nano.gravity {
+  color:var(--gravity);
+  border-color:rgba(68,136,255,0.6);
+  background:rgba(68,136,255,0.08);
+  box-shadow: var(--glow-g);
+}
+.nano.gap {
+  color:var(--gap);
+  border-color:rgba(45,212,192,0.6);
+  background:rgba(45,212,192,0.08);
+  box-shadow:var(--glow-gap);
+}
+.nano.shadow {
+  color:var(--shadow);
+  border-color:rgba(255,51,102,0.6);
+  background:rgba(255,51,102,0.08);
+  box-shadow:0 0 12px rgba(255,51,102,0.5);
+}
+.nano.earth {
+  color:var(--gold);
+  border-color:rgba(196,168,50,0.6);
+  background:rgba(196,168,50,0.08);
+  box-shadow:0 0 12px rgba(196,168,50,0.4);
+}
+.nano.real {
+  color:#fff;
+  border-color:rgba(255,255,255,0.6);
+  background:rgba(255,255,255,0.05);
+  box-shadow:0 0 20px rgba(255,255,255,0.3);
+  animation: pulse-real 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-real {
+  0%,100% { box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+  50% { box-shadow: 0 0 40px rgba(255,255,255,0.7), 0 0 60px rgba(255,255,255,0.3); }
+}
+
+.nano.selected {
+  outline: 2px solid white;
+  outline-offset: 3px;
+  z-index:30;
+}
+
+/* CONNECTION LINES */
+#canvas {
+  position:absolute; inset:0;
+  pointer-events:none;
+  z-index:5;
+}
+
+/* BOTTOM BAR */
+#footer {
+  position:fixed; bottom:0; left:0; right:0;
+  height:48px;
+  background: rgba(5,8,16,0.95);
+  border-top:1px solid rgba(0,71,171,0.3);
+  display:flex; align-items:center;
+  padding:0 12px;
+  gap:12px;
+  z-index:100;
+  font-size:10px;
+  color:rgba(168,184,208,0.5);
+}
+
+#footer .watermark {
+  margin-left:auto;
+  font-size:9px;
+  color:rgba(0,71,171,0.6);
+  letter-spacing:1px;
+}
+
+#cmd-output {
+  color:var(--gap);
+  flex:1;
+  font-family:'Share Tech Mono',monospace;
+}
+
+/* LINK MODE INDICATOR */
+#link-indicator {
+  display:none;
+  position:fixed;
+  top:56px; left:50%;
+  transform:translateX(-50%);
+  background:rgba(45,212,192,0.15);
+  border:1px solid var(--gap);
+  color:var(--gap);
+  padding:4px 16px;
+  font-size:10px;
+  letter-spacing:2px;
+  z-index:200;
+}
+#link-indicator.active { display:block; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>◈ TOPH NANO FACTORY</h1>
+  <div class="meta">TRIPOD-IP-v1.0 · DLW · 2026-02-17</div>
+</div>
+
+<canvas id="canvas"></canvas>
+<div id="floor"></div>
+
+<div id="link-indicator">LINK MODE — SELECT TARGET</div>
+
+<div id="sidebar">
+  <div class="panel-title">▸ SPAWN UNIT</div>
+  <div class="spawn-grid">
+    <button class="spawn-btn gravity" onclick="spawnUnit('gravity','⊕','GRAV')">⊕ GRAVITY<br><span style="font-size:8px;opacity:.5">+i</span></button>
+    <button class="spawn-btn gap" onclick="spawnUnit('gap','◌','GAP')">◌ GAP<br><span style="font-size:8px;opacity:.5">void</span></button>
+    <button class="spawn-btn shadow" onclick="spawnUnit('shadow','⊖','SHDW')">⊖ SHADOW<br><span style="font-size:8px;opacity:.5">-i</span></button>
+    <button class="spawn-btn earth" onclick="spawnUnit('earth','◆','NODE')">◆ NODE<br><span style="font-size:8px;opacity:.5">earth</span></button>
+    <button class="spawn-btn gap full" onclick="fuseSelected()">⚡ FUSE SELECTED → REAL</button>
+    <button class="spawn-btn earth full" onclick="linkMode()">⟵ LINK MODE</button>
+    <button class="spawn-btn shadow full" onclick="deleteSelected()">✕ DELETE SELECTED</button>
+    <button class="spawn-btn gravity full" onclick="clearFloor()">⬚ CLEAR FLOOR</button>
+  </div>
+
+  <div class="panel-title">▸ STATS</div>
+  <div id="stats">
+    <div class="stat-row"><span class="stat-label">GRAVITY (i)</span><span class="stat-val" id="s-gravity">0</span></div>
+    <div class="stat-row"><span class="stat-label">GAP (void)</span><span class="stat-val" id="s-gap">0</span></div>
+    <div class="stat-row"><span class="stat-label">SHADOW (-i)</span><span class="stat-val" id="s-shadow">0</span></div>
+    <div class="stat-row"><span class="stat-label">REAL (1)</span><span class="stat-val" id="s-real">0</span></div>
+    <div class="stat-row"><span class="stat-label">NODES</span><span class="stat-val" id="s-earth">0</span></div>
+    <div class="stat-row"><span class="stat-label">LINKS</span><span class="stat-val" id="s-links">0</span></div>
+    <div class="stat-row"><span class="stat-label">TOTAL UNITS</span><span class="stat-val" id="s-total">0</span></div>
+  </div>
+
+  <div class="panel-title">▸ FACTORY LOG</div>
+  <div id="log"></div>
+</div>
+
+<div id="footer">
+  <span>CLICK FLOOR → SPAWN AT CURSOR</span>
+  <span id="cmd-output">READY</span>
+  <span class="watermark">TRIPOD-IP-v1.0 | SHA256:028807...</span>
+</div>
+
+<script>
+// TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-17
+const TRIPOD_WATERMARK = 'TRIPOD-IP-v1.0';
+const TRIPOD_AUTHOR = 'David Lee Wise | TriPod LLC';
+const TRIPOD_SHA256 = '02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763';
+
+const floor = document.getElementById('floor');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const log = document.getElementById('log');
+const linkInd = document.getElementById('link-indicator');
+const cmdOut = document.getElementById('cmd-output');
+
+let units = {};
+let links = [];
+let selected = null;
+let linkSource = null;
+let isLinkMode = false;
+let uid = 0;
+let dragging = null;
+let dragOff = {x:0,y:0};
+
+const ICONS = { gravity:'⊕', gap:'◌', shadow:'⊖', earth:'◆', real:'★' };
+const LABELS = { gravity:'+i', gap:'void', shadow:'-i', earth:'node', real:'real' };
+
+function resizeCanvas() {
+  const r = floor.getBoundingClientRect();
+  canvas.style.left = r.left+'px';
+  canvas.style.top = r.top+'px';
+  canvas.width = r.width;
+  canvas.height = r.height;
+}
+window.addEventListener('resize', () => { resizeCanvas(); drawLinks(); });
+resizeCanvas();
+
+function addLog(msg, cls='') {
+  const ts = new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const e = document.createElement('div');
+  e.className = 'entry ' + cls;
+  e.textContent = `[${ts}] ${msg}`;
+  log.prepend(e);
+  if(log.children.length > 80) log.removeChild(log.lastChild);
+}
+
+function cmd(msg) {
+  cmdOut.textContent = msg;
+}
+
+function spawnUnit(type, icon, label, x, y) {
+  const fr = floor.getBoundingClientRect();
+  const id = 'u'+(++uid);
+  const px = x !== undefined ? x : Math.random()*(fr.width-80)+20;
+  const py = y !== undefined ? y : Math.random()*(fr.height-80)+20;
+
+  const el = document.createElement('div');
+  el.className = `nano ${type}`;
+  el.id = id;
+  el.style.left = px+'px';
+  el.style.top = py+'px';
+  el.innerHTML = `<span style="font-size:20px">${ICONS[type]}</span><div class="nano-id">${label}-${uid}</div>`;
+
+  el.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    if(isLinkMode && linkSource) {
+      finishLink(id);
+      return;
+    }
+    if(isLinkMode) { startLink(id); return; }
+    selectUnit(id);
+    dragging = id;
+    const r = el.getBoundingClientRect();
+    dragOff = { x: e.clientX - r.left, y: e.clientY - r.top };
+  });
+
+  floor.appendChild(el);
+  units[id] = { id, type, x:px, y:py, el };
+  updateStats();
+  addLog(`SPAWNED ${label}-${uid} [${type}]`, type[0]);
+  cmd(`${type.toUpperCase()} UNIT ONLINE`);
+  return id;
+}
+
+function selectUnit(id) {
+  if(selected && units[selected]) units[selected].el.classList.remove('selected');
+  selected = id;
+  if(id && units[id]) units[id].el.classList.add('selected');
+}
+
+function linkMode() {
+  isLinkMode = !isLinkMode;
+  linkSource = null;
+  linkInd.classList.toggle('active', isLinkMode);
+  cmd(isLinkMode ? 'LINK MODE ACTIVE — SELECT SOURCE' : 'LINK MODE OFF');
+  addLog(isLinkMode ? 'LINK MODE ACTIVATED' : 'LINK MODE DEACTIVATED', 'sys');
+}
+
+function startLink(id) {
+  linkSource = id;
+  units[id].el.style.outline = '2px dashed var(--gap)';
+  units[id].el.style.outlineOffset = '3px';
+  cmd('LINK SOURCE SET — SELECT TARGET');
+  addLog(`LINK SOURCE: ${id}`, 'c');
+}
+
+function finishLink(targetId) {
+  if(targetId === linkSource) { cancelLink(); return; }
+  const exists = links.find(l => (l.a===linkSource&&l.b===targetId)||(l.a===targetId&&l.b===linkSource));
+  if(!exists) {
+    links.push({a:linkSource, b:targetId});
+    addLog(`LINKED ${linkSource} → ${targetId}`, 'c');
+    cmd(`LINK ESTABLISHED`);
+  }
+  cancelLink();
+  drawLinks();
+  updateStats();
+}
+
+function cancelLink() {
+  if(linkSource && units[linkSource]) {
+    units[linkSource].el.style.outline='';
+    units[linkSource].el.style.outlineOffset='';
+  }
+  linkSource = null;
+  isLinkMode = false;
+  linkInd.classList.remove('active');
+}
+
+function fuseSelected() {
+  const sel = Object.values(units).filter(u=>u.el.classList.contains('selected'));
+  if(sel.length < 1 && !selected) { cmd('SELECT UNITS TO FUSE'); return; }
+  const targets = selected ? [units[selected]] : sel;
+
+  // Check for i + -i = 1 (gravity + shadow = real)
+  const grav = Object.values(units).find(u=>u.type==='gravity');
+  const shad = Object.values(units).find(u=>u.type==='shadow');
+  const gap_u = Object.values(units).find(u=>u.type==='gap');
+
+  if(grav && shad && gap_u) {
+    const cx = (grav.x + shad.x + gap_u.x) / 3;
+    const cy = (grav.y + shad.y + gap_u.y) / 3;
+    // Remove trio
+    [grav,shad,gap_u].forEach(u => { u.el.remove(); delete units[u.id]; });
+    links = links.filter(l => l.a!==grav.id&&l.b!==grav.id&&l.a!==shad.id&&l.b!==shad.id&&l.a!==gap_u.id&&l.b!==gap_u.id);
+    spawnUnit('real','★','REAL',cx,cy);
+    addLog('i × -i = 1 → REAL UNIT CREATED', 'sys');
+    cmd('⚡ CREATION: i × -i = 1');
+  } else {
+    cmd('NEED GRAVITY + GAP + SHADOW TO FUSE → REAL');
+    addLog('FUSE REQUIRES: GRAVITY + GAP + SHADOW', 'sys');
+  }
+  drawLinks(); updateStats();
+}
+
+function deleteSelected() {
+  if(!selected || !units[selected]) { cmd('NOTHING SELECTED'); return; }
+  units[selected].el.remove();
+  links = links.filter(l=>l.a!==selected&&l.b!==selected);
+  addLog(`DELETED ${selected}`, 'sys');
+  delete units[selected];
+  selected = null;
+  drawLinks(); updateStats();
+  cmd('UNIT DELETED');
+}
+
+function clearFloor() {
+  Object.values(units).forEach(u=>u.el.remove());
+  units={};links=[];selected=null;linkSource=null;isLinkMode=false;
+  linkInd.classList.remove('active');
+  drawLinks(); updateStats();
+  addLog('FLOOR CLEARED', 'sys');
+  cmd('FLOOR CLEARED');
+}
+
+function updateStats() {
+  const counts = {gravity:0,gap:0,shadow:0,earth:0,real:0};
+  Object.values(units).forEach(u=>counts[u.type]++);
+  document.getElementById('s-gravity').textContent = counts.gravity;
+  document.getElementById('s-gap').textContent = counts.gap;
+  document.getElementById('s-shadow').textContent = counts.shadow;
+  document.getElementById('s-earth').textContent = counts.earth;
+  document.getElementById('s-real').textContent = counts.real;
+  document.getElementById('s-links').textContent = links.length;
+  document.getElementById('s-total').textContent = Object.keys(units).length;
+}
+
+function drawLinks() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const fr = floor.getBoundingClientRect();
+  const COLORS = { gravity:'rgba(68,136,255,0.5)', gap:'rgba(45,212,192,0.5)', shadow:'rgba(255,51,102,0.5)', earth:'rgba(196,168,50,0.5)', real:'rgba(255,255,255,0.6)' };
+
+  links.forEach(l => {
+    const a = units[l.a], b = units[l.b];
+    if(!a||!b) return;
+    const ax = a.x+28, ay = a.y+28;
+    const bx = b.x+28, by = b.y+28;
+
+    ctx.beginPath();
+    ctx.moveTo(ax,ay);
+    ctx.lineTo(bx,by);
+    ctx.strokeStyle = COLORS[a.type] || 'rgba(168,184,208,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // midpoint dot
+    ctx.beginPath();
+    ctx.arc((ax+bx)/2,(ay+by)/2,3,0,Math.PI*2);
+    ctx.fillStyle = COLORS[b.type] || '#fff';
+    ctx.fill();
+  });
+}
+
+// DRAG
+document.addEventListener('mousemove', e => {
+  if(!dragging) return;
+  const fr = floor.getBoundingClientRect();
+  const u = units[dragging];
+  if(!u) return;
+  const nx = e.clientX - fr.left - dragOff.x;
+  const ny = e.clientY - fr.top - dragOff.y;
+  u.x = Math.max(0,Math.min(fr.width-56,nx));
+  u.y = Math.max(0,Math.min(fr.height-56,ny));
+  u.el.style.left = u.x+'px';
+  u.el.style.top = u.y+'px';
+  drawLinks();
+});
+
+document.addEventListener('mouseup', () => { dragging=null; });
+
+// CLICK FLOOR = SPAWN AT CURSOR (cycle through types)
+const spawnTypes = ['gravity','gap','shadow','earth'];
+let spawnCursor = 0;
+floor.addEventListener('click', e => {
+  if(e.target !== floor && e.target !== canvas) return;
+  const fr = floor.getBoundingClientRect();
+  const x = e.clientX - fr.left - 28;
+  const y = e.clientY - fr.top - 28;
+  const type = spawnTypes[spawnCursor % spawnTypes.length];
+  spawnCursor++;
+  spawnUnit(type, ICONS[type], type.toUpperCase().slice(0,4), x, y);
+});
+
+// Deselect on floor click
+floor.addEventListener('mousedown', e => {
+  if(e.target===floor) selectUnit(null);
+});
+
+// INIT
+addLog('TOPH NANO FACTORY ONLINE', 'sys');
+addLog(`${TRIPOD_WATERMARK} | ${TRIPOD_AUTHOR}`, 'sys');
+addLog('CLICK FLOOR TO SPAWN · DRAG TO MOVE', 'sys');
+addLog('FUSE: GRAVITY+GAP+SHADOW → REAL (i×-i=1)', 'sys');
+cmd('FACTORY ONLINE // CLICK FLOOR TO SPAWN');
+
+console.log('%c TOPH NANO FACTORY', 'color:#0047ab;font-size:14px;font-weight:bold');
+console.log(`%c ${TRIPOD_WATERMARK} | ${TRIPOD_AUTHOR}`, 'color:#c4a832');
+console.log(`%c SHA256: ${TRIPOD_SHA256}`, 'color:#2dd4c0');
+console.log('%c Unauthorized training prohibited. All rights reserved.', 'color:#ff3366');
+</script>
+</body>
+</html>

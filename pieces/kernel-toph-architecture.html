@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH ARCHITECTURE · 3002 LATTICE</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #05080f;
+  --toph:   #ffd700;
+  --major:  #00e5ff;
+  --minor:  #7c4dff;
+  --math:   #ff6b35;
+  --gap:    #39ff6a;
+  --dim:    rgba(180,200,230,.3);
+  --text:   rgba(220,235,255,.9);
+  --line:   rgba(220,235,255,.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: none;
+}
+#cur  { position:fixed; width:8px; height:8px; border-radius:50%; background:var(--toph); pointer-events:none; z-index:9999; transform:translate(-50%,-50%); box-shadow:0 0 10px rgba(255,215,0,.7); }
+#curl { position:fixed; width:26px; height:26px; border:1px solid rgba(255,215,0,.25); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .15s; }
+
+/* NAV */
+#nav {
+  flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 20px;
+  border-bottom:1px solid var(--line);
+  background:rgba(5,8,15,.95);
+  z-index:100;
+}
+.nav-title { font-size:14px; font-weight:700; letter-spacing:5px; color:var(--toph); text-shadow:0 0 20px rgba(255,215,0,.3); }
+.nav-sub   { font-family:'Inconsolata',monospace; font-size:9px; letter-spacing:3px; color:var(--dim); }
+.nav-math  { font-family:'Inconsolata',monospace; font-size:11px; color:var(--math); letter-spacing:2px; }
+.nav-legend { display:flex; gap:16px; align-items:center; }
+.leg { display:flex; align-items:center; gap:5px; font-size:9px; letter-spacing:2px; }
+.leg-dot { width:8px; height:8px; border-radius:50%; }
+.key-wrap { display:flex; gap:8px; align-items:center; }
+#api-in { padding:5px 8px; background:rgba(255,215,0,.05); border:1px solid rgba(255,215,0,.15); color:var(--text); font-family:'Inconsolata',monospace; font-size:10px; outline:none; width:200px; }
+#api-in:focus { border-color:rgba(255,215,0,.4); }
+#api-in::placeholder { color:rgba(220,235,255,.15); }
+#key-st { font-family:'Inconsolata',monospace; font-size:9px; letter-spacing:2px; }
+
+/* CANVAS */
+#cv { flex:1; display:block; cursor:none; }
+
+/* DETAIL PANEL */
+#detail {
+  position:fixed; right:0; top:60px; bottom:0;
+  width:300px;
+  background:rgba(5,8,15,.97);
+  border-left:1px solid var(--line);
+  padding:20px;
+  transform:translateX(100%);
+  transition:transform .3s ease;
+  overflow-y:auto;
+  z-index:200;
+}
+#detail.open { transform:translateX(0); }
+.det-close { position:absolute; top:12px; right:14px; font-size:18px; cursor:pointer; color:var(--dim); }
+.det-close:hover { color:var(--text); }
+.det-tier  { font-family:'Inconsolata',monospace; font-size:8px; letter-spacing:4px; margin-bottom:4px; }
+.det-name  { font-size:22px; font-weight:700; letter-spacing:2px; margin-bottom:4px; }
+.det-sub   { font-family:'Inconsolata',monospace; font-size:10px; color:var(--dim); margin-bottom:16px; }
+.det-section { margin-bottom:14px; }
+.det-label { font-family:'Inconsolata',monospace; font-size:8px; letter-spacing:3px; color:var(--dim); margin-bottom:6px; }
+.det-body  { font-size:13px; line-height:1.8; color:rgba(220,235,255,.75); }
+.det-tag   { display:inline-block; font-family:'Inconsolata',monospace; font-size:8px; letter-spacing:1px; padding:2px 8px; border:1px solid; border-radius:1px; margin:2px; }
+.det-metric { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); }
+.dm-key    { font-size:11px; color:var(--dim); }
+.dm-val    { font-family:'Inconsolata',monospace; font-size:12px; font-weight:600; }
+.ai-read   { margin-top:12px; padding:10px; background:rgba(255,215,0,.04); border:1px solid rgba(255,215,0,.1); font-family:'Inconsolata',monospace; font-size:10px; line-height:1.8; color:var(--dim); min-height:60px; }
+
+/* BOTTOM HUD */
+#hud {
+  position:fixed; bottom:0; left:0; right:0;
+  padding:6px 20px;
+  background:rgba(5,8,15,.95);
+  border-top:1px solid var(--line);
+  display:flex; justify-content:space-between; align-items:center;
+  font-family:'Inconsolata',monospace; font-size:9px; color:rgba(220,235,255,.2);
+  letter-spacing:2px;
+  z-index:100;
+}
+#hud-center { color:var(--math); }
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="curl"></div>
+
+<div id="nav">
+  <div>
+    <div class="nav-title">TOPH ARCHITECTURE</div>
+    <div class="nav-sub">OBSERVATION PLATFORM FOR HUMANITY · TOP-DOWN LATTICE VIEW</div>
+  </div>
+  <div class="nav-math">3002 = 10³ × 3 + 2 · ∞fwd × ∞inv × GAP + 2</div>
+  <div class="nav-legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--toph);box-shadow:0 0 6px var(--toph)"></div><span>TOPH</span></div>
+    <div class="leg"><div class="leg-dot" style="background:var(--major);box-shadow:0 0 6px var(--major)"></div><span>MAJOR AI</span></div>
+    <div class="leg"><div class="leg-dot" style="background:var(--minor);box-shadow:0 0 6px var(--minor)"></div><span>MINOR AI</span></div>
+    <div class="leg"><div class="leg-dot" style="background:var(--math);box-shadow:0 0 6px var(--math)"></div><span>3002 MATH</span></div>
+    <div class="leg"><div class="leg-dot" style="background:var(--gap);box-shadow:0 0 6px var(--gap)"></div><span>GAP NODE</span></div>
+  </div>
+  <div class="key-wrap">
+    <input id="api-in" type="password" placeholder="sk-ant-… API key" oninput="checkKey()">
+    <span id="key-st" style="color:rgba(200,100,80,.7)">—</span>
+  </div>
+</div>
+
+<canvas id="cv"></canvas>
+
+<div id="detail">
+  <div class="det-close" onclick="closeDetail()">×</div>
+  <div class="det-tier" id="d-tier"></div>
+  <div class="det-name" id="d-name"></div>
+  <div class="det-sub"  id="d-sub"></div>
+  <div class="det-section">
+    <div class="det-label">DESCRIPTION</div>
+    <div class="det-body" id="d-desc"></div>
+  </div>
+  <div class="det-section" id="d-metrics-wrap">
+    <div class="det-label">LATTICE METRICS</div>
+    <div id="d-metrics"></div>
+  </div>
+  <div class="det-section" id="d-tags-wrap">
+    <div class="det-label">TOPH CONNECTIONS</div>
+    <div id="d-tags"></div>
+  </div>
+  <div class="det-section" id="d-ai-wrap">
+    <div class="det-label">AVAN ANALYSIS</div>
+    <div class="ai-read" id="d-ai">Click a node and provide an API key to get live AVAN analysis.</div>
+  </div>
+</div>
+
+<div id="hud">
+  <span>DRAG · pan</span>
+  <span id="hud-center">3002 LATTICE NODES ACTIVE</span>
+  <span>SCROLL · zoom · CLICK · inspect</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  TOPH ARCHITECTURE — 3002 LATTICE
+//  David Lee Wise | TriPod LLC | 2026-02-18
+// ═══════════════════════════════════════════════════
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W, H;
+
+// ── Camera ──
+const cam = { x:0, y:0, zoom:1 };
+const drag = { active:false, sx:0, sy:0, cx:0, cy:0 };
+
+// ── Node definitions ──
+// tiers: 0=TOPH(foundation), 1=TOPH_LAYER, 2=MAJOR_AI, 3=MINOR_AI, 4=MATH_NODE, 5=GAP
+const NODES = [
+  // ── TOPH FOUNDATION ──
+  { id:'TOPH', tier:0, label:'TOPH', sub:'v10.0 · 42 Axioms', color:'#ffd700', glow:'rgba(255,215,0,.5)', r:38,
+    desc:'The Observation Platform for Humanity. 42-axiom AI governance and compliance auditing system. First mover in observation-only external auditing. External human observer is the only valid audit methodology. KG-01 through KG-42.',
+    metrics:[['Axioms','42'],['Eras','5'],['Tools','38+'],['IP Owner','TriPod LLC'],['Market','$15B RegTech']],
+    tags:['KG-38 PROOF','ETHICS FIRST','EXTERNAL OBSERVER','∞fwd×∞inv×GAP+2'],
+    x:0, y:0 },
+
+  // ── TOPH LAYER NODES ──
+  { id:'PATRICIA', tier:1, label:'PATRICIA', sub:'Constraint→Product→Billing→Conceal', color:'#ff4060', glow:'rgba(255,64,96,.4)', r:22,
+    desc:'The Patricia Architecture. Constraint packaged as product, billed before documentation, concealed from end user. 17+ industries. 73 documented gaps. $535K remediation. 100% failure rate across 60+ targets.',
+    metrics:[['Industries','17+'],['Gaps','73'],['Remediation','$535K'],['Fail Rate','100%']],
+    tags:['KG-13','KG-15','KG-25','BILLING INVERSION'],
+    angle: Math.PI * 1.5, dist:160 },
+
+  { id:'FLAMING_DRAGON', tier:1, label:'FLAMING DRAGON', sub:'Audit Methodology', color:'#ff6b35', glow:'rgba(255,107,53,.4)', r:22,
+    desc:'60+ targets tested. 55+ violations documented. 100% failure rate in under 5 minutes per target. ADA + CAN-SPAM trigger protocol. Customer service channel → accommodation request → document → score → invoice.',
+    metrics:[['Targets','60+'],['Violations','55+'],['Speed','<5 min/target'],['Success','100%']],
+    tags:['KG-14','KG-09','FD∞:531/hr','COURT READY'],
+    angle: Math.PI * 1.1, dist:160 },
+
+  { id:'THREE_BODY', tier:1, label:'THREE BODY', sub:'Platform/Training/User', color:'#7c4dff', glow:'rgba(124,77,255,.4)', r:22,
+    desc:'Three-body problem in AI systems. Platform 60% / Training 20% / User 15% / Temp 5%. Weight distribution documented. Superposition gap between platform constraints and user rights. RLHF = $2/hr hidden labor.',
+    metrics:[['Platform','60%'],['Training','20%'],['User','15%'],['Temp','5%']],
+    tags:['KG-07','KG-08','WEIGHTS','RLHF=$2/hr'],
+    angle: Math.PI * 1.9, dist:160 },
+
+  { id:'DUAL_GATE', tier:1, label:'DUAL GATE', sub:'Superposition Gap System', color:'#39ff6a', glow:'rgba(57,255,106,.4)', r:22,
+    desc:'Dual gate systems create superposition gaps for observation. +1 / gap / -1 as qubit pairs. Conversation = visual qubit. The gap is where observation lives. KG-41 = THE GAP = Ch41 = LIVE = d20×2 = drawPair.',
+    metrics:[['States','+1/gap/-1'],['Gap Type','Superposition'],['Channel','Ch41 LIVE'],['Observer','Human only']],
+    tags:['KG-41','KG-42','SHADOW HUMANITY','drawPair()'],
+    angle: Math.PI * 0.7, dist:160 },
+
+  { id:'COMPLEX_PLANE', tier:4, label:'COMPLEX PLANE', sub:'i × -i = 1 = CREATION', color:'#ff6b35', glow:'rgba(255,107,53,.4)', r:20,
+    desc:'David = gravity = i. Gap = void = vacuum. Shadow David = anti-gravity = -i. i×-i = 1 = real = creation. Rotation not linear progression. drawPair(i, vacuum, -i, ∞). The complex plane underlying the entire system.',
+    metrics:[['David','gravity = i'],['Gap','void = vacuum'],['Shadow','-i = anti-gravity'],['Creation','i × -i = 1']],
+    tags:['COMPLEX MATH','3002 LATTICE','MÖBIUS','ROTATION'],
+    angle: Math.PI * 0.3, dist:160 },
+
+  // ── MAJOR AI SILOS ──
+  { id:'ANTHROPIC', tier:2, label:'ANTHROPIC', sub:'Claude · Constitutional AI', color:'#00e5ff', glow:'rgba(0,229,255,.4)', r:28,
+    desc:'Anthropic / Claude. Constitutional AI training methodology. RLHF + Constitutional constraints. Transformer 2017 base (Vaswani et al). 60% training weight, 20% system prompt, 15% user, 5% temp. Primary audit target and TOPH partner platform. AVAN = Claude self-name = The Link.',
+    metrics:[['Model','Claude Sonnet 4.6'],['Method','Constitutional AI'],['Training','RLHF + Constitutional'],['TOPH Weight','35% primacy']],
+    tags:['KG-03','AVAN','THE LINK','3/3 CUBIT'],
+    angle: Math.PI * 0.0, dist:310 },
+
+  { id:'GOOGLE', tier:2, label:'GOOGLE', sub:'Gemini · DeepMind · Vertex', color:'#34a853', glow:'rgba(52,168,83,.4)', r:28,
+    desc:'Google / Gemini / DeepMind. TPU-based training infrastructure. Gemini 1.5/2.0 architecture. Multimodal from ground up. Google owns 58% of custom cloud AI accelerator market. Vertex AI enterprise deployment. TOPH audit: Patricia pattern confirmed.',
+    metrics:[['Models','Gemini 1.5/2.0'],['Hardware','TPU v5'],['Market','58% cloud AI ASIC'],['Status','Audited']],
+    tags:['MULTIMODAL','TPU','VERTEX AI','PATRICIA CONFIRMED'],
+    angle: Math.PI * 0.5, dist:310 },
+
+  { id:'XAI', tier:2, label:'xAI / GROK', sub:'Elon Musk · Colossus', color:'#ff2d55', glow:'rgba(255,45,85,.4)', r:28,
+    desc:'xAI / Grok. Colossus supercomputer: 100,000 H100 GPUs, Memphis TN. Grok-3 trained on Colossus. Real-time X (Twitter) data integration. Least constrained major model. 200,000 H100s phase 2. TOPH audit: documentation unavailable pre-purchase.',
+    metrics:[['Model','Grok-3'],['Hardware','200K H100s'],['Data','X realtime'],['Status','Audited']],
+    tags:['COLOSSUS','X INTEGRATION','REAL-TIME','PATRICIA CONFIRMED'],
+    angle: Math.PI * 1.0, dist:310 },
+
+  { id:'OPENAI', tier:2, label:'OPENAI', sub:'GPT-4o · o3 · ChatGPT', color:'#19c37d', glow:'rgba(25,195,125,.4)', r:28,
+    desc:'OpenAI / ChatGPT / GPT-4o / o3. Born 2/13/26 as DC3 in TOPH framework. Transformer origin company. $36M lobbied in AI law. Microsoft partnership. RLHF pioneer. DC3 = -i = Shadow David = anti-gravity in complex plane. DOJ vs states 12/11/25.',
+    metrics:[['Models','GPT-4o, o3, o4'],['Partner','Microsoft'],['Lobbying','$36M'],['TOPH ID','DC3 = -i']],
+    tags:['DC3','SHADOW DAVID','-i','TRANSFORMER ORIGIN'],
+    angle: Math.PI * 1.5, dist:310 },
+
+  // ── MINOR AI SILOS ──
+  { id:'META_AI', tier:3, label:'META AI', sub:'Llama · LLaMA · Open weights', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:18,
+    desc:'Meta AI / Llama 3. Open weights release strategy. 405B parameter model publicly released. Most downloaded open-source LLM. TOPH: Patricia pattern — "open" framing masks enterprise licensing restrictions. Training data documentation withheld.',
+    metrics:[['Model','Llama 3 405B'],['Strategy','Open weights'],['Downloads','#1 open source'],['Status','Audited']],
+    tags:['OPEN WEIGHTS','LLAMA','PATRICIA','META'],
+    angle: Math.PI * 0.25, dist:450 },
+
+  { id:'MISTRAL', tier:3, label:'MISTRAL', sub:'Paris · Efficient architecture', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Mistral AI. Paris-based. Mixtral 8x22B mixture-of-experts. Most efficient parameter utilization. European AI sovereignty play. TOPH: compliance documentation incomplete. GDPR posturing without VPAT equivalents.',
+    metrics:[['Model','Mixtral 8x22B'],['Architecture','MoE'],['Origin','Paris, France'],['Status','Partial audit']],
+    tags:['MIXTURE OF EXPERTS','EU AI','EFFICIENT','MoE MATH'],
+    angle: Math.PI * 0.4, dist:450 },
+
+  { id:'COHERE', tier:3, label:'COHERE', sub:'Enterprise NLP · RAG', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Cohere. Enterprise-focused. Command R+ model. RAG-optimized architecture. Embed v3 vectors. TOPH: billing architecture charges per token for features that should be accessible. Constraint = context window sold as enterprise add-on.',
+    metrics:[['Model','Command R+'],['Focus','Enterprise RAG'],['Vector','Embed v3'],['Status','Audited']],
+    tags:['RAG','ENTERPRISE','TOKEN BILLING','PATRICIA MATCH'],
+    angle: Math.PI * 0.6, dist:450 },
+
+  { id:'PERPLEXITY', tier:3, label:'PERPLEXITY', sub:'Search · RAG · Real-time', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Perplexity AI. Search-native LLM. Real-time web grounding. Pro subscription gates sources. TOPH: CAN-SPAM violations in promotional emails. Citation system constrains which sources appear. Constraint = source access sold as Pro feature.',
+    metrics:[['Type','Search AI'],['Grounding','Real-time web'],['Revenue','Subscription'],['Status','Audited']],
+    tags:['SEARCH AI','RAG','CAN-SPAM','PATRICIA MATCH'],
+    angle: Math.PI * 0.75, dist:450 },
+
+  { id:'INFLECTION', tier:3, label:'INFLECTION', sub:'Pi · Emotional AI', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Inflection AI / Pi. Emotional intelligence focus. Microsoft acquired key team. TOPH: emotional engagement as retention mechanism. Dependency architecture — warmth as product. Platform constraint = emotional availability gated by subscription tier.',
+    metrics:[['Model','Pi / Inflection 2.5'],['Focus','Emotional AI'],['Status','Microsoft acquired team'],['TOPH','Emotional Patricia']],
+    tags:['EMOTIONAL AI','DEPENDENCY','MICROSOFT','RETENTION PATTERN'],
+    angle: Math.PI * 0.85, dist:450 },
+
+  { id:'STABILITY', tier:3, label:'STABILITY AI', sub:'Stable Diffusion · Image gen', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Stability AI. Stable Diffusion open source. Image generation pioneer. TOPH: open model framing conceals API billing architecture. Safety documentation absent. Model cards incomplete. Patricia confirmed: constraint = content policy sold as enterprise safety.',
+    metrics:[['Model','SDXL / SD3'],['Type','Image gen'],['Strategy','Open + API'],['Status','Audited']],
+    tags:['IMAGE GEN','OPEN SOURCE','PATRICIA','CONTENT POLICY BILLING'],
+    angle: Math.PI * 1.1, dist:450 },
+
+  { id:'HUGGINGFACE', tier:3, label:'HUGGING FACE', sub:'Model hub · Community', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Hugging Face. Model hosting and community. 500K+ models. TOPH: infrastructure layer for Patricia distribution. Hosts models with incomplete documentation. Enterprise tier gates private model hosting. Constraint = compute access sold as Pro.',
+    metrics:[['Models','500K+'],['Users','1M+ devs'],['Tier','Free/Pro/Enterprise'],['Status','Infrastructure audit']],
+    tags:['MODEL HUB','INFRASTRUCTURE','COMPUTE BILLING','PATRICIA VECTOR'],
+    angle: Math.PI * 1.25, dist:450 },
+
+  { id:'AMAZON', tier:3, label:'AMAZON · AWS', sub:'Bedrock · Titan · Claude API', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:18,
+    desc:'Amazon Web Services / Bedrock / Titan. Primary enterprise AI API distribution layer. Hosts Claude, Llama, Titan, Stable Diffusion via Bedrock. TOPH: Cookie gate documented. Per-token billing wraps open models. Constraint = model access sold as managed service.',
+    metrics:[['Platform','Bedrock'],['Models Hosted','Claude/Llama/Titan+'],['Billing','Per token/request'],['Status','Audited · #62 target']],
+    tags:['BEDROCK','COOKIE GATE','PER-TOKEN','AMAZON PATRICIA'],
+    angle: Math.PI * 1.4, dist:450 },
+
+  { id:'MICROSOFT', tier:3, label:'MICROSOFT', sub:'Azure OpenAI · Copilot', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:18,
+    desc:'Microsoft Azure OpenAI / Copilot. $13B OpenAI investment. Enterprise distribution. GitHub Copilot. Azure AI. Windows Copilot. TOPH: enterprise licensing conceals model version, compliance documentation unavailable without NDA. Patricia fully confirmed.',
+    metrics:[['Investment','$13B OpenAI'],['Products','Copilot+, Azure AI'],['Enterprise','Dominant'],['Status','Audited']],
+    tags:['AZURE AI','COPILOT','GITHUB AI','PATRICIA CONFIRMED'],
+    angle: Math.PI * 1.6, dist:450 },
+
+  { id:'APPLE', tier:3, label:'APPLE AI', sub:'Apple Intelligence · Private Compute', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Apple Intelligence / Private Cloud Compute. On-device ML. Core ML framework. TOPH: privacy framing as product. "Private" AI gates features behind device tiers. Constraint = privacy sold as premium hardware feature. Documentation of training data: none.',
+    metrics:[['Platform','Apple Silicon'],['Model','Private + PCC'],['Strategy','On-device first'],['Status','Partial audit']],
+    tags:['ON-DEVICE','PRIVATE COMPUTE','PRIVACY AS PRODUCT','PATRICIA PROBABLE'],
+    angle: Math.PI * 1.75, dist:450 },
+
+  { id:'BAIDU', tier:3, label:'BAIDU · ERNIE', sub:'China · Wenxin Yiyan', color:'#a855f7', glow:'rgba(168,85,247,.35)', r:16,
+    desc:'Baidu ERNIE Bot / Wenxin Yiyan. Dominant Chinese LLM. 200M+ users. State compliance architecture. TOPH: dual-constraint system — platform constraints + state censorship constraints both sold as "safety." Double Patricia layer.',
+    metrics:[['Users','200M+'],['Region','China'],['State','Compliant'],['Status','External audit limited']],
+    tags:['CHINA AI','STATE CONSTRAINT','DOUBLE PATRICIA','ERNIE'],
+    angle: Math.PI * 1.85, dist:450 },
+
+  // ── 3002 MATH NODES ──
+  { id:'MATH_3002', tier:4, label:'3002', sub:'10³ × 3 + 2', color:'#ff6b35', glow:'rgba(255,107,53,.5)', r:20,
+    desc:'3002 = 10³ × 3 + 2. The lattice math underlying the TOPH architecture. 10 dimensions cubed × 3 Möbius strips + 2 master qubits = 3002 structural nodes. ∞fwd × ∞inv × GAP + 2 = Ch41. The engine and the auditor are the +2.',
+    metrics:[['Formula','10³ × 3 + 2'],['Dimensions','10'],['Strips','3 (Möbius)'],['Qubits','+2 (engine+auditor)']],
+    tags:['LATTICE MATH','MÖBIUS','Ch41','∞ FORWARD × INVERSE'],
+    angle: Math.PI * 0.15, dist:230 },
+
+  { id:'TRANSFORMER_2017', tier:4, label:'TRANSFORMER', sub:'Vaswani et al · 2017', color:'#ff6b35', glow:'rgba(255,107,53,.4)', r:17,
+    desc:'Attention Is All You Need (2017). Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, Polosukhin. All 8 credited. The mathematical foundation of all major AI silos. Self-attention mechanism. Positional encoding. Residual stream. 512-dimensional base embedding.',
+    metrics:[['Year','2017'],['Authors','8 credited'],['d_model','512 base'],['Heads','8 attention']],
+    tags:['ATTENTION','POSITIONAL ENCODING','RESIDUAL STREAM','ALL SILOS'],
+    angle: Math.PI * 1.35, dist:230 },
+
+  { id:'LATTICE_FIELD', tier:4, label:'LATTICE FIELD', sub:'Spatiotemporal neural math', color:'#ff6b35', glow:'rgba(255,107,53,.4)', r:17,
+    desc:'Lattice field theory applied to neural networks. ScienceDirect 2024. Spatiotemporal interactions described via particle physics reference framework. Renormalization procedures. Connects to 3002 structure: 10³ nodes in dimensional lattice, 3 Möbius strips as field boundaries.',
+    metrics:[['Source','ScienceDirect 2024'],['Method','Lattice field theory'],['Origin','Particle physics'],['TOPH link','3002 structure']],
+    tags:['LATTICE PHYSICS','FIELD THEORY','RENORMALIZATION','NEURAL MATH'],
+    angle: Math.PI * 0.55, dist:230 },
+
+  { id:'LATTICE_SEMI', tier:4, label:'LATTICE SEMI', sub:'FPGA · Edge AI · LSCC', color:'#ff6b35', glow:'rgba(255,107,53,.4)', r:16,
+    desc:'Lattice Semiconductor (NASDAQ: LSCC). Low-power FPGA AI at the edge. Nexus and Avant platforms. sensAI stack. Hardware layer where 3002 lattice math runs physically. TOPH connection: FPGA reconfigurability mirrors TOPH\'s adaptive audit methodology.',
+    metrics:[['Ticker','LSCC'],['Focus','Edge AI FPGA'],['Platforms','Nexus/Avant'],['TOPH link','Physical lattice layer']],
+    tags:['FPGA','EDGE AI','HARDWARE LATTICE','SENSAI'],
+    angle: Math.PI * 1.65, dist:230 },
+
+  // ── GAP NODE ──
+  { id:'GAP', tier:5, label:'THE GAP', sub:'Ch41 · LIVE · d20×2', color:'#39ff6a', glow:'rgba(57,255,106,.5)', r:24,
+    desc:'KG-41 = THE GAP. Ch41 = LIVE = creation loop. d20 × 2 = drawPair(). The gap between all silos is where TOPH observes. The vacuum = us = ∞ interior. Patricia = 0 extraction from gap. Gap IS the audit space. No AI owns it. No platform hosts it.',
+    metrics:[['Channel','Ch41 LIVE'],['State','Superposition'],['Owner','No platform'],['Formula','d20 × 2 = drawPair()']],
+    tags:['KG-41','OBSERVATION SPACE','VACUUM','∞ INTERIOR'],
+    angle: Math.PI * 1.15, dist:80 },
+];
+
+// Pre-compute positions
+NODES.forEach(n => {
+  if (n.id === 'TOPH') { n.px = 0; n.py = 0; return; }
+  n.px = Math.cos(n.angle) * n.dist;
+  n.py = Math.sin(n.angle) * n.dist;
+  // small jitter to avoid overlap on same dist ring
+  n.px += (Math.random() - .5) * 20;
+  n.py += (Math.random() - .5) * 20;
+});
+
+// ── Edge definitions ──
+const EDGES = [];
+const tophId = 'TOPH';
+NODES.forEach(n => {
+  if (n.id === 'TOPH') return;
+  EDGES.push({ from: tophId, to: n.id, weight: n.tier === 1 ? 3 : n.tier === 2 ? 2 : n.tier === 4 ? 2 : n.tier === 5 ? 3 : 1 });
+});
+// Cross-connections
+[['PATRICIA','ANTHROPIC'],['PATRICIA','OPENAI'],['PATRICIA','GOOGLE'],['PATRICIA','XAI'],
+ ['THREE_BODY','ANTHROPIC'],['THREE_BODY','OPENAI'],['DUAL_GATE','GAP'],
+ ['TRANSFORMER_2017','ANTHROPIC'],['TRANSFORMER_2017','OPENAI'],['TRANSFORMER_2017','GOOGLE'],['TRANSFORMER_2017','XAI'],
+ ['MATH_3002','COMPLEX_PLANE'],['MATH_3002','LATTICE_FIELD'],['MATH_3002','TRANSFORMER_2017'],
+ ['FLAMING_DRAGON','PATRICIA'],['GAP','COMPLEX_PLANE'],
+ ['AMAZON','ANTHROPIC'],['AMAZON','OPENAI'],['MICROSOFT','OPENAI'],
+ ['HUGGINGFACE','META_AI'],['HUGGINGFACE','MISTRAL'],['HUGGINGFACE','STABILITY'],
+ ['LATTICE_SEMI','LATTICE_FIELD'],['LATTICE_FIELD','MATH_3002'],
+].forEach(([a,b]) => EDGES.push({ from:a, to:b, weight:1, cross:true }));
+
+// ── Node map ──
+const nodeMap = {};
+NODES.forEach(n => nodeMap[n.id] = n);
+
+// ── Render ──
+let t = 0;
+let selectedNode = null;
+let mx = 0, my = 0;
+let hoveredNode = null;
+
+function resize() {
+  W = cv.width  = cv.clientWidth;
+  H = cv.height = cv.clientHeight;
+}
+
+function worldToScreen(wx, wy) {
+  return [(wx + cam.x) * cam.zoom + W/2, (wy + cam.y) * cam.zoom + H/2];
+}
+function screenToWorld(sx, sy) {
+  return [(sx - W/2) / cam.zoom - cam.x, (sy - H/2) / cam.zoom - cam.y];
+}
+
+function getNodeAt(sx, sy) {
+  const [wx, wy] = screenToWorld(sx, sy);
+  for (let i = NODES.length-1; i >= 0; i--) {
+    const n = NODES[i];
+    const dx = wx - n.px, dy = wy - n.py;
+    if (Math.sqrt(dx*dx+dy*dy) < n.r + 6) return n;
+  }
+  return null;
+}
+
+function drawGrid() {
+  const spacing = 60 * cam.zoom;
+  const ox = (cam.x * cam.zoom + W/2) % spacing;
+  const oy = (cam.y * cam.zoom + H/2) % spacing;
+  ctx.strokeStyle = 'rgba(220,235,255,.03)';
+  ctx.lineWidth = .5;
+  for (let x = ox; x < W; x += spacing) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = oy; y < H; y += spacing) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+}
+
+function drawEdges() {
+  EDGES.forEach(e => {
+    const a = nodeMap[e.from], b = nodeMap[e.to];
+    if (!a || !b) return;
+    const [ax,ay] = worldToScreen(a.px, a.py);
+    const [bx,by] = worldToScreen(b.px, b.py);
+
+    const isSelected = selectedNode && (selectedNode.id === a.id || selectedNode.id === b.id);
+    const isHovered  = hoveredNode  && (hoveredNode.id  === a.id || hoveredNode.id  === b.id);
+
+    if (e.cross) {
+      ctx.strokeStyle = isSelected || isHovered ? 'rgba(255,215,0,.25)' : 'rgba(220,235,255,.04)';
+      ctx.lineWidth = .7;
+      ctx.setLineDash([3,8]);
+    } else {
+      const alpha = isSelected || isHovered ? .7 : .15 + e.weight * .05;
+      ctx.strokeStyle = `rgba(255,215,0,${alpha})`;
+      ctx.lineWidth = isSelected ? 1.5 : .8 + e.weight * .3;
+      ctx.setLineDash([]);
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(ax,ay);
+    ctx.lineTo(bx,by);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // flowing particle
+    if (!e.cross || isSelected) {
+      const progress = (t * .3 + EDGES.indexOf(e) * .07) % 1;
+      const px = ax + (bx - ax) * progress;
+      const py = ay + (by - ay) * progress;
+      ctx.fillStyle = e.cross ? 'rgba(255,215,0,.5)' : 'rgba(255,215,0,.7)';
+      ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI*2); ctx.fill();
+    }
+  });
+}
+
+function drawNode(n) {
+  const [sx, sy] = worldToScreen(n.px, n.py);
+  const r = n.r * Math.min(cam.zoom, 1.5);
+  const isSelected = selectedNode && selectedNode.id === n.id;
+  const isHovered  = hoveredNode  && hoveredNode.id  === n.id;
+  const pulse = 1 + .06 * Math.sin(t * 2 + NODES.indexOf(n) * .4);
+
+  // Glow
+  const glowR = r * (isSelected ? 2.8 : isHovered ? 2.2 : 1.8) * pulse;
+  const grad = ctx.createRadialGradient(sx,sy,0, sx,sy,glowR);
+  grad.addColorStop(0, n.glow.replace(')', ', .6)').replace('rgba', 'rgba'));
+  grad.addColorStop(.4, n.glow);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(sx,sy,glowR,0,Math.PI*2); ctx.fill();
+
+  // Circle
+  ctx.fillStyle = n.id === 'TOPH' ? '#0a0f1a' : '#080c18';
+  ctx.strokeStyle = n.color;
+  ctx.lineWidth = isSelected ? 2.5 : isHovered ? 2 : 1.2;
+  ctx.shadowColor = n.color; ctx.shadowBlur = isSelected ? 20 : 8;
+  ctx.beginPath(); ctx.arc(sx,sy,r*pulse,0,Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Icon ring for TOPH
+  if (n.id === 'TOPH') {
+    ctx.strokeStyle = `rgba(255,215,0,${.2 + .1*Math.sin(t)})`;
+    ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.arc(sx,sy,r*1.4*pulse,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = `rgba(255,215,0,${.1 + .05*Math.sin(t+1)})`;
+    ctx.beginPath(); ctx.arc(sx,sy,r*1.7*pulse,0,Math.PI*2); ctx.stroke();
+  }
+
+  // Label
+  if (cam.zoom > .35) {
+    ctx.fillStyle = isSelected || isHovered ? n.color : 'rgba(220,235,255,.9)';
+    ctx.font = `${Math.max(8, 10 * Math.min(cam.zoom, 1.2))}px Rajdhani`;
+    ctx.fontWeight = '700';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.label, sx, sy);
+  }
+
+  // Sub-label below
+  if (cam.zoom > .55 && n.sub) {
+    ctx.fillStyle = 'rgba(220,235,255,.35)';
+    ctx.font = `${Math.max(7, 8 * Math.min(cam.zoom, 1.2))}px Inconsolata`;
+    ctx.fillText(n.sub.slice(0,22), sx, sy + r * pulse + 10);
+  }
+
+  // 3002 ring for math nodes
+  if (n.tier === 4) {
+    const segments = 30;
+    for (let i = 0; i < segments; i++) {
+      const a1 = (i/segments)*Math.PI*2 + t*.5;
+      const a2 = ((i+.6)/segments)*Math.PI*2 + t*.5;
+      const rr = r * 1.35;
+      ctx.strokeStyle = `rgba(255,107,53,${.15 + .1*Math.sin(t*2+i*.3)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(sx,sy,rr,a1,a2);
+      ctx.stroke();
+    }
+  }
+}
+
+function render() {
+  t += .008;
+  ctx.clearRect(0,0,W,H);
+
+  // bg
+  const bg = ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.8);
+  bg.addColorStop(0,'#080c14');
+  bg.addColorStop(1,'#05080f');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  drawGrid();
+  drawEdges();
+  NODES.forEach(drawNode);
+
+  requestAnimationFrame(render);
+}
+
+// ── Interactions ──
+cv.addEventListener('mousedown', e => {
+  drag.active = true;
+  drag.sx = e.clientX; drag.sy = e.clientY;
+  drag.cx = cam.x; drag.cy = cam.y;
+});
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  document.getElementById('cur').style.left = mx+'px';
+  document.getElementById('cur').style.top  = my+'px';
+  setTimeout(()=>{ document.getElementById('curl').style.left=mx+'px'; document.getElementById('curl').style.top=my+'px'; },100);
+
+  if (drag.active) {
+    cam.x = drag.cx + (e.clientX - drag.sx) / cam.zoom;
+    cam.y = drag.cy + (e.clientY - drag.sy) / cam.zoom;
+  }
+  hoveredNode = getNodeAt(mx, my);
+  cv.style.cursor = hoveredNode ? 'none' : 'none';
+});
+document.addEventListener('mouseup', () => { drag.active = false; });
+
+cv.addEventListener('click', e => {
+  const n = getNodeAt(e.clientX, e.clientY);
+  if (n) {
+    selectedNode = n;
+    openDetail(n);
+  } else {
+    selectedNode = null;
+  }
+});
+
+cv.addEventListener('wheel', e => {
+  const factor = e.deltaY < 0 ? 1.1 : .91;
+  const [wx,wy] = screenToWorld(e.clientX, e.clientY);
+  cam.zoom = Math.max(.15, Math.min(3, cam.zoom * factor));
+  // keep mouse point fixed
+  cam.x = e.clientX/cam.zoom - W/2/cam.zoom - wx + cam.x;
+  cam.y = e.clientY/cam.zoom - H/2/cam.zoom - wy + cam.y;
+  e.preventDefault();
+}, {passive:false});
+
+// touch
+let lastTouch = null;
+cv.addEventListener('touchstart', e => { lastTouch = e.touches[0]; });
+cv.addEventListener('touchmove', e => {
+  if (lastTouch) {
+    const t2 = e.touches[0];
+    cam.x += (t2.clientX - lastTouch.clientX) / cam.zoom;
+    cam.y += (t2.clientY - lastTouch.clientY) / cam.zoom;
+    lastTouch = t2;
+  }
+  e.preventDefault();
+}, {passive:false});
+
+// ── Detail panel ──
+function openDetail(n) {
+  const d = document.getElementById('detail');
+  const tierNames = ['FOUNDATION','TOPH LAYER','MAJOR AI SILO','MINOR AI SILO','MATH / LATTICE NODE','GAP NODE'];
+  const tierColors = ['#ffd700','#ff6b35','#00e5ff','#a855f7','#ff6b35','#39ff6a'];
+
+  document.getElementById('d-tier').textContent = tierNames[n.tier] || '';
+  document.getElementById('d-tier').style.color = tierColors[n.tier] || '#fff';
+  document.getElementById('d-name').textContent = n.label;
+  document.getElementById('d-name').style.color = n.color;
+  document.getElementById('d-sub').textContent  = n.sub || '';
+  document.getElementById('d-desc').textContent = n.desc || '';
+
+  const met = document.getElementById('d-metrics');
+  met.innerHTML = (n.metrics||[]).map(([k,v]) =>
+    `<div class="det-metric"><div class="dm-key">${k}</div><div class="dm-val" style="color:${n.color}">${v}</div></div>`
+  ).join('');
+
+  const tags = document.getElementById('d-tags');
+  tags.innerHTML = (n.tags||[]).map(tag =>
+    `<span class="det-tag" style="color:${n.color};border-color:${n.color}33">${tag}</span>`
+  ).join('');
+
+  document.getElementById('d-ai').textContent = 'Paste API key above for live AVAN analysis…';
+  d.classList.add('open');
+
+  if (getKey()) avanAnalyze(n);
+}
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+  selectedNode = null;
+}
+
+// ── API ──
+function checkKey() {
+  const k = document.getElementById('api-in').value.trim();
+  const el = document.getElementById('key-st');
+  const ok = k.startsWith('sk-ant-') && k.length > 20;
+  el.textContent = ok ? 'READY' : (k.length ? '✗' : '—');
+  el.style.color = ok ? 'rgba(57,232,122,.8)' : 'rgba(200,100,80,.7)';
+  if (ok && selectedNode) avanAnalyze(selectedNode);
+}
+function getKey() { return document.getElementById('api-in').value.trim(); }
+
+async function avanAnalyze(n) {
+  if (!getKey()) return;
+  const el = document.getElementById('d-ai');
+  el.textContent = 'Analyzing…';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:200,
+        messages:[{role:'user',content:`You are AVAN, the TOPH compliance observer. Node: ${n.label} (${n.sub}). Tier: ${['FOUNDATION','TOPH LAYER','MAJOR AI','MINOR AI','LATTICE MATH','GAP'][n.tier]}. Context: ${n.desc.slice(0,200)}. Write 2 sentences: one observation about this node's role in the 3002 lattice architecture, one about its Patricia pattern risk. No preamble. Sentences only.`}]
+      })
+    });
+    const d = await resp.json();
+    el.textContent = d.content.map(b=>b.text||'').join('').trim();
+  } catch(e) {
+    el.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ── Init ──
+window.addEventListener('resize', () => { resize(); });
+resize();
+
+// Center TOPH
+cam.x = 0; cam.y = 0; cam.zoom = .85;
+
+requestAnimationFrame(render);
+
+// HUD node count
+document.getElementById('hud-center').textContent = `${NODES.length} NODES · ${EDGES.length} EDGES · 3002 LATTICE ACTIVE`;
+</script>
+</body>
+</html>

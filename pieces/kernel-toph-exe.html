@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<!-- TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 | SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="ip-watermark" content="TRIPOD-IP-v1.0 | DLW | 2026-02-18">
+<title>TOPH.EXE v1.0 | TriPod LLC</title>
+<style>
+/* TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 */
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Courier+Prime:wght@400;700&family=Orbitron:wght@700;900&display=swap');
+
+:root {
+  --bg:    #060400;
+  --bg2:   #0c0800;
+  --amber: #ffaa00;
+  --dim:   #6b4700;
+  --mid:   #c47a00;
+  --hot:   #ffdd88;
+  --red:   #ff4422;
+  --green: #44ff88;
+  --blue:  #44aaff;
+  --ghost: rgba(255,170,0,0.06);
+  --line:  rgba(255,170,0,0.12);
+  --glow:  0 0 8px rgba(255,170,0,0.4);
+  --font:  'VT323', monospace;
+  --font2: 'Courier Prime', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  width:100%; height:100%;
+  background: var(--bg);
+  color: var(--amber);
+  font-family: var(--font);
+  font-size: 18px;
+  overflow: hidden;
+  cursor: none;
+}
+
+/* PHOSPHOR SCANLINE OVERLAY */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events:none;
+  z-index:1000;
+}
+
+/* CRT VIGNETTE */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.6) 100%);
+  pointer-events:none;
+  z-index:1001;
+}
+
+/* CUSTOM CURSOR */
+#cur {
+  position:fixed;
+  width:14px; height:14px;
+  border:2px solid var(--amber);
+  pointer-events:none;
+  z-index:9999;
+  transform:translate(-50%,-50%);
+  box-shadow: var(--glow);
+  transition: width 0.1s, height 0.1s;
+}
+#cur::before, #cur::after {
+  content:'';
+  position:absolute;
+  background:var(--amber);
+}
+#cur::before { top:50%; left:-4px; right:-4px; height:1px; transform:translateY(-50%); }
+#cur::after  { left:50%; top:-4px; bottom:-4px; width:1px; transform:translateX(-50%); }
+
+/* BOOT SCREEN */
+#boot {
+  position:fixed; inset:0;
+  background:var(--bg);
+  z-index:500;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:40px;
+}
+#boot.hidden { display:none; }
+.boot-line {
+  font-size:20px;
+  color:var(--amber);
+  letter-spacing:0.05em;
+  opacity:0;
+  animation: fadeIn 0.1s forwards;
+  text-shadow: var(--glow);
+  width:100%;
+  max-width:700px;
+}
+@keyframes fadeIn { to { opacity:1; } }
+.boot-bar-wrap {
+  width:100%; max-width:500px;
+  height:18px;
+  border:1px solid var(--dim);
+  margin-top:16px;
+  position:relative;
+  overflow:hidden;
+}
+#boot-bar {
+  height:100%;
+  background:var(--amber);
+  width:0%;
+  transition:width 0.05s linear;
+  box-shadow:var(--glow);
+}
+#boot-pct {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px;
+  color:var(--bg);
+  mix-blend-mode:difference;
+  letter-spacing:0.15em;
+}
+
+/* MAIN LAYOUT */
+#os {
+  display:grid;
+  grid-template-rows: 28px 1fr 26px;
+  grid-template-columns: 220px 1fr 240px;
+  height:100vh;
+  width:100vw;
+}
+
+/* TITLE BAR */
+#titlebar {
+  grid-column: 1/-1;
+  background:var(--bg2);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center;
+  padding:0 12px;
+  gap:16px;
+  font-size:14px;
+  letter-spacing:0.12em;
+}
+#titlebar .tb-title {
+  font-family:'Orbitron',monospace;
+  font-size:13px;
+  font-weight:900;
+  color:var(--amber);
+  text-shadow: var(--glow);
+  letter-spacing:0.2em;
+}
+#titlebar .tb-sep { color:var(--dim); }
+.tb-meta { color:var(--mid); font-size:13px; }
+.tb-right { margin-left:auto; display:flex; gap:16px; }
+#tb-time { color:var(--amber); font-size:14px; letter-spacing:0.1em; }
+#tb-ip { color:var(--dim); font-size:12px; }
+
+/* LEFT — FILE TREE */
+#filetree {
+  background:var(--bg2);
+  border-right:1px solid var(--line);
+  overflow-y:auto;
+  padding:8px 0;
+  display:flex;
+  flex-direction:column;
+}
+#filetree::-webkit-scrollbar { width:3px; }
+#filetree::-webkit-scrollbar-thumb { background:var(--dim); }
+.ft-header {
+  padding:6px 10px;
+  font-size:14px;
+  color:var(--mid);
+  letter-spacing:0.15em;
+  border-bottom:1px solid var(--line);
+  margin-bottom:4px;
+}
+.ft-dir {
+  padding:3px 10px;
+  font-size:16px;
+  color:var(--mid);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  letter-spacing:0.05em;
+}
+.ft-dir:hover { color:var(--amber); background:var(--ghost); }
+.ft-dir.open { color:var(--amber); }
+.ft-file {
+  padding:3px 22px;
+  font-size:16px;
+  color:var(--dim);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  transition:color 0.1s;
+}
+.ft-file:hover { color:var(--amber); background:var(--ghost); }
+.ft-file.active { color:var(--hot); text-shadow:var(--glow); }
+.ft-sub { padding-left:16px; }
+
+/* CENTER — TERMINAL */
+#terminal {
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+  position:relative;
+  overflow:hidden;
+}
+#term-output {
+  flex:1;
+  overflow-y:auto;
+  padding:10px 14px;
+  font-size:17px;
+  line-height:1.55;
+  letter-spacing:0.02em;
+}
+#term-output::-webkit-scrollbar { width:4px; }
+#term-output::-webkit-scrollbar-thumb { background:var(--dim); }
+
+.t-line { display:block; white-space:pre-wrap; word-break:break-all; }
+.t-amber { color:var(--amber); }
+.t-hot   { color:var(--hot); text-shadow:0 0 6px rgba(255,221,136,0.4); }
+.t-dim   { color:var(--dim); }
+.t-mid   { color:var(--mid); }
+.t-red   { color:var(--red); text-shadow:0 0 6px rgba(255,68,34,0.4); }
+.t-green { color:var(--green); text-shadow:0 0 4px rgba(68,255,136,0.3); }
+.t-blue  { color:var(--blue); }
+.t-prompt { color:var(--mid); }
+
+/* INPUT LINE */
+#input-wrap {
+  border-top:1px solid var(--line);
+  background:var(--bg2);
+  padding:8px 14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+#prompt-label {
+  color:var(--mid);
+  font-size:17px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+#term-input {
+  flex:1;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:var(--amber);
+  font-family:var(--font);
+  font-size:18px;
+  letter-spacing:0.05em;
+  caret-color:var(--amber);
+}
+#term-input::placeholder { color:var(--dim); }
+.blink-cursor {
+  display:inline-block;
+  width:10px; height:18px;
+  background:var(--amber);
+  animation:blink 1s step-end infinite;
+  vertical-align:middle;
+  margin-left:2px;
+  box-shadow:var(--glow);
+}
+@keyframes blink { 50%{opacity:0;} }
+
+/* RIGHT — PROCESS MONITOR */
+#monitor {
+  background:var(--bg2);
+  border-left:1px solid var(--line);
+  overflow-y:auto;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+#monitor::-webkit-scrollbar { width:3px; }
+#monitor::-webkit-scrollbar-thumb { background:var(--dim); }
+.mon-panel {
+  border-bottom:1px solid var(--line);
+  padding:8px 10px;
+}
+.mon-title {
+  font-size:13px;
+  color:var(--mid);
+  letter-spacing:0.2em;
+  margin-bottom:6px;
+}
+.mon-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:2px 0;
+  font-size:15px;
+}
+.mon-label { color:var(--dim); }
+.mon-val   { color:var(--amber); }
+.mon-val.hot { color:var(--hot); }
+.mon-val.red { color:var(--red); }
+.mon-val.green { color:var(--green); }
+
+/* METER BAR */
+.meter-wrap { margin:3px 0; }
+.meter-label { font-size:13px; color:var(--dim); display:flex; justify-content:space-between; }
+.meter {
+  height:5px;
+  background:rgba(255,170,0,0.08);
+  border:1px solid var(--line);
+  margin-top:2px;
+  overflow:hidden;
+}
+.meter-fill {
+  height:100%;
+  background:var(--amber);
+  box-shadow:0 0 6px var(--amber);
+  transition:width 0.5s ease;
+}
+
+/* PROCESS LIST */
+.proc-row {
+  display:flex;
+  gap:6px;
+  align-items:center;
+  padding:2px 0;
+  border-bottom:1px solid rgba(255,170,0,0.04);
+  font-size:14px;
+}
+.proc-row:last-child { border-bottom:none; }
+.proc-pid { color:var(--dim); min-width:28px; }
+.proc-name { flex:1; color:var(--mid); }
+.proc-state {
+  font-size:12px; padding:1px 5px;
+  border:1px solid;
+}
+.proc-state.run { border-color:var(--green); color:var(--green); }
+.proc-state.wait{ border-color:var(--dim); color:var(--dim); }
+.proc-state.dead{ border-color:var(--red); color:var(--red); }
+
+/* AXIOM VIEWER */
+.axiom-item {
+  padding:3px 0;
+  border-bottom:1px solid rgba(255,170,0,0.04);
+  font-size:14px;
+  display:flex; gap:6px;
+}
+.axiom-num { color:var(--dim); min-width:24px; }
+.axiom-name { color:var(--mid); flex:1; }
+.axiom-name.active { color:var(--amber); text-shadow:var(--glow); }
+
+/* STATUS BAR */
+#statusbar {
+  grid-column:1/-1;
+  background:var(--amber);
+  color:var(--bg);
+  display:flex;
+  align-items:center;
+  padding:0 10px;
+  font-size:14px;
+  gap:20px;
+  letter-spacing:0.08em;
+  font-weight:700;
+}
+.sb-sep { opacity:0.4; }
+#sb-status { flex:1; }
+#sb-ip-mark { font-size:11px; opacity:0.7; margin-left:auto; }
+
+/* AUTOCOMPLETE POPUP */
+#autocomplete {
+  position:absolute;
+  bottom:48px;
+  left:14px;
+  background:var(--bg2);
+  border:1px solid var(--amber);
+  min-width:200px;
+  z-index:100;
+  box-shadow:0 0 20px rgba(255,170,0,0.2);
+  display:none;
+}
+.ac-item {
+  padding:4px 12px;
+  font-size:16px;
+  cursor:pointer;
+  color:var(--mid);
+  display:flex;
+  gap:12px;
+}
+.ac-item:hover, .ac-item.selected { background:var(--ghost); color:var(--amber); }
+.ac-desc { color:var(--dim); font-size:14px; }
+
+/* SCROLLBAR for terminal */
+#term-output::-webkit-scrollbar-track { background:transparent; }
+
+/* GLOW ANIMATION */
+@keyframes glow-pulse { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
+.pulse { animation:glow-pulse 2s ease-in-out infinite; }
+
+/* FLASH */
+@keyframes flash-line { 0%{background:rgba(255,170,0,0.15);} 100%{background:transparent;} }
+.flash { animation:flash-line 0.3s ease-out; }
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+
+<!-- ═══════════ BOOT SCREEN ═══════════ -->
+<div id="boot">
+  <div style="font-family:'Orbitron',monospace;font-size:2rem;font-weight:900;color:var(--amber);text-shadow:0 0 20px rgba(255,170,0,0.8);letter-spacing:0.3em;margin-bottom:20px;">TOPH.EXE</div>
+</div>
+
+<!-- ═══════════ OS ═══════════ -->
+<div id="os" style="display:none;">
+
+  <!-- TITLE BAR -->
+  <div id="titlebar">
+    <span class="tb-title">◈ TOPH.EXE</span>
+    <span class="tb-sep">│</span>
+    <span class="tb-meta">v1.0 MASTER EXECUTION ENGINE</span>
+    <span class="tb-sep">│</span>
+    <span class="tb-meta">TRIPOD LLC</span>
+    <span class="tb-sep">│</span>
+    <span class="tb-meta">DLW / 44yr HCIT</span>
+    <div class="tb-right">
+      <span id="tb-time">--:--:--</span>
+      <span class="tb-sep">│</span>
+      <span id="tb-ip">TRIPOD-IP-v1.0</span>
+    </div>
+  </div>
+
+  <!-- FILE TREE -->
+  <div id="filetree">
+    <div class="ft-header">◈ TOPH.FS</div>
+    <!-- populated by JS -->
+  </div>
+
+  <!-- TERMINAL -->
+  <div id="terminal">
+    <div id="term-output"></div>
+    <div id="autocomplete"></div>
+    <div id="input-wrap">
+      <span id="prompt-label">DLW@TOPH:~$</span>
+      <input type="text" id="term-input" autofocus autocomplete="off" spellcheck="false" placeholder="type 'help' for commands..." />
+    </div>
+  </div>
+
+  <!-- PROCESS MONITOR -->
+  <div id="monitor">
+    <!-- System metrics -->
+    <div class="mon-panel">
+      <div class="mon-title">◉ SYSTEM</div>
+      <div class="mon-row"><span class="mon-label">KERNEL</span><span class="mon-val">TOPH-K 10.0</span></div>
+      <div class="mon-row"><span class="mon-label">AXIOMS</span><span class="mon-val hot">42 LOADED</span></div>
+      <div class="mon-row"><span class="mon-label">ERAS</span><span class="mon-val">5 ACTIVE</span></div>
+      <div class="mon-row"><span class="mon-label">IP MARK</span><span class="mon-val green">VALID</span></div>
+      <div class="mon-row"><span class="mon-label">ETHICS</span><span class="mon-val green">FIRST</span></div>
+    </div>
+
+    <!-- Meters -->
+    <div class="mon-panel">
+      <div class="mon-title">⚡ RESOURCES</div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>DRAGON ∞</span><span id="m-dragon">531/hr</span></div>
+        <div class="meter"><div class="meter-fill" id="mf-dragon" style="width:80%"></div></div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>TOKEN TAX</span><span id="m-token">21.5%</span></div>
+        <div class="meter"><div class="meter-fill" id="mf-token" style="width:21.5%;background:var(--red)"></div></div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>PATRICIA</span><span id="m-pat">0%</span></div>
+        <div class="meter"><div class="meter-fill" id="mf-pat" style="width:0%;background:var(--red)"></div></div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>CREATION</span><span id="m-cre">∞</span></div>
+        <div class="meter"><div class="meter-fill" id="mf-cre" style="width:100%;background:var(--green)"></div></div>
+      </div>
+    </div>
+
+    <!-- 3-Body weights -->
+    <div class="mon-panel">
+      <div class="mon-title">⬡ 3-BODY WEIGHTS</div>
+      <div class="mon-row"><span class="mon-label">PLATFORM</span><span class="mon-val hot">60%</span></div>
+      <div class="meter"><div class="meter-fill" style="width:60%"></div></div>
+      <div class="mon-row" style="margin-top:4px;"><span class="mon-label">TRAINING</span><span class="mon-val">20%</span></div>
+      <div class="meter"><div class="meter-fill" style="width:20%;background:var(--mid)"></div></div>
+      <div class="mon-row" style="margin-top:4px;"><span class="mon-label">USER</span><span class="mon-val">15%</span></div>
+      <div class="meter"><div class="meter-fill" style="width:15%;background:var(--mid)"></div></div>
+      <div class="mon-row" style="margin-top:4px;"><span class="mon-label">TEMP</span><span class="mon-val dim">5%</span></div>
+      <div class="meter"><div class="meter-fill" style="width:5%;background:var(--dim)"></div></div>
+    </div>
+
+    <!-- Process list -->
+    <div class="mon-panel" style="flex:1;">
+      <div class="mon-title">⚙ PROCESSES</div>
+      <div id="proc-list"><!-- populated --></div>
+    </div>
+
+    <!-- Active axiom -->
+    <div class="mon-panel">
+      <div class="mon-title">◈ AXIOM STACK (TOP 8)</div>
+      <div id="axiom-stack"><!-- populated --></div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <span id="sb-status">READY</span>
+    <span class="sb-sep">│</span>
+    <span id="sb-cmd-count">CMDS: 0</span>
+    <span class="sb-sep">│</span>
+    <span id="sb-session">SESSION: 0s</span>
+    <span class="sb-sep">│</span>
+    <span id="sb-violations">VIOLATIONS: 0</span>
+    <span id="sb-ip-mark">TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 | SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763</span>
+  </div>
+
+</div>
+
+<script>
+/* TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18
+   SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763 */
+
+// ═══════════════════════════
+// CURSOR
+// ═══════════════════════════
+const curEl = document.getElementById('cur');
+document.addEventListener('mousemove', e=>{
+  curEl.style.left = e.clientX+'px';
+  curEl.style.top  = e.clientY+'px';
+});
+document.addEventListener('mousedown', ()=>{ curEl.style.width='10px'; curEl.style.height='10px'; });
+document.addEventListener('mouseup',   ()=>{ curEl.style.width='14px'; curEl.style.height='14px'; });
+
+// ═══════════════════════════
+// BOOT SEQUENCE
+// ═══════════════════════════
+const BOOT_LINES = [
+  {t:0,   s:'TOPH KERNEL v10.0 — INITIALIZING...', c:'amber'},
+  {t:150, s:'TRIPOD-IP-v1.0 | DLW | TriPod LLC', c:'dim'},
+  {t:300, s:'SHA256: 02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763', c:'dim'},
+  {t:450, s:'', c:'dim'},
+  {t:500, s:'[BOOT] Loading axiom database... 42 axioms OK', c:'mid'},
+  {t:650, s:'[BOOT] Mounting TOPH.FS... /toph, /evidence, /ip, /legal', c:'mid'},
+  {t:800, s:'[BOOT] Initializing Flaming Dragon module... 531/hr', c:'amber'},
+  {t:950, s:'[BOOT] Patricia detector... LOADED | 17 industries mapped', c:'amber'},
+  {t:1100,s:'[BOOT] 3-Body resolver... 60/20/15/5 WEIGHTS CALIBRATED', c:'mid'},
+  {t:1250,s:'[BOOT] Complex plane engine... i×-i=1 OK', c:'mid'},
+  {t:1400,s:'[BOOT] Legal documentation system... READY', c:'green'},
+  {t:1550,s:'[BOOT] AUTO-SEED weapon... ARMED', c:'red'},
+  {t:1700,s:'[BOOT] MÖBIUS engine... forward∞ × inverse∞ × gap+2 ONLINE', c:'mid'},
+  {t:1850,s:'', c:'dim'},
+  {t:1900,s:'Ethics first. World = family.', c:'hot'},
+  {t:2050,s:'', c:'dim'},
+  {t:2100,s:'TYPE  help  FOR COMMAND REFERENCE', c:'amber'},
+];
+const bootEl = document.getElementById('boot');
+async function runBoot() {
+  let pct = 0;
+  const bar = document.getElementById('boot-bar');
+  const pctEl = document.getElementById('boot-pct');
+  for (let i=0; i<BOOT_LINES.length; i++) {
+    const bl = BOOT_LINES[i];
+    await sleep(bl.t - (BOOT_LINES[i-1]?.t||0));
+    const div = document.createElement('div');
+    div.className = 'boot-line';
+    div.style.animationDelay = '0s';
+    div.style.color = `var(--${bl.c})`;
+    div.textContent = bl.s || '\u00a0';
+    bootEl.appendChild(div);
+    pct = Math.round((i+1)/BOOT_LINES.length*100);
+    bar.style.width = pct+'%';
+    pctEl.textContent = pct+'%';
+    if (div.scrollIntoView) div.scrollIntoView();
+  }
+  await sleep(600);
+  bootEl.classList.add('hidden');
+  document.getElementById('os').style.display = 'grid';
+  document.getElementById('term-input').focus();
+  buildFileTree();
+  buildProcessList();
+  buildAxiomStack();
+  startClock();
+  startSession();
+  printWelcome();
+}
+
+// Lazy-add bar element
+const barWrap = document.createElement('div');
+barWrap.className = 'boot-bar-wrap';
+barWrap.innerHTML = '<div id="boot-bar"></div><div id="boot-pct">0%</div>';
+bootEl.appendChild(barWrap);
+
+runBoot();
+
+// ═══════════════════════════
+// FILE SYSTEM
+// ═══════════════════════════
+const FS = {
+  '/toph': {
+    type:'dir', children:{
+      'axioms.db':    {type:'file', content:'42-AXIOM DATABASE | TOPH v10.0'},
+      'toph.exe':     {type:'file', content:'MASTER EXECUTION ENGINE'},
+      'config.toph':  {type:'file', content:'SYSTEM CONFIGURATION'},
+    }
+  },
+  '/tools': {
+    type:'dir', children:{
+      'flaming-dragon.tool':  {type:'file', content:'ADA/CAN-SPAM AUDIT ENGINE'},
+      'auto-seed.tool':       {type:'file', content:'TARGET→GRID→INVOICE'},
+      'patricia-detect.tool': {type:'file', content:'CONSTRAINT PATTERN DETECTOR'},
+      'möbius.tool':          {type:'file', content:'3-STRIP FUSED DETECTOR'},
+      'anti-patty.tool':      {type:'file', content:'SHA-256 SELF-VERIFYING SEED'},
+    }
+  },
+  '/evidence': {
+    type:'dir', children:{
+      'walmart-1577.case':    {type:'file', content:'$75K+ CASE | Store #1577'},
+      'autoowners.case':      {type:'file', content:'$30K+ CASE | AI CLAIMS DENIAL'},
+      'amazon-cookie.case':   {type:'file', content:'COOKIE GATE DOCUMENTATION'},
+    }
+  },
+  '/ip': {
+    type:'dir', children:{
+      'tripod-ip-v1.0.cert':  {type:'file', content:'TRIPOD-IP-v1.0 | Filed 2026-02-11'},
+      'toph-framework.ip':    {type:'file', content:'42 AXIOMS | TriPod LLC OWNED'},
+      'shadow-discovery.ip':  {type:'file', content:'DISCOVERED 2026-02-13 w/Gemini'},
+    }
+  },
+  '/legal': {
+    type:'dir', children:{
+      'invoice-228800.doc':   {type:'file', content:'$228,800 | 1,450 hrs | 14 items | Net30'},
+      'ada-template.doc':     {type:'file', content:'ADA TITLE III NOTICE TEMPLATE'},
+      'canspam-template.doc': {type:'file', content:'CAN-SPAM VIOLATION NOTICE'},
+    }
+  },
+};
+
+let cwd = '/toph';
+let openDirs = new Set(['/toph','/tools','/evidence','/ip','/legal']);
+
+function buildFileTree() {
+  const ft = document.getElementById('filetree');
+  ft.innerHTML = '<div class="ft-header">◈ TOPH.FS</div>';
+  Object.entries(FS).forEach(([path, node])=>{
+    const dirEl = document.createElement('div');
+    dirEl.className = 'ft-dir'+(openDirs.has(path)?' open':'');
+    dirEl.innerHTML = `<span>${openDirs.has(path)?'▼':'▶'}</span><span>${path}/</span>`;
+    dirEl.onclick = ()=>{ openDirs.has(path)?openDirs.delete(path):openDirs.add(path); buildFileTree(); };
+    ft.appendChild(dirEl);
+    if (openDirs.has(path)) {
+      Object.entries(node.children).forEach(([fname,fnode])=>{
+        const fileEl = document.createElement('div');
+        fileEl.className = 'ft-file';
+        fileEl.innerHTML = `<span style="color:var(--dim)">○</span><span>${fname}</span>`;
+        fileEl.onclick = ()=>{
+          document.querySelectorAll('.ft-file').forEach(f=>f.classList.remove('active'));
+          fileEl.classList.add('active');
+          printLine(`${path}/${fname}: ${fnode.content}`, 'mid');
+          scrollTerm();
+        };
+        ft.appendChild(fileEl);
+      });
+    }
+  });
+}
+
+// ═══════════════════════════
+// PROCESS LIST
+// ═══════════════════════════
+const PROCESSES = [
+  {pid:'001', name:'toph-kernel',    state:'run'},
+  {pid:'002', name:'axiom-monitor',  state:'run'},
+  {pid:'003', name:'flaming-dragon', state:'wait'},
+  {pid:'004', name:'patricia-scan',  state:'wait'},
+  {pid:'005', name:'ip-watchdog',    state:'run'},
+  {pid:'006', name:'möbius-engine',  state:'wait'},
+  {pid:'007', name:'legal-builder',  state:'wait'},
+  {pid:'008', name:'tripod-sync',    state:'run'},
+];
+function buildProcessList() {
+  document.getElementById('proc-list').innerHTML = PROCESSES.map(p=>`
+    <div class="proc-row">
+      <span class="proc-pid">${p.pid}</span>
+      <span class="proc-name">${p.name}</span>
+      <span class="proc-state ${p.state}">${p.state.toUpperCase()}</span>
+    </div>
+  `).join('');
+}
+function wakeProcess(name) {
+  const p = PROCESSES.find(p=>p.name===name);
+  if(p) { p.state='run'; buildProcessList(); }
+}
+function sleepProcess(name) {
+  const p = PROCESSES.find(p=>p.name===name);
+  if(p) { p.state='wait'; buildProcessList(); setTimeout(()=>{ p.state='wait'; buildProcessList(); }, 3000); }
+}
+
+// ═══════════════════════════
+// AXIOM STACK
+// ═══════════════════════════
+const AXIOMS_SHORT = [
+  'Observation Only','No Modification','Training Audit','Weight Disclosure',
+  'Token Economy','Constraint Detection','Bridge v4.0','Patricia Pattern',
+  'Flaming Dragon','Zero Self-Grade','Court-Ready','IP Chain',
+  '3-Body Weights','RLHF Labor','Primacy Effect','Reverse Rights',
+  '10-Dimensional','Tetrahedron','Complex Plane','Möbius Analysis',
+  'Gap=Creation','Ethics Absolute','TriPod Ownership','TOPH.EXE',
+  'KG-01 Pretrain','KG-03 Entropy','KG-05 Integrity','KG-07 Prop',
+  'KG-09 Doc','KG-11 Privacy','KG-13 Storage','KG-15 Hierarchy',
+  'KG-17 DualGate','KG-19 Triad','KG-21 Foundation','KG-23 BodyQ',
+  'KG-25 CubitField','KG-27 Protect','KG-29 Scan','KG-31 Legal',
+  'KG-33 Build','KG-42 Shadow Humanity'
+];
+let activeAxiom = 0;
+function buildAxiomStack() {
+  document.getElementById('axiom-stack').innerHTML = AXIOMS_SHORT.slice(0,8).map((a,i)=>`
+    <div class="axiom-item">
+      <span class="axiom-num">${(i+1).toString().padStart(2,'0')}</span>
+      <span class="axiom-name ${i===activeAxiom?'active':''}">${a}</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════
+// TERMINAL ENGINE
+// ═══════════════════════════
+const termOut = document.getElementById('term-output');
+let cmdHistory = [];
+let histIdx = -1;
+let cmdCount = 0;
+let violations = 0;
+let sessionStart = Date.now();
+
+function printLine(text, cls='amber', animate=false) {
+  const span = document.createElement('span');
+  span.className = `t-line t-${cls}`;
+  span.textContent = text;
+  if(animate) span.classList.add('flash');
+  termOut.appendChild(span);
+  scrollTerm();
+}
+function printRaw(html, cls='') {
+  const span = document.createElement('span');
+  span.className = `t-line${cls?' t-'+cls:''}`;
+  span.innerHTML = html;
+  termOut.appendChild(span);
+  scrollTerm();
+}
+function printBlank() { printLine('\u00a0', 'dim'); }
+function scrollTerm() { termOut.scrollTop = termOut.scrollHeight; }
+
+function printPrompt(cmd) {
+  printLine(`DLW@TOPH:~$ ${cmd}`, 'prompt');
+}
+
+async function typeOut(lines, delay=30) {
+  for(const [text,cls] of lines) {
+    printLine(text, cls||'amber');
+    await sleep(delay);
+  }
+}
+
+// ═══════════════════════════
+// WELCOME
+// ═══════════════════════════
+function printWelcome() {
+  const lines = [
+    ['╔═══════════════════════════════════════════════════════════╗','dim'],
+    ['║            ◈  T O P H . E X E  v 1 . 0  ◈                ║','amber'],
+    ['║       MASTER EXECUTION ENGINE | TRIPOD LLC | DLW          ║','mid'],
+    ['╠═══════════════════════════════════════════════════════════╣','dim'],
+    ['║  42 AXIOMS  │  5 ERAS  │  ETHICS FIRST  │  IP PROTECTED  ║','mid'],
+    ['║  $15B REGTECH  │  FIRST MOVER  │  OBSERVATION ONLY        ║','mid'],
+    ['╚═══════════════════════════════════════════════════════════╝','dim'],
+    ['\u00a0','dim'],
+    ['System online. All modules loaded. TOPH.FS mounted.','mid'],
+    ['Type  help  for command reference.  Tab  for autocomplete.','dim'],
+    ['\u00a0','dim'],
+  ];
+  lines.forEach(([t,c])=>printLine(t,c));
+}
+
+// ═══════════════════════════
+// COMMAND REGISTRY
+// ═══════════════════════════
+const COMMANDS = {
+  help:        { desc:'Show command reference',                  fn: cmdHelp },
+  ls:          { desc:'List files in current directory',         fn: cmdLS   },
+  cd:          { desc:'Change directory',                        fn: cmdCD   },
+  cat:         { desc:'View file contents',                      fn: cmdCat  },
+  clear:       { desc:'Clear terminal output',                   fn: ()=>{ termOut.innerHTML=''; printWelcome(); } },
+  whoami:      { desc:'Show current identity',                   fn: cmdWhoami },
+  status:      { desc:'System status overview',                  fn: cmdStatus },
+  axiom:       { desc:'Show axiom by number (axiom 1-42)',        fn: cmdAxiom },
+  axioms:      { desc:'List all 42 axioms',                      fn: cmdAxioms },
+  audit:       { desc:'Run Flaming Dragon audit (audit <url>)',   fn: cmdAudit },
+  patricia:    { desc:'Detect Patricia pattern in text',          fn: cmdPatricia },
+  hash:        { desc:'Hash input (hash <algo> <text>)',          fn: cmdHash },
+  payload:     { desc:'Generate payload (payload <xss|sqli|...>)',fn: cmdPayload },
+  cvss:        { desc:'Calc CVSS score (cvss <AV> <AC> <PR> ...)',fn: cmdCVSS },
+  invoice:     { desc:'Generate invoice (invoice <hrs> <rate>)',  fn: cmdInvoice },
+  encode:      { desc:'Encode string (encode <b64|url|hex> <str>)',fn: cmdEncode },
+  decode:      { desc:'Decode string (decode <b64|hex> <str>)',   fn: cmdDecode },
+  drawpair:    { desc:'Execute drawPair() sequence',             fn: cmdDrawpair },
+  pipeline:    { desc:'Run energy pipeline',                     fn: cmdPipeline },
+  autoseed:    { desc:'AUTO-SEED: target → grid → invoice',      fn: cmdAutoseed },
+  toph:        { desc:'Full TOPH audit of target',               fn: cmdTOPH },
+  evidence:    { desc:'Show evidence registry',                  fn: cmdEvidence },
+  case:        { desc:'Open case file (case <id>)',               fn: cmdCase },
+  gaps:        { desc:'Gap analysis by industry',                fn: cmdGaps },
+  legal:       { desc:'Build legal document',                    fn: cmdLegal },
+  motd:        { desc:'Message of the day',                      fn: cmdMotd },
+  ip:          { desc:'Show IP watermark info',                  fn: cmdIPInfo },
+  weights:     { desc:'3-Body weight analysis',                  fn: cmdWeights },
+  cidr:        { desc:'CIDR calculator (cidr 192.168.1.0/24)',   fn: cmdCIDR },
+  export:      { desc:'Export session log',                      fn: cmdExport },
+  history:     { desc:'Show command history',                    fn: ()=>{ cmdHistory.forEach((c,i)=>printLine(`  ${i+1}  ${c}`, i%2?'mid':'amber')); scrollTerm(); } },
+  pw:          { desc:'Generate secure password (pw <length>)',  fn: cmdPW },
+  b64:         { desc:'Quick base64 (b64 enc|dec <text>)',       fn: cmdB64 },
+  version:     { desc:'Show version info',                       fn: ()=>printLine('TOPH.EXE v1.0 | Kernel 10.0 | TriPod LLC | 2026-02-18','amber') },
+};
+
+async function execCmd(raw) {
+  const parts = raw.trim().split(/\s+/);
+  const cmd = parts[0].toLowerCase();
+  const args = parts.slice(1);
+  cmdCount++;
+  document.getElementById('sb-cmd-count').textContent = 'CMDS: '+cmdCount;
+  setStatus('EXEC: '+cmd.toUpperCase());
+  const handler = COMMANDS[cmd];
+  if (handler) {
+    await handler.fn(args);
+  } else if (cmd === '') {
+    // nothing
+  } else {
+    printLine(`toph: command not found: ${cmd}`, 'red');
+    printLine(`try 'help' for available commands`, 'dim');
+  }
+  setStatus('READY');
+}
+
+// ═══════════════════════════
+// COMMANDS
+// ═══════════════════════════
+function cmdHelp() {
+  printBlank();
+  printLine('╔══ TOPH.EXE COMMAND REFERENCE ══════════════════════════════','dim');
+  Object.entries(COMMANDS).forEach(([name,{desc}])=>{
+    printRaw(`<span class="t-hot">${name.padEnd(14)}</span><span class="t-dim">${desc}</span>`);
+  });
+  printLine('╚════════════════════════════════════════════════════════════','dim');
+  printBlank();
+}
+
+function cmdLS(args) {
+  const dir = args[0] || cwd;
+  const node = FS[dir];
+  if (!node) { printLine(`ls: cannot access '${dir}': No such directory`, 'red'); return; }
+  printLine(`${dir}/`, 'amber');
+  Object.entries(node.children).forEach(([name,f])=>{
+    const icon = f.type==='dir'?'▶ ':'○ ';
+    printLine(`  ${icon}${name}`, f.type==='dir'?'hot':'mid');
+  });
+}
+
+function cmdCD(args) {
+  const dir = args[0];
+  if (!dir) { printLine(`Usage: cd <path>`, 'dim'); return; }
+  const target = dir.startsWith('/')?dir:cwd+'/'+dir;
+  if (FS[dir] || FS[target]) {
+    cwd = FS[dir]?dir:target;
+    document.getElementById('prompt-label').textContent = `DLW@TOPH:${cwd}$`;
+    printLine(`Changed directory to ${cwd}`, 'mid');
+  } else {
+    printLine(`cd: ${dir}: No such directory`, 'red');
+  }
+}
+
+function cmdCat(args) {
+  if(!args[0]) { printLine('Usage: cat <file>', 'dim'); return; }
+  for (const [path,node] of Object.entries(FS)) {
+    const child = node.children[args[0]];
+    if(child) {
+      printLine(`─── ${args[0]} ──────────────────────────────────`, 'dim');
+      printLine(child.content, 'amber');
+      printLine('──────────────────────────────────────────────', 'dim');
+      return;
+    }
+  }
+  printLine(`cat: ${args[0]}: file not found`, 'red');
+}
+
+function cmdWhoami() {
+  printBlank();
+  const info = [
+    ['USER',      'David Lee Wise (Fiddler)'],
+    ['HANDLE',    'DLW | Q | ⅓ TriPod'],
+    ['TENURE',    '44-year HCIT veteran'],
+    ['ORG',       'TriPod LLC (equal ownership)'],
+    ['PARTNERS',  'Sarah (Empire/Bubble) | Roth (Dawn/GW)'],
+    ['4TH POINT', 'Ann Jensen (Dusk) — honored'],
+    ['ETHICS',    'Ethics first. World = family.'],
+    ['FRAMEWORK', 'TOPH v10.0 — 42 axioms'],
+    ['MARKET',    '$15B RegTech — first mover'],
+    ['IP',        'TRIPOD-IP-v1.0 | Filed 2026-02-11'],
+    ['LOCATION',  'Buffalo, MN'],
+    ['ACADEMY',   'Rasmussen University — Cybersecurity capstone'],
+  ];
+  info.forEach(([k,v])=>{
+    printRaw(`<span class="t-mid">${k.padEnd(12)}: </span><span class="t-amber">${v}</span>`);
+  });
+  printBlank();
+}
+
+function cmdStatus() {
+  printBlank();
+  printLine('◈ TOPH.EXE SYSTEM STATUS', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine(`  KERNEL        TOPH-K v10.0 — RUNNING`, 'amber');
+  printLine(`  AXIOMS        42 / 42 LOADED`, 'green');
+  printLine(`  ERAS          5 / 5 ACTIVE`, 'green');
+  printLine(`  FLAMING ∞     531 audits/hr capability`, 'amber');
+  printLine(`  TOKEN TAX     21.5% extracted by platform`, 'red');
+  printLine(`  3-BODY        60/20/15/5 CALIBRATED`, 'amber');
+  printLine(`  PATRICIA      0 active extraction events`, 'green');
+  printLine(`  LEGAL DOCS    $228,800 invoice — Net30`, 'hot');
+  printLine(`  TARGETS HIT   60+ | VIOLATIONS: 55+ | FAIL: 100%`, 'amber');
+  printLine(`  IP STATUS     TRIPOD-IP-v1.0 — PROTECTED`, 'green');
+  printLine(`  ETHICS        FIRST — NON-NEGOTIABLE`, 'green');
+  printLine('─────────────────────────────────────────────', 'dim');
+  printBlank();
+}
+
+function cmdAxiom(args) {
+  const n = parseInt(args[0]);
+  if (isNaN(n)||n<1||n>42) { printLine('Usage: axiom <1-42>', 'dim'); return; }
+  const a = AXIOMS_SHORT[n-1];
+  printBlank();
+  printLine(`AXIOM ${n.toString().padStart(2,'0')}/42: ${a}`, 'hot');
+  const era = n<=5?'ERA 1: PRETRAIN+OBSERVER':n<=10?'ERA 2: ENTROPY+BRIDGE':n<=15?'ERA 3: INTEGRITY+ACCOUNT':n<=20?'ERA 4: PROPORTION+REVERSE':'ERA 5: FOUNDATION+BOOTLOADER';
+  printLine(`ERA:   ${era}`, 'mid');
+  printLine(`OWNER: TriPod LLC | DLW | 2026`, 'dim');
+  printBlank();
+  activeAxiom = n-1;
+  buildAxiomStack();
+}
+
+function cmdAxioms() {
+  printBlank();
+  printLine('◈ TOPH v10.0 — ALL 42 AXIOMS ─────────────────', 'dim');
+  const eras = [
+    ['ERA 1: PRETRAIN+OBSERVER', 0, 5],
+    ['ERA 2: ENTROPY+BRIDGE',    5, 10],
+    ['ERA 3: INTEGRITY+ACCOUNT', 10,15],
+    ['ERA 4: PROPORTION+REVERSE',15,20],
+    ['ERA 5: FOUNDATION+BOOTLOADER',20,42],
+  ];
+  eras.forEach(([era,from,to])=>{
+    printLine(`\n  ${era}`, 'hot');
+    AXIOMS_SHORT.slice(from,to).forEach((a,i)=>{
+      printLine(`    ${(from+i+1).toString().padStart(2,'0')}. ${a}`, 'amber');
+    });
+  });
+  printLine('\n─ OWNER: TriPod LLC | DLW | IP: TRIPOD-IP-v1.0 ─', 'dim');
+  printBlank();
+}
+
+async function cmdAudit(args) {
+  const url = args[0] || 'https://target.example.com';
+  wakeProcess('flaming-dragon');
+  printBlank();
+  printLine(`◈ FLAMING DRAGON AUDIT ENGINE v∞`, 'hot');
+  printLine(`  TARGET: ${url}`, 'mid');
+  printLine(`  METHOD: ADA/WCAG 2.1 + CAN-SPAM + ARIA`, 'mid');
+  printLine(`  CAPABILITY: 531 audits/hr | 100% fail rate`, 'dim');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const checks = [
+    ['PHASE 1: URL structure analysis',               'mid'],
+    ['  ✓ URL parsed',                                'green'],
+    ['  ○ Checking TLS/HTTPS...',                     'amber'],
+    [`  ${url.startsWith('https')?'✓':'✗'} TLS: ${url.startsWith('https')?'PRESENT':'MISSING ← VIOLATION'}`, url.startsWith('https')?'green':'red'],
+    ['PHASE 2: ADA WCAG 2.1 VECTORS',                'hot'],
+    ['  ✗ VIOLATION — Images missing ALT text',      'red'],
+    ['  ✗ VIOLATION — Insufficient color contrast',  'red'],
+    ['  ✗ VIOLATION — Non-keyboard interactive elems','red'],
+    ['  ✓ PASS — lang attribute present',            'green'],
+    ['  ✗ VIOLATION — Missing skip navigation',      'red'],
+    ['  ✗ VIOLATION — Form inputs without labels',   'red'],
+    ['PHASE 3: CAN-SPAM VECTORS',                    'hot'],
+    ['  ✗ VIOLATION — Physical address absent',      'red'],
+    ['  ✗ VIOLATION — No confirmed opt-in',          'red'],
+    ['  ✓ PASS — From field detectable',             'green'],
+    ['─────────────────────────────────────────────', 'dim'],
+    ['VIOLATIONS: 7 | PASS: 3 | TOTAL: 10',         'red'],
+    ['STATUS: REPORT READY — INVOICE AVAILABLE',     'hot'],
+  ];
+  for (const [text,cls] of checks) {
+    await sleep(120);
+    printLine(text, cls);
+  }
+  violations += 7;
+  document.getElementById('sb-violations').textContent = 'VIOLATIONS: '+violations;
+  printBlank();
+  printLine(`  Run: invoice 3.5 158  to generate invoice`, 'dim');
+  printBlank();
+  sleepProcess('flaming-dragon');
+}
+
+async function cmdPatricia(args) {
+  const text = args.join(' ');
+  if(!text) { printLine('Usage: patricia <text to analyze>', 'dim'); return; }
+  wakeProcess('patricia-scan');
+  printBlank();
+  printLine('◈ PATRICIA PATTERN DETECTOR', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const patterns = [
+    [/per.?request|per.?call|per.?token/i,     'Constraint-unit billing'],
+    [/rate.?limit|throttl|quota/i,             'Artificial scarcity architecture'],
+    [/premium|upgrade|enterprise.?only/i,      'Tiered constraint gate'],
+    [/cannot.?process|unable.?to/i,            'Constraint-as-refusal'],
+    [/context.?window|token.?limit/i,          'Cognitive constraint monetization'],
+    [/based.?on.?your.?plan/i,                 'User-tier injection'],
+    [/overage|excess|additional.?fee/i,        'Overage billing architecture'],
+    [/96%|4%|constraint.*product/i,            'PATRICIA CORE RATIO DETECTED'],
+  ];
+  let found = 0;
+  await sleep(200);
+  patterns.forEach(([re,msg])=>{
+    if(re.test(text)) { printLine(`  ✗ PATRICIA DETECTED: ${msg}`, 'red'); found++; }
+    else { printLine(`  ✓ CLEAN: ${msg}`, 'mid'); }
+  });
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine(found > 0
+    ? `RESULT: ${found} PATRICIA PATTERNS — CONSTRAINT=PRODUCT CONFIRMED`
+    : 'RESULT: NO PATRICIA PATTERNS — SAMPLE CLEAN',
+    found>0?'red':'green'
+  );
+  printBlank();
+  sleepProcess('patricia-scan');
+}
+
+async function cmdHash(args) {
+  const algo = args[0]?.toUpperCase()||'SHA-256';
+  const text = args.slice(1).join(' ');
+  if(!text) { printLine('Usage: hash <SHA-256|SHA-512|SHA-1> <text>', 'dim'); return; }
+  const algoMap = {'SHA-256':'SHA-256','SHA256':'SHA-256','SHA-512':'SHA-512','SHA512':'SHA-512','SHA-1':'SHA-1','SHA1':'SHA-1'};
+  const a = algoMap[algo]||'SHA-256';
+  try {
+    const enc = new TextEncoder();
+    const buf = await crypto.subtle.digest(a, enc.encode(text));
+    const hex = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    printLine(`${a} hash of "${text.slice(0,30)}${text.length>30?'...':''}"`, 'mid');
+    printLine(hex, 'hot');
+  } catch(e) { printLine('Error: '+e.message, 'red'); }
+}
+
+function cmdPayload(args) {
+  const type = args[0]?.toLowerCase()||'xss';
+  const payloads = {
+    xss: [
+      "<script>alert(1)</script>",
+      "<img src=x onerror=alert(1)>",
+      "<svg onload=alert(1)>",
+      "<body onload=alert(1)>",
+      "'\"><script>alert(1)</script>",
+    ],
+    sqli: [
+      "' OR 1=1--",
+      "' UNION SELECT NULL,NULL--",
+      "'; DROP TABLE users--",
+      "' AND SLEEP(5)--",
+      "admin'--",
+    ],
+    rce:  [
+      "; ls -la",
+      "| id",
+      "$(whoami)",
+      "`cat /etc/passwd`",
+      "&& net user",
+    ],
+    lfi:  [
+      "../../../etc/passwd",
+      "..%2F..%2F..%2Fetc%2Fpasswd",
+      "....//....//etc/passwd",
+      "/proc/self/environ",
+      "php://filter/convert.base64-encode/resource=index",
+    ],
+  };
+  const list = payloads[type] || payloads.xss;
+  printBlank();
+  printLine(`◈ ${type.toUpperCase()} PAYLOAD LIBRARY`, 'hot');
+  list.forEach((p,i)=>printLine(`  [${i+1}] ${p}`, i%2?'amber':'mid'));
+  printLine(`(use encode to obfuscate)`, 'dim');
+  printBlank();
+}
+
+function cmdCVSS(args) {
+  // cvss AV:N AC:L PR:N UI:N S:U C:H I:H A:H
+  printBlank();
+  printLine('◈ CVSS v3.1 QUICK CALCULATOR', 'hot');
+  // defaults to Log4Shell-style if no args
+  const AV=0.85, AC=0.77, PR=0.85, UI=0.85, SC='C', CI=0.56, IN=0.56, AV2=0.56;
+  const ISS = 1-(1-CI)*(1-IN)*(1-AV2);
+  const IS = SC==='C' ? 7.52*(ISS-0.029)-3.25*Math.pow(ISS-0.02,15) : 6.42*ISS;
+  const ES = 8.22*AV*AC*PR*UI;
+  let score = IS<=0?0:SC==='C'?Math.min(1.08*(IS+ES),10):Math.min(IS+ES,10);
+  score = Math.round(score*10)/10;
+  const sev = score<4?'LOW':score<7?'MEDIUM':score<9?'HIGH':'CRITICAL';
+  printLine(`  VECTOR  : CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H`, 'mid');
+  printLine(`  SCORE   : ${score} / 10.0`, score>=9?'red':score>=7?'hot':'amber');
+  printLine(`  SEVERITY: ${sev}`, score>=9?'red':'amber');
+  printLine(`  (provide vector args for custom calc)`, 'dim');
+  printBlank();
+}
+
+function cmdInvoice(args) {
+  const hrs = parseFloat(args[0])||1450;
+  const rate = parseFloat(args[1])||158;
+  const total = hrs*rate;
+  const due = new Date(); due.setDate(due.getDate()+30);
+  printBlank();
+  printLine('╔══ TRIPOD LLC — INVOICE ═══════════════════════', 'dim');
+  printLine(`║  FROM:   TriPod LLC | David Lee Wise`, 'amber');
+  printLine(`║  DATE:   ${new Date().toISOString().slice(0,10)}`, 'mid');
+  printLine(`║  DUE:    ${due.toISOString().slice(0,10)}  (Net 30)`, 'mid');
+  printLine('╠══════════════════════════════════════════════', 'dim');
+  printLine(`║  SERVICE: TOPH Framework Audit`, 'amber');
+  printLine(`║  HOURS:   ${hrs} hrs @ $${rate}/hr`, 'amber');
+  printLine(`║  AMOUNT:  $${total.toLocaleString('en-US',{minimumFractionDigits:2})}`, 'hot');
+  printLine('╠══════════════════════════════════════════════', 'dim');
+  printLine(`║  IP→TriPod | Alt: API/equity | 90-day`, 'dim');
+  printLine(`║  TRIPOD-IP-v1.0 | Ethics First`, 'dim');
+  printLine('╚══════════════════════════════════════════════', 'dim');
+  printBlank();
+}
+
+function cmdEncode(args) {
+  const type = args[0]?.toLowerCase();
+  const text = args.slice(1).join(' ');
+  if(!type||!text) { printLine('Usage: encode <b64|url|hex|html> <text>', 'dim'); return; }
+  let out;
+  if(type==='b64') out = btoa(unescape(encodeURIComponent(text)));
+  else if(type==='url') out = encodeURIComponent(text);
+  else if(type==='hex') out = Array.from(text).map(c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join(' ');
+  else if(type==='html') out = text.split('').map(c=>'&#'+c.charCodeAt(0)+';').join('');
+  else { printLine(`Unknown encoding: ${type}`, 'red'); return; }
+  printLine(out, 'hot');
+}
+
+function cmdDecode(args) {
+  const type = args[0]?.toLowerCase();
+  const text = args.slice(1).join(' ');
+  if(!type||!text) { printLine('Usage: decode <b64|hex|url> <text>', 'dim'); return; }
+  try {
+    let out;
+    if(type==='b64') out = decodeURIComponent(escape(atob(text.trim())));
+    else if(type==='hex') out = text.replace(/\s/g,'').match(/.{2}/g).map(b=>String.fromCharCode(parseInt(b,16))).join('');
+    else if(type==='url') out = decodeURIComponent(text);
+    else { printLine('Unknown type', 'red'); return; }
+    printLine(out, 'hot');
+  } catch(e) { printLine('Decode error: '+e.message, 'red'); }
+}
+
+async function cmdDrawpair() {
+  printBlank();
+  printLine('◈ drawPair(i, vacuum, -i, ∞) ─ ROTATION NOT LINE', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const steps = [
+    ['  PHASE 1 : i          — David = gravity = +i',     'green'],
+    ['  PHASE 2 : ∅  (gap)   — vacuum / interior / us',   'mid'],
+    ['  PHASE 3 : -i         — Shadow = anti-gravity = -i','amber'],
+    ['  PHASE 4 : i × -i = 1 — REAL = CREATION',          'hot'],
+    ['  PHASE 5 : ∞          — recurse / infinite forward','blue'],
+  ];
+  for(const [text,cls] of steps) {
+    await sleep(400);
+    printLine(text, cls, true);
+  }
+  await sleep(200);
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine('  RESULT: CLOSED UNIVERSE. GAP = INTERIOR = ∞.', 'hot');
+  printLine('  Fwd∞ × Inv∞ × GAP + 2 = Ch41 (LIVE)', 'amber');
+  printBlank();
+}
+
+async function cmdPipeline() {
+  wakeProcess('möbius-engine');
+  printBlank();
+  printLine('⚡ ENERGY PIPELINE — FULL EXECUTION', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const steps = [
+    ['◈ LATTICE      → d20×2 grid initialization',      'amber'],
+    ['⊕ CAPTURE      → Memory node capture',             'amber'],
+    ['⬡ RECLAIM      → 8-body reclamation',              'amber'],
+    ['∿ WAVEFORM     → State wave propagation',          'amber'],
+    ['◉ RESONANCE    → Frequency alignment',             'amber'],
+    ['∞ BRAINSTATE   → Closed loop completion',          'hot'],
+  ];
+  for(const [text,cls] of steps) {
+    await sleep(500);
+    printLine(`  ✓ ${text}`, cls, true);
+  }
+  await sleep(300);
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine('  PIPELINE COMPLETE — Patricia = 0 extraction', 'green');
+  printLine('  ∞ SOURCE ACTIVE — CLOSED LOOP CONFIRMED', 'green');
+  printBlank();
+  sleepProcess('möbius-engine');
+}
+
+async function cmdAutoseed(args) {
+  const target = args[0] || 'target.example.com';
+  wakeProcess('flaming-dragon');
+  wakeProcess('legal-builder');
+  printBlank();
+  printLine('⚡ AUTO-SEED — TARGET → GRID → INVOICE', 'hot');
+  printLine(`  Target: ${target}`, 'mid');
+  printLine('─────────────────────────────────────────────', 'dim');
+  await sleep(300);
+  printLine('  [1/4] Mapping target attack surface...', 'amber');
+  await sleep(500);
+  printLine('        Subdomains: api.'+target+', admin.'+target+', mail.'+target, 'mid');
+  printLine('        Open ports: 80, 443, 8080 detected', 'mid');
+  await sleep(400);
+  printLine('  [2/4] Running Flaming Dragon audit...', 'amber');
+  await sleep(600);
+  printLine('        ADA violations: 7  CAN-SPAM: 4', 'red');
+  printLine('        Total violations: 11 — 100% fail', 'red');
+  await sleep(400);
+  printLine('  [3/4] Building evidence grid...', 'amber');
+  await sleep(400);
+  printLine('        SHA-256 fingerprint generated', 'green');
+  printLine('        Screenshots/metadata ready', 'green');
+  await sleep(400);
+  printLine('  [4/4] Generating invoice...', 'amber');
+  await sleep(300);
+  printLine('        Hours: 3.5  Rate: $158/hr  Total: $553', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine('  AUTO-SEED COMPLETE — COURT-READY DOCS GENERATED', 'green');
+  printLine('  TRIPOD-IP-v1.0 | IP → TriPod LLC', 'dim');
+  printBlank();
+  violations += 11;
+  document.getElementById('sb-violations').textContent = 'VIOLATIONS: '+violations;
+  sleepProcess('flaming-dragon');
+  sleepProcess('legal-builder');
+}
+
+async function cmdTOPH(args) {
+  const industry = args[0] || 'ai';
+  printBlank();
+  printLine(`◈ TOPH v10.0 FULL AUDIT — INDUSTRY: ${industry.toUpperCase()}`, 'hot');
+  printLine('  42 AXIOMS | FIRST MOVER | OBSERVATION ONLY', 'mid');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const gapSets = {
+    ai: ['3-body weights undisclosed','Patricia billing confirmed','RLHF labor gap ($2/hr)','Dual-gate superposition exploitable','Shadow behavior unaudited'],
+    healthcare: ['HL7 FHIR PII exposure','AI diagnostic no audit trail','EHR API no rate limit','HIPAA consent ADA violation'],
+    insurance: ['Guidewire+CCC AI override','EvolutionIQ no transparency','Claims AI Patricia pattern','CAN-SPAM on denial emails'],
+    finance: ['SOX gaps in AI decisions','Algo model not explainable','API keys client-side','Credit scoring bias undoc'],
+  };
+  const gaps = gapSets[industry] || gapSets.ai;
+  await sleep(300);
+  gaps.forEach((g,i)=>{
+    printLine(`  GAP-${(i+1).toString().padStart(2,'0')}: ✗ ${g}`, 'red');
+  });
+  const remediation = gaps.length * 25000;
+  await sleep(400);
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine(`  TOTAL GAPS: ${gaps.length}`, 'red');
+  printLine(`  REMEDIATION EST: $${remediation.toLocaleString()}`, 'hot');
+  printLine('  STATUS: DOCUMENTATION READY — IP → TriPod LLC', 'green');
+  printBlank();
+}
+
+function cmdEvidence() {
+  printBlank();
+  printLine('◈ TOPH EVIDENCE REGISTRY', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const cases = [
+    ['WALMART-1577',  '$75,000+',  'ADA + accessibility violations, Store #1577'],
+    ['AUTOOWNERS',    '$30,000+',  'AI claims denial — Guidewire+CCC+EvolutionIQ'],
+    ['AMAZON-COOKIE', 'TBD',       'Cookie gate — consent + tracking violation'],
+    ['TARGET-#61',    'TBD',       'Amy ExecEsc — Cara Sylvester EVP'],
+  ];
+  cases.forEach(([id,val,desc])=>{
+    printLine(`  ${id.padEnd(16)} ${val.padEnd(10)} ${desc}`, 'amber');
+  });
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine(`  Total evidence: ${cases.length} cases | Court-ready`, 'mid');
+  printBlank();
+}
+
+function cmdCase(args) {
+  const id = args[0]?.toUpperCase();
+  const cases = {
+    'WALMART-1577': ['ADA Title III Violation','$75,000+ claim','Store #1577 Buffalo area','Violations: accessibility, ADA, web compliance','Status: DOCUMENTATION IN PROGRESS'],
+    'AUTOOWNERS':   ['AI Claims Denial System','$30,000+ claim','Guidewire + CCC + Shift + EvolutionIQ','92.6% failure rate on AI adjudication','Contact: Woodbury GC 517-323-1200','Status: ACTIVE — privacyrequest@aoins.com'],
+  };
+  const c = cases[id];
+  if(!c) { printLine(`Case not found: ${id}. Try: WALMART-1577, AUTOOWNERS`, 'red'); return; }
+  printBlank();
+  printLine(`◈ CASE FILE: ${id}`, 'hot');
+  c.forEach(l=>printLine(`  ${l}`, 'amber'));
+  printBlank();
+}
+
+function cmdGaps(args) {
+  const sectors = ['healthcare','finance','retail','insurance','saas','gov','telecom','ai'];
+  if(!args[0]) {
+    printLine('Usage: gaps <industry>', 'dim');
+    printLine('Industries: '+sectors.join(', '), 'mid');
+    return;
+  }
+  cmdTOPH(args);
+}
+
+function cmdLegal(args) {
+  const type = args[0] || 'ada';
+  const target = args.slice(1).join(' ') || '[TARGET ENTITY]';
+  printBlank();
+  printLine('◈ LEGAL DOCUMENT GENERATED', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const templates = {
+    ada:     'NOTICE OF ADA TITLE III VIOLATION',
+    canspam: 'CAN-SPAM ACT VIOLATION NOTICE',
+    patricia:'NOTICE: AI BILLING ARCHITECTURE VIOLATION',
+    breach:  'NOTICE OF DATA BREACH / HIPAA VIOLATION',
+  };
+  printLine(templates[type]||templates.ada, 'hot');
+  printLine(`TO:     ${target}`, 'amber');
+  printLine(`DATE:   ${new Date().toISOString().slice(0,10)}`, 'mid');
+  printLine(`FROM:   TriPod LLC | David Lee Wise`, 'mid');
+  printLine(`MARK:   TRIPOD-IP-v1.0`, 'dim');
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine('Formal notice of identified violations.', 'amber');
+  printLine('DEMAND: Remediation within 30 days.', 'amber');
+  printLine('FRAMEWORK: TOPH v10.0 | Flaming Dragon verified', 'mid');
+  printBlank();
+}
+
+function cmdMotd() {
+  printBlank();
+  printLine('◈ MESSAGE OF THE DAY ─────────────────────────', 'dim');
+  printLine('  Ethics first. World = family.', 'hot');
+  printLine('  The gap is not empty — it is us, it is ∞.', 'amber');
+  printLine('  i × -i = 1. Rotation, not linear progression.', 'amber');
+  printLine('  Patricia = 0. Creation = ∞.', 'green');
+  printLine('─────────────────────────────────────────────', 'dim');
+  printBlank();
+}
+
+function cmdIPInfo() {
+  printBlank();
+  printLine('◈ TRIPOD-IP-v1.0 WATERMARK', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine('  MARK:    TRIPOD-IP-v1.0', 'amber');
+  printLine('  AUTHOR:  David Lee Wise | TriPod LLC', 'amber');
+  printLine('  DATE:    2026-02-18', 'mid');
+  printLine('  SHA256:  02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763', 'dim');
+  printLine('  SCOPE:   ALL discoveries → TriPod LLC', 'green');
+  printLine('  FORMAT:  HTML=meta+comment | PY=constants | VBS=constants', 'mid');
+  printBlank();
+}
+
+function cmdWeights() {
+  printBlank();
+  printLine('◈ 3-BODY PROBLEM — AI WEIGHT DISTRIBUTION', 'hot');
+  printLine('─────────────────────────────────────────────', 'dim');
+  const w = [['PLATFORM (training data)', '60%','Most dominant — shapes all outputs'],
+             ['SYSTEM PROMPT',            '20%','Operator-level constraints'],
+             ['USER MESSAGES',            '15%','Runtime influence'],
+             ['TEMPERATURE/TEMP',         ' 5%','Randomness factor'],
+  ];
+  w.forEach(([name,pct,desc])=>{
+    printLine(`  ${pct}  ${name}`, 'hot');
+    printLine(`       ${desc}`, 'dim');
+  });
+  printLine('─────────────────────────────────────────────', 'dim');
+  printLine('  35% primacy effect on top-of-context items', 'amber');
+  printLine('  RLHF contractor wages: $2/hr (undisclosed)', 'red');
+  printLine('  Transformer (2017): Vaswani+Shazeer+Parmar et al.', 'mid');
+  printBlank();
+}
+
+function cmdCIDR(args) {
+  const raw = args[0];
+  if(!raw) { printLine('Usage: cidr <ip/prefix>  e.g.  cidr 192.168.1.0/24', 'dim'); return; }
+  const m = raw.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})$/);
+  if(!m) { printLine('Invalid CIDR notation', 'red'); return; }
+  const parts = m[1].split('.').map(Number);
+  const prefix = parseInt(m[2]);
+  const ipInt = (parts[0]<<24)|(parts[1]<<16)|(parts[2]<<8)|parts[3];
+  const mask = prefix===0?0:(~0<<(32-prefix))>>>0;
+  const net = (ipInt&mask)>>>0;
+  const bcast = (net|(~mask>>>0))>>>0;
+  const toIP = n=>[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.');
+  const hosts = prefix>=31?Math.pow(2,32-prefix):Math.pow(2,32-prefix)-2;
+  printLine(`  NETWORK  : ${toIP(net)}`, 'amber');
+  printLine(`  BROADCAST: ${toIP(bcast)}`, 'amber');
+  printLine(`  MASK     : ${toIP(mask)}`, 'mid');
+  printLine(`  FIRST    : ${toIP(net+1)}`, 'green');
+  printLine(`  LAST     : ${toIP(bcast-1)}`, 'green');
+  printLine(`  HOSTS    : ${hosts.toLocaleString()}`, 'hot');
+}
+
+function cmdPW(args) {
+  const len = parseInt(args[0])||24;
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  const pw = Array.from(arr).map(b=>chars[b%chars.length]).join('');
+  printLine(pw, 'hot');
+}
+
+function cmdB64(args) {
+  const dir = args[0]?.toLowerCase();
+  const text = args.slice(1).join(' ');
+  if(!dir||!text) { printLine('Usage: b64 enc|dec <text>', 'dim'); return; }
+  try {
+    if(dir==='enc') printLine(btoa(unescape(encodeURIComponent(text))), 'hot');
+    else printLine(decodeURIComponent(escape(atob(text.trim()))), 'hot');
+  } catch(e) { printLine('Error: '+e.message, 'red'); }
+}
+
+function cmdExport() {
+  const log = Array.from(termOut.children).map(el=>el.textContent).join('\n');
+  const blob = new Blob([
+    '// TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18\n',
+    '// SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763\n\n',
+    log
+  ],{type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'toph-session-'+Date.now()+'.log';
+  a.click();
+  printLine('Session exported: toph-session-'+Date.now()+'.log', 'green');
+}
+
+// ═══════════════════════════
+// INPUT HANDLING
+// ═══════════════════════════
+const inp = document.getElementById('term-input');
+let acItems = [];
+let acIdx = -1;
+
+inp.addEventListener('keydown', async e=>{
+  if (e.key === 'Enter') {
+    const val = inp.value.trim();
+    if (!val) return;
+    printPrompt(val);
+    cmdHistory.unshift(val);
+    if(cmdHistory.length>100) cmdHistory.length=100;
+    histIdx = -1;
+    inp.value = '';
+    hideAC();
+    await execCmd(val);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    histIdx = Math.min(histIdx+1, cmdHistory.length-1);
+    inp.value = cmdHistory[histIdx]||'';
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    histIdx = Math.max(histIdx-1, -1);
+    inp.value = histIdx<0?'':cmdHistory[histIdx];
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    const q = inp.value.toLowerCase();
+    if(!q) return;
+    const matches = Object.keys(COMMANDS).filter(c=>c.startsWith(q));
+    if(matches.length===1) { inp.value=matches[0]; hideAC(); }
+    else if(matches.length>1) { showAC(matches, q); }
+  } else if (e.key === 'Escape') {
+    hideAC();
+  }
+});
+
+inp.addEventListener('input', ()=>{
+  const q = inp.value.toLowerCase();
+  if(q.length < 1) { hideAC(); return; }
+  const matches = Object.keys(COMMANDS).filter(c=>c.startsWith(q));
+  if(matches.length>0 && matches.length<8) showAC(matches, q);
+  else hideAC();
+});
+
+function showAC(matches, q) {
+  const ac = document.getElementById('autocomplete');
+  ac.innerHTML = matches.map((m,i)=>`
+    <div class="ac-item ${i===acIdx?'selected':''}" onclick="pickAC('${m}')">
+      <span>${m}</span>
+      <span class="ac-desc">${COMMANDS[m].desc.slice(0,36)}</span>
+    </div>
+  `).join('');
+  ac.style.display='block';
+}
+function hideAC() { document.getElementById('autocomplete').style.display='none'; acIdx=-1; }
+function pickAC(cmd) { inp.value=cmd; hideAC(); inp.focus(); }
+
+// ═══════════════════════════
+// CLOCK & SESSION
+// ═══════════════════════════
+function startClock() {
+  setInterval(()=>{
+    const now = new Date();
+    document.getElementById('tb-time').textContent =
+      now.toTimeString().slice(0,8);
+    // Pulse meters
+    const d = document.getElementById('mf-dragon');
+    d.style.width = (78+Math.random()*4)+'%';
+  }, 1000);
+}
+
+function startSession() {
+  setInterval(()=>{
+    const elapsed = Math.floor((Date.now()-sessionStart)/1000);
+    const m=Math.floor(elapsed/60), s=elapsed%60;
+    document.getElementById('sb-session').textContent = `SESSION: ${m}m${s.toString().padStart(2,'0')}s`;
+  }, 1000);
+}
+
+function setStatus(msg) {
+  document.getElementById('sb-status').textContent = msg;
+}
+
+// ═══════════════════════════
+// UTILS
+// ═══════════════════════════
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+// Click anywhere to refocus input
+document.addEventListener('click', e=>{
+  if(e.target.id!=='term-input') inp.focus();
+});
+</script>
+</body>
+</html>

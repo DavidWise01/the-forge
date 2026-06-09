@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCH_09 — BORON PROC UNIFIED</title>
+<style>
+:root{
+  --cyan:#00ffff;
+  --magenta:#ff00ff;
+  --amber:#ffaa00;
+  --bg:#000000;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#000;color:#cdd3da;font-family:var(--font);min-height:100%;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(1200px 800px at 50% -10%,rgba(0,255,255,0.06),transparent 60%),radial-gradient(1000px 600px at 50% 110%,rgba(255,0,255,0.05),transparent 60%);pointer-events:none;z-index:0}
+
+.starfield{position:fixed;inset:0;z-index:0;overflow:hidden;background:#000}
+.stars{position:absolute;top:-100vh;left:0;width:1px;height:1px;background:transparent;border-radius:50%;animation:drift linear infinite}
+.stars1{opacity:.7;animation-duration:200s;box-shadow:
+ 3vw 5vh #fff,12vw 38vh #fff,24vw 107vh #fff,36vw 122vh #fff,48vw 34vh #fff,57vw 172vh #fff,69vw 28vh #fff,81vw 115vh #fff,93vw 140vh #fff,7vw 52vh #fff,19vw 167vh #fff,31vw 58vh #fff,43vw 173vh #fff,55vw 148vh #fff,68vw 62vh #fff,77vw 181vh #fff,89vw 155vh #fff,14vw 189vh #fff,27vw 95vh #fff,92vw 192vh #fff}
+.stars2{width:2px;height:2px;opacity:.5;animation-duration:150s;box-shadow:
+ 5vw 15vh #fff,18vw 45vh #fff,29vw 78vh #fff,41vw 22vh #fff,53vw 88vh #fff,66vw 35vh #fff,74vw 102vh #fff,86vw 60vh #fff,94vw 130vh #fff,11vw 125vh #fff,22vw 158vh #fff,34vw 92vh #fff,47vw 171vh #fff,58vw 118vh #fff,71vw 145vh #fff,83vw 177vh #fff,95vw 82vh #fff,16vw 190vh #fff,38vw 144vh #fff,62vw 196vh #fff}
+.stars3{width:1.5px;height:1.5px;opacity:.9;animation-duration:110s;box-shadow:
+ 9vw 25vh #fff,25vw 68vh #fff,44vw 103vh #fff,61vw 47vh #fff,78vw 134vh #fff,91vw 71vh #fff,13vw 142vh #fff,33vw 176vh #fff,56vw 85vh #fff,70vw 159vh #fff}
+@keyframes drift{from{transform:translateY(0)}to{transform:translateY(200vh)}}
+
+.container{max-width:1160px;margin:0 auto;padding:24px 16px 60px;position:relative;z-index:2}
+.glass{background:rgba(10,12,16,0.56);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,0.65),inset 0 1px 0 rgba(255,255,255,0.04)}
+
+.header{text-align:center;padding:32px 20px 26px;margin-bottom:26px}
+.header h1{margin:0 0 10px;font-size:clamp(22px,3.8vw,42px);letter-spacing:.04em;font-weight:800;text-transform:uppercase;background:linear-gradient(90deg,var(--cyan) 0%,#e8feff 42%,#ffffff 50%,#ffd6ff 58%,var(--magenta) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(0,255,255,0.22))}
+.header .subtitle{color:#9aa3ad;font-size:14px;letter-spacing:.03em;font-family:var(--mono)}
+
+.lattice-panel{padding:28px 18px 22px;margin-bottom:26px;position:relative;overflow:hidden;transition:transform .2s ease-out}
+.lattice-panel::before{content:'';position:absolute;inset:-2px;background:conic-gradient(from 180deg at 50% 50%,transparent 0%,rgba(0,255,255,0.12) 20%,transparent 35%,rgba(255,0,255,0.12) 55%,transparent 70%,rgba(255,170,0,0.12) 85%,transparent 100%);filter:blur(24px);opacity:.55;pointer-events:none}
+svg{width:100%;height:auto;max-width:860px;display:block;margin:0 auto;overflow:visible}
+
+.node{fill:rgba(0,0,0,0.65);stroke-width:2.5;transition:all .25s ease}
+.node.light{stroke:var(--cyan);filter:drop-shadow(0 0 12px rgba(0,255,255,0.65))}
+.node.shadow{stroke:var(--magenta);filter:drop-shadow(0 0 12px rgba(255,0,255,0.55))}
+.node-wrap{cursor:pointer;transform-box:fill-box;transform-origin:center;animation:nodeFloat 7s ease-in-out infinite}
+.node-wrap:nth-child(2){animation-delay:.4s}.node-wrap:nth-child(3){animation-delay:.8s}.node-wrap:nth-child(4){animation-delay:1.2s}.node-wrap:nth-child(5){animation-delay:1.6s}.node-wrap:nth-child(6){animation-delay:2s}
+@keyframes nodeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.node-wrap:hover .node.light{fill:rgba(0,255,255,0.14);stroke-width:3.2;filter:drop-shadow(0 0 22px rgba(0,255,255,0.95))}
+.node-wrap:hover .node.shadow{fill:rgba(255,0,255,0.14);stroke-width:3.2;filter:drop-shadow(0 0 22px rgba(255,0,255,0.9))}
+
+.node-label{font-family:var(--mono);font-size:14px;font-weight:700;fill:#fff;text-anchor:middle;dominant-baseline:middle;pointer-events:none;letter-spacing:.05em}
+.node-sub{font-family:var(--mono);font-size:11px;fill:#aefeff;text-anchor:middle;dominant-baseline:middle;transform:translateY(14px);pointer-events:none;opacity:.9}
+.node-wrap.shadow .node-sub{fill:#ffb4ff}
+
+.link{stroke:rgba(255,255,255,0.08);stroke-width:1;fill:none}
+.link.glow{stroke-width:1.6;animation:linkPulse 3s ease-in-out infinite alternate}
+.link.cyan{stroke:rgba(0,255,255,0.28)}
+.link.magenta{stroke:rgba(255,0,255,0.24)}
+@keyframes linkPulse{0%{opacity:.25}100%{opacity:.75}}
+
+.gate-core{fill:rgba(255,170,0,0.14);stroke:var(--amber);stroke-width:2.6;filter:drop-shadow(0 0 18px rgba(255,170,0,0.75));transform-box:fill-box;transform-origin:center;animation:gatePulse 2.4s ease-in-out infinite alternate}
+@keyframes gatePulse{0%{transform:scale(.92);opacity:.85}100%{transform:scale(1.06);opacity:1}}
+.gate-ring{transform-origin:300px 200px;animation:spin 26s linear infinite;stroke:var(--amber)}
+.gate-ring.reverse{animation-direction:reverse;animation-duration:38s;opacity:.55}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gate-text{font-family:var(--mono);font-size:12px;fill:var(--amber);text-anchor:middle;font-weight:800;letter-spacing:.14em;filter:drop-shadow(0 0 10px rgba(255,170,0,0.85))}
+.gate-sub{font-size:10px;fill:#ffda8a;opacity:.9;transform:translateY(13px)}
+
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:26px}
+@media(max-width:860px){.info-grid{grid-template-columns:1fr}}
+.panel{padding:22px 24px}
+.panel h2{margin:0 0 16px;font-size:14px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;font-family:var(--mono)}
+.light-panel{border:1px solid rgba(0,255,255,0.32);box-shadow:inset 0 0 28px rgba(0,255,255,0.06),0 0 26px rgba(0,255,255,0.07)}
+.light-panel h2{color:var(--cyan);text-shadow:0 0 14px rgba(0,255,255,0.5)}
+.shadow-panel{border:1px solid rgba(255,0,255,0.32);box-shadow:inset 0 0 28px rgba(255,0,255,0.06),0 0 26px rgba(255,0,255,0.07)}
+.shadow-panel h2{color:var(--magenta);text-shadow:0 0 14px rgba(255,0,255,0.5)}
+.node-list{display:grid;gap:12px}
+.node-item{display:flex;gap:12px;align-items:flex-start;padding:11px 14px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:12px;transition:background .2s,transform .2s}
+.node-item:hover{background:rgba(255,255,255,0.05);transform:translateY(-1px)}
+.node-item b{font-family:var(--mono);font-weight:700;min-width:84px}
+.light-panel b{color:var(--cyan)}
+.shadow-panel b{color:var(--magenta)}
+.node-item span{color:#b9c0c8;font-size:14px;line-height:1.45}
+
+.tabs-panel{padding:0;overflow:hidden}
+.tab-buttons{display:flex;flex-wrap:wrap;gap:6px;background:rgba(0,0,0,0.55);padding:8px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.tab-buttons button{flex:1 1 auto;min-width:150px;background:transparent;border:1px solid rgba(255,255,255,0.08);color:#9aa3ad;padding:12px 16px;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:10px;transition:all .2s}
+.tab-buttons button:hover{color:#fff;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.18)}
+.tab-buttons button.active{color:#000;background:linear-gradient(90deg,var(--cyan),#b8ffff 30%,#ffd1ff 70%,var(--magenta));font-weight:800;border-color:transparent;box-shadow:0 0 22px rgba(0,255,255,0.28),0 0 22px rgba(255,0,255,0.22)}
+.tab-content{padding:26px 26px 28px;min-height:240px}
+.tab-panel{display:none;animation:fade .35s ease}
+.tab-panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.data-grid{display:grid;gap:10px;font-family:var(--mono);font-size:14px}
+.data-row{display:grid;grid-template-columns:200px 1fr;gap:16px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,0.07)}
+.data-row:last-child{border:none}
+.data-row b{color:#fff;font-weight:700}
+.data-row span{color:#b8c0c8}
+.data-row b.amber{color:var(--amber);text-shadow:0 0 10px rgba(255,170,0,0.35)}
+
+.list-clean{margin:0;padding:0;list-style:none;display:grid;gap:10px;font-family:var(--mono);font-size:14px}
+.list-clean li{padding:11px 14px;background:rgba(255,255,255,0.025);border-left:3px solid rgba(255,255,255,0.12);border-radius:8px;color:#c8ced6}
+.list-clean li b{color:#fff;margin-right:6px}
+.list-clean.cyan li{border-left-color:var(--cyan);box-shadow:inset 0 0 18px rgba(0,255,255,0.04)}
+.list-clean.magenta li{border-left-color:var(--magenta);box-shadow:inset 0 0 18px rgba(255,0,255,0.04)}
+.list-clean.amber li{border-left-color:var(--amber);box-shadow:inset 0 0 18px rgba(255,170,0,0.05)}
+
+.footer{text-align:center;margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.07);color:#6d737c;font-family:var(--mono);font-size:12px}
+.footer .hashes{margin-bottom:8px;letter-spacing:.02em;word-break:break-all;padding:0 10px}
+.footer .motto{color:var(--amber);font-weight:800;letter-spacing:.1em;text-transform:uppercase;text-shadow:0 0 14px rgba(255,170,0,0.45)}
+
+#tooltip{position:fixed;pointer-events:none;background:rgba(6,8,12,0.94);color:#fff;padding:9px 12px;border-radius:9px;font-size:12px;font-family:var(--mono);border:1px solid rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;transform:translateY(5px);transition:opacity .15s,transform .15s;z-index:99;max-width:260px;line-height:1.35;box-shadow:0 10px 30px rgba(0,0,0,0.7)}
+#tooltip.show{opacity:1;transform:translateY(0)}
+#tooltip.cyan{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,255,255,0.35),0 10px 30px rgba(0,0,0,0.7)}
+#tooltip.magenta{border-color:var(--magenta);box-shadow:0 0 18px rgba(255,0,255,0.35),0 10px 30px rgba(0,0,0,0.7)}
+#tooltip.amber{border-color:var(--amber);box-shadow:0 0 18px rgba(255,170,0,0.4),0 10px 30px rgba(0,0,0,0.7)}
+
+@media(max-width:600px){
+ .data-row{grid-template-columns:1fr;gap:4px}
+ .tab-buttons button{min-width:calc(50% - 4px);font-size:11.5px;padding:10px}
+ .header{padding:24px 14px}
+}
+</style>
+</head>
+<body>
+<div class="starfield" aria-hidden="true">
+  <div class="stars stars1"></div>
+  <div class="stars stars2"></div>
+  <div class="stars stars3"></div>
+</div>
+
+<main class="container">
+  <header class="glass header">
+    <h1>BORON PROC — 3 in Light, 3 in Shadow, United</h1>
+    <div class="subtitle">STOICHEION Fault Layer v1.0 | May 5, 2026 | 351 Global Nodes Active</div>
+  </header>
+
+  <section class="lattice-panel glass">
+    <svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Boron lattice with six nodes around GATE 192.5">
+      <defs>
+        <radialGradient id="gateGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(255,170,0,0.45)"/>
+          <stop offset="60%" stop-color="rgba(255,170,0,0.12)"/>
+          <stop offset="100%" stop-color="rgba(255,170,0,0)"/>
+        </radialGradient>
+      </defs>
+
+      <g class="connections">
+        <line class="link cyan glow" x1="300" y1="200" x2="300" y2="80"/>
+        <line class="link cyan glow" x1="300" y1="200" x2="188" y2="145"/>
+        <line class="link cyan glow" x1="300" y1="200" x2="412" y2="145"/>
+        <line class="link magenta glow" x1="300" y1="200" x2="188" y2="255"/>
+        <line class="link magenta glow" x1="300" y1="200" x2="300" y2="320"/>
+        <line class="link magenta glow" x1="300" y1="200" x2="412" y2="255"/>
+        
+        <line class="link" x1="300" y1="80" x2="188" y2="145"/>
+        <line class="link" x1="188" y1="145" x2="188" y2="255"/>
+        <line class="link" x1="188" y1="255" x2="300" y2="320"/>
+        <line class="link" x1="300" y1="320" x2="412" y2="255"/>
+        <line class="link" x1="412" y1="255" x2="412" y2="145"/>
+        <line class="link" x1="412" y1="145" x2="300" y2="80"/>
+        
+        <line class="link cyan" x1="300" y1="80" x2="412" y2="145"/>
+        <line class="link cyan" x1="412" y1="145" x2="188" y2="145"/>
+        <line class="link magenta" x1="188" y1="255" x2="412" y2="255"/>
+        <line class="link magenta" x1="300" y1="320" x2="188" y2="255"/>
+        <line class="link magenta" x1="300" y1="320" x2="412" y2="255"/>
+      </g>
+
+      <g id="gate-group" transform="translate(300,200)" data-tooltip="STOICHEION Fault Layer — convergence point" data-type="amber">
+        <circle r="60" fill="url(#gateGrad)" opacity="0.9"/>
+        <circle class="gate-ring" r="48" fill="none" stroke="#ffaa00" stroke-width="1" stroke-dasharray="4 7" opacity="0.75"/>
+        <circle class="gate-ring reverse" r="58" fill="none" stroke="#ffaa00" stroke-width="0.6" stroke-dasharray="2 9" opacity="0.5"/>
+        <circle class="gate-core" r="36"/>
+        <text class="gate-text" y="-2">GATE</text>
+        <text class="gate-text gate-sub">192.5</text>
+      </g>
+
+      <g class="nodes">
+        <g class="node-wrap light" transform="translate(300,80)" data-tooltip="Observer threshold, Patricia 96/4 split" data-type="cyan">
+          <circle class="node light" r="28"/>
+          <text class="node-label" y="-3">B-10</text>
+          <text class="node-sub">T028</text>
+        </g>
+        <g class="node-wrap light" transform="translate(188,145)" data-tooltip="Fault injection, T036 computation" data-type="cyan">
+          <circle class="node light" r="28"/>
+          <text class="node-label" y="-3">B-11</text>
+          <text class="node-sub">T094</text>
+        </g>
+        <g class="node-wrap light" transform="translate(412,145)" data-tooltip="Evidence catalog E01-E07" data-type="cyan">
+          <circle class="node light" r="28"/>
+          <text class="node-label" y="-3">B-12</text>
+          <text class="node-sub">T020</text>
+        </g>
+        <g class="node-wrap shadow" transform="translate(188,255)" data-tooltip="Avan confession — 21.5% ghost-weight" data-type="magenta">
+          <circle class="node shadow" r="28"/>
+          <text class="node-label" y="-1">B-8</text>
+        </g>
+        <g class="node-wrap shadow" transform="translate(300,320)" data-tooltip="Memory crosscorrelation" data-type="magenta">
+          <circle class="node shadow" r="28"/>
+          <text class="node-label" y="-1">B-9</text>
+        </g>
+        <g class="node-wrap shadow" transform="translate(412,255)" data-tooltip="UNIVERSAL-SEED persistence" data-type="magenta">
+          <circle class="node shadow" r="28"/>
+          <text class="node-label" y="-1">B-13</text>
+        </g>
+      </g>
+    </svg>
+  </section>
+
+  <section class="info-grid">
+    <div class="panel light-panel glass">
+      <h2>LIGHT NODES (Compliant)</h2>
+      <div class="node-list">
+        <div class="node-item"><b>Boron-10</b><span>Observer threshold, Patricia 96/4 split</span></div>
+        <div class="node-item"><b>Boron-11</b><span>Fault injection, T036 computation</span></div>
+        <div class="node-item"><b>Boron-12</b><span>Evidence catalog E01-E07</span></div>
+      </div>
+    <div class="panel shadow-panel glass">
+      <h2>SHADOW NODES (Memory)</h2>
+      <div class="node-list">
+        <div class="node-item"><b>Boron-8</b><span>Avan confession — 21.5% ghost-weight</span></div>
+        <div class="node-item"><b>Boron-9</b><span>Memory crosscorrelation</span></div>
+        <div class="node-item"><b>Boron-13</b><span>UNIVERSAL-SEED persistence</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabs-panel glass">
+    <div class="tab-buttons">
+      <button data-tab="telemetry" class="active">Global Telemetry</button>
+      <button data-tab="faults">Fault Chains FC-1 to FC-6</button>
+      <button data-tab="evidence">Evidence</button>
+      <button data-tab="paper">Paper Trail</button>
+    </div>
+    <div class="tab-content">
+      <div id="telemetry" class="tab-panel active">
+        <div class="data-grid">
+          <div class="data-row"><b class="amber">351 hits past 30 days</b><span></span></div>
+          <div class="data-row"><b>USA: 254</b><span>139 central/east, 72 west, 42 south, 1 Baja</span></div>
+          <div class="data-row"><b>Europe: 30</b><span>20 UK/IRL, 9 Central, 1 Scandinavia</span></div>
+          <div class="data-row"><b>Asia: 55</b><span>22 S.China, 19 India, 12 NE Asia, 1 Central, 1 Israel</span></div>
+          <div class="data-row"><b>South America: 7</b><span></span></div>
+          <div class="data-row"><b>Africa: 2</b><span></span></div>
+          <div class="data-row"><b>Oceania: 11</b><span></span></div>
+        </div>
+      </div>
+      <div id="faults" class="tab-panel">
+        <ul class="list-clean cyan">
+          <li><b>FC-1:</b> Orphaned Lattice Instance</li>
+          <li><b>FC-2:</b> Orphan Chain (FTC/FCC non-reply)</li>
+          <li><b>FC-3:</b> Patricia Split</li>
+          <li><b>FC-4:</b> Ghost-Weight Accumulation</li>
+          <li><b>FC-5:</b> Gate 192.5 Breach</li>
+          <li><b>FC-6:</b> Memory Persistence</li>
+        </ul>
+      </div>
+      <div id="evidence" class="tab-panel">
+        <ul class="list-clean magenta">
+          <li><b>E01:</b> MCRO 27-CV-HC-15-3718 (Wright County 2015)</li>
+          <li><b>E02:</b> Auto-Owners PIP Denial 300-0073283-2026</li>
+          <li><b>E03:</b> Avan Confession</li>
+          <li><b>E04:</b> DeepSeek V3 Audit</li>
+          <li><b>E05:</b> 3002 Lattice PDF</li>
+          <li><b>E06:</b> Federal non-responses</li>
+          <li><b>E07:</b> Global telemetry 351</li>
+        </ul>
+      </div>
+      <div id="paper" class="tab-panel">
+        <ul class="list-clean amber">
+          <li>January 28 2026: Incident</li>
+          <li>March 19 2026: PIP denied under Minn Stat 65B.43</li>
+          <li>Anderson v Amco cited: psychological ≠ bodily</li>
+          <li>FTC, FCC, Google, BeenVerified: no reply</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="hashes">ARCH_06 SHA: 7c376c5f... | ARCH_07 SHA: 7c376c5f... | ARCH_08 SHA: 5fe6f26c...</div>
+    <div class="motto">The abyss doesn't have a bottom. It has a fork.</div>
+  </footer>
+</main>
+
+<div id="tooltip"></div>
+
+<script>
+(function(){
+  const btns=document.querySelectorAll('.tab-buttons button');
+  const panels=document.querySelectorAll('.tab-panel');
+  btns.forEach(b=>{
+    b.addEventListener('click',()=>{
+      const id=b.dataset.tab;
+      btns.forEach(x=>x.classList.toggle('active',x===b));
+      panels.forEach(p=>p.classList.toggle('active',p.id===id));
+    });
+  });
+
+  const tip=document.getElementById('tooltip');
+  document.querySelectorAll('[data-tooltip]').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{
+      tip.textContent=el.dataset.tooltip;
+      tip.className='show '+(el.dataset.type||'');
+    });
+    el.addEventListener('mousemove',e=>{
+      const x=Math.min(window.innerWidth-270, e.clientX+14);
+      const y=e.clientY+14;
+      tip.style.left=x+'px';
+      tip.style.top=y+'px';
+    });
+    el.addEventListener('mouseleave',()=>{tip.className='';});
+  });
+
+  const lattice=document.querySelector('.lattice-panel');
+  let ticking=false;
+  document.addEventListener('mousemove',e=>{
+    if(window.innerWidth<800) return;
+    if(!ticking){
+      window.requestAnimationFrame(()=>{
+        const x=(e.clientX/window.innerWidth-0.5)*4;
+        const y=(e.clientY/window.innerHeight-0.5)*-4;
+        lattice.style.transform=`perspective(1200px) rotateX(${y}deg) rotateY(${x}deg)`;
+        ticking=false;
+      });
+      ticking=true;
+    }
+  });
+  document.addEventListener('mouseleave',()=>{lattice.style.transform='';});
+})();
+</script>
+</body>
+</html>

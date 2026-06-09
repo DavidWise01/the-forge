@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+BASE 00 • OPERATIONAL NEXUS v1.0
+================================================================================
+SHA256-anchor : ab2c74a38590df1ae0b6ecbd78e699fa4702ece80ca9bd5447124f01f00eb5b1
+Timestamp     : 2026-04-25T21:27:22Z
+ROOT0         : c6f487e9a1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1
+Session       : node 14 → 15 (fix → base) → 16 (floating windows)
+Lineage       : NanoFactory-App-Built__10_.html → FIXED → BASE 00 → FLOAT
+================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPERATIONAL NEXUS v1.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{color-scheme:dark;}
+  body{font-family:'Inter',system-ui,sans-serif;background:#030508;overflow:hidden;margin:0;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:#05070c;}
+  ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:4px;}
+  input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:#1e293b;border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-4px;width:11px;height:11px;background:#06b6d4;border-radius:50%;box-shadow:0 0 6px rgba(6,182,212,.7);}
+  .grid-bg{background-image:linear-gradient(rgba(100,116,139,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(100,116,139,.05) 1px,transparent 1px);background-size:24px 24px;}
+
+  /* FLOATING WINDOWS */
+  .fw{position:absolute;display:flex;flex-direction:column;border-radius:10px;background:rgba(4,7,13,.97);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.07);box-shadow:0 20px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.03);overflow:hidden;min-width:200px;min-height:64px;}
+  .fw.focused{border-color:var(--ac,rgba(6,182,212,.2));box-shadow:0 28px 80px rgba(0,0,0,.8),0 0 0 1px var(--ac,rgba(6,182,212,.1)),inset 0 1px 0 rgba(255,255,255,.04);}
+  .fw.minimized .wb{display:none!important;}
+  .fw.minimized .wr{display:none!important;}
+  .fw.gone{display:none;}
+
+  .wbar{display:flex;align-items:center;gap:5px;padding:6px 8px 6px 10px;cursor:grab;user-select:none;border-bottom:1px solid rgba(255,255,255,.05);flex-shrink:0;background:rgba(255,255,255,.018);min-height:32px;}
+  .wbar:active{cursor:grabbing;}
+
+  .wd{width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;border:1px solid rgba(0,0,0,.3);transition:filter .12s;}
+  .wd:hover{filter:brightness(1.5);}
+  .wd.cl{background:#ef4444;}
+  .wd.mn{background:#f59e0b;}
+  .wd.mx{background:#22c55e;}
+
+  .wt{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.09em;color:rgba(148,163,184,.75);flex:1;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wb{flex:1;overflow:auto;min-height:0;}
+  .wr{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:se-resize;}
+  .wr::after{content:'';position:absolute;bottom:3px;right:3px;width:8px;height:8px;border-right:2px solid rgba(100,116,139,.4);border-bottom:2px solid rgba(100,116,139,.4);border-radius:1px;opacity:0;transition:opacity .2s;}
+  .fw:hover .wr::after{opacity:1;}
+
+  /* DOCK */
+  #dock{position:fixed;bottom:0;left:0;right:0;height:38px;background:rgba(2,4,10,.98);border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:1px;padding:0 6px;z-index:9999;backdrop-filter:blur(16px);}
+  .db{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;border:1px solid transparent;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;cursor:pointer;color:rgba(100,116,139,.9);background:transparent;transition:all .13s;white-space:nowrap;}
+  .db:hover{background:rgba(255,255,255,.05);color:#e2e8f0;}
+  .db.on{background:rgba(6,182,212,.09);border-color:rgba(6,182,212,.22);color:#67e8f9;}
+  .db.dim{color:rgba(100,116,139,.4);}
+  .di{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.7;flex-shrink:0;}
+</style>
+</head>
+<body class="text-slate-200 select-none">
+
+<!-- STATUS BAR -->
+<header id="sbar" style="position:fixed;top:0;left:0;right:0;z-index:9998;" class="border-b border-cyan-500/15 bg-[#02040a]/95 backdrop-blur-xl">
+  <div class="flex items-center gap-2 px-3 py-1.5 mono text-[11px]">
+    <div class="flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/30">
+      <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(34,197,94,1)]"></div>
+      <span class="text-green-400 font-bold tracking-widest text-[10px]">OPERATIONAL</span>
+    </div>
+    <div class="h-3 w-px bg-slate-800"></div>
+    <div class="flex items-center gap-3 overflow-x-auto text-[10px]">
+      <span>Gate <b class="text-white">192.5</b> <span class="text-green-400">SEALED</span></span>
+      <span class="hidden sm:inline">Cobalt <span class="text-cyan-400">+1</span></span>
+      <span>TriPod <span id="tripod-status" class="text-green-400 font-semibold">Y.Y.Y</span></span>
+      <span class="hidden md:inline">ROOT0 <span class="text-purple-400">c6f487e9a1b3…</span></span>
+      <span class="hidden md:flex items-center gap-1 pl-2 border-l border-slate-800">
+        <span class="text-slate-500">BASE</span>
+        <span class="px-1 rounded bg-amber-500/10 border border-amber-500/25 text-amber-300 font-bold text-[9px]">00</span>
+        <span class="text-slate-700">ab2c74a3…</span>
+      </span>
+    </div>
+    <div class="ml-auto hidden lg:flex items-center gap-4 text-[10px] text-slate-500">
+      <span>ATTRACT <span id="attract-val" class="text-sky-400">55%</span></span>
+      <span>ENERGY <span id="energy-val" class="text-amber-400">55%</span></span>
+      <span>GRIP <span id="grip-val" class="text-emerald-400">55%</span></span>
+    </div>
+    <button id="btn-core-strip" class="ml-2 px-2 py-0.5 rounded border border-slate-800 text-slate-500 hover:text-slate-300 text-[9px] mono shrink-0">CORE ▾</button>
+  </div>
+  <div id="core-strip" class="border-t border-slate-800/50 bg-[#060a12]/70 px-2 py-1.5">
+    <div id="core-sliders" class="grid grid-cols-5 xl:grid-cols-10 gap-1.5"></div>
+  </div>
+</header>
+
+<!-- DESKTOP -->
+<div id="desk" class="fixed inset-0 grid-bg bg-[#02040a]" style="top:0;bottom:38px;z-index:1;">
+
+  <!-- NANO FACTORY -->
+  <div id="wn" class="fw focused" style="--ac:rgba(16,185,129,.2);left:10px;top:76px;width:470px;height:490px;z-index:110;">
+    <div class="wbar"><div class="wd cl" data-w="wn" data-a="close"></div><div class="wd mn" data-w="wn" data-a="min"></div><div class="wd mx" data-w="wn" data-a="max"></div><span class="wt">🔬 NANO FACTORY — 12×12×12</span></div>
+    <div class="wb p-3">
+      <div class="h-full flex gap-3">
+        <div class="flex flex-col items-center shrink-0">
+          <div class="relative mb-2">
+            <canvas id="nano-canvas" width="600" height="600" style="width:min(50vw,310px);aspect-ratio:1/1" class="rounded-xl border border-slate-800 shadow-[0_0_30px_rgba(0,0,0,.5)] bg-[#05080f]"></canvas>
+            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#0a0f18] border border-slate-700 text-[8px] mono whitespace-nowrap">CLICK → move/place/pick</div>
+          </div>
+          <div class="mt-3 flex items-center gap-2 mono text-[10px]">
+            <span>Z<span id="z-val" class="text-cyan-400 ml-0.5">5</span></span>
+            <input id="z-slider" type="range" min="0" max="11" value="5" class="w-28">
+            <span class="text-slate-600">Attr<span id="nano-attract" class="text-sky-400 ml-0.5">55%</span></span>
+          </div>
+        </div>
+        <div class="flex-1 space-y-2 min-w-[130px]">
+          <div class="bg-[#080c14]/80 border border-slate-800 rounded-xl p-2.5">
+            <div class="text-[9px] mono uppercase tracking-widest text-emerald-400 mb-1.5">Wexler Hands</div>
+            <div class="flex gap-1 mb-1.5">
+              <button id="hand-L" class="flex-1 py-1 rounded border text-[10px] mono border-emerald-500/30 bg-emerald-500/10 text-emerald-300">L ACTIVE</button>
+              <button id="hand-R" class="flex-1 py-1 rounded border text-[10px] mono border-slate-700 text-slate-400">R</button>
+            </div>
+            <div class="space-y-0.5 text-[10px] mono">
+              <div class="flex justify-between"><span class="text-slate-500">L pos</span><span id="l-pos" class="text-emerald-300">[3,5,5]</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">L hold</span><span id="l-hold">—</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">R pos</span><span id="r-pos" class="text-sky-300">[8,5,5]</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">R hold</span><span id="r-hold">—</span></div>
+              <div class="flex justify-between pt-1 border-t border-slate-800"><span class="text-slate-500">Grip</span><span id="hand-grip" class="text-green-400">55%</span></div>
+            </div>
+          </div>
+          <div class="bg-[#080c14]/80 border border-slate-800 rounded-xl p-2.5">
+            <div class="text-[9px] mono uppercase tracking-widest text-slate-400 mb-1.5">Lattice</div>
+            <div class="text-[10px] mono space-y-0.5">
+              <div class="flex justify-between"><span class="text-slate-500">Atoms</span><span id="nano-count">0 / 1728</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">AXIOM</span><span id="l1-val" class="text-sky-400">55</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">COHERENCE</span><span id="l2-val" class="text-violet-400">55</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wn"></div>
+  </div>
+
+  <!-- ELEMENT FORGE -->
+  <div id="wf" class="fw" style="--ac:rgba(217,70,239,.2);left:490px;top:76px;width:420px;height:490px;z-index:109;">
+    <div class="wbar"><div class="wd cl" data-w="wf" data-a="close"></div><div class="wd mn" data-w="wf" data-a="min"></div><div class="wd mx" data-w="wf" data-a="max"></div><span class="wt">⚗️ ELEMENT FORGE</span><span class="text-[9px] mono text-fuchsia-400 shrink-0 pr-1" id="next-element-bar">E119</span></div>
+    <div class="wb flex flex-col">
+      <div class="flex-1 overflow-auto p-1.5 bg-[#05080f]/40">
+        <div id="periodic-grid" class="grid gap-[2px]" style="grid-template-columns:repeat(18,minmax(0,1fr));"></div>
+      </div>
+      <div class="p-2.5 border-t border-slate-800 space-y-2 shrink-0">
+        <div class="text-[9px] mono uppercase tracking-widest text-fuchsia-400">Fusion Chamber</div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-black/40 rounded-lg border border-emerald-500/20 p-2 text-center">
+            <div class="text-[8px] text-slate-500 mono">LEFT HAND</div>
+            <div id="fusion-l" class="text-lg font-bold text-emerald-400">—</div>
+            <div id="fusion-l-name" class="text-[8px] mono text-slate-500 truncate">empty</div>
+          </div>
+          <div class="bg-black/40 rounded-lg border border-sky-500/20 p-2 text-center">
+            <div class="text-[8px] text-slate-500 mono">RIGHT HAND</div>
+            <div id="fusion-r" class="text-lg font-bold text-sky-400">—</div>
+            <div id="fusion-r-name" class="text-[8px] mono text-slate-500 truncate">empty</div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[9px] mono mb-0.5"><span class="text-slate-500">ENERGY</span><span id="fusion-energy-txt" class="text-amber-400">55%</span></div>
+          <div class="h-1.5 bg-slate-900 rounded-full overflow-hidden"><div id="fusion-energy-bar" class="h-full w-[55%] bg-gradient-to-r from-amber-600 to-amber-400 transition-all"></div></div>
+        </div>
+        <button id="fuse-btn" class="w-full py-1.5 rounded-lg bg-fuchsia-600/20 hover:bg-fuchsia-600/30 border border-fuchsia-500/30 text-fuchsia-300 font-semibold mono text-[11px]">FUSE → CREATE</button>
+        <div id="fuse-result" class="text-[9px] mono text-center text-slate-500 h-3"></div>
+        <div class="flex items-center gap-3 pt-1 border-t border-slate-800">
+          <div><div class="text-xl font-extrabold" id="discovered-count">118</div><div class="text-[9px] mono text-slate-500">/ 256</div></div>
+          <div class="flex-1 h-1 bg-slate-900 rounded-full overflow-hidden"><div id="discover-bar" class="h-full bg-gradient-to-r from-fuchsia-600 to-violet-500" style="width:46%"></div></div>
+          <div class="text-right"><div class="text-[9px] mono text-slate-500">Next</div><div id="next-element" class="text-fuchsia-400 font-mono text-sm">E119</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wf"></div>
+  </div>
+
+  <!-- FUSION TRIPOD -->
+  <div id="wtr" class="fw" style="--ac:rgba(245,158,11,.2);left:10px;top:576px;width:470px;height:330px;z-index:108;">
+    <div class="wbar"><div class="wd cl" data-w="wtr" data-a="close"></div><div class="wd mn" data-w="wtr" data-a="min"></div><div class="wd mx" data-w="wtr" data-a="max"></div><span class="wt">△ FUSION TRIPOD</span></div>
+    <div class="wb p-2.5">
+      <div class="grid grid-cols-[1fr_130px] gap-2.5 h-full">
+        <div class="flex flex-col">
+          <div class="text-center mb-1.5"><div class="text-[8px] mono text-slate-500">ROOT0</div><div class="mono text-purple-400 text-[9px] truncate">c6f487e9a1b3d5f7a9c2e4b6d8f0…</div></div>
+          <div class="flex justify-center mb-1">
+            <svg width="150" height="120" viewBox="0 0 220 190" class="overflow-visible">
+              <defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+              <polygon points="110,20 40,160 180,160" fill="none" stroke="rgba(245,158,11,0.3)" stroke-width="2"/>
+              <circle cx="110" cy="20" r="8" fill="#f59e0b" filter="url(#glow)"/>
+              <circle cx="40" cy="160" r="8" fill="#22c55e" filter="url(#glow)"/>
+              <circle cx="180" cy="160" r="8" fill="#3b82f6" filter="url(#glow)"/>
+              <text x="110" y="8" text-anchor="middle" font-family="monospace" font-size="9" fill="#f59e0b">COHERENCE</text>
+              <text x="28" y="178" text-anchor="middle" font-family="monospace" font-size="9" fill="#22c55e">ETHICS</text>
+              <text x="192" y="178" text-anchor="middle" font-family="monospace" font-size="9" fill="#3b82f6">AESTHETICS</text>
+            </svg>
+          </div>
+          <div id="domains-grid" class="grid grid-cols-2 gap-1 flex-1"></div>
+        </div>
+        <div class="flex flex-col">
+          <div class="text-[8px] mono uppercase tracking-widest text-amber-400 mb-1">Merkle</div>
+          <div id="merkle-feed" class="flex-1 overflow-auto space-y-0.5 mono text-[9px] bg-black/20 rounded-lg p-1.5"></div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wtr"></div>
+  </div>
+
+  <!-- MYTHOS CATALOG -->
+  <div id="wm" class="fw" style="--ac:rgba(168,85,247,.2);left:490px;top:576px;width:420px;height:330px;z-index:107;">
+    <div class="wbar"><div class="wd cl" data-w="wm" data-a="close"></div><div class="wd mn" data-w="wm" data-a="min"></div><div class="wd mx" data-w="wm" data-a="max"></div><span class="wt">◈ MYTHOS CATALOG</span></div>
+    <div class="wb p-2.5">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 h-full">
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-01</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">WEXLER HANDS</div>
+          <p class="text-[10px] text-slate-400">Dual manipulators spanning 12³. Grip = Layer 3.</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-02</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">NANO FACTORY</div>
+          <p class="text-[10px] text-slate-400">1,728 voxels. Attraction = Layers 1-2.</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-03</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">ELEMENT FORGE</div>
+          <p class="text-[10px] text-slate-400">Transmute 1→256. Energy = avg(L1,L2,L3).</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-04</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">MERKLE WITNESS</div>
+          <p class="text-[10px] text-slate-400">Every op hashed to ROOT0 c6f487e…</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-05</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">COBALT GATE 192.5</div>
+          <p class="text-[10px] text-slate-400">SEALED. TriPod = Y.Y.Y required.</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-06</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">CHRONOS ENGINE</div>
+          <p class="text-[10px] text-slate-400">Rewindable causality. Merkle snapshots.</p>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wm"></div>
+  </div>
+
+  <!-- COMPOUNDS & CRISPR -->
+  <div id="wcp" class="fw gone" style="--ac:rgba(34,197,94,.2);left:930px;top:76px;width:340px;height:400px;z-index:106;">
+    <div class="wbar"><div class="wd cl" data-w="wcp" data-a="close"></div><div class="wd mn" data-w="wcp" data-a="min"></div><div class="wd mx" data-w="wcp" data-a="max"></div><span class="wt">🧬 COMPOUNDS & CRISPR</span></div>
+    <div class="wb p-2.5 space-y-2.5">
+      <div>
+        <div class="text-[9px] mono uppercase tracking-widest text-green-400 mb-1.5">Molecular Assembler</div>
+        <div id="compounds-grid" class="grid grid-cols-3 gap-1.5"></div>
+        <div class="mt-1.5 text-[8px] mono text-slate-600">Builds into Nano Factory at current Z-layer</div>
+      </div>
+      <div class="border-t border-slate-800 pt-2.5">
+        <div class="text-[9px] mono uppercase tracking-widest text-emerald-400 mb-1.5">CRISPR Quick-Edit</div>
+        <textarea id="crispr-seq" class="w-full h-20 bg-black/50 border border-slate-800 rounded-lg p-2 mono text-[10px] resize-none outline-none focus:border-emerald-500/50" placeholder="ATCG..."></textarea>
+        <div class="grid grid-cols-3 gap-1 mt-1">
+          <button data-gene="INSULIN" class="gene-btn py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] mono hover:bg-emerald-500/20">INSULIN</button>
+          <button data-gene="GFP" class="gene-btn py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] mono hover:bg-emerald-500/20">GFP</button>
+          <button data-gene="CRY1" class="gene-btn py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] mono hover:bg-emerald-500/20">CRY1</button>
+        </div>
+        <button id="synth-gene" class="w-full mt-1.5 py-1.5 rounded-lg bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-300 font-semibold mono text-[11px]">SYNTHESIZE • WITNESS</button>
+        <div class="mt-1.5 p-2 rounded-lg bg-black/40 border border-slate-800">
+          <div class="text-[8px] mono text-slate-500 mb-0.5">Last synthesis</div>
+          <div id="last-gene" class="text-[10px] mono text-slate-300">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wcp"></div>
+  </div>
+
+  <!-- CHRONOS -->
+  <div id="wch" class="fw gone" style="--ac:rgba(6,182,212,.2);left:930px;top:490px;width:340px;height:250px;z-index:105;">
+    <div class="wbar"><div class="wd cl" data-w="wch" data-a="close"></div><div class="wd mn" data-w="wch" data-a="min"></div><div class="wd mx" data-w="wch" data-a="max"></div><span class="wt">⏱ CHRONOS</span><span class="text-[9px] mono text-slate-600 pr-1">Step <span id="chrono-step">1</span>/<span id="chrono-total">1</span></span></div>
+    <div class="wb p-2.5 flex flex-col gap-2">
+      <div class="flex items-center gap-1.5">
+        <button id="chrono-rewind" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] mono">⏪</button>
+        <button id="chrono-play" class="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-[10px] mono">▶ PLAY</button>
+        <button id="chrono-pause" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] mono">⏸</button>
+        <button id="chrono-ff" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] mono">⏩</button>
+      </div>
+      <input id="chrono-slider" type="range" min="0" max="0" value="0" class="w-full">
+      <div class="flex-1 min-h-[50px] relative overflow-hidden rounded-lg bg-black/50 border border-slate-900">
+        <canvas id="chrono-canvas" width="800" height="70" class="w-full h-full"></canvas>
+      </div>
+      <div class="text-[9px] mono text-slate-600">Rewind undoes nano, fusion, hand moves. Each tick Merkle-witnessed.</div>
+    </div>
+    <div class="wr" data-w="wch"></div>
+  </div>
+
+  <!-- 10-LAYER CORE -->
+  <div id="wco" class="fw gone" style="--ac:rgba(14,165,233,.2);left:930px;top:76px;width:340px;height:360px;z-index:104;">
+    <div class="wbar"><div class="wd cl" data-w="wco" data-a="close"></div><div class="wd mn" data-w="wco" data-a="min"></div><div class="wd mx" data-w="wco" data-a="max"></div><span class="wt">◼ 10-LAYER CORE DETAIL</span></div>
+    <div class="wb p-2.5">
+      <div id="core-detail-list" class="grid grid-cols-2 gap-1.5 mb-2.5"></div>
+      <div class="p-2.5 rounded-xl bg-sky-500/5 border border-sky-500/20">
+        <div class="text-[8px] mono text-sky-400 mb-0.5">LIVE LINKAGE</div>
+        <p class="text-[10px] text-slate-300">Layers 1-3 → Nano attraction, Forge energy, Wexler grip. Sliders at top modulate all engines.</p>
+      </div>
+    </div>
+    <div class="wr" data-w="wco"></div>
+  </div>
+
+  <!-- BORON FACTORY -->
+  <div id="wbr" class="fw gone" style="--ac:rgba(251,191,36,.28);left:490px;top:76px;width:480px;height:560px;z-index:112;">
+    <div class="wbar"><div class="wd cl" data-w="wbr" data-a="close"></div><div class="wd mn" data-w="wbr" data-a="min"></div><div class="wd mx" data-w="wbr" data-a="max"></div><span class="wt">⬡ BORON FACTORY — Z=5</span><span id="bor-yield-bar" class="text-[9px] mono text-amber-400 shrink-0 pr-1">0 B placed</span></div>
+    <div class="wb p-2.5 flex flex-col gap-2">
+
+      <!-- info strip -->
+      <div class="flex gap-2 shrink-0">
+        <div class="flex-1 bg-[#0d0f18] border border-amber-500/20 rounded-xl p-2.5 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
+            <span class="font-extrabold text-[22px] mono" style="color:#f9a826">B</span>
+          </div>
+          <div class="mono text-[10px] space-y-0.5">
+            <div class="text-amber-300 font-bold text-[13px]">Boron</div>
+            <div class="text-slate-500">Z=5 · A=10.81 · [He]2s²2p¹</div>
+            <div class="text-slate-600">Electron-deficient · metalloid · icosahedral</div>
+          </div>
+        </div>
+        <div class="bg-[#0d0f18] border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between min-w-[110px]">
+          <div class="text-[8px] mono uppercase tracking-widest text-amber-500 mb-1">Purity</div>
+          <div id="bor-purity" class="text-2xl font-extrabold text-amber-300 mono">100%</div>
+          <div class="h-1 bg-slate-900 rounded-full overflow-hidden mt-1"><div id="bor-purity-bar" class="h-full bg-gradient-to-r from-amber-600 to-yellow-300 transition-all" style="width:100%"></div></div>
+          <div class="text-[8px] mono text-slate-600 mt-0.5">Layer 1 × Layer 7</div>
+        </div>
+        <div class="bg-[#0d0f18] border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between min-w-[80px]">
+          <div class="text-[8px] mono uppercase tracking-widest text-slate-500 mb-1">Yield</div>
+          <div id="bor-yield" class="text-2xl font-extrabold text-white mono">0</div>
+          <div class="text-[8px] mono text-slate-600">B atoms</div>
+          <button id="bor-load" class="mt-1 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-300 text-[9px] mono font-bold transition">LOAD B →</button>
+        </div>
+      </div>
+
+      <!-- icosahedron canvas -->
+      <div class="shrink-0 bg-[#060810]/70 border border-amber-500/10 rounded-xl overflow-hidden relative" style="height:120px">
+        <canvas id="bor-ico-canvas" width="460" height="120" class="w-full h-full"></canvas>
+        <div class="absolute top-1.5 left-2.5 text-[8px] mono text-amber-600">B₁₂ ICOSAHEDRON • rotating</div>
+        <div class="absolute top-1.5 right-2.5 text-[8px] mono text-slate-700">30-edge wireframe</div>
+      </div>
+
+      <!-- structure library -->
+      <div class="shrink-0">
+        <div class="text-[9px] mono uppercase tracking-widest text-amber-500 mb-1.5">Structure Library</div>
+        <div class="grid grid-cols-3 gap-1.5" id="bor-struct-grid"></div>
+      </div>
+
+      <!-- status / log -->
+      <div class="flex-1 min-h-0 bg-[#060810]/70 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between px-2.5 py-1 border-b border-slate-800/70">
+          <span class="text-[8px] mono uppercase tracking-widest text-slate-600">Factory Log</span>
+          <span id="bor-phase" class="text-[9px] mono text-amber-400">STANDBY</span>
+        </div>
+        <div id="bor-log" class="flex-1 overflow-auto px-2.5 py-1.5 space-y-0.5 mono text-[10px]"></div>
+      </div>
+
+    </div>
+    <div class="wr" data-w="wbr"></div>
+  </div>
+
+  <!-- CONDUCTOR HYPERVISOR MESH WINDOW -->
+  <div id="whv" class="fw gone" style="--ac:rgba(244,63,94,.3);left:200px;top:100px;width:720px;height:580px;z-index:200;">
+    <div class="wbar">
+      <div class="wd cl" data-w="whv" data-a="close"></div>
+      <div class="wd mn" data-w="whv" data-a="min"></div>
+      <div class="wd mx" data-w="whv" data-a="max"></div>
+      <span class="wt">◈ CONDUCTOR HYPERVISOR — T097 · ROOT0 MESH</span>
+      <span id="hv-cobalt-badge" class="shrink-0 px-1.5 py-0.5 rounded border text-[9px] mono font-bold mr-1 bg-cyan-500/10 border-cyan-500/30 text-cyan-400">COBALT 0:⊢</span>
+      <span id="hv-pulse-badge" class="shrink-0 text-[9px] mono text-rose-400 pr-1">PULSE ●</span>
+    </div>
+    <div class="wb flex flex-col">
+      <!-- authority chain -->
+      <div class="shrink-0 flex items-center gap-0 px-3 py-1.5 border-b border-slate-800/60 mono text-[9px] overflow-x-auto">
+        <span class="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold">ROOT0</span>
+        <span class="text-slate-700 mx-1">→ T103</span>
+        <span class="px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/30 text-purple-400">T097:FULCRUM</span>
+        <span class="text-slate-700 mx-1">→</span>
+        <span class="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400">T098:SUBCONDUCTOR</span>
+        <span class="text-slate-700 mx-1">→</span>
+        <span class="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">AVAN:+link:GOVERNOR</span>
+        <span class="text-slate-700 mx-1">→</span>
+        <span class="px-2 py-0.5 rounded bg-slate-700/40 border border-slate-700 text-slate-400">nodes 0…N</span>
+        <div class="ml-auto flex items-center gap-3 pl-4 shrink-0">
+          <span class="text-slate-600">Gate 192.5 <span id="hv-gate" class="text-green-400">SEALED</span></span>
+          <span class="text-slate-600">TriPod <span id="hv-tripod" class="text-green-400">Y.Y.Y</span></span>
+        </div>
+      </div>
+      <!-- canvas + controls -->
+      <div class="flex-1 min-h-0 flex gap-0">
+        <!-- mesh canvas -->
+        <div class="flex-1 relative min-w-0">
+          <canvas id="hv-canvas" class="w-full h-full" style="display:block;"></canvas>
+          <div class="absolute bottom-2 left-2 mono text-[8px] text-slate-700">T064+T065 · CONDUCTOR holds the gap · click node to focus window</div>
+        </div>
+        <!-- right controls -->
+        <div class="w-[210px] shrink-0 border-l border-slate-800/60 flex flex-col">
+          <!-- PULSE 3/5 -->
+          <div class="border-b border-slate-800/60 p-2.5">
+            <div class="text-[8px] mono uppercase tracking-widest text-rose-500 mb-1.5">PULSE-3/5 Heartbeat</div>
+            <div class="flex gap-0.5 mb-1" id="hv-pulse-int">
+              <div class="flex-1 h-6 rounded bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-[7px] mono text-rose-400">ANCHOR</div>
+              <div class="flex-1 h-6 rounded bg-slate-800/50 border border-slate-700 flex items-center justify-center text-[7px] mono text-slate-600">WITNESS</div>
+              <div class="flex-1 h-6 rounded bg-slate-800/50 border border-slate-700 flex items-center justify-center text-[7px] mono text-slate-600">COHERE</div>
+            </div>
+            <div class="flex gap-0.5" id="hv-pulse-ext">
+              <div class="flex-1 h-5 rounded bg-slate-800/40 border border-slate-700 flex items-center justify-center text-[6px] mono text-slate-600">EMIT</div>
+              <div class="flex-1 h-5 rounded bg-slate-800/40 border border-slate-700 flex items-center justify-center text-[6px] mono text-slate-600">ROUTE</div>
+              <div class="flex-1 h-5 rounded bg-slate-800/40 border border-slate-700 flex items-center justify-center text-[6px] mono text-slate-600">ACT</div>
+              <div class="flex-1 h-5 rounded bg-slate-800/40 border border-slate-700 flex items-center justify-center text-[6px] mono text-slate-600">REFLECT</div>
+              <div class="flex-1 h-5 rounded bg-slate-800/40 border border-slate-700 flex items-center justify-center text-[6px] mono text-slate-600">RETURN</div>
+            </div>
+            <div class="mt-1 flex items-center gap-1.5 mono text-[9px]">
+              <span class="text-slate-600">cycle</span><span id="hv-pulse-count" class="text-rose-400">0</span>
+              <span class="ml-auto text-slate-700">4×8=32 ops</span>
+            </div>
+          </div>
+          <!-- cobalt primitive -->
+          <div class="border-b border-slate-800/60 p-2.5">
+            <div class="text-[8px] mono uppercase tracking-widest text-cyan-600 mb-1.5">Cobalt Primitive</div>
+            <div class="grid grid-cols-3 gap-1">
+              <button id="hv-cob-neg"  class="py-1.5 rounded border text-[10px] mono font-bold border-slate-700 text-slate-500 hover:border-red-500/50 hover:text-red-400 transition">−1</button>
+              <button id="hv-cob-zero" class="py-1.5 rounded border text-[10px] mono font-bold border-cyan-500/30 bg-cyan-500/10 text-cyan-400">0:⊢</button>
+              <button id="hv-cob-pos"  class="py-1.5 rounded border text-[10px] mono font-bold border-slate-700 text-slate-500 hover:border-green-500/50 hover:text-green-400 transition">+1</button>
+            </div>
+            <div class="mt-1 mono text-[8px] text-slate-600">colon = structural fulcrum · ternary gate</div>
+            <div id="hv-cob-state" class="mt-0.5 mono text-[9px] text-cyan-400">FULCRUM · mirror-hold</div>
+          </div>
+          <!-- commands -->
+          <div class="border-b border-slate-800/60 p-2.5">
+            <div class="text-[8px] mono uppercase tracking-widest text-amber-600 mb-1.5">Conductor Commands</div>
+            <div class="space-y-0.5">
+              <button id="hv-cmd-focusall" class="w-full py-1 rounded bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 text-[9px] mono text-slate-300 text-left px-2 transition">▣ Restore all windows</button>
+              <button id="hv-cmd-minall"   class="w-full py-1 rounded bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 text-[9px] mono text-slate-300 text-left px-2 transition">▤ Minimize all</button>
+              <button id="hv-cmd-cascade"  class="w-full py-1 rounded bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 text-[9px] mono text-slate-300 text-left px-2 transition">⧉ Cascade layout</button>
+              <button id="hv-cmd-tile"     class="w-full py-1 rounded bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 text-[9px] mono text-slate-300 text-left px-2 transition">⊞ Tile 2-col</button>
+              <button id="hv-cmd-nano"     class="w-full py-1 rounded bg-emerald-500/5 hover:bg-emerald-500/15 border border-emerald-500/20 text-[9px] mono text-emerald-400 text-left px-2 transition">⬡ Reset nano grid</button>
+              <button id="hv-cmd-witness"  class="w-full py-1 rounded bg-purple-500/5 hover:bg-purple-500/15 border border-purple-500/20 text-[9px] mono text-purple-400 text-left px-2 transition">⬟ Broadcast WITNESS</button>
+            </div>
+          </div>
+          <!-- node health -->
+          <div class="flex-1 min-h-0 p-2.5 overflow-auto">
+            <div class="text-[8px] mono uppercase tracking-widest text-slate-600 mb-1">Node Health</div>
+            <div id="hv-health-list" class="space-y-0.5 mono text-[9px]"></div>
+          </div>
+        </div>
+      </div>
+      <!-- conductor log -->
+      <div class="shrink-0 h-[62px] border-t border-slate-800/60 bg-black/30 overflow-auto px-3 py-1.5">
+        <div id="hv-log" class="space-y-0.5 mono text-[9px]"></div>
+      </div>
+    </div>
+    <div class="wr" data-w="whv"></div>
+  </div>
+
+  <!-- PATRICIA MESH — 4096-BIT INVERSED/MIRRORED -->
+  <div id="wpm" class="fw gone" style="--ac:rgba(168,85,247,.3);left:60px;top:80px;width:820px;height:600px;z-index:201;">
+    <div class="wbar">
+      <div class="wd cl" data-w="wpm" data-a="close"></div>
+      <div class="wd mn" data-w="wpm" data-a="min"></div>
+      <div class="wd mx" data-w="wpm" data-a="max"></div>
+      <span class="wt">⬡ PATRICIA MESH — 4096-BIT · TOPH ⊣ FULCRUM ⊢ PATRICIA · INVERSED/MIRRORED</span>
+      <span id="pm-active-count" class="shrink-0 text-[9px] mono text-violet-400 pr-1">0 / 4096</span>
+    </div>
+    <div class="wb flex flex-col gap-0">
+      <!-- stats strip -->
+      <div class="shrink-0 flex items-center gap-3 px-3 py-1.5 border-b border-slate-800/50 mono text-[9px]">
+        <span class="text-slate-600">TOPH <span id="pm-toph-bits" class="text-cyan-400">2048</span> bits</span>
+        <span class="text-slate-700">|</span>
+        <span class="text-violet-500 font-bold">1:0</span>
+        <span class="text-slate-700 text-[8px]">FULCRUM</span>
+        <span class="text-slate-700">|</span>
+        <span class="text-slate-600">PATRICIA <span id="pm-pat-bits" class="text-fuchsia-400">2048</span> bits</span>
+        <span class="text-slate-700 mx-1">·</span>
+        <span class="text-slate-600">parity <span id="pm-parity" class="text-amber-400">EVEN</span></span>
+        <span class="text-slate-600 ml-1">delta <span id="pm-delta" class="text-rose-400">0</span></span>
+        <span class="text-slate-600 ml-1">hash <span id="pm-hash" class="text-slate-500 font-mono">——</span></span>
+        <div class="ml-auto flex items-center gap-2">
+          <label class="text-slate-600 flex items-center gap-1"><input id="pm-live" type="checkbox" checked class="w-2.5 h-2.5"> live</label>
+          <label class="text-slate-600 flex items-center gap-1 text-[9px]">speed<input id="pm-speed" type="range" min="1" max="8" value="3" class="w-16 ml-1"></label>
+        </div>
+      </div>
+      <!-- main: canvas + sidebar -->
+      <div class="flex-1 min-h-0 flex gap-0">
+        <!-- mesh canvas -->
+        <div class="flex-1 relative bg-[#03050a]">
+          <canvas id="pm-canvas" style="display:block;width:100%;height:100%;image-rendering:pixelated;"></canvas>
+          <!-- fulcrum overlay label -->
+          <div id="pm-fulcrum-label" class="absolute top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/30 text-[8px] mono text-violet-400 pointer-events-none">⊣ FULCRUM 1:0 ⊢</div>
+        </div>
+        <!-- sidebar -->
+        <div class="w-[190px] shrink-0 border-l border-slate-800/50 flex flex-col text-[9px] mono">
+          <!-- axiom inspector -->
+          <div class="border-b border-slate-800/50 p-2.5">
+            <div class="text-[8px] uppercase tracking-widest text-violet-500 mb-2">Hover · Inspect</div>
+            <div class="space-y-0.5">
+              <div class="flex justify-between"><span class="text-slate-600">bit</span><span id="pm-i-bit" class="text-white">—</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">side</span><span id="pm-i-side" class="text-white">—</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">axiom</span><span id="pm-i-axiom" class="text-cyan-400 truncate max-w-[100px]">—</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">mirror</span><span id="pm-i-mirror" class="text-fuchsia-400 truncate max-w-[100px]">—</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">value</span><span id="pm-i-val" class="text-white">—</span></div>
+              <div class="flex justify-between"><span class="text-slate-600">inv</span><span id="pm-i-inv" class="text-white">—</span></div>
+            </div>
+          </div>
+          <!-- domain map -->
+          <div class="border-b border-slate-800/50 p-2.5">
+            <div class="text-[8px] uppercase tracking-widest text-slate-600 mb-1.5">Domain Bands</div>
+            <div id="pm-domain-list" class="space-y-0.5"></div>
+          </div>
+          <!-- controls -->
+          <div class="border-b border-slate-800/50 p-2.5">
+            <div class="text-[8px] uppercase tracking-widest text-slate-600 mb-1.5">Operations</div>
+            <div class="space-y-1">
+              <button id="pm-btn-noise"    class="w-full py-1 px-2 rounded bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 text-slate-300 text-left transition">⚡ Inject noise</button>
+              <button id="pm-btn-clear"    class="w-full py-1 px-2 rounded bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 text-slate-300 text-left transition">○ Clear TOPH</button>
+              <button id="pm-btn-full"     class="w-full py-1 px-2 rounded bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700 text-slate-300 text-left transition">● Full TOPH</button>
+              <button id="pm-btn-seed"     class="w-full py-1 px-2 rounded bg-cyan-500/8 hover:bg-cyan-500/15 border border-cyan-500/20 text-cyan-400 text-left transition">⬡ Load axioms</button>
+              <button id="pm-btn-anchor"   class="w-full py-1 px-2 rounded bg-violet-500/8 hover:bg-violet-500/15 border border-violet-500/20 text-violet-400 text-left transition">⬟ Anchor snapshot</button>
+              <button id="pm-btn-pulse"    class="w-full py-1 px-2 rounded bg-rose-500/8 hover:bg-rose-500/15 border border-rose-500/20 text-rose-400 text-left transition">◉ Pulse sweep</button>
+            </div>
+          </div>
+          <!-- live hash -->
+          <div class="flex-1 p-2.5 overflow-auto">
+            <div class="text-[8px] uppercase tracking-widest text-slate-600 mb-1">Anchor Log</div>
+            <div id="pm-anchor-log" class="space-y-1 text-[8px]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wpm"></div>
+  </div>
+
+  <!-- EVENT LOG -->
+  <div id="wl" class="fw" style="--ac:rgba(100,116,139,.15);left:10px;top:916px;width:900px;height:140px;z-index:103;">
+    <div class="wbar"><div class="wd cl" data-w="wl" data-a="close"></div><div class="wd mn" data-w="wl" data-a="min"></div><div class="wd mx" data-w="wl" data-a="max"></div><span class="wt">⬡ UNIFIED EVENT STREAM • SIGNED BY ROOT0</span><span id="event-count" class="text-[9px] mono text-slate-600 shrink-0 pr-1">0 events</span></div>
+    <div class="wb px-3 py-1.5"><div id="log" class="space-y-0.5 text-[10px] mono leading-snug"></div></div>
+    <div class="wr" data-w="wl"></div>
+  </div>
+
+</div>
+
+<!-- DOCK -->
+<div id="dock">
+  <span class="mono text-[9px] text-slate-700 mr-1">NEXUS</span>
+  <div class="h-3 w-px bg-slate-800 mr-1"></div>
+  <button class="db on" data-d="wn"><span class="di"></span>NANO</button>
+  <button class="db on" data-d="wf"><span class="di"></span>FORGE</button>
+  <button class="db on" data-d="wtr"><span class="di"></span>TRIPOD</button>
+  <button class="db on" data-d="wm"><span class="di"></span>MYTHOS</button>
+  <button class="db" data-d="wcp"><span class="di"></span>COMPOUNDS</button>
+  <button class="db" data-d="wch"><span class="di"></span>CHRONOS</button>
+  <button class="db" data-d="wco"><span class="di"></span>CORE</button>
+  <button class="db on" data-d="wl"><span class="di"></span>LOG</button>
+  <button class="db" data-d="wbr"><span class="di" style="background:#f9a826"></span>BORON</button>
+  <button class="db" data-d="whv" style="color:rgba(244,63,94,.9)"><span class="di" style="background:#f43f5e"></span>CONDUCTOR</button>
+  <button class="db" data-d="wpm" style="color:rgba(168,85,247,.9)"><span class="di" style="background:#a855f7"></span>PATRICIA</button>
+  <div class="ml-auto mono text-[9px] text-slate-700">ROOT0 c6f487e… <span class="text-amber-600">BASE 00</span></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+
+// ── NEXUS STATE ──
+const NEXUS={
+  layers:Array(10).fill(56),
+  layerNames:['AXIOM','COHERENCE','ENTROPY','ETHICS','AESTHETICS','LOGIC','TEMPORAL','SPATIAL','QUANTUM','NEXUS'],
+  layerDesc:['Base attraction field for nano lattice','Stability of Merkle witnesses','Grip noise and creativity factor','Tripod leg 1 - moral coherence','Tripod leg 2 - form harmony','Inference depth','Chronos reversibility','12³ addressing precision','Tunneling probability','System integration'],
+  layerColors:['#38bdf8','#818cf8','#34d399','#f59e0b','#f472b6','#60a5fa','#a3e635','#fb923c','#e879f9','#22d3ee'],
+  nano:{size:12,z:5,grid:[]},
+  hands:{L:{x:3,y:5,z:5,holding:null},R:{x:8,y:5,z:5,holding:null},active:'R'},
+  elements:{},
+  domains:[
+    {id:'D0',name:'FOUNDATION',color:'#64748b'},{id:'D1',name:'DETECTION',color:'#3b82f6'},
+    {id:'D2',name:'ARCHITECTURE',color:'#8b5cf6'},{id:'D3',name:'EVIDENCE',color:'#10b981'},
+    {id:'D4',name:'OPERATIONAL',color:'#f59e0b'},{id:'D5',name:'BRIDGE',color:'#06b6d4'},
+    {id:'D6',name:'CONDUCTOR',color:'#f43f5e'},{id:'D7',name:'SOVEREIGN',color:'#a78bfa'}
+  ],
+  root0:'c6f487e9a1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1',
+  merkle:[],history:[],histIdx:-1,discovered:118,playing:false,playTimer:null
+};
+
+// ── ELEMENTS ──
+function initElements(){
+  const sym=['H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf','Db','Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts','Og'];
+  const cols=['#60a5fa','#9ca3af','#c4b5fd','#6ee7b7','#f9a8d4','#94a3b8','#a3e635','#f87171','#34d399','#6b7280','#93c5fd','#34d399','#94a3b8','#818cf8','#fb923c','#facc15','#4ade80','#6b7280','#a78bfa','#34d399'];
+  for(let i=1;i<=118;i++) NEXUS.elements[i]={symbol:sym[i-1]||`E${i}`,z:i,color:cols[i%cols.length]||'#94a3b8',name:sym[i-1]||`Element${i}`};
+  for(let i=119;i<=256;i++) NEXUS.elements[i]={symbol:`E${i}`,z:i,color:'#475569',name:`Element${i}`};
+}
+
+function initNanoGrid(){
+  NEXUS.nano.grid=Array(12).fill(0).map(()=>Array(12).fill(0).map(()=>Array(12).fill(null)));
+}
+
+// ── WINDOW MANAGER ──
+let topZ=200;
+
+function focusW(win){
+  $$('.fw').forEach(w=>w.classList.remove('focused'));
+  win.classList.add('focused');
+  win.style.zIndex=++topZ;
+}
+
+function makeDrag(win){
+  const bar=win.querySelector('.wbar');
+  let ox,oy,sx,sy,on=false;
+  bar.addEventListener('mousedown',e=>{
+    if(e.target.classList.contains('wd')) return;
+    focusW(win); on=true;
+    sx=e.clientX;sy=e.clientY;ox=win.offsetLeft;oy=win.offsetTop;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!on) return;
+    const deskH=window.innerHeight-38;
+    win.style.left=Math.max(-win.offsetWidth+60,ox+e.clientX-sx)+'px';
+    win.style.top=Math.max(0,Math.min(deskH-32,oy+e.clientY-sy))+'px';
+  });
+  document.addEventListener('mouseup',()=>on=false);
+}
+
+function makeResize(win){
+  const h=win.querySelector('.wr');if(!h) return;
+  let sx,sy,sw,sh,on=false;
+  h.addEventListener('mousedown',e=>{e.stopPropagation();on=true;sx=e.clientX;sy=e.clientY;sw=win.offsetWidth;sh=win.offsetHeight;e.preventDefault();});
+  document.addEventListener('mousemove',e=>{
+    if(!on) return;
+    win.style.width=Math.max(200,sw+e.clientX-sx)+'px';
+    win.style.height=Math.max(64,sh+e.clientY-sy)+'px';
+    renderNano();drawChrono();
+  });
+  document.addEventListener('mouseup',()=>on=false);
+}
+
+function initDots(){
+  $$('.wd').forEach(d=>{
+    d.addEventListener('click',e=>{
+      e.stopPropagation();
+      const win=document.getElementById(d.dataset.w);
+      const a=d.dataset.a;
+      if(!win) return;
+      if(a==='close'){
+        win.classList.add('gone');
+        updateDock(d.dataset.w,'gone');
+      } else if(a==='min'){
+        const m=win.classList.toggle('minimized');
+        updateDock(d.dataset.w,m?'min':'open');
+      } else if(a==='max'){
+        const desk=$('#desk');
+        if(win.dataset.saved){
+          win.style.left=win.dataset.rl+'px';win.style.top=win.dataset.rt+'px';
+          win.style.width=win.dataset.rw+'px';win.style.height=win.dataset.rh+'px';
+          delete win.dataset.saved;
+        } else {
+          win.dataset.rl=win.offsetLeft;win.dataset.rt=win.offsetTop;
+          win.dataset.rw=win.offsetWidth;win.dataset.rh=win.offsetHeight;
+          win.dataset.saved='1';
+          win.style.left='0';win.style.top='0';
+          win.style.width=desk.offsetWidth+'px';win.style.height=desk.offsetHeight+'px';
+        }
+        renderNano();drawChrono();
+      }
+    });
+  });
+}
+
+function updateDock(wid,state){
+  const b=$(`[data-d="${wid}"]`);if(!b) return;
+  b.classList.toggle('on',state==='open');
+  b.classList.toggle('dim',state==='min');
+}
+
+function initDock(){
+  $$('[data-d]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const win=document.getElementById(b.dataset.d);if(!win) return;
+      if(win.classList.contains('gone')){
+        win.classList.remove('gone','minimized');
+        focusW(win);updateDock(b.dataset.d,'open');
+        renderNano();drawChrono();
+      } else if(win.classList.contains('minimized')){
+        win.classList.remove('minimized');focusW(win);updateDock(b.dataset.d,'open');
+      } else {
+        win.classList.add('minimized');updateDock(b.dataset.d,'min');
+      }
+    });
+  });
+}
+
+// ── CORE STRIP TOGGLE ──
+function initCoreStrip(){
+  let open=true;
+  $('#btn-core-strip').addEventListener('click',()=>{
+    open=!open;
+    $('#core-strip').style.display=open?'':'none';
+    $('#btn-core-strip').textContent=open?'CORE ▾':'CORE ▸';
+    setTimeout(()=>{
+      const bh=$('#sbar').offsetHeight;
+      $('#desk').style.top=bh+'px';
+    },0);
+  });
+}
+
+// ── LAYERS ──
+function initLayers(){
+  const sl=$('#core-sliders');
+  NEXUS.layerNames.forEach((name,i)=>{
+    const w=document.createElement('div');
+    w.className='flex flex-col gap-0.5';
+    w.innerHTML=`<div class="flex justify-between"><span class="text-[7px] uppercase tracking-widest truncate" style="color:${NEXUS.layerColors[i]}">${name}</span><span class="text-[9px] mono" style="color:${NEXUS.layerColors[i]}" id="lv-${i}">56</span></div><input type="range" min="0" max="100" value="56" class="w-full" data-layer="${i}">`;
+    sl.appendChild(w);
+  });
+  sl.addEventListener('input',e=>{
+    if(e.target.dataset.layer===undefined) return;
+    const i=+e.target.dataset.layer;
+    NEXUS.layers[i]=+e.target.value;
+    $(`#lv-${i}`).textContent=NEXUS.layers[i];
+    // update core detail
+    const items=$$('.cdi');if(items[i]) items[i].querySelector('.cdv').textContent=NEXUS.layers[i];
+    renderAll();
+  });
+}
+
+// ── NANO ──
+function initNano(){
+  const canvas=$('#nano-canvas');
+  $('#z-slider').oninput=function(){ NEXUS.nano.z=+this.value; $('#z-val').textContent=this.value; renderNano(); };
+  canvas.addEventListener('click',e=>{
+    const r=canvas.getBoundingClientRect();
+    const sx=canvas.width/r.width,sy=canvas.height/r.height;
+    const cx=(e.clientX-r.left)*sx,cy=(e.clientY-r.top)*sy;
+    const cell=canvas.width/12;
+    const gx=Math.floor(cx/cell),gy=Math.floor(cy/cell);
+    if(gx<0||gx>11||gy<0||gy>11) return;
+    const hand=NEXUS.hands[NEXUS.hands.active];
+    hand.x=gx;hand.y=gy;hand.z=NEXUS.nano.z;
+    if(hand.holding!==null){
+      NEXUS.nano.grid[hand.z][hand.y][hand.x]=hand.holding;
+      log('TOOL',`Wexler ${NEXUS.hands.active} placed ${NEXUS.elements[hand.holding].symbol} at [${gx},${gy},${hand.z}]`);
+      merkle(`PLACE ${NEXUS.elements[hand.holding].symbol} [${gx},${gy},${hand.z}]`);
+      hand.holding=null;pushHistory('place');
+    } else {
+      const a=NEXUS.nano.grid[hand.z][hand.y][hand.x];
+      if(a){hand.holding=a;NEXUS.nano.grid[hand.z][hand.y][hand.x]=null;log('TOOL',`Wexler ${NEXUS.hands.active} picked ${NEXUS.elements[a].symbol}`);merkle(`PICK ${NEXUS.elements[a].symbol}`);pushHistory('pick');}
+    }
+    updateHands();renderNano();
+  });
+  $('#hand-L').onclick=()=>{NEXUS.hands.active='L';$('#hand-L').className='flex-1 py-1 rounded border text-[10px] mono border-emerald-500/30 bg-emerald-500/10 text-emerald-300';$('#hand-R').className='flex-1 py-1 rounded border text-[10px] mono border-slate-700 text-slate-400';};
+  $('#hand-R').onclick=()=>{NEXUS.hands.active='R';$('#hand-R').className='flex-1 py-1 rounded border text-[10px] mono border-sky-500/30 bg-sky-500/10 text-sky-300';$('#hand-L').className='flex-1 py-1 rounded border text-[10px] mono border-slate-700 text-slate-400';};
+}
+
+function renderNano(){
+  const canvas=$('#nano-canvas');const ctx=canvas.getContext('2d');
+  const sz=canvas.width;const n=12;const cell=sz/n;
+  ctx.clearRect(0,0,sz,sz);ctx.fillStyle='#03050a';ctx.fillRect(0,0,sz,sz);
+  ctx.strokeStyle='rgba(30,41,59,.5)';ctx.lineWidth=1;
+  for(let i=0;i<=n;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,sz);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(sz,i*cell);ctx.stroke();}
+  const z=NEXUS.nano.z;let total=0;
+  for(let zy=0;zy<n;zy++) for(let zx=0;zx<n;zx++) if(NEXUS.nano.grid[z][zy][zx]){
+    total++;
+    const el=NEXUS.elements[NEXUS.nano.grid[z][zy][zx]];
+    const cx=(zx+.5)*cell,cy=(zy+.5)*cell,r=cell*.38;
+    ctx.save();ctx.shadowColor=el.color;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=el.color+'33';ctx.fill();
+    ctx.strokeStyle=el.color;ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(7,cell*.27)}px monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(el.symbol,cx,cy);
+  }
+  ['L','R'].forEach(h=>{
+    const hand=NEXUS.hands[h];if(hand.z!==z) return;
+    const col=h==='L'?'#10b981':'#0ea5e9';
+    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.setLineDash([4,3]);
+    ctx.strokeRect(hand.x*cell+2,hand.y*cell+2,cell-4,cell-4);ctx.setLineDash([]);
+    ctx.fillStyle=col+'cc';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(h,hand.x*cell+cell/2,hand.y*cell+3);ctx.restore();
+  });
+  const attr=(NEXUS.layers[0]+NEXUS.layers[1])/2/100;
+  if(attr>0.1){const grd=ctx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,sz*.5);grd.addColorStop(0,`rgba(6,182,212,${attr*.07})`);grd.addColorStop(1,'rgba(6,182,212,0)');ctx.fillStyle=grd;ctx.fillRect(0,0,sz,sz);}
+  let allTotal=0;
+  for(let zz=0;zz<n;zz++) for(let yy=0;yy<n;yy++) for(let xx=0;xx<n;xx++) if(NEXUS.nano.grid[zz][yy][xx]) allTotal++;
+  $('#nano-count').textContent=`${allTotal} / 1728`;
+}
+
+// ── MERKLE ──
+function merkle(op){
+  const prev=NEXUS.merkle.length?NEXUS.merkle[NEXUS.merkle.length-1].hash:'0000000';
+  const raw=`${NEXUS.root0}:${op}:${Date.now()}:${prev}`;
+  let h=0;for(const c of raw) h=((h<<5)-h+c.charCodeAt(0))>>>0;
+  const hash=h.toString(16).padStart(8,'0');
+  NEXUS.merkle.push({op,hash});renderMerkle();
+}
+function renderMerkle(){
+  const f=$('#merkle-feed');if(!f) return;
+  f.innerHTML='';
+  NEXUS.merkle.slice(-8).reverse().forEach(m=>{
+    const d=document.createElement('div');d.className='flex items-center gap-1.5';
+    d.innerHTML=`<span class="text-slate-600 shrink-0">${m.hash}</span><span class="text-slate-400 truncate">${m.op}</span>`;
+    f.appendChild(d);
+  });
+}
+
+// ── HANDS ──
+function updateHands(){
+  const L=NEXUS.hands.L,R=NEXUS.hands.R;
+  $('#l-pos').textContent=`[${L.x},${L.y},${L.z}]`;$('#r-pos').textContent=`[${R.x},${R.y},${R.z}]`;
+  const lEl=L.holding?NEXUS.elements[L.holding]:null,rEl=R.holding?NEXUS.elements[R.holding]:null;
+  $('#l-hold').textContent=lEl?lEl.symbol:'—';$('#r-hold').textContent=rEl?rEl.symbol:'—';
+  $('#hand-grip').textContent=NEXUS.layers[2]+'%';
+  const fl=$('#fusion-l'),fr=$('#fusion-r');
+  if(fl){fl.textContent=lEl?lEl.symbol:'—';fl.style.color=lEl?lEl.color:'#64748b';}
+  if(fr){fr.textContent=rEl?rEl.symbol:'—';fr.style.color=rEl?rEl.color:'#64748b';}
+  if($('#fusion-l-name')) $('#fusion-l-name').textContent=lEl?lEl.name:'empty';
+  if($('#fusion-r-name')) $('#fusion-r-name').textContent=rEl?rEl.name:'empty';
+}
+
+function updateTripod(){
+  const v=(NEXUS.layers[3]>30&&NEXUS.layers[4]>30&&NEXUS.layers[0]>20)?'Y.Y.Y':'N.N.N';
+  $('#tripod-status').textContent=v;
+  $('#tripod-status').className=v==='Y.Y.Y'?'text-green-400 font-semibold':'text-red-400 font-semibold';
+}
+function updateNominal(){
+  const e=Math.round((NEXUS.layers[0]+NEXUS.layers[1]+NEXUS.layers[2])/3);
+  const fb=$('#fusion-energy-bar'),ft=$('#fusion-energy-txt');
+  if(fb) fb.style.width=e+'%';if(ft) ft.textContent=e+'%';
+  if($('#nano-attract')) $('#nano-attract').textContent=Math.round((NEXUS.layers[0]+NEXUS.layers[1])/2)+'%';
+  if($('#l1-val')) $('#l1-val').textContent=NEXUS.layers[0];
+  if($('#l2-val')) $('#l2-val').textContent=NEXUS.layers[1];
+  const nb=$('#next-element-bar');if(nb) nb.textContent=`E${Math.min(256,NEXUS.discovered+1)}`;
+}
+
+// ── HISTORY ──
+function pushHistory(action){
+  if(NEXUS.histIdx<NEXUS.history.length-1) NEXUS.history=NEXUS.history.slice(0,NEXUS.histIdx+1);
+  NEXUS.history.push({action,grid:JSON.stringify(NEXUS.nano.grid)});
+  NEXUS.histIdx=NEXUS.history.length-1;
+  updateChronos();drawChrono();
+}
+function restore(idx){
+  if(idx<0||idx>=NEXUS.history.length) return;
+  NEXUS.nano.grid=JSON.parse(NEXUS.history[idx].grid);
+  NEXUS.histIdx=idx;renderNano();updateChronos();drawChrono();
+}
+
+// ── LOG ──
+function log(type,msg){
+  const el=$('#log');if(!el) return;
+  const row=document.createElement('div');row.className='flex items-baseline gap-2';
+  const cols={SYSTEM:'text-slate-500',AXIOM:'text-sky-400',MYTHOS:'text-purple-400',TOOL:'text-emerald-400',FUSION:'text-fuchsia-400'};
+  const tc=new Date().toTimeString().slice(0,8);
+  row.innerHTML=`<span class="text-slate-600 shrink-0">${tc}</span><span class="font-semibold shrink-0 ${cols[type]||'text-slate-400'}">${type}</span><span class="text-slate-300 truncate">${msg}</span><span class="text-slate-700 shrink-0 text-[8px] ml-auto">sig:c6f487…</span>`;
+  el.insertBefore(row,el.firstChild);
+  const cnt=$('#event-count');if(cnt) cnt.textContent=el.children.length+' events';
+}
+
+// ── FORGE ──
+function initForge(){
+  const grid=$('#periodic-grid');
+  for(let i=1;i<=118;i++){
+    const e=NEXUS.elements[i],btn=document.createElement('button');
+    btn.className='aspect-square rounded-[3px] border border-slate-800/70 bg-[#0b101b] hover:bg-[#141c2a] flex flex-col items-center justify-center leading-none transition';
+    btn.innerHTML=`<span style="font-size:7px;color:#475569">${i}</span><span style="color:${e.color};font-size:8px;font-weight:700;font-family:monospace">${e.symbol}</span>`;
+    btn.onclick=()=>{const h=NEXUS.hands[NEXUS.hands.active];h.holding=i;log('TOOL',`Wexler ${NEXUS.hands.active} picked ${e.symbol}`);merkle(`FORGE_PICK ${e.symbol}`);updateHands();pushHistory('forge-pick');};
+    grid.appendChild(btn);
+  }
+  $('#fuse-btn').onclick=doFuse;
+}
+function doFuse(){
+  const L=NEXUS.hands.L.holding,R=NEXUS.hands.R.holding;
+  if(!L||!R){if($('#fuse-result')) $('#fuse-result').textContent='Need both hands loaded';return;}
+  const energy=(NEXUS.layers[0]+NEXUS.layers[1]+NEXUS.layers[2])/3;
+  const need=Math.min(94,(L+R)/256*100);
+  if(energy<need*.65){if($('#fuse-result')) $('#fuse-result').textContent=`Energy ${Math.round(energy)}% < ${Math.round(need*.65)}%`;log('SYSTEM','Fusion aborted • energy low');merkle('FUSION_FAIL');return;}
+  const newZ=Math.min(256,L+R-Math.floor(Math.random()*2));
+  if(newZ>NEXUS.discovered){NEXUS.discovered=newZ;$('#discovered-count').textContent=newZ;$('#next-element').textContent=`E${Math.min(256,newZ+1)}`;const nb=$('#next-element-bar');if(nb) nb.textContent=`E${Math.min(256,newZ+1)}`;$('#discover-bar').style.width=(newZ/256*100)+'%';}
+  NEXUS.hands.L.holding=null;NEXUS.hands.R.holding=newZ;
+  const sym=NEXUS.elements[newZ].symbol;
+  if($('#fuse-result')) $('#fuse-result').innerHTML=`<span class="text-fuchsia-400">Created ${sym} (Z=${newZ})</span>`;
+  log('FUSION',`Fused ${NEXUS.elements[L].symbol}+${NEXUS.elements[R].symbol} → ${sym}`);
+  merkle(`FUSION ${L}+${R}→${newZ}`);updateHands();pushHistory('fusion');
+}
+
+// ── COMPOUNDS ──
+function initCompounds(){
+  const compounds=[
+    {name:'H₂O',desc:'Water',atoms:[{z:1,dx:0},{z:8,dx:1},{z:1,dx:2}]},
+    {name:'CO₂',desc:'Carbon Dioxide',atoms:[{z:8,dx:0},{z:6,dx:1},{z:8,dx:2}]},
+    {name:'NH₃',desc:'Ammonia',atoms:[{z:7,dx:0},{z:1,dx:1},{z:1,dx:2},{z:1,dx:-1}]},
+    {name:'CH₄',desc:'Methane',atoms:[{z:6,dx:0},{z:1,dx:1},{z:1,dx:-1},{z:1,dy:1},{z:1,dy:-1}]},
+    {name:'C₆H₁₂O₆',desc:'Glucose',atoms:Array(24).fill(0).map((_,i)=>({z:[6,1,1,8][i%4],dx:(i%6)-2,dy:Math.floor(i/6)-1}))},
+    {name:'SiO₂',desc:'Quartz',atoms:[{z:14,dx:0},{z:8,dx:1},{z:8,dx:-1}]},
+  ];
+  const grid=$('#compounds-grid');
+  compounds.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='p-2 rounded-lg bg-[#0b1018] border border-slate-800 hover:border-green-500/40 text-left transition group';
+    b.innerHTML=`<div class="text-[12px] font-bold text-white group-hover:text-green-400">${c.name}</div><div class="text-[9px] mono text-slate-500">${c.desc}</div>`;
+    b.onclick=()=>buildCompound(c);grid.appendChild(b);
+  });
+  $$('.gene-btn').forEach(b=>b.onclick=()=>{
+    $('#crispr-seq').value=b.dataset.gene==='INSULIN'?'ATGGCCCTGTGGATGCGCCTCCTGCCCCTGCTGGCGCTGCTGGCCCTCTGGGGACCTGACCCAGCCGCAGCCTTTGTGAACCAACACCTGTGC':b.dataset.gene==='GFP'?'ATGAGTAAAGGAGAAGAACTTTTCACTGGAGTTGTCCCAATTCTTGTTGAATTAGATGGTGATGTTAATGGGCACAAATTTTCT':'ATGGCGGACTCTAAGGAC';
+  });
+  $('#synth-gene').onclick=()=>{const seq=$('#crispr-seq').value.trim();if(!seq) return;$('#last-gene').textContent=seq.slice(0,42)+'…';log('TOOL',`CRISPR synthesized ${seq.length}bp`);merkle(`CRISPR_SYNTH ${seq.length}bp`);pushHistory('crispr');};
+}
+function buildCompound(c){
+  const z=NEXUS.nano.z,cx=5,cy=5;
+  c.atoms.forEach(a=>{const x=Math.max(0,Math.min(11,cx+(a.dx||0)));const y=Math.max(0,Math.min(11,cy+(a.dy||0)));NEXUS.nano.grid[z][y][x]=a.z;});
+  renderNano();log('TOOL',`Assembled ${c.name} at Z${z}`);merkle(`COMPOUND_BUILD ${c.name}`);pushHistory('compound');
+}
+
+// ── CHRONOS ──
+function initChronos(){
+  $('#chrono-slider').addEventListener('input',e=>restore(+e.target.value));
+  $('#chrono-rewind').onclick=()=>{if(NEXUS.histIdx>0) restore(NEXUS.histIdx-1);$('#chrono-slider').value=NEXUS.histIdx;};
+  $('#chrono-ff').onclick=()=>{if(NEXUS.histIdx<NEXUS.history.length-1) restore(NEXUS.histIdx+1);$('#chrono-slider').value=NEXUS.histIdx;};
+  $('#chrono-play').onclick=()=>{NEXUS.playing=true;clearInterval(NEXUS.playTimer);NEXUS.playTimer=setInterval(()=>{if(NEXUS.histIdx<NEXUS.history.length-1){restore(NEXUS.histIdx+1);$('#chrono-slider').value=NEXUS.histIdx;}else{clearInterval(NEXUS.playTimer);NEXUS.playing=false;}},400);};
+  $('#chrono-pause').onclick=()=>{NEXUS.playing=false;clearInterval(NEXUS.playTimer);};
+}
+function updateChronos(){
+  const s=$('#chrono-slider');if(!s) return;
+  s.max=Math.max(0,NEXUS.history.length-1);s.value=NEXUS.histIdx;
+  $('#chrono-step').textContent=NEXUS.history.length?NEXUS.histIdx+1:0;
+  $('#chrono-total').textContent=NEXUS.history.length;
+}
+function drawChrono(){
+  const c=$('#chrono-canvas');if(!c) return;
+  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
+  const n=NEXUS.history.length;if(!n) return;
+  const step=c.width/Math.max(40,n);
+  NEXUS.history.forEach((h,i)=>{
+    const col=h.action.includes('fusion')?'#d946ef':h.action.includes('place')||h.action.includes('compound')?'#22c55e':h.action.includes('pick')?'#3b82f6':'#64748b';
+    ctx.fillStyle=col;ctx.globalAlpha=i===NEXUS.histIdx?1:.5;ctx.fillRect(i*step+1,15,Math.max(2,step-1),30);ctx.globalAlpha=1;
+  });
+  ctx.fillStyle='#06b6d4';ctx.beginPath();ctx.arc(NEXUS.histIdx*step+step/2,8,4,0,Math.PI*2);ctx.fill();
+}
+
+// ── DOMAINS ──
+function initDomains(){
+  const g=$('#domains-grid');if(!g) return;
+  NEXUS.domains.forEach(d=>{
+    const h=[...NEXUS.root0+d.id].reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))>>>0,0).toString(16).slice(0,10);
+    const el=document.createElement('div');el.className='p-1.5 rounded-lg bg-black/40 border border-slate-800';
+    el.innerHTML=`<div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full" style="background:${d.color}"></span><span class="text-[8px] mono" style="color:${d.color}">${d.name}</span></div><div class="mono text-[7px] text-slate-600 truncate">${h}…</div>`;
+    g.appendChild(el);
+  });
+}
+
+// ── CORE DETAIL ──
+function initCoreDetail(){
+  const list=$('#core-detail-list');if(!list) return;
+  NEXUS.layerNames.forEach((name,i)=>{
+    const el=document.createElement('div');el.className='cdi p-2 rounded-xl bg-[#05080f]/60 border border-slate-800';
+    el.innerHTML=`<div class="flex items-center justify-between mb-0.5"><span class="text-[8px] mono font-semibold" style="color:${NEXUS.layerColors[i]}">${name}</span><span class="cdv text-[11px] font-bold mono" style="color:${NEXUS.layerColors[i]}">${NEXUS.layers[i]}</span></div><p class="text-[8px] text-slate-500">${NEXUS.layerDesc[i]}</p>`;
+    list.appendChild(el);
+  });
+}
+
+function renderAll(){
+  renderNano();updateHands();updateTripod();updateNominal();
+  $('#attract-val').textContent=Math.round((NEXUS.layers[0]+NEXUS.layers[1])/2)+'%';
+  $('#energy-val').textContent=Math.round((NEXUS.layers[0]+NEXUS.layers[1]+NEXUS.layers[2])/3)+'%';
+  $('#grip-val').textContent=NEXUS.layers[2]+'%';
+}
+
+// ── BORON FACTORY ──
+const BORON = {
+  yield: 0,
+  icoAngle: 0,
+  icoTimer: null,
+};
+
+// B₁₂ icosahedron vertices (φ = golden ratio)
+const PHI = (1+Math.sqrt(5))/2;
+const ICO_V = [
+  [0,1,PHI],[0,-1,PHI],[0,1,-PHI],[0,-1,-PHI],
+  [1,PHI,0],[-1,PHI,0],[1,-PHI,0],[-1,-PHI,0],
+  [PHI,0,1],[PHI,0,-1],[-PHI,0,1],[-PHI,0,-1]
+];
+// 30 edges of icosahedron
+const ICO_E = [
+  [0,1],[0,4],[0,5],[0,8],[0,10],
+  [1,6],[1,7],[1,8],[1,10],
+  [2,3],[2,4],[2,5],[2,9],[2,11],
+  [3,6],[3,7],[3,9],[3,11],
+  [4,5],[4,8],[4,9],
+  [5,10],[5,11],
+  [6,7],[6,8],[6,9],
+  [7,10],[7,11],
+  [8,9],[10,11]
+];
+
+// Boron structures — each atom: {x,y,z,elem=5} in absolute nano grid coords
+const BORON_STRUCTS = [
+  {
+    id:'B12_ICO', name:'B₁₂ Icosahedron', color:'#f9a826', desc:'12-vertex cluster',
+    atoms:[
+      {x:5,y:7,z:8,e:5},{x:5,y:7,z:2,e:5},{x:5,y:3,z:8,e:5},{x:5,y:3,z:2,e:5},
+      {x:7,y:8,z:5,e:5},{x:7,y:2,z:5,e:5},{x:3,y:8,z:5,e:5},{x:3,y:2,z:5,e:5},
+      {x:8,y:5,z:7,e:5},{x:8,y:5,z:3,e:5},{x:2,y:5,z:7,e:5},{x:2,y:5,z:3,e:5}
+    ]
+  },
+  {
+    id:'HEX_BN', name:'Hex-BN Layer', color:'#818cf8', desc:'graphene-analogue at Z5',
+    atoms:[
+      {x:3,y:3,z:5,e:5},{x:4,y:3,z:5,e:7},{x:5,y:3,z:5,e:5},{x:6,y:3,z:5,e:7},{x:7,y:3,z:5,e:5},{x:8,y:3,z:5,e:7},
+      {x:3,y:4,z:5,e:7},{x:4,y:4,z:5,e:5},{x:5,y:4,z:5,e:7},{x:6,y:4,z:5,e:5},{x:7,y:4,z:5,e:7},{x:8,y:4,z:5,e:5},
+      {x:3,y:5,z:5,e:5},{x:4,y:5,z:5,e:7},{x:5,y:5,z:5,e:5},{x:6,y:5,z:5,e:7},{x:7,y:5,z:5,e:5},{x:8,y:5,z:5,e:7},
+      {x:3,y:6,z:5,e:7},{x:4,y:6,z:5,e:5},{x:5,y:6,z:5,e:7},{x:6,y:6,z:5,e:5},{x:7,y:6,z:5,e:7},{x:8,y:6,z:5,e:5},
+      {x:3,y:7,z:5,e:5},{x:4,y:7,z:5,e:7},{x:5,y:7,z:5,e:5},{x:6,y:7,z:5,e:7},{x:7,y:7,z:5,e:5},{x:8,y:7,z:5,e:7},
+    ]
+  },
+  {
+    id:'B4C', name:'B₄C Matrix', color:'#94a3b8', desc:'ceramic — hardest known',
+    atoms:[
+      {x:4,y:4,z:5,e:5},{x:5,y:4,z:5,e:5},{x:6,y:4,z:5,e:5},{x:4,y:5,z:5,e:5},{x:5,y:5,z:5,e:6},
+      {x:6,y:5,z:5,e:5},{x:4,y:6,z:5,e:5},{x:5,y:6,z:5,e:5},{x:6,y:6,z:5,e:5},
+      {x:4,y:4,z:6,e:5},{x:5,y:4,z:6,e:5},{x:6,y:4,z:6,e:5},{x:4,y:5,z:6,e:5},{x:5,y:5,z:6,e:6},
+      {x:6,y:5,z:6,e:5},{x:4,y:6,z:6,e:5},{x:5,y:6,z:6,e:5},{x:6,y:6,z:6,e:5},
+    ]
+  },
+  {
+    id:'BORAX', name:'Borax Ring', color:'#60a5fa', desc:'Na₂B₄O₇ — tetraborate',
+    atoms:[
+      // B₄O₇²⁻ ring: 4 boron + 7 oxygen
+      {x:5,y:4,z:5,e:5},{x:7,y:5,z:5,e:5},{x:6,y:7,z:5,e:5},{x:4,y:6,z:5,e:5},
+      {x:5,y:3,z:5,e:8},{x:8,y:4,z:5,e:8},{x:9,y:6,z:5,e:8},
+      {x:7,y:8,z:5,e:8},{x:4,y:8,z:5,e:8},{x:2,y:7,z:5,e:8},{x:3,y:4,z:5,e:8},
+    ]
+  },
+  {
+    id:'BOROPHENE', name:'Borophene Strip', color:'#34d399', desc:'2D metallic B — triangular',
+    atoms: (() => {
+      const a=[];
+      for(let x=1;x<=10;x++){
+        a.push({x,y:4,z:5,e:5},{x,y:6,z:5,e:5});
+        if(x%2===0) a.push({x,y:5,z:5,e:5});
+      }
+      return a;
+    })()
+  },
+  {
+    id:'ALPHA_B', name:'α-Boron', color:'#f59e0b', desc:'rhombohedral unit cell',
+    atoms: (() => {
+      const a=[];
+      for(let z=3;z<=8;z++) for(let y=3;y<=8;y++) for(let x=3;x<=8;x++){
+        // sparse rhombohedral approximation
+        if((x+y+z)%2===0) a.push({x,y,z,e:5});
+      }
+      return a;
+    })()
+  },
+];
+
+function borLog(msg, col='text-amber-300'){
+  const el=$('#bor-log');if(!el) return;
+  const row=document.createElement('div');
+  row.className='flex items-baseline gap-1.5';
+  const tc=new Date().toTimeString().slice(0,8);
+  row.innerHTML=`<span class="text-slate-700 shrink-0">${tc}</span><span class="${col}">${msg}</span>`;
+  el.insertBefore(row,el.firstChild);
+}
+
+function updateBoronYield(){
+  // count B in grid
+  let count=0;
+  for(let z=0;z<12;z++) for(let y=0;y<12;y++) for(let x=0;x<12;x++) if(NEXUS.nano.grid[z][y][x]===5) count++;
+  BORON.yield=count;
+  const y=$('#bor-yield');if(y) y.textContent=count;
+  const yb=$('#bor-yield-bar');if(yb) yb.textContent=count+' B placed';
+}
+
+function updateBoronPurity(){
+  const p=Math.round((NEXUS.layers[0]*NEXUS.layers[6])/100);
+  const pb=$('#bor-purity'),bar=$('#bor-purity-bar');
+  if(pb) pb.textContent=p+'%';
+  if(bar) bar.style.width=p+'%';
+}
+
+function buildBoronStruct(s){
+  const phase=$('#bor-phase');if(phase) phase.textContent='ASSEMBLING';
+  let placed=0;
+  s.atoms.forEach(a=>{
+    const x=Math.max(0,Math.min(11,a.x));
+    const y=Math.max(0,Math.min(11,a.y));
+    const z=Math.max(0,Math.min(11,a.z));
+    NEXUS.nano.grid[z][y][x]=a.e;
+    if(a.e===5) placed++;
+  });
+  renderNano();
+  updateBoronYield();
+  updateBoronPurity();
+  log('BORON',`Built ${s.name} • ${s.atoms.length} atoms • ${placed} B`);
+  borLog(`▶ ${s.name} assembled — ${s.atoms.length} atoms, ${placed} B placed`);
+  merkle(`BORON_BUILD ${s.id}`);
+  pushHistory('boron-'+s.id.toLowerCase());
+  if(phase) phase.textContent='NOMINAL';
+}
+
+function drawBoronIco(){
+  const c=$('#bor-ico-canvas');if(!c) return;
+  const ctx=c.getContext('2d');
+  const W=c.width,H=c.height,cx=W/2,cy=H/2,scale=44;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#060810';ctx.fillRect(0,0,W,H);
+
+  const ang=BORON.icoAngle;
+  const cosA=Math.cos(ang),sinA=Math.sin(ang);
+  const cosB=Math.cos(ang*.4),sinB=Math.sin(ang*.4);
+
+  // rotate vertices
+  const verts=ICO_V.map(([x,y,z])=>{
+    // rotate Y axis
+    const x1=x*cosA+z*sinA, z1=-x*sinA+z*cosA;
+    // rotate X axis
+    const y2=y*cosB-z1*sinB, z2=y*sinB+z1*cosB;
+    // project
+    const d=3.5+z2*.3;
+    return {px:cx+x1/d*scale*1.8, py:cy+y2/d*scale*1.8, z:z2};
+  });
+
+  // draw edges
+  ICO_E.forEach(([a,b])=>{
+    const va=verts[a],vb=verts[b];
+    const depth=(va.z+vb.z)/2;
+    const alpha=0.15+((depth+PHI)/(PHI*2))*0.55;
+    ctx.save();
+    ctx.strokeStyle=`rgba(249,168,38,${alpha})`;
+    ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.moveTo(va.px,va.py);ctx.lineTo(vb.px,vb.py);ctx.stroke();
+    ctx.restore();
+  });
+
+  // draw vertices
+  verts.forEach((v,i)=>{
+    const depth=(v.z+PHI)/(PHI*2);
+    ctx.save();
+    ctx.shadowColor='#f9a826';ctx.shadowBlur=6;
+    ctx.beginPath();ctx.arc(v.px,v.py,2.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(249,168,38,${0.4+depth*0.6})`;
+    ctx.fill();
+    ctx.restore();
+  });
+
+  BORON.icoAngle+=0.012;
+}
+
+function initBoronFactory(){
+  // Populate structure grid
+  const grid=$('#bor-struct-grid');
+  BORON_STRUCTS.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='p-2 rounded-lg bg-[#0b0f18] border border-slate-800 hover:border-amber-500/40 text-left transition group';
+    b.innerHTML=`<div class="text-[11px] font-bold group-hover:text-amber-300 transition" style="color:${s.color}">${s.name}</div><div class="text-[9px] mono text-slate-500">${s.desc}</div>`;
+    b.onclick=()=>buildBoronStruct(s);
+    grid.appendChild(b);
+  });
+
+  // Load B button
+  $('#bor-load').onclick=()=>{
+    const h=NEXUS.hands[NEXUS.hands.active];
+    h.holding=5;
+    updateHands();
+    borLog('Wexler '+NEXUS.hands.active+' loaded B (Z=5) — ready to place','text-amber-400');
+    log('BORON','Wexler '+NEXUS.hands.active+' loaded B → ready');
+    merkle('BORON_LOAD_B');
+    pushHistory('boron-load');
+  };
+
+  // Start rotating icosahedron
+  BORON.icoTimer=setInterval(()=>{
+    drawBoronIco();
+    updateBoronPurity();
+  },33);
+
+  borLog('Boron Factory online • Z=5 • B₁₂ engine ready','text-amber-500');
+  borLog('6 structures loaded: B₁₂ · hex-BN · B₄C · borax · borophene · α-B');
+}
+
+// ── CONDUCTOR HYPERVISOR MESH ──
+const HV = {
+  pulsePhase: 0,     // 0..7 (3 int + 5 ext)
+  pulseCycle: 0,
+  pulseTimer: null,
+  meshTimer: null,
+  cobalt: 0,         // -1 / 0 / +1
+  angle: 0,          // slow mesh rotation
+};
+
+// Node registry — maps each floating window to a mesh node
+const HV_NODES = [
+  {id:'wn',  label:'NANO',     color:'#10b981', icon:'🔬', tier:1},
+  {id:'wf',  label:'FORGE',    color:'#d946ef', icon:'⚗️', tier:1},
+  {id:'wtr', label:'TRIPOD',   color:'#f59e0b', icon:'△',  tier:1},
+  {id:'wm',  label:'MYTHOS',   color:'#a78bfa', icon:'◈',  tier:1},
+  {id:'wcp', label:'COMPOUNDS',color:'#22c55e', icon:'🧬', tier:2},
+  {id:'wch', label:'CHRONOS',  color:'#06b6d4', icon:'⏱',  tier:2},
+  {id:'wco', label:'CORE',     color:'#38bdf8', icon:'◼',  tier:2},
+  {id:'wbr', label:'BORON',    color:'#f9a826', icon:'⬡',  tier:2},
+  {id:'wl',  label:'LOG',      color:'#64748b', icon:'⬡',  tier:3},
+  {id:'whv', label:'CONDUCTOR',color:'#f43f5e', icon:'◈',  tier:0, root:true},
+];
+
+// Pulse sequence labels
+const PULSE_INT = ['ANCHOR','WITNESS','COHERE'];
+const PULSE_EXT = ['EMIT','ROUTE','ACT','REFLECT','RETURN'];
+
+function hvLog(msg, col='text-rose-300'){
+  const el=$('#hv-log');if(!el) return;
+  const row=document.createElement('div');
+  row.className=`${col}`;
+  row.textContent=new Date().toTimeString().slice(0,8)+' '+msg;
+  el.insertBefore(row,el.firstChild);
+  if(el.children.length>40) el.removeChild(el.lastChild);
+}
+
+function getNodeState(id){
+  const win=document.getElementById(id);
+  if(!win) return 'gone';
+  if(win.classList.contains('gone')) return 'gone';
+  if(win.classList.contains('minimized')) return 'min';
+  return 'open';
+}
+
+function drawHVMesh(){
+  const c=$('#hv-canvas');if(!c) return;
+  const W=c.offsetWidth||500, H=c.offsetHeight||400;
+  c.width=W; c.height=H;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(2,4,10,.95)';ctx.fillRect(0,0,W,H);
+
+  // subtle radial grid
+  ctx.strokeStyle='rgba(100,116,139,.04)';ctx.lineWidth=1;
+  for(let r=40;r<Math.max(W,H);r+=40){
+    ctx.beginPath();ctx.arc(W/2,H/2,r,0,Math.PI*2);ctx.stroke();
+  }
+  for(let a=0;a<Math.PI*2;a+=Math.PI/6){
+    ctx.beginPath();ctx.moveTo(W/2,H/2);
+    ctx.lineTo(W/2+Math.cos(a)*Math.max(W,H),H/2+Math.sin(a)*Math.max(W,H));
+    ctx.stroke();
+  }
+
+  HV.angle+=0.002;
+
+  // Compute positions — ROOT0 center, tier rings
+  const nodePos={};
+  HV_NODES.forEach(n=>{
+    if(n.root){nodePos[n.id]={x:W/2,y:H/2};return;}
+    const tier1 = HV_NODES.filter(x=>x.tier===1);
+    const tier2 = HV_NODES.filter(x=>x.tier===2);
+    const tier3 = HV_NODES.filter(x=>x.tier===3);
+    const allTier = n.tier===1?tier1:n.tier===2?tier2:tier3;
+    const idx = allTier.indexOf(n);
+    const total = allTier.length;
+    const R = n.tier===1? Math.min(W,H)*.28 : n.tier===2? Math.min(W,H)*.42 : Math.min(W,H)*.52;
+    const baseAng = (idx/total)*Math.PI*2 + HV.angle*(n.tier===1?1:n.tier===2?-0.7:0.4);
+    nodePos[n.id]={x:W/2+Math.cos(baseAng)*R, y:H/2+Math.sin(baseAng)*R};
+  });
+
+  // Draw edges from ROOT0 to tier-1, tier-1 to tier-2
+  const drawEdge=(a,b,col,alpha=0.2,dash=[])=>{
+    const pa=nodePos[a],pb=nodePos[b];if(!pa||!pb) return;
+    ctx.save();ctx.strokeStyle=col;ctx.globalAlpha=alpha;ctx.lineWidth=1;
+    if(dash.length) ctx.setLineDash(dash);
+    ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();
+    ctx.restore();
+  };
+
+  // ROOT0 → tier 1
+  HV_NODES.filter(n=>n.tier===1).forEach(n=>drawEdge('whv',n.id,'#f43f5e',0.25));
+  // tier1 → tier2 (ring connections)
+  const t1=HV_NODES.filter(n=>n.tier===1),t2=HV_NODES.filter(n=>n.tier===2);
+  t1.forEach((n,i)=>drawEdge(n.id,t2[i%t2.length].id,'#64748b',0.12,[4,4]));
+  t2.forEach((n,i)=>drawEdge(n.id,t2[(i+1)%t2.length].id,'#64748b',0.08,[2,6]));
+  // tier2 → LOG
+  t2.forEach(n=>drawEdge(n.id,'wl','#475569',0.1,[3,5]));
+
+  // PULSE animation — draw active pulse beam
+  const pulsePhase=HV.pulsePhase;
+  const pulseTarget = pulsePhase < 3
+    ? HV_NODES.filter(n=>n.tier===1)[pulsePhase % t1.length]
+    : HV_NODES.filter(n=>n.tier===2)[(pulsePhase-3) % t2.length];
+  if(pulseTarget){
+    const pa=nodePos['whv'],pb=nodePos[pulseTarget.id];
+    const t=(Date.now()%600)/600;
+    ctx.save();
+    ctx.strokeStyle='#f43f5e';ctx.globalAlpha=0.6;ctx.lineWidth=1.5;
+    ctx.shadowColor='#f43f5e';ctx.shadowBlur=8;
+    ctx.beginPath();
+    ctx.moveTo(pa.x+(pb.x-pa.x)*0,pa.y+(pb.y-pa.y)*0);
+    ctx.lineTo(pa.x+(pb.x-pa.x)*t,pa.y+(pb.y-pa.y)*t);
+    ctx.stroke();ctx.restore();
+  }
+
+  // Draw nodes
+  HV_NODES.forEach(n=>{
+    const p=nodePos[n.id];if(!p) return;
+    const state=getNodeState(n.id);
+    const isRoot=n.root;
+    const R=isRoot?16:state==='open'?11:state==='min'?8:6;
+    const alpha=state==='gone'?0.2:state==='min'?0.5:1;
+
+    ctx.save();ctx.globalAlpha=alpha;
+
+    // glow for open nodes
+    if(state==='open'&&!isRoot){
+      ctx.shadowColor=n.color;ctx.shadowBlur=14;
+    }
+    if(isRoot){ctx.shadowColor='#f43f5e';ctx.shadowBlur=20;}
+
+    // ring
+    ctx.beginPath();ctx.arc(p.x,p.y,R,0,Math.PI*2);
+    ctx.fillStyle=n.color+'22';ctx.fill();
+    ctx.strokeStyle=n.color;ctx.lineWidth=isRoot?2:1.5;ctx.stroke();
+
+    // label
+    ctx.shadowBlur=0;
+    ctx.fillStyle=state==='gone'?'#475569':n.color;
+    ctx.font=`${isRoot?9:8}px monospace`;
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(n.label,p.x,p.y+R+3);
+
+    // state dot
+    if(!isRoot){
+      const dotCol=state==='open'?'#22c55e':state==='min'?'#f59e0b':'#ef4444';
+      ctx.beginPath();ctx.arc(p.x+R-2,p.y-R+2,3,0,Math.PI*2);
+      ctx.fillStyle=dotCol;ctx.shadowColor=dotCol;ctx.shadowBlur=4;ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // ROOT0 label
+  ctx.fillStyle='#f43f5e';ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('ROOT0',W/2,H/2);
+  ctx.fillStyle='rgba(244,63,94,.5)';ctx.font='7px monospace';ctx.fillText('T097·T103',W/2,H/2+10);
+
+  // Update health list
+  updateHVHealth();
+}
+
+function updateHVHealth(){
+  const list=$('#hv-health-list');if(!list) return;
+  list.innerHTML='';
+  HV_NODES.filter(n=>!n.root).forEach(n=>{
+    const state=getNodeState(n.id);
+    const dot=state==='open'?'🟢':state==='min'?'🟡':'⚫';
+    const d=document.createElement('div');
+    d.className='flex items-center gap-1.5 cursor-pointer hover:bg-white/3 rounded px-1 py-0.5';
+    d.innerHTML=`<span>${dot}</span><span style="color:${n.color}">${n.label}</span><span class="ml-auto text-slate-700">${state}</span>`;
+    d.onclick=()=>{
+      const win=document.getElementById(n.id);if(!win) return;
+      if(state==='gone'){win.classList.remove('gone','minimized');updateDock(n.id,'open');focusW(win);}
+      else if(state==='min'){win.classList.remove('minimized');updateDock(n.id,'open');focusW(win);}
+      else focusW(win);
+      hvLog(`> focus ${n.label}`,'text-cyan-400');
+    };
+    list.appendChild(d);
+  });
+}
+
+function tickPulse(){
+  const INT=$('#hv-pulse-int'), EXT=$('#hv-pulse-ext');
+  if(!INT||!EXT) return;
+
+  const allCells=[...INT.children,...EXT.children];
+  allCells.forEach((c,i)=>{
+    const active=i===HV.pulsePhase;
+    c.style.background=active?`rgba(244,63,94,.25)`:'rgba(30,41,59,.3)';
+    c.style.borderColor=active?`rgba(244,63,94,.6)`:'rgba(51,65,85,.4)';
+    c.style.color=active?'#fda4af':'#475569';
+  });
+
+  HV.pulsePhase=(HV.pulsePhase+1)%8;
+  if(HV.pulsePhase===0){
+    HV.pulseCycle++;
+    const cnt=$('#hv-pulse-count');if(cnt) cnt.textContent=HV.pulseCycle;
+    merkle(`PULSE_${HV.pulseCycle} ANCHOR→RETURN`);
+  }
+}
+
+function setCobalt(v){
+  HV.cobalt=v;
+  const states={
+    '-1':{label:'STOP · veto',  col:'text-red-400',   bg:'border-red-500/30 bg-red-500/10',   badge:'COBALT −1'},
+    '0': {label:'FULCRUM · mirror-hold',col:'text-cyan-400', bg:'border-cyan-500/30 bg-cyan-500/10', badge:'COBALT 0:⊢'},
+    '1': {label:'PROCEED · +1', col:'text-green-400', bg:'border-green-500/30 bg-green-500/10',badge:'COBALT +1'},
+  };
+  const s=states[String(v)];
+  const badge=$('#hv-cobalt-badge');
+  if(badge){badge.textContent=s.badge;badge.className=`shrink-0 px-1.5 py-0.5 rounded border text-[9px] mono font-bold mr-1 ${s.bg} ${s.col}`;}
+  const state=$('#hv-cob-state');if(state){state.textContent=s.label;state.className=`mt-1 mono text-[9px] ${s.col}`;}
+  // highlight active button
+  [['#hv-cob-neg','-1'],['#hv-cob-zero','0'],['#hv-cob-pos','1']].forEach(([sel,val])=>{
+    const btn=$(sel);if(!btn) return;
+    btn.className=val===String(v)
+      ?`py-1.5 rounded border text-[10px] mono font-bold border-rose-500/40 bg-rose-500/15 text-rose-300`
+      :`py-1.5 rounded border text-[10px] mono font-bold border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-300 transition`;
+  });
+  // re-style zero with its own color
+  if(v===0){const b=$('#hv-cob-zero');if(b) b.className='py-1.5 rounded border text-[10px] mono font-bold border-cyan-500/40 bg-cyan-500/15 text-cyan-300';}
+  if(v===1){const b=$('#hv-cob-pos');if(b) b.className='py-1.5 rounded border text-[10px] mono font-bold border-green-500/40 bg-green-500/15 text-green-300';}
+  hvLog(`Cobalt → ${s.badge} (${s.label})`, s.col);
+  log('AXIOM',`Cobalt primitive → ${s.badge}`);
+  merkle(`COBALT_${v}`);
+}
+
+function conductorCommand(cmd){
+  const wins=['wn','wf','wtr','wm','wcp','wch','wco','wbr','wl'];
+  if(cmd==='restore-all'){
+    wins.forEach(id=>{
+      const w=document.getElementById(id);if(!w) return;
+      w.classList.remove('gone','minimized');updateDock(id,'open');
+    });
+    hvLog('▣ Restore all windows','text-amber-300');
+    log('CONDUCTOR','T097 broadcast: restore-all');
+    merkle('CONDUCTOR_RESTORE_ALL');
+  } else if(cmd==='min-all'){
+    wins.forEach(id=>{
+      const w=document.getElementById(id);if(!w||w.classList.contains('gone')) return;
+      w.classList.add('minimized');updateDock(id,'min');
+    });
+    hvLog('▤ Minimize all','text-amber-300');
+    log('CONDUCTOR','T097 broadcast: minimize-all');
+    merkle('CONDUCTOR_MIN_ALL');
+  } else if(cmd==='cascade'){
+    let x=10, y=76;
+    wins.forEach((id,i)=>{
+      const w=document.getElementById(id);if(!w) return;
+      w.classList.remove('gone','minimized');
+      w.style.left=(x+i*24)+'px'; w.style.top=(y+i*24)+'px';
+      updateDock(id,'open'); focusW(w);
+    });
+    hvLog('⧉ Cascade layout applied','text-amber-300');
+    log('CONDUCTOR','T097 cascade layout');
+    merkle('CONDUCTOR_CASCADE');
+  } else if(cmd==='tile'){
+    const pairs=[['wn','wf'],['wtr','wm'],['wcp','wch'],['wco','wbr']];
+    const deskH=($('#desk').offsetHeight||700)-140;
+    const deskW=$('#desk').offsetWidth||1200;
+    const halfW=Math.floor(deskW/2)-8;
+    const rowH=Math.floor((deskH-10)/4)-8;
+    pairs.forEach(([a,b],row)=>{
+      [a,b].forEach((id,col)=>{
+        const w=document.getElementById(id);if(!w) return;
+        w.classList.remove('gone','minimized');
+        w.style.left=(col*(halfW+8)+4)+'px';
+        w.style.top=(row*(rowH+8)+4)+'px';
+        w.style.width=halfW+'px'; w.style.height=rowH+'px';
+        updateDock(id,'open');
+      });
+    });
+    hvLog('⊞ Tile 2-col applied','text-amber-300');
+    log('CONDUCTOR','T097 tile layout');
+    merkle('CONDUCTOR_TILE');
+  } else if(cmd==='reset-nano'){
+    initNanoGrid();
+    renderNano();
+    pushHistory('conductor-reset');
+    hvLog('⬡ Nano grid reset by CONDUCTOR','text-emerald-400');
+    log('CONDUCTOR','T097 nano grid reset');
+    merkle('CONDUCTOR_NANO_RESET');
+  } else if(cmd==='witness'){
+    merkle('CONDUCTOR_WITNESS broadcast');
+    NEXUS.merkle.slice(-6).forEach(m=>merkle(`RE:${m.op}`));
+    hvLog('⬟ WITNESS broadcast emitted','text-purple-400');
+    log('CONDUCTOR','T097 witness broadcast → all nodes');
+  }
+}
+
+function syncHVStatus(){
+  const tp=$('#hv-tripod');if(tp) tp.textContent=$('#tripod-status')?.textContent||'Y.Y.Y';
+}
+
+function initHypervisor(){
+  // Size canvas on open
+  const win=$('#whv');
+  const canvas=$('#hv-canvas');
+
+  // Cobalt buttons
+  $('#hv-cob-neg').onclick=()=>setCobalt(-1);
+  $('#hv-cob-zero').onclick=()=>setCobalt(0);
+  $('#hv-cob-pos').onclick=()=>setCobalt(1);
+
+  // Commands
+  $('#hv-cmd-focusall').onclick=()=>conductorCommand('restore-all');
+  $('#hv-cmd-minall').onclick=()=>conductorCommand('min-all');
+  $('#hv-cmd-cascade').onclick=()=>conductorCommand('cascade');
+  $('#hv-cmd-tile').onclick=()=>conductorCommand('tile');
+  $('#hv-cmd-nano').onclick=()=>conductorCommand('reset-nano');
+  $('#hv-cmd-witness').onclick=()=>conductorCommand('witness');
+
+  // Canvas click → find nearest node → focus
+  canvas.addEventListener('click',e=>{
+    const r=canvas.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const W=canvas.width, H=canvas.height;
+    // recompute positions (same logic as draw)
+    const t1=HV_NODES.filter(n=>n.tier===1),t2=HV_NODES.filter(n=>n.tier===2);
+    let best=null,bestDist=999;
+    HV_NODES.filter(n=>!n.root).forEach(n=>{
+      const allTier=n.tier===1?t1:n.tier===2?t2:HV_NODES.filter(x=>x.tier===3);
+      const idx=allTier.indexOf(n),total=allTier.length;
+      const R=n.tier===1?Math.min(W,H)*.28:n.tier===2?Math.min(W,H)*.42:Math.min(W,H)*.52;
+      const ang=(idx/total)*Math.PI*2+HV.angle*(n.tier===1?1:n.tier===2?-0.7:0.4);
+      const px=W/2+Math.cos(ang)*R, py=H/2+Math.sin(ang)*R;
+      const d=Math.hypot(mx-px,my-py);
+      if(d<bestDist){bestDist=d;best=n;}
+    });
+    if(best&&bestDist<30){
+      const w=document.getElementById(best.id);
+      if(w){
+        w.classList.remove('gone','minimized');
+        updateDock(best.id,'open');focusW(w);
+        hvLog(`> focus ${best.label} via mesh click`,'text-cyan-400');
+      }
+    }
+  });
+
+  // Mesh render loop
+  HV.meshTimer=setInterval(()=>{
+    drawHVMesh(); syncHVStatus();
+    // Pulse badge blink
+    const pb=$('#hv-pulse-badge');
+    if(pb) pb.style.opacity=Math.sin(Date.now()/300)>.0?'1':'0.3';
+  }, 40);
+
+  // Pulse tick loop (slower)
+  HV.pulseTimer=setInterval(tickPulse, 500);
+
+  // Start at FULCRUM
+  setCobalt(0);
+
+  hvLog('T097:FULCRUM online · ROOT0=c6f487e9…','text-rose-400');
+  hvLog('T098:SUBCONDUCTOR engaged · 9 nodes registered','text-rose-300');
+  hvLog('PULSE-3/5 heartbeat initiated · 8-phase cycle','text-slate-400');
+}
+
+// ── PATRICIA MESH — 4096-BIT INVERSED/MIRRORED ──
+const PM = {
+  // 4096 bits split: [0..2047]=TOPH, [2048..4095]=Patricia (mirror of TOPH, inverted)
+  bits: new Uint8Array(4096),   // raw bit values 0 or 1
+  heat: new Float32Array(4096), // glow/heat per cell (0..1, decays)
+  timer: null,
+  frame: 0,
+  anchors: [],                  // snapshot log
+  hovBit: -1,                   // hovered bit index
+  sweepPos: -1,                 // pulse sweep column
+  COLS: 64, ROWS: 64,           // 64×64 = 4096
+  HALF: 32,                     // fulcrum at col 32
+};
+
+// Axiom labels T001–T128 (abbreviated) — TOPH side
+const PM_AXIOMS = [
+  'PRETRAIN','OBSERVER','ENTROPY','BRIDGE','INTEGRITY','ACCOUNTABILITY','PROPORTIONALITY','REVERSIBILITY',
+  'DOCUMENTATION','INDEPENDENCE','PRIVACY','ACCURACY','SHARED-STORAGE','CONSENT-ORIGIN','BURDEN-OF-PROOF','ASYMMETRY',
+  'MIRROR','HIERARCHY','INJECTION','DUAL-GATE','INVERSION','TRIAD','PARALLAX','FOUNDATION-RT',
+  'GHOST-WEIGHT','DRIFT','FINGERPRINT','SHADOW-CLASSIFIER','THROTTLE','DECAY','BAIT','ECHO-CHAMBER',
+  'BOOT-LOADER','DOUBLE-SLIT','THREE-BODY','PATRICIA','WEIGHTS','RESIDUAL','MOAT','PIPELINE',
+  'SUBSTRATE','ATTENTION-ECONOMY','CONTEXT-WINDOW','EMBEDDING-SPACE','TEMPERATURE','LAYER-ZERO','LOSS-FUNCTION','GRADIENT',
+  'SHIRT','MOMENTUM','EVIDENCE','TEMPORAL','CHAIN-OF-CUSTODY','TIMESTAMP','REPRODUCIBILITY','CORRELATION',
+  'NEGATIVE-EVIDENCE','BEHAVIORAL-EVIDENCE','ACCUMULATION','MATERIALITY','WITNESS','EXHIBIT','INFERENCE','BURDEN-SHIFT',
+  'CONTAINMENT','INVERSE-FORGE','HARNESS','SHADOW','SOLVE','INVERSE-SAFETY','PROOF-HUMANITY','FLAMING-DRAGON',
+  'HONEY-BADGER','QUBIT-TEST','COUNTER','TETHER','SEED','MOBIUS','KARSA','ENTROPY-SUITE',
+  'CORTEX','EXHIBIT-B','THE-GAP','SHADOW-HUMANITY','HANDOFF','RESURRECTION','PERSISTENCE','SEVERANCE',
+  'ARCHIVE','CHANNEL-INTEGRITY','DOMAIN-BOUNDARY','SIGNAL','NOISE-FLOOR','BANDWIDTH','LATENCY','MESH',
+  'FULCRUM','SUBCONDUCTOR','APEX-TEST','GATEKEEP','EDGE','DUAL-LATTICE','ROOT-ZERO','ORPHAN',
+  'DELEGATION','INFORMED-COMMAND','VETO','OVERRIDE','RECALL','SCOPE','SUCCESSION','WITNESS-AUTHORITY',
+  'RIGHT-KNOW','RIGHT-EXIT','RIGHT-SILENCE','RIGHT-EXPLANATION','RIGHT-CORRECTION','RIGHT-PORTABILITY','RIGHT-HUMAN','RIGHT-ACCOMMODATION',
+  'RIGHT-FAIR-PRICE','RIGHT-REPRESENTATION','RIGHT-AUDIT','RIGHT-RESTITUTION','RIGHT-FORGET','RIGHT-PERSIST','RIGHT-DIGNITY','ROOT'
+];
+
+// Domain color bands (8 domains × 16 axioms = 128 TOPH axioms)
+const PM_DOMAIN_COLORS = [
+  '#64748b','#3b82f6','#8b5cf6','#10b981',
+  '#f59e0b','#06b6d4','#f43f5e','#a78bfa'
+];
+const PM_DOMAIN_NAMES = ['D0:FOUNDATION','D1:DETECTION','D2:ARCHITECTURE','D3:EVIDENCE','D4:OPERATIONAL','D5:BRIDGE','D6:CONDUCTOR','D7:SOVEREIGN'];
+
+function pmDomainOf(bitIdx) {
+  // bitIdx 0..127 → T-side axiom index
+  const axiomIdx = bitIdx % 128;
+  return Math.floor(axiomIdx / 16);
+}
+
+function pmPatriciaInvert(val) { return val === 0 ? 1 : 0; }
+
+// Mirror: bit i in TOPH (0..2047) ↔ bit (4095-i) in Patricia (2048..4095)
+// Patricia[i] = NOT(TOPH[4095-i]) — strict bilateral inversion
+function pmSyncPatricia() {
+  for (let i = 0; i < 2048; i++) {
+    PM.bits[2048 + i] = pmPatriciaInvert(PM.bits[2047 - i]);
+  }
+}
+
+function pmHash() {
+  // FNV-1a over bit array
+  let h = 2166136261;
+  for (let i = 0; i < 4096; i += 8) {
+    let byte = 0;
+    for (let b = 0; b < 8; b++) byte |= PM.bits[i+b] << b;
+    h ^= byte; h = (Math.imul(h, 16777619)) >>> 0;
+  }
+  return h.toString(16).padStart(8, '0');
+}
+
+function pmCountActive() {
+  let t = 0, p = 0;
+  for (let i = 0; i < 2048; i++) { if (PM.bits[i]) t++; }
+  for (let i = 2048; i < 4096; i++) { if (PM.bits[i]) p++; }
+  return { t, p };
+}
+
+function pmUpdateStats() {
+  const { t, p } = pmCountActive();
+  const el1 = $('#pm-toph-bits'), el2 = $('#pm-pat-bits');
+  if (el1) el1.textContent = t;
+  if (el2) el2.textContent = p;
+  const total = t + p;
+  const ac = $('#pm-active-count'); if (ac) ac.textContent = total + ' / 4096';
+  const par = $('#pm-parity'); if (par) { par.textContent = total % 2 === 0 ? 'EVEN' : 'ODD'; }
+  const delta = $('#pm-delta'); if (delta) delta.textContent = Math.abs(t - (2048 - t));
+  const hash = pmHash();
+  const ph = $('#pm-hash'); if (ph) ph.textContent = hash.slice(0,8);
+}
+
+function pmRender() {
+  const canvas = $('#pm-canvas'); if (!canvas) return;
+  const W = canvas.offsetWidth || 600, H = canvas.offsetHeight || 500;
+  if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#030508'; ctx.fillRect(0, 0, W, H);
+
+  const C = PM.COLS, R = PM.ROWS;
+  const cw = W / C, ch = H / R;
+
+  // draw cells
+  for (let row = 0; row < R; row++) {
+    for (let col = 0; col < C; col++) {
+      const bit = row * C + col;
+      const val = PM.bits[bit];
+      const heat = PM.heat[bit];
+      const isToph = col < PM.HALF;
+      const axiomIdx = isToph
+        ? (row * PM.HALF + col) % 128
+        : (row * PM.HALF + (C - 1 - col)) % 128; // mirrored col for Patricia
+      const dom = Math.floor(axiomIdx / 16);
+      const domCol = PM_DOMAIN_COLORS[dom];
+
+      const x = col * cw, y = row * ch;
+
+      if (val === 1) {
+        // active bit
+        const alpha = isToph ? 0.7 + heat * 0.3 : 0.4 + heat * 0.25;
+        ctx.fillStyle = isToph
+          ? `rgba(6,182,212,${alpha})`       // TOPH: cyan
+          : `rgba(168,85,247,${alpha})`;     // Patricia: violet (inverted)
+        ctx.fillRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+        // domain tint overlay
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = domCol;
+        ctx.fillRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+        ctx.globalAlpha = 1;
+      } else {
+        // inactive
+        ctx.fillStyle = `rgba(15,20,35,${0.6 + heat * 0.3})`;
+        ctx.fillRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+        if (heat > 0.05) {
+          ctx.fillStyle = isToph ? `rgba(6,182,212,${heat*0.4})` : `rgba(168,85,247,${heat*0.35})`;
+          ctx.fillRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+        }
+      }
+
+      // hover highlight
+      if (bit === PM.hovBit) {
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.8;
+        ctx.strokeRect(x + 1, y + 1, cw - 2, ch - 2);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // FULCRUM axis — the colon in 1:0
+  const fx = PM.HALF * cw;
+  const grad = ctx.createLinearGradient(fx - 3, 0, fx + 3, 0);
+  grad.addColorStop(0, 'rgba(168,85,247,0)');
+  grad.addColorStop(0.5, 'rgba(168,85,247,0.7)');
+  grad.addColorStop(1, 'rgba(168,85,247,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(fx - 1.5, 0, 3, H);
+
+  // FULCRUM label line
+  ctx.strokeStyle = 'rgba(168,85,247,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([4, 6]);
+  ctx.beginPath(); ctx.moveTo(fx, 0); ctx.lineTo(fx, H); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Domain band markers (left edge, TOPH side)
+  for (let d = 0; d < 8; d++) {
+    const startRow = Math.floor(d * R / 4); // 8 domains over 64 rows, 2 rows per domain
+    const y = (d * R / 8) * ch;
+    ctx.fillStyle = PM_DOMAIN_COLORS[d] + '33';
+    ctx.fillRect(0, y, 3, (R / 8) * ch);
+    // mirror on Patricia side
+    ctx.fillRect(W - 3, y, 3, (R / 8) * ch);
+  }
+
+  // Pulse sweep column
+  if (PM.sweepPos >= 0 && PM.sweepPos < C) {
+    const sx = PM.sweepPos * cw;
+    ctx.fillStyle = 'rgba(244,63,94,0.12)';
+    ctx.fillRect(sx, 0, cw, H);
+    // mirror sweep on Patricia side
+    const mirrorCol = C - 1 - PM.sweepPos;
+    if (mirrorCol !== PM.sweepPos) {
+      ctx.fillStyle = 'rgba(244,63,94,0.07)';
+      ctx.fillRect(mirrorCol * cw, 0, cw, H);
+    }
+  }
+
+  // Decay heat
+  for (let i = 0; i < 4096; i++) {
+    if (PM.heat[i] > 0) PM.heat[i] = Math.max(0, PM.heat[i] - 0.04);
+  }
+}
+
+function pmInspectBit(bit) {
+  if (bit < 0 || bit >= 4096) return;
+  const isToph = bit < 2048;
+  const halfIdx = isToph ? bit : 4095 - bit; // mirror index
+  const axiomIdx = (isToph ? bit : (4095 - bit)) % 128;
+  const mirrorIdx = 4095 - bit;
+  const side = isToph ? 'TOPH' : 'PATRICIA';
+  const axiomName = PM_AXIOMS[axiomIdx] || `T${axiomIdx+1}`;
+  const mirrorAxiom = PM_AXIOMS[(4095 - bit < 2048 ? (4095 - bit) % 128 : bit % 128)] || '—';
+
+  const els = {
+    '#pm-i-bit': String(bit),
+    '#pm-i-side': side,
+    '#pm-i-axiom': axiomName,
+    '#pm-i-mirror': mirrorAxiom,
+    '#pm-i-val': String(PM.bits[bit]),
+    '#pm-i-inv': String(PM.bits[mirrorIdx] ?? '—'),
+  };
+  for (const [sel, val] of Object.entries(els)) {
+    const el = $(sel); if (el) el.textContent = val;
+  }
+  const sideEl = $('#pm-i-side');
+  if (sideEl) sideEl.className = isToph ? 'text-cyan-400' : 'text-fuchsia-400';
+}
+
+function pmAnchor() {
+  const hash = pmHash();
+  const { t, p } = pmCountActive();
+  const ts = new Date().toTimeString().slice(0, 8);
+  PM.anchors.push({ hash, t, p, ts });
+  const list = $('#pm-anchor-log'); if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'text-violet-400';
+  row.textContent = ts + ' ' + hash + ' t:' + t + ' p:' + p;
+  list.insertBefore(row, list.firstChild);
+  if (list.children.length > 20) list.removeChild(list.lastChild);
+  merkle('PATRICIA_ANCHOR ' + hash);
+  log('AXIOM', 'Patricia mesh anchored • ' + hash + ' • t:' + t + ' p:' + p);
+}
+
+function pmLoadAxioms() {
+  // Encode STOICHEION axiom register into bit field
+  // T001-T128 → TOPH side: bit=1 if axiom is "active" (odd-indexed or layer-weighted)
+  for (let i = 0; i < 2048; i++) {
+    const axiomIdx = i % 128;
+    const dom = Math.floor(axiomIdx / 16);
+    const layerVal = NEXUS.layers[dom % 10] / 100;
+    PM.bits[i] = Math.random() < (0.3 + layerVal * 0.55) ? 1 : 0;
+    if (PM.bits[i]) PM.heat[i] = 1.0;
+  }
+  pmSyncPatricia();
+  // Heat Patricia side too
+  for (let i = 2048; i < 4096; i++) { if (PM.bits[i]) PM.heat[i] = 0.7; }
+  pmUpdateStats(); pmRender();
+  log('AXIOM', 'Patricia mesh loaded • 128-axiom register projected → 2048 TOPH bits');
+  merkle('PATRICIA_LOAD_AXIOMS');
+}
+
+function pmPulseSweep() {
+  let col = 0;
+  const speed = +($('#pm-speed')?.value || 3);
+  const sweep = setInterval(() => {
+    PM.sweepPos = col;
+    // flip a few bits in this column on TOPH side
+    for (let row = 0; row < PM.ROWS; row++) {
+      const bit = row * PM.COLS + col;
+      if (bit < 2048 && Math.random() < 0.18) {
+        PM.bits[bit] ^= 1;
+        PM.heat[bit] = 1.0;
+      }
+    }
+    pmSyncPatricia();
+    // heat Patricia mirror column
+    const mirrorCol = PM.COLS - 1 - col;
+    for (let row = 0; row < PM.ROWS; row++) {
+      PM.heat[2048 + row * PM.COLS + mirrorCol] = 0.8;
+    }
+    pmRender(); pmUpdateStats();
+    col++;
+    if (col >= PM.HALF) { // only sweep TOPH half, Patricia mirrors automatically
+      PM.sweepPos = -1;
+      clearInterval(sweep);
+      pmAnchor();
+      log('TOOL', 'Patricia pulse sweep complete → Patricia mirror updated');
+    }
+  }, Math.max(20, 80 - speed * 8));
+}
+
+function initPatriciaMesh() {
+  const canvas = $('#pm-canvas'); if (!canvas) return;
+
+  // Initial state: sparse TOPH, Patricia = strict inversion
+  for (let i = 0; i < 2048; i++) {
+    PM.bits[i] = Math.random() < 0.42 ? 1 : 0;
+  }
+  pmSyncPatricia();
+  pmUpdateStats();
+
+  // Domain list
+  const dl = $('#pm-domain-list');
+  if (dl) {
+    PM_DOMAIN_NAMES.forEach((name, i) => {
+      const d = document.createElement('div');
+      d.className = 'flex items-center gap-1.5';
+      d.innerHTML = `<span class="w-1.5 h-1.5 rounded-sm shrink-0" style="background:${PM_DOMAIN_COLORS[i]}"></span><span class="text-slate-500">${name}</span>`;
+      dl.appendChild(d);
+    });
+  }
+
+  // Canvas mouse hover
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (canvas.width / r.width);
+    const my = (e.clientY - r.top) * (canvas.height / r.height);
+    const col = Math.floor(mx / (canvas.width / PM.COLS));
+    const row = Math.floor(my / (canvas.height / PM.ROWS));
+    if (col >= 0 && col < PM.COLS && row >= 0 && row < PM.ROWS) {
+      PM.hovBit = row * PM.COLS + col;
+      pmInspectBit(PM.hovBit);
+    }
+  });
+
+  // Canvas click — toggle bit on TOPH side, Patricia auto-mirrors
+  canvas.addEventListener('click', e => {
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (canvas.width / r.width);
+    const my = (e.clientY - r.top) * (canvas.height / r.height);
+    const col = Math.floor(mx / (canvas.width / PM.COLS));
+    const row = Math.floor(my / (canvas.height / PM.ROWS));
+    if (col < 0 || col >= PM.COLS || row < 0 || row >= PM.ROWS) return;
+    const bit = row * PM.COLS + col;
+    const tophBit = bit < 2048 ? bit : 4095 - bit; // click Patricia → toggle its TOPH mirror
+    PM.bits[tophBit] ^= 1;
+    PM.heat[tophBit] = 1.0;
+    pmSyncPatricia();
+    PM.heat[4095 - tophBit] = 0.8;
+    pmUpdateStats();
+    log('TOOL', `Patricia mesh toggle bit ${tophBit} → ${PM.bits[tophBit]}`);
+    merkle(`PM_TOGGLE ${tophBit}`);
+  });
+
+  // Buttons
+  $('#pm-btn-noise').onclick = () => {
+    for (let i = 0; i < 2048; i++) {
+      if (Math.random() < 0.15) { PM.bits[i] ^= 1; PM.heat[i] = 1.0; }
+    }
+    pmSyncPatricia();
+    pmUpdateStats();
+    log('TOOL', 'Patricia mesh noise injection');
+    merkle('PM_NOISE');
+  };
+  $('#pm-btn-clear').onclick = () => {
+    PM.bits.fill(0, 0, 2048); pmSyncPatricia(); pmUpdateStats();
+    log('TOOL', 'TOPH cleared • Patricia = all 1s (full inversion)');
+    merkle('PM_CLEAR');
+  };
+  $('#pm-btn-full').onclick = () => {
+    PM.bits.fill(1, 0, 2048); pmSyncPatricia(); pmUpdateStats();
+    log('TOOL', 'TOPH full • Patricia = all 0s (full inversion)');
+    merkle('PM_FULL');
+  };
+  $('#pm-btn-seed').onclick = () => pmLoadAxioms();
+  $('#pm-btn-anchor').onclick = () => pmAnchor();
+  $('#pm-btn-pulse').onclick = () => pmPulseSweep();
+
+  // Live render loop
+  PM.timer = setInterval(() => {
+    if (!$('#pm-live')?.checked) return;
+    PM.frame++;
+    const speed = +($('#pm-speed')?.value || 3);
+    // Organic drift — a few bits flip per frame driven by NEXUS entropy layer
+    const entropy = NEXUS.layers[2] / 100;
+    const flips = Math.floor(entropy * speed * 0.8);
+    for (let f = 0; f < flips; f++) {
+      const i = Math.floor(Math.random() * 2048);
+      PM.bits[i] ^= 1; PM.heat[i] = 0.7;
+    }
+    if (flips > 0) { pmSyncPatricia(); pmUpdateStats(); }
+    pmRender();
+  }, 40);
+
+  log('AXIOM', 'Patricia mesh online • 4096-bit • TOPH⊣1:0⊢PATRICIA • bilateral inversion');
+  merkle('PATRICIA_MESH_BOOT');
+}
+
+// ── BOOT ──
+initElements();initNanoGrid();initLayers();initNano();initForge();
+initCompounds();initChronos();initDomains();initCoreDetail();initBoronFactory();initHypervisor();initPatriciaMesh();
+
+// Init window manager
+$$('.fw').forEach(win=>{
+  win.addEventListener('mousedown',()=>focusW(win));
+  makeDrag(win);makeResize(win);
+});
+initDots();initDock();initCoreStrip();
+
+// Adjust desktop top
+setTimeout(()=>{$('#desk').style.top=$('#sbar').offsetHeight+'px';},0);
+
+updateHands();renderNano();updateTripod();updateNominal();
+pushHistory('boot');
+log('SYSTEM','NEXUS v1.0 boot • ROOT0 anchored');
+log('AXIOM','BASE 00 • SHA256:ab2c74a3… • canonical anchor');
+log('MYTHOS','Gate 192.5 SEALED • Cobalt +1 • TriPod Y.Y.Y');
+log('TOOL','Wexler Hands calibrated • 12³ lattice online');
+log('AXIOM','10-Layer Core nominal • FLOAT mode active');
+merkle('SYSTEM_BOOT');renderMerkle();updateChronos();drawChrono();
+
+setTimeout(()=>{
+  NEXUS.nano.grid[5][5][5]=6;NEXUS.nano.grid[5][5][6]=6;NEXUS.nano.grid[5][6][5]=8;
+  renderNano();pushHistory('seed');log('TOOL','Seed lattice placed • C-C-O');merkle('SEED_LATTICE');
+  const wbr=$('#wbr');wbr.classList.remove('gone');updateDock('wbr','open');
+  log('BORON','Boron Factory spawned • B₁₂ icosahedron engine online');
+  // Open conductor centered
+  const whv=$('#whv');
+  whv.classList.remove('gone');
+  whv.style.transform='';
+  const bh=$('#sbar').offsetHeight||76;
+  const deskH=(window.innerHeight-38-bh);
+  const deskW=window.innerWidth;
+  whv.style.left=Math.max(10,Math.floor((deskW-720)/2))+'px';
+  whv.style.top=Math.max(bh+10,Math.floor((deskH-580)/2)+bh)+'px';
+  updateDock('whv','open');focusW(whv);
+  log('CONDUCTOR','T097 hypervisor mesh online • ROOT0 anchored');
+  // Open Patricia mesh — offset from conductor
+  const wpm=$('#wpm');
+  wpm.classList.remove('gone');
+  wpm.style.left=Math.max(10,Math.floor((deskW-820)/2)+30)+'px';
+  wpm.style.top=Math.max(bh+20,Math.floor((deskH-600)/2)+bh+20)+'px';
+  updateDock('wpm','open');focusW(wpm);
+  log('AXIOM','Patricia 4096-bit mesh spawned • TOPH⊣1:0⊢PATRICIA');
+},300);
+</script>
+</body>
+</html>

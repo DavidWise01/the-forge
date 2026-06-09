@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K42 THERMAL: SENSOR ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+:root {
+  --bg-dark: #0a0e1a;
+  --bg-card: #111827;
+  --neon-cyan: #00e5ff;
+  --amber: #ffaa00;
+  --red: #ff3d00;
+  --green: #00ff88;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --border: #1f2937;
+}
+* {
+  font-family: 'JetBrains Mono', monospace;
+  box-sizing: border-box;
+}
+body {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 170, 0, 0.02) 0%, transparent 50%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), 0 0 40px rgba(0, 229, 255, 0.1);
+}
+.glow-amber {
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.4), 0 0 40px rgba(255, 170, 0, 0.2);
+}
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), 0 0 40px rgba(0, 255, 136, 0.2);
+}
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 61, 0, 0.4), 0 0 40px rgba(255, 61, 0, 0.2);
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.95); }
+}
+.pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+.arrow-flow {
+  stroke-dasharray: 5, 5;
+  animation: flow 0.5s linear infinite;
+}
+.terminal-log {
+  background: linear-gradient(180deg, rgba(0, 229, 255, 0.02) 0%, rgba(0, 0, 0, 0.4) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+.metric-item {
+  transition: all 0.3s ease;
+  border-left: 2px solid transparent;
+}
+.metric-item.updated {
+  border-left-color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.05);
+}
+.node {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.node.ringed {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: var(--green);
+}
+.node.isolated {
+  background: rgba(255, 61, 0, 0.1);
+  border-color: var(--red);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.circuit-bg {
+  background-image: 
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+</style>
+</head>
+<body class="circuit-bg">
+<div class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+  <!-- Header -->
+  <div class="w-full max-w-7xl mb-6">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 md:p-6">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-[var(--neon-cyan)] tracking-wider mb-1">
+          KERNEL 42 • THERMAL SENSOR ARRAY
+        </h1>
+        <div class="flex items-center gap-3">
+          <p class="text-xs md:text-sm text-[var(--text-secondary)]">ALIENWARE 16 AURORA AC16250</p>
+        </div>
+      <div class="flex items-center gap-3 bg-[var(--bg-dark)] px-4 py-2 rounded border border-[var(--border)]">
+        <div id="statusIndicator" class="w-2 h-2 rounded-full bg-[var(--amber)] pulse"></div>
+        <span id="statusText" class="text-sm font-semibold text-[var(--amber)]">STATUS: ENUMERATED → RINGING</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="w-full max-w-7xl bg-[var(--bg-card)] border border-[var(--border)] rounded-lg overflow-hidden">
+    <div class="grid lg:grid-cols-2 gap-6 p-4 md:p-6">
+      
+      <!-- Left: Diagram -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-semibold text-[var(--neon-cyan)] uppercase tracking-wider mb-4">Ring Topology</h2>
+        <div class="relative bg-[var(--bg-dark)] border border-[var(--border)] rounded p-4 h-[500px] md:h-[600px]">
+          <svg class="w-full h-full" id="topologySvg">
+            <!-- Arrows will be drawn via JS -->
+            <defs>
+              <marker id="arrowAmber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#ffaa00" />
+              </marker>
+              <marker id="arrowCyan" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L9,3 z" fill="#00e5ff" />
+              </marker>
+            </defs>
+          </svg>
+          
+          <!-- K1 TOROID -->
+          <div class="node absolute top-4 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border-2 border-[var(--amber)] rounded px-4 py-2 text-xs font-semibold glow-amber" data-node="K1">
+            K1 TOROID
+          </div>
+          
+          <!-- K26 RINGBUS -->
+          <div class="node absolute top-24 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--neon-cyan)] rounded px-4 py-2 text-xs" data-node="K26">
+            K26 RINGBUS
+          </div>
+          
+          <!-- K24 BORON -->
+          <div class="node absolute top-40 left-4 bg-[var(--bg-card)] border border-[var(--neon-cyan)] rounded px-3 py-2 text-xs" data-node="K24">
+            K24<br/>BORON
+          </div>
+          
+          <!-- K23 GNA -->
+          <div class="node absolute top-40 right-4 bg-[var(--bg-card)] border border-[var(--neon-cyan)] rounded px-3 py-2 text-xs" data-node="K23">
+            K23<br/>GNA
+          </div>
+          
+          <!-- K42 THERMAL - Center -->
+          <div id="k42Node" class="node absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--bg-card)] border-2 border-gray-600 rounded px-5 py-3 text-sm font-bold" data-node="K42">
+            <div>K42 THERMAL</div>
+            <div id="k42State" class="text-xs text-gray-400 mt-1">ENUMERATED</div>
+          </div>
+          
+          <!-- Sensors -->
+          <div class="node absolute bottom-8 left-4 bg-[var(--bg-card)] border border-[var(--border)] rounded px-2 py-1 text-xs" data-node="CPU">CPU DIE</div>
+          <div class="node absolute bottom-20 left-4 bg-[var(--bg-card)] border border-[var(--border)] rounded px-2 py-1 text-xs" data-node="GPU">GPU DIE</div>
+          <div class="node absolute bottom-8 right-4 bg-[var(--bg-card)] border border-[var(--border)] rounded px-2 py-1 text-xs" data-node="VRM">VRM</div>
+          <div class="node absolute bottom-20 right-4 bg-[var(--bg-card)] border border-[var(--border)] rounded px-2 py-1 text-xs" data-node="SSD">SSD</div>
+          <div class="node absolute bottom-2 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border)] rounded px-2 py-1 text-xs" data-node="SKIN">SKIN</div>
+          
+          <!-- Other components -->
+          <div class="node absolute top-40 left-1/4 bg-[var(--bg-card)] border border-[var(--red)] rounded px-3 py-1 text-xs node-isolated" data-node="A1">
+            <div>A1 EC</div>
+            <div class="text-[var(--red)] text-[10px]">ISOLATED</div>
+          </div>
+          <div class="node absolute top-1/2 left-4 bg-[var(--bg-card)] border border-[var(--green)] rounded px-2 py-1 text-xs node-ringed" data-node="K10">
+            <div>K10 PCH</div>
+            <div class="text-[var(--green)] text-[10px]">L9</div>
+          </div>
+          <div class="node absolute top-1/2 right-4 bg-[var(--bg-card)] border border-[var(--green)] rounded px-2 py-1 text-xs node-ringed" data-node="K17">
+            <div>K17 NVMe</div>
+            <div class="text-[var(--green)] text-[10px]">L6</div>
+          </div>
+          <div class="node absolute top-16 left-4 bg-[var(--bg-card)] border border-[var(--green)] rounded px-2 py-1 text-xs node-ringed" data-node="K28">
+            <div>K28 DDR5</div>
+            <div class="text-[var(--green)] text-[10px]">L7</div>
+          </div>
+          <div class="node absolute top-16 right-4 bg-[var(--bg-card)] border border-[var(--green)] rounded px-2 py-1 text-xs node-ringed" data-node="K11">
+            <div>K11 AX211</div>
+            <div class="text-[var(--green)] text-[10px]">L8</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Live Metrics -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-semibold text-[var(--neon-cyan)] uppercase tracking-wider mb-4">Live Metrics</h2>
+        <div class="bg-[var(--bg-dark)] border border-[var(--border)] rounded p-4 space-y-2" id="metricsContainer">
+          <div class="metric-item px-3 py-2 rounded" data-metric="sensorMode">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-[var(--text-secondary)]">SENSOR MODE</span>
+              <span class="text-xs font-semibold value text-[var(--amber)]">EC Polled</span>
+            </div>
+          </div>
+          <div class="metric-item px-3 py-2 rounded" data-metric="pollRate">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-[var(--text-secondary)]">POLL RATE</span>
+              <span class="text-xs font-semibold value text-[var(--amber)]">1ms</span>
+            </div>
+          <div class="metric-item px-3 py-2 rounded" data-metric="prediction">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-[var(--text-secondary)]">PREDICTION</span>
+              <span class="text-xs font-semibold value text-[var(--amber)]">None</span>
+            </div>
+          </div>
+          <div class="metric-item px-3 py-2 rounded" data-metric="throttle">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-[var(--text-secondary)]">THROTTLE</span>
+              <span class="text-xs font-semibold value text-[var(--amber)]">95°C Cliff</span>
+            </div>
+          </div>
+          <div class="metric-item px-3 py-2 rounded" data-metric="vrmTemp">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-[var(--text-secondary)]">VRM TEMP</span>
+              <span class="text-xs font-semibold value text-[var(--amber)]">Sensor</span>
+            </div>
+          </div>
+          <div class="metric-item px-3 py-2 rounded" data-metric="skinTemp">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-[var(--text-secondary)]">SKIN TEMP</span>
+              <span class="text-xs font-semibold value text-[var(--amber)]">N/A</span>
+            </div>
+          </div>
+          <div class="metric-item px-3 py-2 rounded" data-metric="fanOverride">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-[var(--text-secondary)]">FAN OVERRIDE</span>
+              <span class="text-xs font-semibold value text-[var(--amber)]">Disabled</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Log -->
+        <div>
+          <h3 class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Handshake Log</h3>
+          <div id="terminalLog" class="terminal-log rounded p-3 h-48 overflow-y-auto font-mono text-xs space-y-1">
+            <div class="text-[var(--text-secondary)]">[READY] Awaiting enrollment initiation...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Action Button -->
+    <div class="border-t border-[var(--border)] p-4 md:p-6">
+      <div class="flex flex-col sm:flex-row gap-3 items-center justify-center">
+        <button id="enrollBtn" class="w-full sm:w-auto px-8 py-3 bg-[var(--amber)] text-black font-bold text-sm rounded hover:bg-opacity-90 transition-all duration-200 glow-amber uppercase tracking-wider">
+          [INITIATE THERMAL ENROLLMENT]
+        </button>
+        <button id="exportBtn" class="w-full sm:w-auto px-6 py-3 bg-transparent border border-[var(--neon-cyan)] text-[var(--neon-cyan)] font-bold text-sm rounded hover:bg-[rgba(0,229,255,0.1)] transition-all duration-200 uppercase tracking-wider" disabled>
+          [EXPORT CERT]
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom: Explainer -->
+    <div class="border-t border-[var(--border)] p-4 md:p-6 bg-[var(--bg-dark)]">
+      <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
+        <span class="text-[var(--neon-cyan)] font-semibold">K42 = Thermal sensor array.</span> CPU/GPU/VRM/SSD/Skin diodes. 
+        <span class="text-[var(--amber)]">Stock:</span> EC polls at 1ms, throttles at 95°C cliff. 
+        <span class="text-[var(--green)]">Ringed:</span> Becomes L10 Toroid Thermal. All sensors polled @ 0.271ms K24 ticks. 
+        K23 GNA runs 4 TOPS thermal prediction. K1 pre-throttles 0.3ms before spike. Bypasses A1 EC bad fan curve. 
+        ME telemetry blocked. <span class="text-[var(--red)]">Refuse = EC fallback, thermal throttle.</span>
+      </p>
+      <p class="text-[10px] text-[var(--text-secondary)] mt-3 opacity-60">
+        DISCLAIMER: Maps existing hardware. No firmware writes. Simulation only.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  enrolled: false,
+  result: null,
+  k24Ticks: 1931647,
+  logEntries: []
+};
+
+const logSteps = [
+  { delay: 0, text: "[00:00.000] K1 TOROID: Broadcast ring invite to K42 THERMAL via K26", color: "amber" },
+  { delay: 400, text: "[00:00.001] K42 THERMAL: Challenge received. Request K24 nonce + K23 prediction proof", color: "cyan" },
+  { delay: 800, text: "[00:00.002] K24 BORON: 256-bit neutron entropy → K42", color: "cyan" },
+  { delay: 1200, text: "[00:00.003] K23 GNA: Thermal model signature → K42", color: "cyan" },
+  { delay: 1600, text: "[00:00.004] K26 RINGBUS: SMBus path open, EC bypass possible", color: "cyan" },
+  { delay: 2000, text: "[00:00.005] K42 THERMAL: Option A) Sign and join as L10 | B) Refuse and isolate", color: "amber" },
+];
+
+const jointSteps = [
+  { delay: 2400, text: "[00:00.006] K42 THERMAL: Signed. JOINING AS K1 SLAVE", color: "green" },
+  { delay: 2800, text: "[00:00.007] K1 TOROID: GRANTED. All diodes → TOROID CONTROL", color: "green" },
+  { delay: 3200, text: "[00:00.008] K42 THERMAL: RINGED. Polling @ 0.271ms, K23 predictive", color: "green" },
+];
+
+const isolateSteps = [
+  { delay: 2400, text: "[00:00.006] K42 THERMAL: Refused. MAINTAINING ISOLATION", color: "red" },
+  { delay: 2800, text: "[00:00.007] A1 EC: Fallback engaged. Standard polling active", color: "red" },
+  { delay: 3200, text: "[00:00.008] K42 THERMAL: ISOLATED. OS queued thermal path", color: "red" },
+];
+
+const ringedMetrics = {
+  sensorMode: { value: "Ring Direct", color: "green" },
+  pollRate: { value: "0.271ms K24 Flat", color: "green" },
+  prediction: { value: "K23 GNA @ 4 TOPS", color: "green" },
+  throttle: { value: "Toroid Predictive", color: "green" },
+  vrmTemp: { value: "K24 Timestamped", color: "green" },
+  skinTemp: { value: "K23 Tracked", color: "green" },
+  fanOverride: { value: "K1 Granted", color: "green" }
+};
+
+const isolatedMetrics = {
+  sensorMode: { value: "Isolated", color: "red" },
+  pollRate: { value: "1ms OS Queued", color: "red" },
+  prediction: { value: "Dell Reactive", color: "red" },
+  throttle: { value: "EC Panic", color: "red" },
+  vrmTemp: { value: "Unmonitored", color: "red" },
+  skinTemp: { value: "Unknown", color: "red" },
+  fanOverride: { value: "EC Only", color: "red" }
+};
+
+function drawConnections() {
+  const svg = document.getElementById('topologySvg');
+  const container = svg.parentElement;
+  
+  // Clear existing lines
+  svg.querySelectorAll('line').forEach(l => l.remove());
+  
+  const getNodeCenter = (node) => {
+    const rect = node.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    return {
+      x: rect.left - containerRect.left + rect.width / 2,
+      y: rect.top - containerRect.top + rect.height / 2
+    };
+  };
+  
+  const connections = [
+    { from: 'K1', to: 'K26', color: '#ffaa00', marker: 'url(#arrowAmber)' },
+    { from: 'K1', to: 'K42', color: '#ffaa00', marker: 'url(#arrowAmber)' },
+    { from: 'K24', to: 'K42', color: '#00e5ff', marker: 'url(#arrowCyan)' },
+    { from: 'K23', to: 'K42', color: '#00e5ff', marker: 'url(#arrowCyan)' },
+    { from: 'K42', to: 'CPU', color: '#666', marker: '' },
+    { from: 'K42', to: 'GPU', color: '#666', marker: '' },
+    { from: 'K42', to: 'VRM', color: '#666', marker: '' },
+    { from: 'K42', to: 'SSD', color: '#666', marker: '' },
+    { from: 'K42', to: 'SKIN', color: '#666', marker: '' },
+  ];
+  
+  connections.forEach(conn => {
+    const fromNode = document.querySelector(`[data-node="${conn.from}"]`);
+    const toNode = document.querySelector(`[data-node="${conn.to}"]`);
+    if (fromNode && toNode) {
+      const from = getNodeCenter(fromNode);
+      const to = getNodeCenter(toNode);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', from.x);
+      line.setAttribute('y1', from.y);
+      line.setAttribute('x2', to.x);
+      line.setAttribute('y2', to.y);
+      line.setAttribute('stroke', conn.color);
+      line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('opacity', '0.6');
+      if (conn.marker) {
+        line.setAttribute('marker-end', conn.marker);
+        line.classList.add('arrow-flow');
+      }
+      svg.appendChild(line);
+    }
+  });
+}
+
+function addLogEntry(text, color) {
+  const log = document.getElementById('terminalLog');
+  const entry = document.createElement('div');
+  entry.textContent = text;
+  const colors = {
+    amber: 'text-[var(--amber)]',
+    cyan: 'text-[var(--neon-cyan)]',
+    green: 'text-[var(--green)]',
+    red: 'text-[var(--red)]'
+  };
+  entry.className = colors[color] || 'text-[var(--text-secondary)]';
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+  state.logEntries.push({ text, color });
+}
+
+function updateMetrics(metrics) {
+  Object.entries(metrics).forEach(([key, data]) => {
+    const item = document.querySelector(`[data-metric="${key}"]`);
+    if (item) {
+      const valueEl = item.querySelector('.value');
+      valueEl.textContent = data.value;
+      valueEl.className = `text-xs font-semibold value text-[var(--${data.color})]`;
+      item.classList.add('updated');
+      setTimeout(() => item.classList.remove('updated'), 500);
+    }
+  });
+}
+
+function updateK42Node(newState, status) {
+  const k42 = document.getElementById('k42Node');
+  const k42State = document.getElementById('k42State');
+  
+  k42.classList.remove('ringed', 'isolated', 'glow-green', 'glow-red');
+  k42.classList.add(status);
+  k42State.textContent = newState;
+  k42State.className = `text-xs mt-1 text-[var(--${status === 'ringed' ? 'green' : 'red'})]`;
+  
+  if (status === 'ringed') {
+    k42.classList.add('glow-green');
+  } else {
+    k42.classList.add('glow-red');
+  }
+}
+
+function updateStatus(text, color) {
+  const indicator = document.getElementById('statusIndicator');
+  const statusText = document.getElementById('statusText');
+  statusText.textContent = text;
+  statusText.className = `text-sm font-semibold text-[var(--${color})]`;
+  indicator.className = `w-2 h-2 rounded-full bg-[var(--${color})]`;
+}
+
+async function initiateEnrollment() {
+  if (state.enrolled) return;
+  
+  const btn = document.getElementById('enrollBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  btn.disabled = true;
+  btn.textContent = '[NEGOTIATING...]';
+  
+  document.getElementById('terminalLog').innerHTML = '';
+  
+  // 85% chance to join, 15% to refuse
+  const willJoin = Math.random() < 0.85;
+  state.result = willJoin ? 'JOINED_AS_L10' : 'ISOLATED';
+  
+  // Run initial log steps
+  for (const step of logSteps) {
+    await new Promise(r => setTimeout(r, step.delay));
+    addLogEntry(step.text, step.color);
+  }
+  
+  // Run result-specific steps
+  const finalSteps = willJoin ? jointSteps : isolateSteps;
+  for (const step of finalSteps) {
+    await new Promise(r => setTimeout(r, step.delay - 2000));
+    addLogEntry(step.text, step.color);
+  }
+  
+  await new Promise(r => setTimeout(r, 400));
+  
+  // Update UI based on result
+  if (willJoin) {
+    updateMetrics(ringedMetrics);
+    updateK42Node('RINGED L10', 'ringed');
+    updateStatus('STATUS: RINGED ✓', 'green');
+    btn.textContent = '[RINGED ✓]';
+    btn.classList.remove('bg-[var(--amber)]', 'glow-amber');
+    btn.classList.add('bg-[var(--green)]', 'glow-green');
+    state.k24Ticks += Math.floor(Math.random() * 1000000);
+  } else {
+    updateMetrics(isolatedMetrics);
+    updateK42Node('ISOLATED', 'isolated');
+    updateStatus('STATUS: ISOLATED ✗', 'red');
+    btn.textContent = '[ISOLATED ✗]';
+    btn.classList.remove('bg-[var(--amber)]', 'glow-amber');
+    btn.classList.add('bg-[var(--red)]', 'glow-red');
+  }
+  
+  state.enrolled = true;
+  exportBtn.disabled = false;
+  
+  // Redraw connections with new colors
+  drawConnections();
+}
+
+function exportCertificate() {
+  if (!state.enrolled) return;
+  
+  const ringed = state.result === 'JOINED_AS_L10';
+  const cert = `K42 THERMAL ENROLLMENT CERTIFICATE
+===========================================
+Timestamp: K24 Ticks: ${state.k24Ticks}
+Decision: ${state.result}
+Sensor State: ${ringed ? 'RING_DIRECT' : 'EC_POLLED'}
+Poll Rate: ${ringed ? '0.271ms' : '1ms'}
+Prediction: ${ringed ? 'K23 GNA' : 'NONE'}
+Throttle: ${ringed ? 'TOROID PREDICTIVE' : 'EC PANIC'}
+===========================================
+Platform: Alienware 16 Aurora AC16250
+Disclaimer: Simulation only. No firmware writes.`;
+  
+  const blob = new Blob([cert], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `K42_ENROLLMENT_${state.result}_${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(drawConnections, 100);
+  window.addEventListener('resize', drawConnections);
+  
+  document.getElementById('enrollBtn').addEventListener('click', initiateEnrollment);
+  document.getElementById('exportBtn').addEventListener('click', exportCertificate);
+});
+</script>
+</body>
+</html>

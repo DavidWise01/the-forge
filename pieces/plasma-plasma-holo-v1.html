@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plasma Holographic Storage — 0root.ai Lab</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+  html,body { height: 100%; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background:#02050a; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  input[type=range] { -webkit-appearance:none; appearance:none; height:6px; background:linear-gradient(90deg, rgba(139,92,246,0.2), rgba(34,211,238,0.2)); border-radius:999px; outline:none; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#22d3ee; border:2px solid #0e7490; box-shadow:0 0 12px rgba(34,211,238,0.9), 0 0 24px rgba(139,92,246,0.6); cursor:pointer; }
+  input[type=range]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#22d3ee; border:2px solid #0e7490; box-shadow:0 0 12px rgba(34,211,238,0.9); cursor:pointer; }
+  .glass { background: linear-gradient(180deg, rgba(8,12,20,0.7), rgba(4,6,12,0.6)); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .hud-grid { background-image: linear-gradient(rgba(34,211,238,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.08) 1px, transparent 1px); background-size: 32px 32px; }
+  .scanlines::after{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(transparent 0 2px, rgba(0,255,255,0.035) 2px 3px); pointer-events:none; mix-blend-mode:screen; }
+  .corner { position:absolute; width:18px; height:18px; border:2px solid rgba(34,211,238,0.5); }
+  .corner.tl { left:-1px; top:-1px; border-right:none; border-bottom:none; border-radius:8px 0 0 0; }
+  .corner.tr { right:-1px; top:-1px; border-left:none; border-bottom:none; border-radius:0 8px 0 0; }
+  .corner.bl { left:-1px; bottom:-1px; border-right:none; border-top:none; border-radius:0 0 0 8px; }
+  .corner.br { right:-1px; bottom:-1px; border-left:none; border-top:none; border-radius:0 0 8px 0; }
+  .glow-text { text-shadow: 0 0 12px rgba(139,92,246,0.6), 0 0 24px rgba(34,211,238,0.4); }
+</style>
+</head>
+<body class="min-h-screen text-cyan-100 selection:bg-fuchsia-500/30 selection:text-white">
+<div class="fixed inset-0">
+  <div class="absolute inset-0 bg-[radial-gradient(800px_400px_at_50%_-10%,rgba(139,92,246,0.18),transparent),radial-gradient(600px_300px_at_80%_20%,rgba(34,211,238,0.15),transparent),radial-gradient(500px_300px_at_20%_30%,rgba(236,72,153,0.12),transparent)]"></div>
+  <div class="absolute inset-0 hud-grid opacity-[0.25]"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70"></div>
+</div>
+
+<div class="relative z-10 min-h-screen flex flex-col">
+  <header class="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-black/60 border border-cyan-400/30 grid place-items-center shadow-[0_0_30px_rgba(34,211,238,0.25)]">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2 L19 7 L19 17 L12 22 L5 17 L5 7 Z" stroke="#22d3ee" stroke-opacity="0.9" fill="none"/><circle cx="12" cy="12" r="3" fill="#a78bfa" fill-opacity="0.9"/></svg>
+        </div>
+        <div>
+          <h1 class="text-[15px] sm:text-lg font-semibold tracking-widest uppercase text-cyan-200 glow-text">Plasma Holographic Storage — 0root.ai Lab</h1>
+          <p class="text-[11px] font-mono text-cyan-300/60 -mt-0.5">MAG-CONFINEMENT • PHOTONIC ADDRESSING • v0.9.1</p>
+        </div>
+      <div class="hidden md:flex items-center gap-2 font-mono text-[11px]">
+        <span class="px-2 py-1 rounded border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">FIELD STABLE</span>
+        <span class="px-2 py-1 rounded border border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-300">PLASMA IGNITED</span>
+        <span class="px-2 py-1 rounded border border-cyan-400/30 bg-cyan-400/10 text-cyan-300">PHOTONICS ONLINE</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="px-4 sm:px-6 lg:px-8 pb-6 flex-1 grid lg:grid-cols-12 gap-4 lg:gap-6">
+    <!-- Left -->
+    <aside class="lg:col-span-3 order-2 lg:order-1">
+      <div class="glass rounded-2xl border border-cyan-500/15 shadow-[0_0_80px_rgba(0,0,0,0.5)] relative overflow-hidden">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div class="p-5">
+          <h2 class="text-xs uppercase tracking-[0.2em] text-cyan-300/80 mb-4 font-mono">Plasma State</h2>
+          
+          <div class="space-y-5 font-mono">
+            <div>
+              <div class="flex justify-between text-[11px] mb-2"><span class="text-cyan-200/80">Density</span><span id="dVal" class="text-fuchsia-300">1.00 ×10¹⁷ cm⁻³</span></div>
+              <input id="density" type="range" min="0.5" max="1.5" step="0.01" value="1.0" class="w-full">
+              <div class="flex justify-between text-[10px] text-cyan-400/50 mt-1"><span>0.5</span><span>1.5</span></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-2"><span class="text-cyan-200/80">Temperature</span><span id="tVal" class="text-cyan-300">12,000 K</span></div>
+              <input id="temperature" type="range" min="5000" max="20000" step="100" value="12000" class="w-full">
+              <div class="flex justify-between text-[10px] text-cyan-400/50 mt-1"><span>5k</span><span>20k</span></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-2"><span class="text-cyan-200/80">Ionization</span><span id="iVal" class="text-violet-300">92%</span></div>
+              <input id="ionization" type="range" min="70" max="100" step="1" value="92" class="w-full">
+              <div class="flex justify-between text-[10px] text-cyan-400/50 mt-1"><span>70%</span><span>100%</span></div>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-3 gap-2">
+            <button id="writeBtn" class="group relative overflow-hidden rounded-xl bg-fuchsia-500/15 hover:bg-fuchsia-500/25 border border-fuchsia-400/30 px-3 py-2.5 text-[11px] font-mono uppercase tracking-wider transition">
+              <span class="relative z-10">Write</span>
+              <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(120px_40px_at_50%_120%,rgba(217,70,239,0.4),transparent)]"></div>
+            </button>
+            <button id="readBtn" class="group relative overflow-hidden rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 px-3 py-2.5 text-[11px] font-mono uppercase tracking-wider transition">
+              <span class="relative z-10">Read</span>
+              <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(120px_40px_at_50%_120%,rgba(34,211,238,0.4),transparent)]"></div>
+            </button>
+            <button id="purgeBtn" class="rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2.5 text-[11px] font-mono uppercase tracking-wider transition">Purge</button>
+          </div>
+
+          <div class="mt-5 p-3 rounded-xl bg-black/40 border border-white/5">
+            <div class="text-[10px] font-mono text-cyan-300/70 uppercase tracking-wider mb-1">Beam Alignment</div>
+            <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Write λ 638nm</div>
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#22c55e]"></span> Write λ 520nm</div>
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span> Read λ 450nm</div>
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_8px_#a78bfa]"></span> Confinement</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center -->
+    <section class="lg:col-span-6 order-1 lg:order-2">
+      <div class="relative">
+        <div class="glass rounded-2xl border border-cyan-500/20 shadow-[0_0_120px_rgba(0,0,0,0.6)] overflow-hidden scanlines">
+          <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+          <div class="relative">
+            <div id="lab" class="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] w-full"></div>
+            
+            <!-- HUD overlay -->
+            <div class="pointer-events-none absolute inset-0">
+              <div class="absolute top-3 left-3 right-3 flex justify-between text-[10px] font-mono">
+                <div class="px-2 py-1 rounded bg-black/60 border border-cyan-500/20 text-cyan-300/80">MAG COILS: 3-AXIS</div>
+                <div class="px-2 py-1 rounded bg-black/60 border border-fuchsia-500/20 text-fuchsia-300/80">INTERFERENCE ACTIVE</div>
+              </div>
+              <div class="absolute bottom-3 left-3 right-3 flex justify-between items-end">
+                <div class="font-mono text-[10px] leading-tight">
+                  <div class="text-cyan-300/70">INTENSITY</div>
+                  <div class="w-28 h-1.5 mt-1 bg-black/60 border border-cyan-500/20 rounded overflow-hidden">
+                    <div id="intensityBar" class="h-full w-2/3 bg-gradient-to-r from-fuchsia-500 to-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)] transition-all"></div>
+                  </div>
+                <div class="text-right font-mono">
+                  <div class="text-[10px] text-cyan-300/60">FOCAL POINT</div>
+                  <div id="focalReadout" class="text-[13px] text-violet-300 tracking-wider">0.00, 0.00, 0.00 µm</div>
+                </div>
+              <!-- reticle -->
+              <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div class="w-28 h-28 rounded-full border border-cyan-400/15"></div>
+                <div class="absolute left-1/2 top-1/2 w-36 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent -translate-x-1/2"></div>
+                <div class="absolute left-1/2 top-1/2 h-36 w-px bg-gradient-to-b from-transparent via-cyan-400/40 to-transparent -translate-y-1/2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-center gap-3 text-[11px] font-mono text-cyan-200/70">
+          <span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse"></span> Plasma core suspended in quadrupole field</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right -->
+    <aside class="lg:col-span-3 order-3">
+      <div class="glass rounded-2xl border border-cyan-500/15 shadow-[0_0_80px_rgba(0,0,0,0.5)] relative overflow-hidden h-full">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div class="p-5">
+          <h2 class="text-xs uppercase tracking-[0.2em] text-cyan-300/80 mb-4 font-mono">Storage Metrics</h2>
+          <div class="space-y-3 font-mono text-[13px]">
+            <div class="flex items-center justify-between py-2.5 border-b border-white/5">
+              <span class="text-cyan-200/70">Density</span>
+              <span class="text-white">10<sup>18</sup> bits/cm³</span>
+            </div>
+            <div class="flex items-center justify-between py-2.5 border-b border-white/5">
+              <span class="text-cyan-200/70">Access time</span>
+              <span class="text-emerald-300">&lt;1 ns <span class="text-cyan-400/70">(photonic)</span></span>
+            </div>
+            <div class="flex items-center justify-between py-2.5 border-b border-white/5">
+              <span class="text-cyan-200/70">Persistence</span>
+              <span class="text-violet-300">non-volatile</span>
+            </div>
+            <div class="flex items-center justify-between py-2.5">
+              <span class="text-cyan-200/70">Holographic pages</span>
+              <span id="pageCount" class="text-fuchsia-300 tracking-wider">990,990</span>
+            </div>
+          </div>
+
+          <div class="mt-5 rounded-xl bg-gradient-to-b from-black/50 to-black/30 border border-white/10 p-4">
+            <div class="text-[10px] uppercase tracking-widest text-cyan-300/70 mb-2">Live Diffraction</div>
+            <canvas id="fft" width="320" height="80" class="w-full h-20 rounded bg-black/60 border border-cyan-500/10"></canvas>
+            <div class="mt-2 flex justify-between text-[10px] font-mono text-cyan-400/60"><span>k-space</span><span id="snr">SNR 42.7 dB</span></div>
+          </div>
+
+          <div class="mt-5">
+            <div class="text-[10px] uppercase tracking-widest text-cyan-300/70 mb-2">Last Operation</div>
+            <div id="log" class="h-[86px] overflow-hidden rounded-lg bg-black/50 border border-white/5 p-2.5 font-mono text-[11px] leading-snug text-cyan-100/80">
+              <div>> system: field coils nominal</div>
+              <div>> plasma: ignited @ 12,000K</div>
+              <div>> ready for holographic write</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="px-4 sm:px-6 lg:px-8 pb-8">
+    <div class="glass rounded-2xl border border-cyan-500/15 px-4 py-4 sm:py-5 relative overflow-hidden">
+      <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      <div class="grid md:grid-cols-3 gap-4 text-center">
+        <div>
+          <div class="text-[11px] uppercase tracking-widest text-cyan-300/70 font-mono">Versus SSD/NAND</div>
+          <div class="mt-1 text-sm text-white/90">No moving parts — magnetic bottle replaces mechanics</div>
+        </div>
+        <div>
+          <div class="text-[11px] uppercase tracking-widest text-cyan-300/70 font-mono">Thermal</div>
+          <div class="mt-1 text-sm text-white/90">No heat death — energy recirculates in plasma loop</div>
+        </div>
+        <div>
+          <div class="text-[11px] uppercase tracking-widest text-cyan-300/70 font-mono">Physics</div>
+          <div class="mt-1 text-sm text-white/90">Light in plasma — data lives as 3D interference</div>
+        </div>
+      </div>
+    </div>
+    <div class="text-center mt-3 text-[10px] font-mono text-cyan-400/50">0root.ai Lab • Conceptual interface. Visualized with WebGL.</div>
+  </footer>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const container = document.getElementById('lab');
+const dVal = document.getElementById('dVal');
+const tVal = document.getElementById('tVal');
+const iVal = document.getElementById('iVal');
+const densityEl = document.getElementById('density');
+const tempEl = document.getElementById('temperature');
+const ionEl = document.getElementById('ionization');
+const pageCountEl = document.getElementById('pageCount');
+const writeBtn = document.getElementById('writeBtn');
+const readBtn = document.getElementById('readBtn');
+const purgeBtn = document.getElementById('purgeBtn');
+const logEl = document.getElementById('log');
+const intensityBar = document.getElementById('intensityBar');
+const snrEl = document.getElementById('snr');
+
+let pages = 990990;
+const params = { density:1.0, temperature:12000, ionization:0.92 };
+
+function fmt(n){ return n.toLocaleString(); }
+function log(msg){ const d=document.createElement('div'); d.textContent='> '+msg; logEl.prepend(d); while(logEl.children.length>5) logEl.lastChild.remove(); }
+
+densityEl.addEventListener('input', e=>{ params.density=+e.target.value; dVal.textContent=params.density.toFixed(2)+' ×10¹⁷ cm⁻³'; updatePlasma(); });
+tempEl.addEventListener('input', e=>{ params.temperature=+e.target.value; tVal.textContent=params.temperature.toLocaleString()+' K'; updatePlasma(); });
+ionEl.addEventListener('input', e=>{ params.ionization=+e.target.value/100; iVal.textContent=e.target.value+'%'; updatePlasma(); });
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x02060c, 0.06);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+camera.position.set(0, 1.2, 5.2);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+container.appendChild(renderer.domElement);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, container.clientHeight), 1.1, 0.65, 0.2);
+composer.addPass(bloom);
+
+// lights
+scene.add(new THREE.AmbientLight(0x0a1a2a, 0.6));
+const key = new THREE.PointLight(0x7c3aed, 2.2, 10); key.position.set(-2,2,2); scene.add(key);
+const rim = new THREE.PointLight(0x22d3ee, 1.8, 10); rim.position.set(2,-1, -2); scene.add(rim);
+
+// lab floor grid
+const grid = new THREE.GridHelper(12, 24, 0x0ea5e9, 0x082f49);
+grid.position.y = -1.6; grid.material.opacity = 0.15; grid.material.transparent = true;
+scene.add(grid);
+
+// magnetic coils
+const coilGroup = new THREE.Group();
+const coilMat = new THREE.MeshStandardMaterial({ color:0x0b1324, metalness:0.9, roughness:0.25, emissive:0x0ea5e9, emissiveIntensity:0.25 });
+[0,1,2].forEach(i=>{
+  const torus = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.035, 24, 128), coilMat);
+  if(i===0) torus.rotation.x = Math.PI/2;
+  if(i===1) torus.rotation.y = Math.PI/2;
+  coilGroup.add(torus);
+});
+scene.add(coilGroup);
+
+// containment cube frame
+const boxGeo = new THREE.BoxGeometry(2.1,2.1);
+const edges = new THREE.EdgesGeometry(boxGeo);
+const frame = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color:0x22d3ee, transparent:true, opacity:0.25 }));
+scene.add(frame);
+
+// plasma core glow
+const coreMat = new THREE.MeshPhysicalMaterial({
+  color:0x5b21b6, transparent:true, opacity:0.16, roughness:0.1, metalness:0,
+  emissive:0x8b5cf6, emissiveIntensity:1.4, side:THREE.BackSide, depthWrite:false
+});
+const core = new THREE.Mesh(new THREE.BoxGeometry(1.8,1.8), coreMat);
+scene.add(core);
+
+const innerCore = new THREE.Mesh(new THREE.SphereGeometry(0.75, 48, 48), new THREE.MeshBasicMaterial({ color:0xa78bfa, transparent:true, opacity:0.08, blending:THREE.AdditiveBlending }));
+scene.add(innerCore);
+
+// plasma particles
+const pCount = 3500;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(pCount*3);
+for(let i=0;i<pCount;i++){
+  const r = 0.9 * Math.cbrt(Math.random());
+  const th = Math.random()*Math.PI*2;
+  const ph = Math.acos(2*Math.random()-1);
+  pPos[i*3] = r*Math.sin(ph)*Math.cos(th);
+  pPos[i*3+1] = r*Math.sin(ph)*Math.sin(th)*0.9;
+  pPos[i*3+2] = r*Math.cos(ph);
+}
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos,3));
+const pMat = new THREE.PointsMaterial({ size:0.022, sizeAttenuation:true, transparent:true, opacity:0.85, depthWrite:false, blending:THREE.AdditiveBlending, color:new THREE.Color(0x9b6bff) });
+const plasma = new THREE.Points(pGeo, pMat);
+scene.add(plasma);
+
+// laser beams
+function makeBeam(color, from, to){
+  const dir = new THREE.Vector3().subVectors(to, from);
+  const len = dir.length();
+  const geo = new THREE.CylinderGeometry(0.006, 0.018, len, 12, 1, true);
+  const mat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.copy(from).addScaledVector(dir, 0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+  m.userData.from = from.clone(); m.userData.to = to.clone();
+  return m;
+}
+const redBeam = makeBeam(0xff2a6d, new THREE.Vector3(-3.2,1.1,2.4), new THREE.Vector3(0,0,0));
+const greenBeam = makeBeam(0x22ff88, new THREE.Vector3(3.2,1.1,2.4), new THREE.Vector3(0,0,0));
+const blueBeam = makeBeam(0x4cc9f0, new THREE.Vector3(0, -1.2, 2.6), new THREE.Vector3(0,1.2,0));
+blueBeam.material.color.set(0x38bdf8);
+scene.add(redBeam, greenBeam, blueBeam);
+
+// intersection glow
+const hitLight = new THREE.PointLight(0xc084fc, 0, 2.5);
+hitLight.position.set(0,0,0);
+scene.add(hitLight);
+
+// holograms
+const holograms = new THREE.Group();
+scene.add(holograms);
+
+function createHologram(){
+  const g = new THREE.Group();
+  const s = 1.55;
+  for(let i=0;i<3;i++){
+    const geo = new THREE.PlaneGeometry(s,s, 96,96);
+    const mat = new THREE.ShaderMaterial({
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide,
+      uniforms:{
+        time:{value:0}, opacity:{value:0.9},
+        c1:{value:new THREE.Color(0x8b5cf6)},
+        c2:{value:new THREE.Color(0x22d3ee)},
+        c3:{value:new THREE.Color(0xec4899)},
+      },
+      vertexShader:`varying vec2 vUv; varying vec3 vPos; void main(){ vUv=uv; vPos=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader:`
+        varying vec2 vUv; varying vec3 vPos; uniform float time; uniform float opacity; uniform vec3 c1; uniform vec3 c2; uniform vec3 c3;
+        float interference(vec2 uv){
+          vec2 p = uv-0.5;
+          float r = length(p);
+          float a = atan(p.y,p.x);
+          float f1 = sin(r*80.0 - time*3.0);
+          float f2 = sin(a*7.0 + r*50.0 + time*2.0);
+          float f3 = sin((uv.x+uv.y)*60.0 - time*1.7);
+          return f1*0.5 + f2*0.3 + f3*0.2;
+        }
+        void main(){
+          float I = interference(vUv);
+          float m = smoothstep(0.2,0.85, I*0.5+0.5);
+          float rings = sin(length(vUv-0.5)*90.0 - time*4.0)*0.5+0.5;
+          vec3 col = mix(c1,c2, m);
+          col = mix(col, c3, rings*0.35);
+          float alpha = pow(m,1.4)*0.35 + pow(rings,2.0)*0.15;
+          gl_FragColor = vec4(col, alpha*opacity);
+        }`
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    if(i===1) mesh.rotation.y = Math.PI/2;
+    if(i===2) mesh.rotation.x = Math.PI/2;
+    mesh.scale.setScalar(0.01);
+    g.add(mesh);
+  }
+  g.position.y = (Math.random()-0.5)*0.7;
+  g.userData.born = performance.now();
+  return g;
+}
+
+// probe sphere
+const probe = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16,16), new THREE.MeshBasicMaterial({ color:0x7dd3fc, transparent:true, opacity:0 }));
+scene.add(probe);
+
+let beamPower = 0, probeActive = false, probeT = 0;
+
+function updatePlasma(){
+  const tNorm = (params.temperature-5000)/15000;
+  const hue = THREE.MathUtils.lerp(0.78, 0.55, tNorm); // purple -> cyan
+  const col = new THREE.Color().setHSL(hue, 0.9, 0.6);
+  pMat.color.copy(col);
+  coreMat.emissiveIntensity = 0.8 + params.ionization*1.6;
+  coreMat.opacity = 0.12 + params.density*0.06;
+  bloom.strength = 0.9 + params.ionization*0.5;
+  intensityBar.style.width = Math.round((0.4 + params.density*0.35 + params.ionization*0.25)*100)+'%';
+}
+updatePlasma();
+
+function animateWrite(){
+  if(beamPower>0.01) return;
+  beamPower = 0.001;
+  hitLight.intensity = 0;
+  log('write: firing 638nm & 520nm');
+  setTimeout(()=>{ hitLight.intensity = 6; }, 350);
+  setTimeout(()=>{
+    const h = createHologram();
+    holograms.add(h);
+    pages += 1 + Math.floor(Math.random()*3);
+    pageCountEl.textContent = fmt(pages);
+    log('write: interference pattern stored');
+    snrEl.textContent = 'SNR ' + (41 + Math.random()*3).toFixed(1) + ' dB';
+  }, 520);
+  setTimeout(()=>{ beamPower = -0.002; }, 900);
+}
+
+function animateRead(){
+  if(probeActive) return;
+  probeActive = true; probeT = 0; probe.material.opacity = 0.9;
+  log('read: probe 450nm scanning');
+  // boost holograms
+  holograms.children.forEach(g=> g.children.forEach(m=> m.material.uniforms.opacity.value = 1.3));
+  setTimeout(()=> log('read: page reconstructed'), 900);
+}
+
+writeBtn.addEventListener('click', animateWrite);
+readBtn.addEventListener('click', animateRead);
+purgeBtn.addEventListener('click', ()=>{
+  holograms.children.slice().forEach(h=>{ h.children.forEach(m=> m.material.transparent=true); });
+  const fade = setInterval(()=>{
+    let done = true;
+    holograms.children.forEach(h=>{
+      h.scale.multiplyScalar(0.92);
+      h.children.forEach(m=> m.material.uniforms.opacity.value *= 0.9);
+      if(h.scale.x>0.05) done=false;
+    });
+    if(done){ clearInterval(fade); holograms.clear(); log('purge: lattice cleared'); }
+  }, 16);
+});
+
+// resize
+function onResize(){
+  const w = container.clientWidth, h = container.clientHeight;
+  renderer.setSize(w,h); composer.setSize(w,h);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(onResize).observe(container);
+
+// fft canvas viz
+const fft = document.getElementById('fft');
+const ftx = fft.getContext('2d');
+
+const clock = new THREE.Clock();
+function tick(){
+  const t = clock.getElapsedTime();
+
+  // beams
+  if(beamPower>0){ beamPower = Math.min(1, beamPower+0.08); }
+  if(beamPower<0){ beamPower = Math.max(0, beamPower+beamPower); if(beamPower<0.01) beamPower=0; }
+  const bp = beamPower;
+  redBeam.material.opacity = bp*0.85;
+  greenBeam.material.opacity = bp*0.85;
+  hitLight.intensity = Math.max(0, hitLight.intensity*0.92);
+  blueBeam.material.opacity = probeActive ? 0.7 : 0;
+
+  // probe
+  if(probeActive){
+    probeT += 0.012;
+    const y = -1.0 + probeT*2.2;
+    probe.position.set(0, y, 0.05);
+    probe.material.opacity = 0.9*(1-Math.abs(y)/1.2);
+    blueBeam.scale.y = 1;
+    blueBeam.position.y = y*0.5;
+    if(probeT>1){ probeActive=false; probe.material.opacity=0; holograms.children.forEach(g=> g.children.forEach(m=> m.material.uniforms.opacity.value=0.9)); }
+  }
+
+  // coil spin
+  coilGroup.rotation.y += 0.002 + params.ionization*0.001;
+  coilGroup.children[0].rotation.z = t*0.2;
+  coilGroup.children[1].rotation.x = t*0.18;
+  coilGroup.children[2].rotation.y = t*0.15;
+
+  // plasma breathe
+  const breathe = 0.97 + Math.sin(t*1.7)*0.03;
+  core.scale.setScalar(breathe);
+  innerCore.scale.setScalar(0.9 + Math.sin(t*2.3)*0.05);
+  pMat.opacity = 0.65 + Math.sin(t*3.1)*0.1 + params.density*0.15;
+  plasma.rotation.y += 0.0008 + (params.temperature/20000)*0.0015;
+  plasma.rotation.x = Math.sin(t*0.3)*0.1;
+
+  // holograms animate
+  holograms.children.forEach((g,i)=>{
+    const age = (performance.now()-g.userData.born)/1000;
+    g.children.forEach(m=>{
+      m.material.uniforms.time.value = t*1.2 + i*0.3;
+      const target = 1;
+      m.scale.lerp(new THREE.Vector3(target,target,target), 0.07);
+    });
+    g.rotation.y += 0.002;
+  });
+
+  // camera slight orbit
+  camera.position.x = Math.sin(t*0.1)*0.2;
+  camera.lookAt(0,0,0);
+
+  // fft draw
+  ftx.clearRect(0,0,fft.width, fft.height);
+  const grad = ftx.createLinearGradient(0,0,0,fft.height);
+  grad.addColorStop(0,'rgba(139,92,246,0.8)'); grad.addColorStop(1,'rgba(34,211,238,0.2)');
+  ftx.fillStyle = '#06121c';
+  ftx.fillRect(0,0,fft.width, fft.height);
+  ftx.beginPath();
+  for(let x=0;x<fft.width;x++){
+    const nx = x/fft.width;
+    const base = Math.sin(nx*12 + t*2)*0.5+0.5;
+    const interference = Math.sin(nx*60 - t*3 + Math.sin(nx*8 + t))*0.5+0.5;
+    const y = fft.height - (base*0.3 + interference*0.6 + Math.random()*0.05)*fft.height*0.9;
+    if(x===0) ftx.moveTo(x,y); else ftx.lineTo(x,y);
+  }
+  ftx.lineWidth = 2; ftx.strokeStyle = grad; ftx.stroke();
+  ftx.globalAlpha = 0.15; ftx.lineTo(fft.width, fft.height); ftx.lineTo(0, fft.height); ftx.fillStyle = grad; ftx.fill(); ftx.globalAlpha = 1;
+
+  composer.render();
+  requestAnimationFrame(tick);
+}
+tick();
+
+// initial demo sequence
+setTimeout(animateWrite, 800);
+setTimeout(animateRead, 2200);
+</script>
+</body>
+</html>

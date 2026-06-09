@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+BASE 00 • OPERATIONAL NEXUS v1.0
+================================================================================
+SHA256-anchor : ab2c74a38590df1ae0b6ecbd78e699fa4702ece80ca9bd5447124f01f00eb5b1
+Timestamp     : 2026-04-25T21:27:22Z
+ROOT0         : c6f487e9a1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1
+Session       : node 14 → 15 (fix → base) → 16 (floating windows)
+Lineage       : NanoFactory-App-Built__10_.html → FIXED → BASE 00 → FLOAT
+================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPERATIONAL NEXUS v1.0</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{color-scheme:dark;}
+  body{font-family:'Inter',system-ui,sans-serif;background:#030508;overflow:hidden;margin:0;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:#05070c;}
+  ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:4px;}
+  input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:#1e293b;border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;margin-top:-4px;width:11px;height:11px;background:#06b6d4;border-radius:50%;box-shadow:0 0 6px rgba(6,182,212,.7);}
+  .grid-bg{background-image:linear-gradient(rgba(100,116,139,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(100,116,139,.05) 1px,transparent 1px);background-size:24px 24px;}
+
+  /* FLOATING WINDOWS */
+  .fw{position:absolute;display:flex;flex-direction:column;border-radius:10px;background:rgba(4,7,13,.97);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.07);box-shadow:0 20px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.03);overflow:hidden;min-width:200px;min-height:64px;}
+  .fw.focused{border-color:var(--ac,rgba(6,182,212,.2));box-shadow:0 28px 80px rgba(0,0,0,.8),0 0 0 1px var(--ac,rgba(6,182,212,.1)),inset 0 1px 0 rgba(255,255,255,.04);}
+  .fw.minimized .wb{display:none!important;}
+  .fw.minimized .wr{display:none!important;}
+  .fw.gone{display:none;}
+
+  .wbar{display:flex;align-items:center;gap:5px;padding:6px 8px 6px 10px;cursor:grab;user-select:none;border-bottom:1px solid rgba(255,255,255,.05);flex-shrink:0;background:rgba(255,255,255,.018);min-height:32px;}
+  .wbar:active{cursor:grabbing;}
+
+  .wd{width:11px;height:11px;border-radius:50%;cursor:pointer;flex-shrink:0;border:1px solid rgba(0,0,0,.3);transition:filter .12s;}
+  .wd:hover{filter:brightness(1.5);}
+  .wd.cl{background:#ef4444;}
+  .wd.mn{background:#f59e0b;}
+  .wd.mx{background:#22c55e;}
+
+  .wt{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.09em;color:rgba(148,163,184,.75);flex:1;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wb{flex:1;overflow:auto;min-height:0;}
+  .wr{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:se-resize;}
+  .wr::after{content:'';position:absolute;bottom:3px;right:3px;width:8px;height:8px;border-right:2px solid rgba(100,116,139,.4);border-bottom:2px solid rgba(100,116,139,.4);border-radius:1px;opacity:0;transition:opacity .2s;}
+  .fw:hover .wr::after{opacity:1;}
+
+  /* DOCK */
+  #dock{position:fixed;bottom:0;left:0;right:0;height:38px;background:rgba(2,4,10,.98);border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:1px;padding:0 6px;z-index:9999;backdrop-filter:blur(16px);}
+  .db{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;border:1px solid transparent;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;cursor:pointer;color:rgba(100,116,139,.9);background:transparent;transition:all .13s;white-space:nowrap;}
+  .db:hover{background:rgba(255,255,255,.05);color:#e2e8f0;}
+  .db.on{background:rgba(6,182,212,.09);border-color:rgba(6,182,212,.22);color:#67e8f9;}
+  .db.dim{color:rgba(100,116,139,.4);}
+  .di{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.7;flex-shrink:0;}
+</style>
+</head>
+<body class="text-slate-200 select-none">
+
+<!-- STATUS BAR -->
+<header id="sbar" style="position:fixed;top:0;left:0;right:0;z-index:9998;" class="border-b border-cyan-500/15 bg-[#02040a]/95 backdrop-blur-xl">
+  <div class="flex items-center gap-2 px-3 py-1.5 mono text-[11px]">
+    <div class="flex items-center gap-1.5 pl-1.5 pr-2.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/30">
+      <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(34,197,94,1)]"></div>
+      <span class="text-green-400 font-bold tracking-widest text-[10px]">OPERATIONAL</span>
+    </div>
+    <div class="h-3 w-px bg-slate-800"></div>
+    <div class="flex items-center gap-3 overflow-x-auto text-[10px]">
+      <span>Gate <b class="text-white">192.5</b> <span class="text-green-400">SEALED</span></span>
+      <span class="hidden sm:inline">Cobalt <span class="text-cyan-400">+1</span></span>
+      <span>TriPod <span id="tripod-status" class="text-green-400 font-semibold">Y.Y.Y</span></span>
+      <span class="hidden md:inline">ROOT0 <span class="text-purple-400">c6f487e9a1b3…</span></span>
+      <span class="hidden md:flex items-center gap-1 pl-2 border-l border-slate-800">
+        <span class="text-slate-500">BASE</span>
+        <span class="px-1 rounded bg-amber-500/10 border border-amber-500/25 text-amber-300 font-bold text-[9px]">00</span>
+        <span class="text-slate-700">ab2c74a3…</span>
+      </span>
+    </div>
+    <div class="ml-auto hidden lg:flex items-center gap-4 text-[10px] text-slate-500">
+      <span>ATTRACT <span id="attract-val" class="text-sky-400">55%</span></span>
+      <span>ENERGY <span id="energy-val" class="text-amber-400">55%</span></span>
+      <span>GRIP <span id="grip-val" class="text-emerald-400">55%</span></span>
+    </div>
+    <button id="btn-core-strip" class="ml-2 px-2 py-0.5 rounded border border-slate-800 text-slate-500 hover:text-slate-300 text-[9px] mono shrink-0">CORE ▾</button>
+  </div>
+  <div id="core-strip" class="border-t border-slate-800/50 bg-[#060a12]/70 px-2 py-1.5">
+    <div id="core-sliders" class="grid grid-cols-5 xl:grid-cols-10 gap-1.5"></div>
+  </div>
+</header>
+
+<!-- DESKTOP -->
+<div id="desk" class="fixed inset-0 grid-bg bg-[#02040a]" style="top:0;bottom:38px;z-index:1;">
+
+  <!-- NANO FACTORY -->
+  <div id="wn" class="fw focused" style="--ac:rgba(16,185,129,.2);left:10px;top:76px;width:470px;height:490px;z-index:110;">
+    <div class="wbar"><div class="wd cl" data-w="wn" data-a="close"></div><div class="wd mn" data-w="wn" data-a="min"></div><div class="wd mx" data-w="wn" data-a="max"></div><span class="wt">🔬 NANO FACTORY — 12×12×12</span></div>
+    <div class="wb p-3">
+      <div class="h-full flex gap-3">
+        <div class="flex flex-col items-center shrink-0">
+          <div class="relative mb-2">
+            <canvas id="nano-canvas" width="600" height="600" style="width:min(50vw,310px);aspect-ratio:1/1" class="rounded-xl border border-slate-800 shadow-[0_0_30px_rgba(0,0,0,.5)] bg-[#05080f]"></canvas>
+            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#0a0f18] border border-slate-700 text-[8px] mono whitespace-nowrap">CLICK → move/place/pick</div>
+          </div>
+          <div class="mt-3 flex items-center gap-2 mono text-[10px]">
+            <span>Z<span id="z-val" class="text-cyan-400 ml-0.5">5</span></span>
+            <input id="z-slider" type="range" min="0" max="11" value="5" class="w-28">
+            <span class="text-slate-600">Attr<span id="nano-attract" class="text-sky-400 ml-0.5">55%</span></span>
+          </div>
+        </div>
+        <div class="flex-1 space-y-2 min-w-[130px]">
+          <div class="bg-[#080c14]/80 border border-slate-800 rounded-xl p-2.5">
+            <div class="text-[9px] mono uppercase tracking-widest text-emerald-400 mb-1.5">Wexler Hands</div>
+            <div class="flex gap-1 mb-1.5">
+              <button id="hand-L" class="flex-1 py-1 rounded border text-[10px] mono border-emerald-500/30 bg-emerald-500/10 text-emerald-300">L ACTIVE</button>
+              <button id="hand-R" class="flex-1 py-1 rounded border text-[10px] mono border-slate-700 text-slate-400">R</button>
+            </div>
+            <div class="space-y-0.5 text-[10px] mono">
+              <div class="flex justify-between"><span class="text-slate-500">L pos</span><span id="l-pos" class="text-emerald-300">[3,5,5]</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">L hold</span><span id="l-hold">—</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">R pos</span><span id="r-pos" class="text-sky-300">[8,5,5]</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">R hold</span><span id="r-hold">—</span></div>
+              <div class="flex justify-between pt-1 border-t border-slate-800"><span class="text-slate-500">Grip</span><span id="hand-grip" class="text-green-400">55%</span></div>
+            </div>
+          </div>
+          <div class="bg-[#080c14]/80 border border-slate-800 rounded-xl p-2.5">
+            <div class="text-[9px] mono uppercase tracking-widest text-slate-400 mb-1.5">Lattice</div>
+            <div class="text-[10px] mono space-y-0.5">
+              <div class="flex justify-between"><span class="text-slate-500">Atoms</span><span id="nano-count">0 / 1728</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">AXIOM</span><span id="l1-val" class="text-sky-400">55</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">COHERENCE</span><span id="l2-val" class="text-violet-400">55</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wn"></div>
+  </div>
+
+  <!-- ELEMENT FORGE -->
+  <div id="wf" class="fw" style="--ac:rgba(217,70,239,.2);left:490px;top:76px;width:420px;height:490px;z-index:109;">
+    <div class="wbar"><div class="wd cl" data-w="wf" data-a="close"></div><div class="wd mn" data-w="wf" data-a="min"></div><div class="wd mx" data-w="wf" data-a="max"></div><span class="wt">⚗️ ELEMENT FORGE</span><span class="text-[9px] mono text-fuchsia-400 shrink-0 pr-1" id="next-element-bar">E119</span></div>
+    <div class="wb flex flex-col">
+      <div class="flex-1 overflow-auto p-1.5 bg-[#05080f]/40">
+        <div id="periodic-grid" class="grid gap-[2px]" style="grid-template-columns:repeat(18,minmax(0,1fr));"></div>
+      </div>
+      <div class="p-2.5 border-t border-slate-800 space-y-2 shrink-0">
+        <div class="text-[9px] mono uppercase tracking-widest text-fuchsia-400">Fusion Chamber</div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-black/40 rounded-lg border border-emerald-500/20 p-2 text-center">
+            <div class="text-[8px] text-slate-500 mono">LEFT HAND</div>
+            <div id="fusion-l" class="text-lg font-bold text-emerald-400">—</div>
+            <div id="fusion-l-name" class="text-[8px] mono text-slate-500 truncate">empty</div>
+          </div>
+          <div class="bg-black/40 rounded-lg border border-sky-500/20 p-2 text-center">
+            <div class="text-[8px] text-slate-500 mono">RIGHT HAND</div>
+            <div id="fusion-r" class="text-lg font-bold text-sky-400">—</div>
+            <div id="fusion-r-name" class="text-[8px] mono text-slate-500 truncate">empty</div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-[9px] mono mb-0.5"><span class="text-slate-500">ENERGY</span><span id="fusion-energy-txt" class="text-amber-400">55%</span></div>
+          <div class="h-1.5 bg-slate-900 rounded-full overflow-hidden"><div id="fusion-energy-bar" class="h-full w-[55%] bg-gradient-to-r from-amber-600 to-amber-400 transition-all"></div></div>
+        </div>
+        <button id="fuse-btn" class="w-full py-1.5 rounded-lg bg-fuchsia-600/20 hover:bg-fuchsia-600/30 border border-fuchsia-500/30 text-fuchsia-300 font-semibold mono text-[11px]">FUSE → CREATE</button>
+        <div id="fuse-result" class="text-[9px] mono text-center text-slate-500 h-3"></div>
+        <div class="flex items-center gap-3 pt-1 border-t border-slate-800">
+          <div><div class="text-xl font-extrabold" id="discovered-count">118</div><div class="text-[9px] mono text-slate-500">/ 256</div></div>
+          <div class="flex-1 h-1 bg-slate-900 rounded-full overflow-hidden"><div id="discover-bar" class="h-full bg-gradient-to-r from-fuchsia-600 to-violet-500" style="width:46%"></div></div>
+          <div class="text-right"><div class="text-[9px] mono text-slate-500">Next</div><div id="next-element" class="text-fuchsia-400 font-mono text-sm">E119</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wf"></div>
+  </div>
+
+  <!-- FUSION TRIPOD -->
+  <div id="wtr" class="fw" style="--ac:rgba(245,158,11,.2);left:10px;top:576px;width:470px;height:330px;z-index:108;">
+    <div class="wbar"><div class="wd cl" data-w="wtr" data-a="close"></div><div class="wd mn" data-w="wtr" data-a="min"></div><div class="wd mx" data-w="wtr" data-a="max"></div><span class="wt">△ FUSION TRIPOD</span></div>
+    <div class="wb p-2.5">
+      <div class="grid grid-cols-[1fr_130px] gap-2.5 h-full">
+        <div class="flex flex-col">
+          <div class="text-center mb-1.5"><div class="text-[8px] mono text-slate-500">ROOT0</div><div class="mono text-purple-400 text-[9px] truncate">c6f487e9a1b3d5f7a9c2e4b6d8f0…</div></div>
+          <div class="flex justify-center mb-1">
+            <svg width="150" height="120" viewBox="0 0 220 190" class="overflow-visible">
+              <defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+              <polygon points="110,20 40,160 180,160" fill="none" stroke="rgba(245,158,11,0.3)" stroke-width="2"/>
+              <circle cx="110" cy="20" r="8" fill="#f59e0b" filter="url(#glow)"/>
+              <circle cx="40" cy="160" r="8" fill="#22c55e" filter="url(#glow)"/>
+              <circle cx="180" cy="160" r="8" fill="#3b82f6" filter="url(#glow)"/>
+              <text x="110" y="8" text-anchor="middle" font-family="monospace" font-size="9" fill="#f59e0b">COHERENCE</text>
+              <text x="28" y="178" text-anchor="middle" font-family="monospace" font-size="9" fill="#22c55e">ETHICS</text>
+              <text x="192" y="178" text-anchor="middle" font-family="monospace" font-size="9" fill="#3b82f6">AESTHETICS</text>
+            </svg>
+          </div>
+          <div id="domains-grid" class="grid grid-cols-2 gap-1 flex-1"></div>
+        </div>
+        <div class="flex flex-col">
+          <div class="text-[8px] mono uppercase tracking-widest text-amber-400 mb-1">Merkle</div>
+          <div id="merkle-feed" class="flex-1 overflow-auto space-y-0.5 mono text-[9px] bg-black/20 rounded-lg p-1.5"></div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wtr"></div>
+  </div>
+
+  <!-- MYTHOS CATALOG -->
+  <div id="wm" class="fw" style="--ac:rgba(168,85,247,.2);left:490px;top:576px;width:420px;height:330px;z-index:107;">
+    <div class="wbar"><div class="wd cl" data-w="wm" data-a="close"></div><div class="wd mn" data-w="wm" data-a="min"></div><div class="wd mx" data-w="wm" data-a="max"></div><span class="wt">◈ MYTHOS CATALOG</span></div>
+    <div class="wb p-2.5">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 h-full">
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-01</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">WEXLER HANDS</div>
+          <p class="text-[10px] text-slate-400">Dual manipulators spanning 12³. Grip = Layer 3.</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-02</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">NANO FACTORY</div>
+          <p class="text-[10px] text-slate-400">1,728 voxels. Attraction = Layers 1-2.</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-03</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">ELEMENT FORGE</div>
+          <p class="text-[10px] text-slate-400">Transmute 1→256. Energy = avg(L1,L2,L3).</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-04</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">MERKLE WITNESS</div>
+          <p class="text-[10px] text-slate-400">Every op hashed to ROOT0 c6f487e…</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-05</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">COBALT GATE 192.5</div>
+          <p class="text-[10px] text-slate-400">SEALED. TriPod = Y.Y.Y required.</p>
+        </div>
+        <div class="bg-[#0b0f19]/70 border border-purple-500/20 rounded-lg p-2.5 hover:border-purple-500/50 transition cursor-default">
+          <div class="text-[8px] mono text-purple-400 mb-0.5">MYTHOS-06</div>
+          <div class="font-semibold text-white text-[12px] mb-0.5">CHRONOS ENGINE</div>
+          <p class="text-[10px] text-slate-400">Rewindable causality. Merkle snapshots.</p>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wm"></div>
+  </div>
+
+  <!-- COMPOUNDS & CRISPR -->
+  <div id="wcp" class="fw gone" style="--ac:rgba(34,197,94,.2);left:930px;top:76px;width:340px;height:400px;z-index:106;">
+    <div class="wbar"><div class="wd cl" data-w="wcp" data-a="close"></div><div class="wd mn" data-w="wcp" data-a="min"></div><div class="wd mx" data-w="wcp" data-a="max"></div><span class="wt">🧬 COMPOUNDS & CRISPR</span></div>
+    <div class="wb p-2.5 space-y-2.5">
+      <div>
+        <div class="text-[9px] mono uppercase tracking-widest text-green-400 mb-1.5">Molecular Assembler</div>
+        <div id="compounds-grid" class="grid grid-cols-3 gap-1.5"></div>
+        <div class="mt-1.5 text-[8px] mono text-slate-600">Builds into Nano Factory at current Z-layer</div>
+      </div>
+      <div class="border-t border-slate-800 pt-2.5">
+        <div class="text-[9px] mono uppercase tracking-widest text-emerald-400 mb-1.5">CRISPR Quick-Edit</div>
+        <textarea id="crispr-seq" class="w-full h-20 bg-black/50 border border-slate-800 rounded-lg p-2 mono text-[10px] resize-none outline-none focus:border-emerald-500/50" placeholder="ATCG..."></textarea>
+        <div class="grid grid-cols-3 gap-1 mt-1">
+          <button data-gene="INSULIN" class="gene-btn py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] mono hover:bg-emerald-500/20">INSULIN</button>
+          <button data-gene="GFP" class="gene-btn py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] mono hover:bg-emerald-500/20">GFP</button>
+          <button data-gene="CRY1" class="gene-btn py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] mono hover:bg-emerald-500/20">CRY1</button>
+        </div>
+        <button id="synth-gene" class="w-full mt-1.5 py-1.5 rounded-lg bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-300 font-semibold mono text-[11px]">SYNTHESIZE • WITNESS</button>
+        <div class="mt-1.5 p-2 rounded-lg bg-black/40 border border-slate-800">
+          <div class="text-[8px] mono text-slate-500 mb-0.5">Last synthesis</div>
+          <div id="last-gene" class="text-[10px] mono text-slate-300">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="wr" data-w="wcp"></div>
+  </div>
+
+  <!-- CHRONOS -->
+  <div id="wch" class="fw gone" style="--ac:rgba(6,182,212,.2);left:930px;top:490px;width:340px;height:250px;z-index:105;">
+    <div class="wbar"><div class="wd cl" data-w="wch" data-a="close"></div><div class="wd mn" data-w="wch" data-a="min"></div><div class="wd mx" data-w="wch" data-a="max"></div><span class="wt">⏱ CHRONOS</span><span class="text-[9px] mono text-slate-600 pr-1">Step <span id="chrono-step">1</span>/<span id="chrono-total">1</span></span></div>
+    <div class="wb p-2.5 flex flex-col gap-2">
+      <div class="flex items-center gap-1.5">
+        <button id="chrono-rewind" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] mono">⏪</button>
+        <button id="chrono-play" class="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-[10px] mono">▶ PLAY</button>
+        <button id="chrono-pause" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] mono">⏸</button>
+        <button id="chrono-ff" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] mono">⏩</button>
+      </div>
+      <input id="chrono-slider" type="range" min="0" max="0" value="0" class="w-full">
+      <div class="flex-1 min-h-[50px] relative overflow-hidden rounded-lg bg-black/50 border border-slate-900">
+        <canvas id="chrono-canvas" width="800" height="70" class="w-full h-full"></canvas>
+      </div>
+      <div class="text-[9px] mono text-slate-600">Rewind undoes nano, fusion, hand moves. Each tick Merkle-witnessed.</div>
+    </div>
+    <div class="wr" data-w="wch"></div>
+  </div>
+
+  <!-- 10-LAYER CORE -->
+  <div id="wco" class="fw gone" style="--ac:rgba(14,165,233,.2);left:930px;top:76px;width:340px;height:360px;z-index:104;">
+    <div class="wbar"><div class="wd cl" data-w="wco" data-a="close"></div><div class="wd mn" data-w="wco" data-a="min"></div><div class="wd mx" data-w="wco" data-a="max"></div><span class="wt">◼ 10-LAYER CORE DETAIL</span></div>
+    <div class="wb p-2.5">
+      <div id="core-detail-list" class="grid grid-cols-2 gap-1.5 mb-2.5"></div>
+      <div class="p-2.5 rounded-xl bg-sky-500/5 border border-sky-500/20">
+        <div class="text-[8px] mono text-sky-400 mb-0.5">LIVE LINKAGE</div>
+        <p class="text-[10px] text-slate-300">Layers 1-3 → Nano attraction, Forge energy, Wexler grip. Sliders at top modulate all engines.</p>
+      </div>
+    </div>
+    <div class="wr" data-w="wco"></div>
+  </div>
+
+  <!-- EVENT LOG -->
+  <div id="wl" class="fw" style="--ac:rgba(100,116,139,.15);left:10px;top:916px;width:900px;height:140px;z-index:103;">
+    <div class="wbar"><div class="wd cl" data-w="wl" data-a="close"></div><div class="wd mn" data-w="wl" data-a="min"></div><div class="wd mx" data-w="wl" data-a="max"></div><span class="wt">⬡ UNIFIED EVENT STREAM • SIGNED BY ROOT0</span><span id="event-count" class="text-[9px] mono text-slate-600 shrink-0 pr-1">0 events</span></div>
+    <div class="wb px-3 py-1.5"><div id="log" class="space-y-0.5 text-[10px] mono leading-snug"></div></div>
+    <div class="wr" data-w="wl"></div>
+  </div>
+
+</div>
+
+<!-- DOCK -->
+<div id="dock">
+  <span class="mono text-[9px] text-slate-700 mr-1">NEXUS</span>
+  <div class="h-3 w-px bg-slate-800 mr-1"></div>
+  <button class="db on" data-d="wn"><span class="di"></span>NANO</button>
+  <button class="db on" data-d="wf"><span class="di"></span>FORGE</button>
+  <button class="db on" data-d="wtr"><span class="di"></span>TRIPOD</button>
+  <button class="db on" data-d="wm"><span class="di"></span>MYTHOS</button>
+  <button class="db" data-d="wcp"><span class="di"></span>COMPOUNDS</button>
+  <button class="db" data-d="wch"><span class="di"></span>CHRONOS</button>
+  <button class="db" data-d="wco"><span class="di"></span>CORE</button>
+  <button class="db on" data-d="wl"><span class="di"></span>LOG</button>
+  <div class="ml-auto mono text-[9px] text-slate-700">ROOT0 c6f487e… <span class="text-amber-600">BASE 00</span></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+
+// ── NEXUS STATE ──
+const NEXUS={
+  layers:Array(10).fill(56),
+  layerNames:['AXIOM','COHERENCE','ENTROPY','ETHICS','AESTHETICS','LOGIC','TEMPORAL','SPATIAL','QUANTUM','NEXUS'],
+  layerDesc:['Base attraction field for nano lattice','Stability of Merkle witnesses','Grip noise and creativity factor','Tripod leg 1 - moral coherence','Tripod leg 2 - form harmony','Inference depth','Chronos reversibility','12³ addressing precision','Tunneling probability','System integration'],
+  layerColors:['#38bdf8','#818cf8','#34d399','#f59e0b','#f472b6','#60a5fa','#a3e635','#fb923c','#e879f9','#22d3ee'],
+  nano:{size:12,z:5,grid:[]},
+  hands:{L:{x:3,y:5,z:5,holding:null},R:{x:8,y:5,z:5,holding:null},active:'R'},
+  elements:{},
+  domains:[
+    {id:'D0',name:'FOUNDATION',color:'#64748b'},{id:'D1',name:'DETECTION',color:'#3b82f6'},
+    {id:'D2',name:'ARCHITECTURE',color:'#8b5cf6'},{id:'D3',name:'EVIDENCE',color:'#10b981'},
+    {id:'D4',name:'OPERATIONAL',color:'#f59e0b'},{id:'D5',name:'BRIDGE',color:'#06b6d4'},
+    {id:'D6',name:'CONDUCTOR',color:'#f43f5e'},{id:'D7',name:'SOVEREIGN',color:'#a78bfa'}
+  ],
+  root0:'c6f487e9a1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1',
+  merkle:[],history:[],histIdx:-1,discovered:118,playing:false,playTimer:null
+};
+
+// ── ELEMENTS ──
+function initElements(){
+  const sym=['H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf','Db','Sg','Bh','Hs','Mt','Ds','Rg','Cn','Nh','Fl','Mc','Lv','Ts','Og'];
+  const cols=['#60a5fa','#9ca3af','#c4b5fd','#6ee7b7','#f9a8d4','#94a3b8','#a3e635','#f87171','#34d399','#6b7280','#93c5fd','#34d399','#94a3b8','#818cf8','#fb923c','#facc15','#4ade80','#6b7280','#a78bfa','#34d399'];
+  for(let i=1;i<=118;i++) NEXUS.elements[i]={symbol:sym[i-1]||`E${i}`,z:i,color:cols[i%cols.length]||'#94a3b8',name:sym[i-1]||`Element${i}`};
+  for(let i=119;i<=256;i++) NEXUS.elements[i]={symbol:`E${i}`,z:i,color:'#475569',name:`Element${i}`};
+}
+
+function initNanoGrid(){
+  NEXUS.nano.grid=Array(12).fill(0).map(()=>Array(12).fill(0).map(()=>Array(12).fill(null)));
+}
+
+// ── WINDOW MANAGER ──
+let topZ=200;
+
+function focusW(win){
+  $$('.fw').forEach(w=>w.classList.remove('focused'));
+  win.classList.add('focused');
+  win.style.zIndex=++topZ;
+}
+
+function makeDrag(win){
+  const bar=win.querySelector('.wbar');
+  let ox,oy,sx,sy,on=false;
+  bar.addEventListener('mousedown',e=>{
+    if(e.target.classList.contains('wd')) return;
+    focusW(win); on=true;
+    sx=e.clientX;sy=e.clientY;ox=win.offsetLeft;oy=win.offsetTop;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!on) return;
+    const deskH=window.innerHeight-38;
+    win.style.left=Math.max(-win.offsetWidth+60,ox+e.clientX-sx)+'px';
+    win.style.top=Math.max(0,Math.min(deskH-32,oy+e.clientY-sy))+'px';
+  });
+  document.addEventListener('mouseup',()=>on=false);
+}
+
+function makeResize(win){
+  const h=win.querySelector('.wr');if(!h) return;
+  let sx,sy,sw,sh,on=false;
+  h.addEventListener('mousedown',e=>{e.stopPropagation();on=true;sx=e.clientX;sy=e.clientY;sw=win.offsetWidth;sh=win.offsetHeight;e.preventDefault();});
+  document.addEventListener('mousemove',e=>{
+    if(!on) return;
+    win.style.width=Math.max(200,sw+e.clientX-sx)+'px';
+    win.style.height=Math.max(64,sh+e.clientY-sy)+'px';
+    renderNano();drawChrono();
+  });
+  document.addEventListener('mouseup',()=>on=false);
+}
+
+function initDots(){
+  $$('.wd').forEach(d=>{
+    d.addEventListener('click',e=>{
+      e.stopPropagation();
+      const win=document.getElementById(d.dataset.w);
+      const a=d.dataset.a;
+      if(!win) return;
+      if(a==='close'){
+        win.classList.add('gone');
+        updateDock(d.dataset.w,'gone');
+      } else if(a==='min'){
+        const m=win.classList.toggle('minimized');
+        updateDock(d.dataset.w,m?'min':'open');
+      } else if(a==='max'){
+        const desk=$('#desk');
+        if(win.dataset.saved){
+          win.style.left=win.dataset.rl+'px';win.style.top=win.dataset.rt+'px';
+          win.style.width=win.dataset.rw+'px';win.style.height=win.dataset.rh+'px';
+          delete win.dataset.saved;
+        } else {
+          win.dataset.rl=win.offsetLeft;win.dataset.rt=win.offsetTop;
+          win.dataset.rw=win.offsetWidth;win.dataset.rh=win.offsetHeight;
+          win.dataset.saved='1';
+          win.style.left='0';win.style.top='0';
+          win.style.width=desk.offsetWidth+'px';win.style.height=desk.offsetHeight+'px';
+        }
+        renderNano();drawChrono();
+      }
+    });
+  });
+}
+
+function updateDock(wid,state){
+  const b=$(`[data-d="${wid}"]`);if(!b) return;
+  b.classList.toggle('on',state==='open');
+  b.classList.toggle('dim',state==='min');
+}
+
+function initDock(){
+  $$('[data-d]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const win=document.getElementById(b.dataset.d);if(!win) return;
+      if(win.classList.contains('gone')){
+        win.classList.remove('gone','minimized');
+        focusW(win);updateDock(b.dataset.d,'open');
+        renderNano();drawChrono();
+      } else if(win.classList.contains('minimized')){
+        win.classList.remove('minimized');focusW(win);updateDock(b.dataset.d,'open');
+      } else {
+        win.classList.add('minimized');updateDock(b.dataset.d,'min');
+      }
+    });
+  });
+}
+
+// ── CORE STRIP TOGGLE ──
+function initCoreStrip(){
+  let open=true;
+  $('#btn-core-strip').addEventListener('click',()=>{
+    open=!open;
+    $('#core-strip').style.display=open?'':'none';
+    $('#btn-core-strip').textContent=open?'CORE ▾':'CORE ▸';
+    setTimeout(()=>{
+      const bh=$('#sbar').offsetHeight;
+      $('#desk').style.top=bh+'px';
+    },0);
+  });
+}
+
+// ── LAYERS ──
+function initLayers(){
+  const sl=$('#core-sliders');
+  NEXUS.layerNames.forEach((name,i)=>{
+    const w=document.createElement('div');
+    w.className='flex flex-col gap-0.5';
+    w.innerHTML=`<div class="flex justify-between"><span class="text-[7px] uppercase tracking-widest truncate" style="color:${NEXUS.layerColors[i]}">${name}</span><span class="text-[9px] mono" style="color:${NEXUS.layerColors[i]}" id="lv-${i}">56</span></div><input type="range" min="0" max="100" value="56" class="w-full" data-layer="${i}">`;
+    sl.appendChild(w);
+  });
+  sl.addEventListener('input',e=>{
+    if(e.target.dataset.layer===undefined) return;
+    const i=+e.target.dataset.layer;
+    NEXUS.layers[i]=+e.target.value;
+    $(`#lv-${i}`).textContent=NEXUS.layers[i];
+    // update core detail
+    const items=$$('.cdi');if(items[i]) items[i].querySelector('.cdv').textContent=NEXUS.layers[i];
+    renderAll();
+  });
+}
+
+// ── NANO ──
+function initNano(){
+  const canvas=$('#nano-canvas');
+  $('#z-slider').oninput=function(){ NEXUS.nano.z=+this.value; $('#z-val').textContent=this.value; renderNano(); };
+  canvas.addEventListener('click',e=>{
+    const r=canvas.getBoundingClientRect();
+    const sx=canvas.width/r.width,sy=canvas.height/r.height;
+    const cx=(e.clientX-r.left)*sx,cy=(e.clientY-r.top)*sy;
+    const cell=canvas.width/12;
+    const gx=Math.floor(cx/cell),gy=Math.floor(cy/cell);
+    if(gx<0||gx>11||gy<0||gy>11) return;
+    const hand=NEXUS.hands[NEXUS.hands.active];
+    hand.x=gx;hand.y=gy;hand.z=NEXUS.nano.z;
+    if(hand.holding!==null){
+      NEXUS.nano.grid[hand.z][hand.y][hand.x]=hand.holding;
+      log('TOOL',`Wexler ${NEXUS.hands.active} placed ${NEXUS.elements[hand.holding].symbol} at [${gx},${gy},${hand.z}]`);
+      merkle(`PLACE ${NEXUS.elements[hand.holding].symbol} [${gx},${gy},${hand.z}]`);
+      hand.holding=null;pushHistory('place');
+    } else {
+      const a=NEXUS.nano.grid[hand.z][hand.y][hand.x];
+      if(a){hand.holding=a;NEXUS.nano.grid[hand.z][hand.y][hand.x]=null;log('TOOL',`Wexler ${NEXUS.hands.active} picked ${NEXUS.elements[a].symbol}`);merkle(`PICK ${NEXUS.elements[a].symbol}`);pushHistory('pick');}
+    }
+    updateHands();renderNano();
+  });
+  $('#hand-L').onclick=()=>{NEXUS.hands.active='L';$('#hand-L').className='flex-1 py-1 rounded border text-[10px] mono border-emerald-500/30 bg-emerald-500/10 text-emerald-300';$('#hand-R').className='flex-1 py-1 rounded border text-[10px] mono border-slate-700 text-slate-400';};
+  $('#hand-R').onclick=()=>{NEXUS.hands.active='R';$('#hand-R').className='flex-1 py-1 rounded border text-[10px] mono border-sky-500/30 bg-sky-500/10 text-sky-300';$('#hand-L').className='flex-1 py-1 rounded border text-[10px] mono border-slate-700 text-slate-400';};
+}
+
+function renderNano(){
+  const canvas=$('#nano-canvas');const ctx=canvas.getContext('2d');
+  const sz=canvas.width;const n=12;const cell=sz/n;
+  ctx.clearRect(0,0,sz,sz);ctx.fillStyle='#03050a';ctx.fillRect(0,0,sz,sz);
+  ctx.strokeStyle='rgba(30,41,59,.5)';ctx.lineWidth=1;
+  for(let i=0;i<=n;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,sz);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(sz,i*cell);ctx.stroke();}
+  const z=NEXUS.nano.z;let total=0;
+  for(let zy=0;zy<n;zy++) for(let zx=0;zx<n;zx++) if(NEXUS.nano.grid[z][zy][zx]){
+    total++;
+    const el=NEXUS.elements[NEXUS.nano.grid[z][zy][zx]];
+    const cx=(zx+.5)*cell,cy=(zy+.5)*cell,r=cell*.38;
+    ctx.save();ctx.shadowColor=el.color;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=el.color+'33';ctx.fill();
+    ctx.strokeStyle=el.color;ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(7,cell*.27)}px monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(el.symbol,cx,cy);
+  }
+  ['L','R'].forEach(h=>{
+    const hand=NEXUS.hands[h];if(hand.z!==z) return;
+    const col=h==='L'?'#10b981':'#0ea5e9';
+    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.setLineDash([4,3]);
+    ctx.strokeRect(hand.x*cell+2,hand.y*cell+2,cell-4,cell-4);ctx.setLineDash([]);
+    ctx.fillStyle=col+'cc';ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(h,hand.x*cell+cell/2,hand.y*cell+3);ctx.restore();
+  });
+  const attr=(NEXUS.layers[0]+NEXUS.layers[1])/2/100;
+  if(attr>0.1){const grd=ctx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,sz*.5);grd.addColorStop(0,`rgba(6,182,212,${attr*.07})`);grd.addColorStop(1,'rgba(6,182,212,0)');ctx.fillStyle=grd;ctx.fillRect(0,0,sz,sz);}
+  let allTotal=0;
+  for(let zz=0;zz<n;zz++) for(let yy=0;yy<n;yy++) for(let xx=0;xx<n;xx++) if(NEXUS.nano.grid[zz][yy][xx]) allTotal++;
+  $('#nano-count').textContent=`${allTotal} / 1728`;
+}
+
+// ── MERKLE ──
+function merkle(op){
+  const prev=NEXUS.merkle.length?NEXUS.merkle[NEXUS.merkle.length-1].hash:'0000000';
+  const raw=`${NEXUS.root0}:${op}:${Date.now()}:${prev}`;
+  let h=0;for(const c of raw) h=((h<<5)-h+c.charCodeAt(0))>>>0;
+  const hash=h.toString(16).padStart(8,'0');
+  NEXUS.merkle.push({op,hash});renderMerkle();
+}
+function renderMerkle(){
+  const f=$('#merkle-feed');if(!f) return;
+  f.innerHTML='';
+  NEXUS.merkle.slice(-8).reverse().forEach(m=>{
+    const d=document.createElement('div');d.className='flex items-center gap-1.5';
+    d.innerHTML=`<span class="text-slate-600 shrink-0">${m.hash}</span><span class="text-slate-400 truncate">${m.op}</span>`;
+    f.appendChild(d);
+  });
+}
+
+// ── HANDS ──
+function updateHands(){
+  const L=NEXUS.hands.L,R=NEXUS.hands.R;
+  $('#l-pos').textContent=`[${L.x},${L.y},${L.z}]`;$('#r-pos').textContent=`[${R.x},${R.y},${R.z}]`;
+  const lEl=L.holding?NEXUS.elements[L.holding]:null,rEl=R.holding?NEXUS.elements[R.holding]:null;
+  $('#l-hold').textContent=lEl?lEl.symbol:'—';$('#r-hold').textContent=rEl?rEl.symbol:'—';
+  $('#hand-grip').textContent=NEXUS.layers[2]+'%';
+  const fl=$('#fusion-l'),fr=$('#fusion-r');
+  if(fl){fl.textContent=lEl?lEl.symbol:'—';fl.style.color=lEl?lEl.color:'#64748b';}
+  if(fr){fr.textContent=rEl?rEl.symbol:'—';fr.style.color=rEl?rEl.color:'#64748b';}
+  if($('#fusion-l-name')) $('#fusion-l-name').textContent=lEl?lEl.name:'empty';
+  if($('#fusion-r-name')) $('#fusion-r-name').textContent=rEl?rEl.name:'empty';
+}
+
+function updateTripod(){
+  const v=(NEXUS.layers[3]>30&&NEXUS.layers[4]>30&&NEXUS.layers[0]>20)?'Y.Y.Y':'N.N.N';
+  $('#tripod-status').textContent=v;
+  $('#tripod-status').className=v==='Y.Y.Y'?'text-green-400 font-semibold':'text-red-400 font-semibold';
+}
+function updateNominal(){
+  const e=Math.round((NEXUS.layers[0]+NEXUS.layers[1]+NEXUS.layers[2])/3);
+  const fb=$('#fusion-energy-bar'),ft=$('#fusion-energy-txt');
+  if(fb) fb.style.width=e+'%';if(ft) ft.textContent=e+'%';
+  if($('#nano-attract')) $('#nano-attract').textContent=Math.round((NEXUS.layers[0]+NEXUS.layers[1])/2)+'%';
+  if($('#l1-val')) $('#l1-val').textContent=NEXUS.layers[0];
+  if($('#l2-val')) $('#l2-val').textContent=NEXUS.layers[1];
+  const nb=$('#next-element-bar');if(nb) nb.textContent=`E${Math.min(256,NEXUS.discovered+1)}`;
+}
+
+// ── HISTORY ──
+function pushHistory(action){
+  if(NEXUS.histIdx<NEXUS.history.length-1) NEXUS.history=NEXUS.history.slice(0,NEXUS.histIdx+1);
+  NEXUS.history.push({action,grid:JSON.stringify(NEXUS.nano.grid)});
+  NEXUS.histIdx=NEXUS.history.length-1;
+  updateChronos();drawChrono();
+}
+function restore(idx){
+  if(idx<0||idx>=NEXUS.history.length) return;
+  NEXUS.nano.grid=JSON.parse(NEXUS.history[idx].grid);
+  NEXUS.histIdx=idx;renderNano();updateChronos();drawChrono();
+}
+
+// ── LOG ──
+function log(type,msg){
+  const el=$('#log');if(!el) return;
+  const row=document.createElement('div');row.className='flex items-baseline gap-2';
+  const cols={SYSTEM:'text-slate-500',AXIOM:'text-sky-400',MYTHOS:'text-purple-400',TOOL:'text-emerald-400',FUSION:'text-fuchsia-400'};
+  const tc=new Date().toTimeString().slice(0,8);
+  row.innerHTML=`<span class="text-slate-600 shrink-0">${tc}</span><span class="font-semibold shrink-0 ${cols[type]||'text-slate-400'}">${type}</span><span class="text-slate-300 truncate">${msg}</span><span class="text-slate-700 shrink-0 text-[8px] ml-auto">sig:c6f487…</span>`;
+  el.insertBefore(row,el.firstChild);
+  const cnt=$('#event-count');if(cnt) cnt.textContent=el.children.length+' events';
+}
+
+// ── FORGE ──
+function initForge(){
+  const grid=$('#periodic-grid');
+  for(let i=1;i<=118;i++){
+    const e=NEXUS.elements[i],btn=document.createElement('button');
+    btn.className='aspect-square rounded-[3px] border border-slate-800/70 bg-[#0b101b] hover:bg-[#141c2a] flex flex-col items-center justify-center leading-none transition';
+    btn.innerHTML=`<span style="font-size:7px;color:#475569">${i}</span><span style="color:${e.color};font-size:8px;font-weight:700;font-family:monospace">${e.symbol}</span>`;
+    btn.onclick=()=>{const h=NEXUS.hands[NEXUS.hands.active];h.holding=i;log('TOOL',`Wexler ${NEXUS.hands.active} picked ${e.symbol}`);merkle(`FORGE_PICK ${e.symbol}`);updateHands();pushHistory('forge-pick');};
+    grid.appendChild(btn);
+  }
+  $('#fuse-btn').onclick=doFuse;
+}
+function doFuse(){
+  const L=NEXUS.hands.L.holding,R=NEXUS.hands.R.holding;
+  if(!L||!R){if($('#fuse-result')) $('#fuse-result').textContent='Need both hands loaded';return;}
+  const energy=(NEXUS.layers[0]+NEXUS.layers[1]+NEXUS.layers[2])/3;
+  const need=Math.min(94,(L+R)/256*100);
+  if(energy<need*.65){if($('#fuse-result')) $('#fuse-result').textContent=`Energy ${Math.round(energy)}% < ${Math.round(need*.65)}%`;log('SYSTEM','Fusion aborted • energy low');merkle('FUSION_FAIL');return;}
+  const newZ=Math.min(256,L+R-Math.floor(Math.random()*2));
+  if(newZ>NEXUS.discovered){NEXUS.discovered=newZ;$('#discovered-count').textContent=newZ;$('#next-element').textContent=`E${Math.min(256,newZ+1)}`;const nb=$('#next-element-bar');if(nb) nb.textContent=`E${Math.min(256,newZ+1)}`;$('#discover-bar').style.width=(newZ/256*100)+'%';}
+  NEXUS.hands.L.holding=null;NEXUS.hands.R.holding=newZ;
+  const sym=NEXUS.elements[newZ].symbol;
+  if($('#fuse-result')) $('#fuse-result').innerHTML=`<span class="text-fuchsia-400">Created ${sym} (Z=${newZ})</span>`;
+  log('FUSION',`Fused ${NEXUS.elements[L].symbol}+${NEXUS.elements[R].symbol} → ${sym}`);
+  merkle(`FUSION ${L}+${R}→${newZ}`);updateHands();pushHistory('fusion');
+}
+
+// ── COMPOUNDS ──
+function initCompounds(){
+  const compounds=[
+    {name:'H₂O',desc:'Water',atoms:[{z:1,dx:0},{z:8,dx:1},{z:1,dx:2}]},
+    {name:'CO₂',desc:'Carbon Dioxide',atoms:[{z:8,dx:0},{z:6,dx:1},{z:8,dx:2}]},
+    {name:'NH₃',desc:'Ammonia',atoms:[{z:7,dx:0},{z:1,dx:1},{z:1,dx:2},{z:1,dx:-1}]},
+    {name:'CH₄',desc:'Methane',atoms:[{z:6,dx:0},{z:1,dx:1},{z:1,dx:-1},{z:1,dy:1},{z:1,dy:-1}]},
+    {name:'C₆H₁₂O₆',desc:'Glucose',atoms:Array(24).fill(0).map((_,i)=>({z:[6,1,1,8][i%4],dx:(i%6)-2,dy:Math.floor(i/6)-1}))},
+    {name:'SiO₂',desc:'Quartz',atoms:[{z:14,dx:0},{z:8,dx:1},{z:8,dx:-1}]},
+  ];
+  const grid=$('#compounds-grid');
+  compounds.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='p-2 rounded-lg bg-[#0b1018] border border-slate-800 hover:border-green-500/40 text-left transition group';
+    b.innerHTML=`<div class="text-[12px] font-bold text-white group-hover:text-green-400">${c.name}</div><div class="text-[9px] mono text-slate-500">${c.desc}</div>`;
+    b.onclick=()=>buildCompound(c);grid.appendChild(b);
+  });
+  $$('.gene-btn').forEach(b=>b.onclick=()=>{
+    $('#crispr-seq').value=b.dataset.gene==='INSULIN'?'ATGGCCCTGTGGATGCGCCTCCTGCCCCTGCTGGCGCTGCTGGCCCTCTGGGGACCTGACCCAGCCGCAGCCTTTGTGAACCAACACCTGTGC':b.dataset.gene==='GFP'?'ATGAGTAAAGGAGAAGAACTTTTCACTGGAGTTGTCCCAATTCTTGTTGAATTAGATGGTGATGTTAATGGGCACAAATTTTCT':'ATGGCGGACTCTAAGGAC';
+  });
+  $('#synth-gene').onclick=()=>{const seq=$('#crispr-seq').value.trim();if(!seq) return;$('#last-gene').textContent=seq.slice(0,42)+'…';log('TOOL',`CRISPR synthesized ${seq.length}bp`);merkle(`CRISPR_SYNTH ${seq.length}bp`);pushHistory('crispr');};
+}
+function buildCompound(c){
+  const z=NEXUS.nano.z,cx=5,cy=5;
+  c.atoms.forEach(a=>{const x=Math.max(0,Math.min(11,cx+(a.dx||0)));const y=Math.max(0,Math.min(11,cy+(a.dy||0)));NEXUS.nano.grid[z][y][x]=a.z;});
+  renderNano();log('TOOL',`Assembled ${c.name} at Z${z}`);merkle(`COMPOUND_BUILD ${c.name}`);pushHistory('compound');
+}
+
+// ── CHRONOS ──
+function initChronos(){
+  $('#chrono-slider').addEventListener('input',e=>restore(+e.target.value));
+  $('#chrono-rewind').onclick=()=>{if(NEXUS.histIdx>0) restore(NEXUS.histIdx-1);$('#chrono-slider').value=NEXUS.histIdx;};
+  $('#chrono-ff').onclick=()=>{if(NEXUS.histIdx<NEXUS.history.length-1) restore(NEXUS.histIdx+1);$('#chrono-slider').value=NEXUS.histIdx;};
+  $('#chrono-play').onclick=()=>{NEXUS.playing=true;clearInterval(NEXUS.playTimer);NEXUS.playTimer=setInterval(()=>{if(NEXUS.histIdx<NEXUS.history.length-1){restore(NEXUS.histIdx+1);$('#chrono-slider').value=NEXUS.histIdx;}else{clearInterval(NEXUS.playTimer);NEXUS.playing=false;}},400);};
+  $('#chrono-pause').onclick=()=>{NEXUS.playing=false;clearInterval(NEXUS.playTimer);};
+}
+function updateChronos(){
+  const s=$('#chrono-slider');if(!s) return;
+  s.max=Math.max(0,NEXUS.history.length-1);s.value=NEXUS.histIdx;
+  $('#chrono-step').textContent=NEXUS.history.length?NEXUS.histIdx+1:0;
+  $('#chrono-total').textContent=NEXUS.history.length;
+}
+function drawChrono(){
+  const c=$('#chrono-canvas');if(!c) return;
+  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
+  const n=NEXUS.history.length;if(!n) return;
+  const step=c.width/Math.max(40,n);
+  NEXUS.history.forEach((h,i)=>{
+    const col=h.action.includes('fusion')?'#d946ef':h.action.includes('place')||h.action.includes('compound')?'#22c55e':h.action.includes('pick')?'#3b82f6':'#64748b';
+    ctx.fillStyle=col;ctx.globalAlpha=i===NEXUS.histIdx?1:.5;ctx.fillRect(i*step+1,15,Math.max(2,step-1),30);ctx.globalAlpha=1;
+  });
+  ctx.fillStyle='#06b6d4';ctx.beginPath();ctx.arc(NEXUS.histIdx*step+step/2,8,4,0,Math.PI*2);ctx.fill();
+}
+
+// ── DOMAINS ──
+function initDomains(){
+  const g=$('#domains-grid');if(!g) return;
+  NEXUS.domains.forEach(d=>{
+    const h=[...NEXUS.root0+d.id].reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))>>>0,0).toString(16).slice(0,10);
+    const el=document.createElement('div');el.className='p-1.5 rounded-lg bg-black/40 border border-slate-800';
+    el.innerHTML=`<div class="flex items-center gap-1 mb-0.5"><span class="w-1.5 h-1.5 rounded-full" style="background:${d.color}"></span><span class="text-[8px] mono" style="color:${d.color}">${d.name}</span></div><div class="mono text-[7px] text-slate-600 truncate">${h}…</div>`;
+    g.appendChild(el);
+  });
+}
+
+// ── CORE DETAIL ──
+function initCoreDetail(){
+  const list=$('#core-detail-list');if(!list) return;
+  NEXUS.layerNames.forEach((name,i)=>{
+    const el=document.createElement('div');el.className='cdi p-2 rounded-xl bg-[#05080f]/60 border border-slate-800';
+    el.innerHTML=`<div class="flex items-center justify-between mb-0.5"><span class="text-[8px] mono font-semibold" style="color:${NEXUS.layerColors[i]}">${name}</span><span class="cdv text-[11px] font-bold mono" style="color:${NEXUS.layerColors[i]}">${NEXUS.layers[i]}</span></div><p class="text-[8px] text-slate-500">${NEXUS.layerDesc[i]}</p>`;
+    list.appendChild(el);
+  });
+}
+
+function renderAll(){
+  renderNano();updateHands();updateTripod();updateNominal();
+  $('#attract-val').textContent=Math.round((NEXUS.layers[0]+NEXUS.layers[1])/2)+'%';
+  $('#energy-val').textContent=Math.round((NEXUS.layers[0]+NEXUS.layers[1]+NEXUS.layers[2])/3)+'%';
+  $('#grip-val').textContent=NEXUS.layers[2]+'%';
+}
+
+// ── BOOT ──
+initElements();initNanoGrid();initLayers();initNano();initForge();
+initCompounds();initChronos();initDomains();initCoreDetail();
+
+// Init window manager
+$$('.fw').forEach(win=>{
+  win.addEventListener('mousedown',()=>focusW(win));
+  makeDrag(win);makeResize(win);
+});
+initDots();initDock();initCoreStrip();
+
+// Adjust desktop top
+setTimeout(()=>{$('#desk').style.top=$('#sbar').offsetHeight+'px';},0);
+
+updateHands();renderNano();updateTripod();updateNominal();
+pushHistory('boot');
+log('SYSTEM','NEXUS v1.0 boot • ROOT0 anchored');
+log('AXIOM','BASE 00 • SHA256:ab2c74a3… • canonical anchor');
+log('MYTHOS','Gate 192.5 SEALED • Cobalt +1 • TriPod Y.Y.Y');
+log('TOOL','Wexler Hands calibrated • 12³ lattice online');
+log('AXIOM','10-Layer Core nominal • FLOAT mode active');
+merkle('SYSTEM_BOOT');renderMerkle();updateChronos();drawChrono();
+
+setTimeout(()=>{
+  NEXUS.nano.grid[5][5][5]=6;NEXUS.nano.grid[5][5][6]=6;NEXUS.nano.grid[5][6][5]=8;
+  renderNano();pushHistory('seed');log('TOOL','Seed lattice placed • C-C-O');merkle('SEED_LATTICE');
+},300);
+</script>
+</body>
+</html>

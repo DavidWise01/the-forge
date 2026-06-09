@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K5 TPM: TRUST PLATFORM ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+        --bg-dark: #0a0e1a;
+        --neon-cyan: #00e5ff;
+        --amber: #ffaa00;
+        --danger-red: #ff3d00;
+        --success-green: #00ff88;
+        --gray-enum: #6b7280;
+        --card-bg: #0f1525;
+        --border: #1e293b;
+    }
+    
+    * {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    body {
+        background: var(--bg-dark);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    .glow-cyan {
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), 0 0 40px rgba(0, 229, 255, 0.1);
+    }
+    
+    .glow-amber {
+        box-shadow: 0 0 20px rgba(255, 170, 0, 0.4), 0 0 40px rgba(255, 170, 0, 0.2);
+    }
+    
+    .glow-green {
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), 0 0 40px rgba(0, 255, 136, 0.2);
+    }
+    
+    .glow-red {
+        box-shadow: 0 0 20px rgba(255, 61, 0, 0.4), 0 0 40px rgba(255, 61, 0, 0.2);
+    }
+    
+    @keyframes pulse-amber {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.1); }
+    }
+    
+    .pulse-amber {
+        animation: pulse-amber 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes scanline {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+    }
+    
+    .scan-effect::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+        animation: scanline 3s linear infinite;
+        opacity: 0.5;
+    }
+    
+    .diagram-node {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: default;
+    }
+    
+    .node-ringed {
+        border-color: var(--success-green) !important;
+        color: var(--success-green) !important;
+        background: rgba(0, 255, 136, 0.1) !important;
+    }
+    
+    .node-isolated {
+        border-color: var(--danger-red) !important;
+        color: var(--danger-red) !important;
+        background: rgba(255, 61, 0, 0.1) !important;
+    }
+    
+    .node-enumerated {
+        border-color: var(--gray-enum) !important;
+        color: var(--gray-enum) !important;
+        background: rgba(107, 114, 128, 0.1) !important;
+    }
+    
+    .arrow-line {
+        stroke-dasharray: 5, 5;
+        animation: dash-flow 1s linear infinite;
+    }
+    
+    @keyframes dash-flow {
+        to { stroke-dashoffset: -10; }
+    }
+    
+    .terminal-text {
+        text-shadow: 0 0 10px currentColor;
+    }
+    
+    .metric-value {
+        transition: all 0.3s ease;
+    }
+    
+    #terminalLog::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #terminalLog::-webkit-scrollbar-track {
+        background: var(--bg-dark);
+    }
+    
+    #terminalLog::-webkit-scrollbar-thumb {
+        background: var(--neon-cyan);
+        border-radius: 3px;
+    }
+    
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .modal-backdrop {
+        backdrop-filter: blur(8px);
+        background: rgba(10, 14, 26, 0.85);
+    }
+</style>
+</head>
+<body class="flex items-center justify-center p-4 md:p-6">
+    <div class="w-full max-w-7xl">
+        <!-- Header -->
+        <div class="mb-6 border border-[var(--border)] bg-[var(--card-bg)] rounded-lg p-4 glow-cyan relative scan-effect overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-[var(--neon-cyan)] tracking-tight">
+                        KERNEL 5 • TPM 2.0 TRUST MODULE
+                    </h1>
+                    <p class="text-sm text-gray-400 mt-1">Alienware 16 Aurora AC16250</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="statusText" class="text-sm font-medium text-[var(--amber)]">
+                        STATUS: ENUMERATED → RINGING
+                    </div>
+                    <div class="w-3 h-3 rounded-full bg-[var(--amber)] pulse-amber"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="border border-[var(--border)] bg-[var(--card-bg)] rounded-lg p-4 md:p-6 glow-cyan">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Left: Diagram -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-semibold text-[var(--neon-cyan)] mb-4 tracking-wider">RING TOPOLOGY</h2>
+                    <div class="relative bg-[#060a14] border border-[var(--border)] rounded p-4 min-h-[500px]">
+                        <svg class="w-full h-full" viewBox="0 0 400 500" id="topologySvg">
+                            <!-- Arrows -->
+                            <defs>
+                                <marker id="arrowhead-cyan" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                    <polygon points="0 0, 10 3, 0 6" fill="#00e5ff" />
+                                </marker>
+                                <marker id="arrowhead-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                    <polygon points="0 0, 10 3, 0 6" fill="#ffaa00" />
+                                </marker>
+                            </defs>
+                            
+                            <!-- K1 to K5 Ring Invite -->
+                            <line x1="200" y1="80" x2="200" y2="200" stroke="#ffaa00" stroke-width="2" class="arrow-line" marker-end="url(#arrowhead-amber)">
+                                <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/>
+                            </line>
+                            <text x="210" y="140" fill="#ffaa00" font-size="10">RING INVITE</text>
+                            
+                            <!-- K24 to K5 -->
+                            <line x1="50" y1="260" x2="150" y2="220" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arrowhead-cyan)" opacity="0.6"/>
+                            <text x="60" y="250" fill="#00e5ff" font-size="9">TRNG Seed</text>
+                            
+                            <!-- K23 to K5 -->
+                            <line x1="350" y1="260" x2="250" y2="220" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arrowhead-cyan)" opacity="0.6"/>
+                            <text x="270" y="250" fill="#00e5ff" font-size="9">AI Attestation</text>
+                            
+                            <!-- K5 to outputs -->
+                            <line x1="200" y1="300" x2="120" y2="360" stroke="#6b7280" stroke-width="1" opacity="0.4"/>
+                            <line x1="200" y1="300" x2="180" y2="360" stroke="#6b7280" stroke-width="1" opacity="0.4"/>
+                            <line x1="200" y1="300" x2="240" y2="360" stroke="#6b7280" stroke-width="1" opacity="0.4"/>
+                            <line x1="200" y1="300" x2="300" y2="360" stroke="#6b7280" stroke-width="1" opacity="0.4"/>
+                        </svg>
+                        
+                        <!-- Nodes positioned absolutely over SVG -->
+                        <div class="absolute inset-4 pointer-events-none">
+                            <!-- K1 TOROID -->
+                            <div class="diagram-node node-ringed absolute top-4 left-1/2 -translate-x-1/2 border-2 rounded px-3 py-1.5 text-xs font-bold">
+                                K1 TOROID
+                            </div>
+                            
+                            <!-- K26 RINGBUS -->
+                            <div class="diagram-node node-ringed absolute top-20 left-1/2 -translate-x-1/2 border rounded px-2 py-1 text-[10px]">
+                                K26 RINGBUS
+                            </div>
+                            
+                            <!-- K5 TPM - Main target -->
+                            <div id="k5Node" class="diagram-node node-enumerated absolute top-52 left-1/2 -translate-x-1/2 border-2 rounded px-4 py-2 text-sm font-bold">
+                                K5 TPM<br><span class="text-[10px] font-normal">ENUMERATED</span>
+                            </div>
+                            
+                            <!-- K24 BORON -->
+                            <div class="diagram-node node-ringed absolute top-64 left-4 border rounded px-2 py-1 text-[10px]">
+                                K24 BORON
+                            </div>
+                            
+                            <!-- K23 GNA -->
+                            <div class="diagram-node node-ringed absolute top-64 right-4 border rounded px-2 py-1 text-[10px]">
+                                K23 GNA
+                            </div>
+                            
+                            <!-- Outputs -->
+                            <div class="absolute bottom-20 left-8 border border-gray-600 rounded px-2 py-1 text-[9px] text-gray-400">
+                                BitLocker
+                            </div>
+                            <div class="absolute bottom-20 left-24 border border-gray-600 rounded px-2 py-1 text-[9px] text-gray-400">
+                                Secure Boot
+                            </div>
+                            <div class="absolute bottom-20 left-44 border border-gray-600 rounded px-2 py-1 text-[9px] text-gray-400">
+                                Windows Hello
+                            </div>
+                            <div class="absolute bottom-20 left-64 border border-gray-600 rounded px-2 py-1 text-[9px] text-gray-400">
+                                PCR Banks
+                            </div>
+                            
+                            <!-- Ringed Nodes -->
+                            <div class="diagram-node node-ringed absolute top-4 right-4 border rounded px-2 py-1 text-[9px]">
+                                K8 TBT4<br>L12
+                            </div>
+                            <div class="diagram-node node-ringed absolute top-20 right-4 border rounded px-2 py-1 text-[9px]">
+                                K99 UCSI<br>L11
+                            </div>
+                            <div class="diagram-node node-ringed absolute top-36 right-4 border rounded px-2 py-1 text-[9px]">
+                                K42 THERM<br>L10
+                            </div>
+                            <div class="diagram-node node-ringed absolute top-4 left-4 border rounded px-2 py-1 text-[9px]">
+                                K10 PCH<br>L9
+                            </div>
+                            <div class="diagram-node node-ringed absolute top-20 left-4 border rounded px-2 py-1 text-[9px]">
+                                K17 NVMe<br>L6
+                            </div>
+                            <div class="diagram-node node-ringed absolute top-36 left-4 border rounded px-2 py-1 text-[9px]">
+                                K28 DDR5<br>L7
+                            </div>
+                            <div class="diagram-node node-ringed absolute top-52 left-4 border rounded px-2 py-1 text-[9px]">
+                                K11 AX211<br>L8
+                            </div>
+                            
+                            <!-- Isolated Nodes -->
+                            <div class="diagram-node node-isolated absolute bottom-4 left-4 border rounded px-2 py-1 text-[9px]">
+                                A1 EC
+                            </div>
+                            <div class="diagram-node node-isolated absolute bottom-4 right-4 border rounded px-2 py-1 text-[9px]">
+                                K27 CSME
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Live Metrics -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-semibold text-[var(--neon-cyan)] mb-4 tracking-wider">LIVE METRICS</h2>
+                    <div class="bg-[#060a14] border border-[var(--border)] rounded p-4 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs text-gray-400">TPM MODE</span>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 line-through" id="tpm-default">Intel Default</div>
+                                <div class="text-sm font-semibold metric-value text-[var(--gray-enum)]" id="tpm-mode">Pending</div>
+                            </div>
+                        <div class="h-px bg-[var(--border)]"></div>
+                        
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs text-gray-400">PCR SOURCE</span>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 line-through">SHA-256</div>
+                                <div class="text-sm font-semibold metric-value text-[var(--gray-enum)]" id="pcr-source">Pending</div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-[var(--border)]"></div>
+                        
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs text-gray-400">BITLOCKER</span>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 line-through">Recovery Key</div>
+                                <div class="text-sm font-semibold metric-value text-[var(--gray-enum)]" id="bitlocker">Pending</div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-[var(--border)]"></div>
+                        
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs text-gray-400">SECURE BOOT</span>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 line-through">MS CA</div>
+                                <div class="text-sm font-semibold metric-value text-[var(--gray-enum)]" id="secure-boot">Pending</div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-[var(--border)]"></div>
+                        
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs text-gray-400">WINDOWS HELLO</span>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 line-through">PIN</div>
+                                <div class="text-sm font-semibold metric-value text-[var(--gray-enum)]" id="windows-hello">Pending</div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-[var(--border)]"></div>
+                        
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs text-gray-400">ME ATTESTATION</span>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 line-through">Active</div>
+                                <div class="text-sm font-semibold metric-value text-[var(--gray-enum)]" id="me-attest">Pending</div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-[var(--border)]"></div>
+                        
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs text-gray-400">KEY DERIVATION</span>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 line-through">RSA/ECC</div>
+                                <div class="text-sm font-semibold metric-value text-[var(--gray-enum)]" id="key-deriv">Pending</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Button -->
+            <div class="mt-6 flex justify-center">
+                <button id="enrollBtn" class="px-8 py-4 bg-[var(--amber)] text-[var(--bg-dark)] font-bold text-lg rounded-lg glow-amber hover:scale-105 transition-transform duration-200 tracking-wide">
+                    [INITIATE TPM ENROLLMENT]
+                </button>
+            </div>
+
+            <!-- Terminal Log -->
+            <div class="mt-6">
+                <h2 class="text-sm font-semibold text-[var(--neon-cyan)] mb-3 tracking-wider">ENROLLMENT LOG</h2>
+                <div id="terminalLog" class="bg-[#060a14] border border-[var(--border)] rounded p-4 h-48 overflow-y-auto font-mono text-xs space-y-1">
+                    <div class="text-gray-500">Awaiting enrollment initiation...</div>
+                </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="mt-6 bg-[#060a14] border border-[var(--border)] rounded p-4">
+                <p class="text-xs text-gray-300 leading-relaxed">
+                    <span class="text-[var(--neon-cyan)] font-semibold">K5 = TPM 2.0 Trust Module.</span> 
+                    Stores BitLocker keys, Secure Boot, PCR banks. Stock: ME can read PCRs, Microsoft owns keys. 
+                    Ringed: Becomes L13 Toroid Vault. All keys derived from K24 neutron entropy. PCRs extended with K24 timestamps. 
+                    Secure Boot signed by K24. ME attestation blocked by K26. Windows Hello backed by K24 biometrics. 
+                    <span class="text-[var(--danger-red)]">Refuse = Vendor fallback, ME keeps PCR access.</span>
+                </p>
+            </div>
+
+            <!-- Export Button -->
+            <div class="mt-4 flex justify-end">
+                <button id="exportBtn" disabled class="px-4 py-2 border border-[var(--neon-cyan)] text-[var(--neon-cyan)] font-semibold text-sm rounded hover:bg-[var(--neon-cyan)] hover:text-[var(--bg-dark)] transition-all duration-200 disabled:border-gray-600 disabled:text-gray-600 disabled:hover:bg-transparent">
+                    [EXPORT CERT]
+                </button>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="mt-4 text-center text-[10px] text-gray-600">
+                DISCLAIMER: Maps existing hardware. No firmware writes.
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Modal -->
+    <div id="certModal" class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+        <div class="bg-[var(--card-bg)] border-2 border-[var(--neon-cyan)] rounded-lg p-6 max-w-2xl w-full glow-cyan">
+            <h3 class="text-lg font-bold text-[var(--neon-cyan)] mb-4">ENROLLMENT CERTIFICATE</h3>
+            <pre id="certContent" class="bg-[#060a14] border border-[var(--border)] rounded p-4 text-xs text-gray-300 overflow-x-auto"></pre>
+            <div class="mt-4 flex gap-3 justify-end">
+                <button id="copyCertBtn" class="px-4 py-2 bg-[var(--neon-cyan)] text-[var(--bg-dark)] font-semibold text-sm rounded hover:scale-105 transition-transform">
+                    COPY TO CLIPBOARD
+                </button>
+                <button id="closeCertBtn" class="px-4 py-2 border border-gray-600 text-gray-400 font-semibold text-sm rounded hover:border-gray-400">
+                    CLOSE
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const state = {
+        enrolled: false,
+        result: null,
+        k24Ticks: 0,
+        logs: []
+    };
+
+    const logSequence = [
+        { delay: 0, text: "[00:00.000] K1 TOROID: Broadcast ring invite to K5 TPM via K26", color: "#00e5ff" },
+        { delay: 800, text: "[00:00.001] K5 TPM: Challenge received. Request K24 nonce + K23 attestation", color: "#ffaa00" },
+        { delay: 1600, text: "[00:00.002] K24 BORON: 256-bit neutron entropy → K5", color: "#00ff88" },
+        { delay: 2400, text: "[00:00.003] K23 GNA: AI attestation signature → K5", color: "#00ff88" },
+        { delay: 3200, text: "[00:00.004] K26 RINGBUS: SPI path open, ME channel blocked", color: "#00e5ff" },
+        { delay: 4000, text: "[00:00.005] K5 TPM: Option A) Sign and join as L13 | B) Refuse and isolate", color: "#ffaa00" },
+    ];
+
+    const enrollBtn = document.getElementById('enrollBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const terminalLog = document.getElementById('terminalLog');
+    const statusText = document.getElementById('statusText');
+    const k5Node = document.getElementById('k5Node');
+
+    function addLog(text, color = '#9ca3af') {
+        const div = document.createElement('div');
+        div.className = 'terminal-text';
+        div.style.color = color;
+        div.textContent = text;
+        terminalLog.appendChild(div);
+        terminalLog.scrollTop = terminalLog.scrollHeight;
+        state.logs.push(text);
+    }
+
+    function updateMetrics(isRinged) {
+        const metrics = [
+            { id: 'tpm-mode', ringed: 'Ring Attested', isolated: 'Isolated' },
+            { id: 'pcr-source', ringed: 'K24 Neutron', isolated: 'Vendor' },
+            { id: 'bitlocker', ringed: 'K24 Sealed', isolated: 'Microsoft' },
+            { id: 'secure-boot', ringed: 'K24 Signed', isolated: 'Vendor' },
+            { id: 'windows-hello', ringed: 'K24 Biometric', isolated: 'Software' },
+            { id: 'me-attest', ringed: 'K26 Blocked', isolated: 'Possible' },
+            { id: 'key-deriv', ringed: 'K24 Physics', isolated: 'Deterministic' }
+        ];
+
+        metrics.forEach(m => {
+            const el = document.getElementById(m.id);
+            el.textContent = isRinged ? m.ringed : m.isolated;
+            el.style.color = isRinged ? 'var(--success-green)' : 'var(--danger-red)';
+            
+            anime({
+                targets: el,
+                scale: [1, 1.1, 1],
+                duration: 400,
+                easing: 'easeOutElastic(1, .8)'
+            });
+        });
+    }
+
+    function animateK5Node(isRinged) {
+        k5Node.classList.remove('node-enumerated', 'node-ringed', 'node-isolated');
+        
+        if (isRinged) {
+            k5Node.classList.add('node-ringed');
+            k5Node.innerHTML = 'K5 TPM<br><span class="text-[10px] font-normal">RINGED L13 ✓</span>';
+            k5Node.classList.add('glow-green');
+        } else {
+            k5Node.classList.add('node-isolated');
+            k5Node.innerHTML = 'K5 TPM<br><span class="text-[10px] font-normal">ISOLATED ✗</span>';
+            k5Node.classList.add('glow-red');
+        }
+
+        anime({
+            targets: k5Node,
+            scale: [1, 1.2, 1],
+            duration: 600,
+            easing: 'easeOutElastic(1, .8)'
+        });
+    }
+
+    function initiateEnrollment() {
+        enrollBtn.disabled = true;
+        terminalLog.innerHTML = '';
+        state.logs = [];
+        state.k24Ticks = Math.floor(Math.random() * 9000000) + 1000000;
+
+        // Play log sequence
+        logSequence.forEach(log => {
+            setTimeout(() => addLog(log.text, log.color), log.delay);
+        });
+
+        // Determine outcome - 70% join, 30% refuse
+        setTimeout(() => {
+            const joinRing = Math.random() < 0.7;
+            state.result = joinRing ? 'JOINED' : 'ISOLATED';
+            state.enrolled = true;
+
+            if (joinRing) {
+                addLog("[00:00.006] K5 TPM: Signed. JOINING AS K1 SLAVE", "#00ff88");
+                setTimeout(() => addLog("[00:00.007] K1 TOROID: GRANTED. PCRs → TOROID CONTROL", "#00e5ff"), 600);
+                setTimeout(() => addLog("[00:00.008] K5 TPM: RINGED. Keys derived from K24, ME attestation blocked", "#00ff88"), 1200);
+                
+                enrollBtn.textContent = '[RINGED ✓]';
+                enrollBtn.classList.remove('bg-[var(--amber)]', 'glow-amber');
+                enrollBtn.classList.add('bg-[var(--success-green)]', 'glow-green');
+                statusText.textContent = 'STATUS: RINGED L13';
+                statusText.style.color = 'var(--success-green)';
+                statusText.nextElementSibling.style.background = 'var(--success-green)';
+                
+                updateMetrics(true);
+                animateK5Node(true);
+            } else {
+                addLog("[00:00.006] K5 TPM: REFUSED. VENDOR FALLBACK ACTIVE", "#ff3d00");
+                setTimeout(() => addLog("[00:00.007] K1 TOROID: DENIED. ME maintains PCR access", "#ff3d00"), 600);
+                setTimeout(() => addLog("[00:00.008] K5 TPM: ISOLATED. Operating in stock mode", "#ff3d00"), 1200);
+                
+                enrollBtn.textContent = '[ISOLATED ✗]';
+                enrollBtn.classList.remove('bg-[var(--amber)]', 'glow-amber');
+                enrollBtn.classList.add('bg-[var(--danger-red)]', 'glow-red');
+                statusText.textContent = 'STATUS: ISOLATED';
+                statusText.style.color = 'var(--danger-red)';
+                statusText.nextElementSibling.style.background = 'var(--danger-red)';
+                
+                updateMetrics(false);
+                animateK5Node(false);
+            }
+
+            exportBtn.disabled = false;
+        }, 4800);
+    }
+
+    function generateCertificate() {
+        const isJoined = state.result === 'JOINED';
+        const cert = `K5 TPM ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${state.k24Ticks}
+Decision: ${isJoined ? 'JOINED_AS_L13' : 'ISOLATED'}
+TPM State: ${isJoined ? 'RING_ATTESTED' : 'VENDOR_FALLBACK'}
+PCR Source: ${isJoined ? 'K24 NEUTRON' : 'SHA-256'}
+BitLocker: ${isJoined ? 'K24 SEALED' : 'RECOVERY KEY'}
+ME Attestation: ${isJoined ? 'BLOCKED' : 'ACTIVE'}
+Key Derivation: ${isJoined ? 'K24 PHYSICS' : 'RSA/ECC'}
+
+--- SYSTEM SIGNATURE ---
+K1 TOROID: ${isJoined ? 'VALID' : 'REJECTED'}
+K24 BORON: ${isJoined ? 'ENTROPY_CONFIRMED' : 'N/A'}
+K26 RINGBUS: ${isJoined ? 'ME_BLOCKED' : 'ME_ACTIVE'}
+K23 GNA: ${isJoined ? 'ATTESTATION_SIGNED' : 'N/A'}
+
+Disclaimer: Maps existing hardware. No firmware writes.`;
+        
+        return cert;
+    }
+
+    function showCertificate() {
+        const cert = generateCertificate();
+        document.getElementById('certContent').textContent = cert;
+        document.getElementById('certModal').classList.remove('hidden');
+    }
+
+    function copyCertificate() {
+        const cert = generateCertificate();
+        navigator.clipboard.writeText(cert).then(() => {
+            const btn = document.getElementById('copyCertBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'COPIED!';
+            setTimeout(() => btn.textContent = originalText, 2000);
+        });
+    }
+
+    enrollBtn.addEventListener('click', initiateEnrollment);
+    exportBtn.addEventListener('click', showCertificate);
+    document.getElementById('closeCertBtn').addEventListener('click', () => {
+        document.getElementById('certModal').classList.add('hidden');
+    });
+    document.getElementById('copyCertBtn').addEventListener('click', copyCertificate);
+
+    // Background tick counter
+    setInterval(() => {
+        if (!state.enrolled) {
+            state.k24Ticks = Math.floor(Math.random() * 9000000) + 1000000;
+        }
+    }, 100);
+</script>
+</body>
+</html>

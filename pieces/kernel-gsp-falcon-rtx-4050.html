@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K7 GSP FALCON: GPU ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        
+:root {
+    --bg-dark: #0a0e1a;
+    --neon-cyan: #00e5ff;
+    --amber: #ffaa00;
+    --red-alert: #ff3d00;
+    --green-ringed: #00ff88;
+    --card-bg: #111827;
+    --border: #1f2937;
+}
+
+* {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+body {
+    background: var(--bg-dark);
+    color: #e5e7eb;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 170, 0, 0.02) 0%, transparent 50%);
+}
+
+.glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), inset 0 0 20px rgba(0, 229, 255, 0.05);
+}
+
+.glow-amber {
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.4), inset 0 0 20px rgba(255, 170, 0, 0.05);
+}
+
+.glow-green {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5), inset 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+.glow-red {
+    box-shadow: 0 0 30px rgba(255, 61, 0, 0.5), inset 0 0 20px rgba(255, 61, 0, 0.1);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.pulse-amber {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes dataFlow {
+    0% { stroke-dashoffset: 1000; }
+    100% { stroke-dashoffset: 0; }
+}
+
+.flow-line {
+    stroke-dasharray: 5, 5;
+    animation: dataFlow 20s linear infinite;
+}
+
+.terminal {
+    font-size: 11px;
+    line-height: 1.6;
+    background: #000;
+    border: 1px solid var(--border);
+}
+
+.terminal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.terminal::-webkit-scrollbar-track {
+    background: #000;
+}
+
+.terminal::-webkit-scrollbar-thumb {
+    background: var(--neon-cyan);
+    border-radius: 3px;
+}
+
+.metric-transition {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+.scan::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    animation: scanline 3s linear infinite;
+}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-7xl">
+        <!-- Header -->
+        <div class="mb-6 border border-[#1f2937] bg-[#111827]/80 backdrop-blur-sm rounded-lg p-4 glow-cyan">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-[#00e5ff] tracking-wider">KERNEL 7 • GSP FALCON RTX 4050</h1>
+                    <p class="text-xs text-gray-400 mt-1">Alienware 16 Aurora AC16250 • TOROID RING ARCHITECTURE</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="statusText" class="text-sm font-semibold text-[#ffaa00] tracking-wide">STATUS: ENUMERATED → RINGING</span>
+                    <div id="statusIndicator" class="w-3 h-3 rounded-full bg-[#ffaa00] pulse-amber"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="border border-[#1f2937] bg-[#111827]/80 backdrop-blur-sm rounded-lg glow-cyan overflow-hidden">
+            <div class="grid lg:grid-cols-2 gap-6 p-6">
+                <!-- Left: Diagram -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-bold text-[#00e5ff] border-b border-[#1f2937] pb-2">RING TOPOLOGY</h2>
+                    
+                    <svg viewBox="0 0 500 400" class="w-full h-auto">
+                        <!-- Defs for gradients -->
+                        <defs>
+                            <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#00e5ff;stop-opacity:0.8" />
+                                <stop offset="100%" style="stop-color:#00e5ff;stop-opacity:0.3" />
+                            </linearGradient>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#00e5ff" />
+                            </marker>
+                            <marker id="arrowheadAmber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#ffaa00" />
+                            </marker>
+                        </defs>
+
+                        <!-- K1 TOROID -->
+                        <g id="k1Group">
+                            <rect x="175" y="10" width="150" height="50" rx="4" fill="#111827" stroke="#00e5ff" stroke-width="2" class="glow-cyan"/>
+                            <text x="250" y="35" text-anchor="middle" fill="#00e5ff" font-size="14" font-weight="bold">K1 TOROID</text>
+                            <text x="250" y="50" text-anchor="middle" fill="#9ca3af" font-size="9">MASTER @ 0.287ms</text>
+                        </g>
+
+                        <!-- K26 RINGBUS -->
+                        <rect x="100" y="90" width="300" height="30" rx="15" fill="#1f2937" stroke="#00e5ff" stroke-width="1" opacity="0.6"/>
+                        <text x="250" y="109" text-anchor="middle" fill="#00e5ff" font-size="11" font-weight="600">K26 RINGBUS • PCIe DMA</text>
+
+                        <!-- K24 BORON -->
+                        <rect x="20" y="150" width="120" height="45" rx="4" fill="#111827" stroke="#374151" stroke-width="1"/>
+                        <text x="80" y="170" text-anchor="middle" fill="#e5e7eb" font-size="12" font-weight="600">K24 BORON</text>
+                        <text x="80" y="185" text-anchor="middle" fill="#9ca3af" font-size="9">TRNG Seed</text>
+
+                        <!-- K23 GNA -->
+                        <rect x="360" y="150" width="120" height="45" rx="4" fill="#111827" stroke="#374151" stroke-width="1"/>
+                        <text x="420" y="170" text-anchor="middle" fill="#e5e7eb" font-size="12" font-weight="600">K23 GNA</text>
+                        <text x="420" y="185" text-anchor="middle" fill="#9ca3af" font-size="9">4 TOPS Control</text>
+
+                        <!-- K7 GSP -->
+                        <g id="k7Group">
+                            <rect id="k7Box" x="175" y="230" width="150" height="60" rx="4" fill="#1f2937" stroke="#6b7280" stroke-width="2" class="metric-transition"/>
+                            <text id="k7Label" x="250" y="255" text-anchor="middle" fill="#6b7280" font-size="14" font-weight="bold" class="metric-transition">K7 GSP</text>
+                            <text id="k7State" x="250" y="273" text-anchor="middle" fill="#6b7280" font-size="10" font-weight="600" class="metric-transition">ENUMERATED</text>
+                        </g>
+
+                        <!-- GPU/VRAM -->
+                        <rect x="150" y="320" width="100" height="50" rx="4" fill="#111827" stroke="#374151" stroke-width="1"/>
+                        <text x="200" y="340" text-anchor="middle" fill="#e5e7eb" font-size="11" font-weight="600">140W GPU</text>
+                        <text x="200" y="355" text-anchor="middle" fill="#9ca3af" font-size="9">RTX 4050</text>
+
+                        <rect x="260" y="320" width="100" height="50" rx="4" fill="#111827" stroke="#374151" stroke-width="1"/>
+                        <text x="310" y="340" text-anchor="middle" fill="#e5e7eb" font-size="11" font-weight="600">6GB VRAM</text>
+                        <text x="310" y="355" text-anchor="middle" fill="#9ca3af" font-size="9">GDDR6</text>
+
+                        <!-- Arrows -->
+                        <line x1="250" y1="60" x2="250" y2="230" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrowhead)" opacity="0.6"/>
+                        <text x="260" y="145" fill="#00e5ff" font-size="9">RING INVITE</text>
+
+                        <line id="boronArrow" x1="140" y1="172" x2="175" y2="250" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrowheadAmber)" opacity="0" class="flow-line"/>
+                        <text id="boronLabel" x="100" y="210" fill="#ffaa00" font-size="9" opacity="0">TRNG Seed</text>
+
+                        <line id="gnaArrow" x1="360" y1="172" x2="325" y2="250" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrowheadAmber)" opacity="0" class="flow-line"/>
+                        <text id="gnaLabel" x="340" y="210" fill="#ffaa00" font-size="9" opacity="0">4 TOPS Proof</text>
+
+                        <line x1="250" y1="290" x2="200" y2="320" stroke="#374151" stroke-width="1.5"/>
+                        <line x1="250" y1="290" x2="310" y2="320" stroke="#374151" stroke-width="1.5"/>
+                    </svg>
+                </div>
+
+                <!-- Right: Live Metrics -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-bold text-[#00e5ff] border-b border-[#1f2937] pb-2">LIVE METRICS</h2>
+                    
+                    <div class="space-y-3">
+                        <div class="bg-black/40 border border-[#1f2937] rounded p-3">
+                            <div class="text-xs text-gray-400 mb-1">GSP MODE</div>
+                            <div id="metricMode" class="text-sm font-semibold text-[#e5e7eb] metric-transition">Nvidia Secure</div>
+                        </div>
+
+                        <div class="bg-black/40 border border-[#1f2937] rounded p-3">
+                            <div class="text-xs text-gray-400 mb-1">CUDA CORES</div>
+                            <div id="metricCuda" class="text-sm font-semibold text-[#e5e7eb] metric-transition">2560</div>
+                        </div>
+
+                        <div class="bg-black/40 border border-[#1f2937] rounded p-3">
+                            <div class="text-xs text-gray-400 mb-1">VRAM</div>
+                            <div id="metricVram" class="text-sm font-semibold text-[#e5e7eb] metric-transition">6GB GDDR6</div>
+                        </div>
+
+                        <div class="bg-black/40 border border-[#1f2937] rounded p-3">
+                            <div class="text-xs text-gray-400 mb-1">POWER</div>
+                            <div id="metricPower" class="text-sm font-semibold text-[#e5e7eb] metric-transition">0W</div>
+                        </div>
+
+                        <div class="bg-black/40 border border-[#1f2937] rounded p-3">
+                            <div class="text-xs text-gray-400 mb-1">HDCP</div>
+                            <div id="metricHdcp" class="text-sm font-semibold text-[#e5e7eb] metric-transition">Nvidia Key</div>
+                        </div>
+
+                        <div class="bg-black/40 border border-[#1f2937] rounded p-3">
+                            <div class="text-xs text-gray-400 mb-1">TELEMETRY</div>
+                            <div id="metricTelemetry" class="text-sm font-semibold text-[#e5e7eb] metric-transition">Active</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Button -->
+            <div class="px-6 pb-6">
+                <button id="enrollBtn" class="w-full py-4 bg-[#ffaa00] text-black font-bold text-lg rounded-lg glow-amber hover:bg-[#ffbb33] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#ffaa00]">
+                    [INITIATE GSP ENROLLMENT]
+                </button>
+            </div>
+
+            <!-- Terminal Log -->
+            <div class="px-6 pb-6">
+                <h2 class="text-sm font-bold text-[#00e5ff] border-b border-[#1f2937] pb-2 mb-3">K1 → K7 HANDSHAKE LOG</h2>
+                <div id="terminal" class="terminal rounded p-3 h-48 overflow-y-auto text-[#00e5ff] relative scan">
+                    <div class="text-gray-500">[SYSTEM] Awaiting enrollment initiation...</div>
+                </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="px-6 pb-6 border-t border-[#1f2937] pt-4">
+                <div class="text-xs text-gray-400 leading-relaxed space-y-2">
+                    <p class="text-[#00e5ff] font-semibold">GSP Falcon = Nvidia's RISC-V security core.</p>
+                    <p><span class="text-gray-300">Stock:</span> Handles HDCP, secure boot, telemetry to Nvidia. 140W + 6GB VRAM.</p>
+                    <p><span class="text-[#00ff88]">Ringed:</span> Becomes L5 Toroid Compute. Display, CUDA, VRAM controlled by K1 @ 0.287ms. HDCP keys derived from K24 BORON. Nvidia telemetry blocked by K26.</p>
+                    <p><span class="text-[#ff3d00]">Refuse:</span> PCIe isolation, iGPU fallback via K33.</p>
+                    <p class="text-[10px] text-gray-500 pt-2 border-t border-[#1f2937]">Disclaimer: Maps existing hardware. No firmware writes. Simulation only.</p>
+                </div>
+            </div>
+
+            <!-- Export -->
+            <div class="px-6 pb-6">
+                <button id="exportBtn" disabled class="w-full py-3 bg-[#00e5ff]/10 border border-[#00e5ff] text-[#00e5ff] font-semibold rounded-lg hover:bg-[#00e5ff]/20 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[#00e5ff]/10">
+                    [EXPORT CERT]
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+const state = {
+    enrolled: false,
+    decision: null,
+    k24Ticks: 1929501 + Math.floor(Math.random() * 10000),
+    hdcpSeed: '0x' + Math.floor(Math.random() * 0xFFFFFFFF).toString(16).padStart(8, '0'),
+    logs: []
+};
+
+const terminal = document.getElementById('terminal');
+const enrollBtn = document.getElementById('enrollBtn');
+const exportBtn = document.getElementById('exportBtn');
+const statusText = document.getElementById('statusText');
+const statusIndicator = document.getElementById('statusIndicator');
+
+const metrics = {
+    mode: document.getElementById('metricMode'),
+    cuda: document.getElementById('metricCuda'),
+    vram: document.getElementById('metricVram'),
+    power: document.getElementById('metricPower'),
+    hdcp: document.getElementById('metricHdcp'),
+    telemetry: document.getElementById('metricTelemetry')
+};
+
+const diagram = {
+    k7Box: document.getElementById('k7Box'),
+    k7Label: document.getElementById('k7Label'),
+    k7State: document.getElementById('k7State'),
+    boronArrow: document.getElementById('boronArrow'),
+    boronLabel: document.getElementById('boronLabel'),
+    gnaArrow: document.getElementById('gnaArrow'),
+    gnaLabel: document.getElementById('gnaLabel')
+};
+
+function logTerminal(msg, color = '#00e5ff') {
+    const time = `[${(state.logs.length * 0.001).toFixed(3)}]`;
+    const div = document.createElement('div');
+    div.innerHTML = `<span class="text-gray-500">${time}</span> <span style="color: ${color}">${msg}</span>`;
+    terminal.appendChild(div);
+    terminal.scrollTop = terminal.scrollHeight;
+    state.logs.push(msg);
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function initiateEnrollment() {
+    if (state.enrolled) return;
+    
+    enrollBtn.disabled = true;
+    enrollBtn.textContent = '[NEGOTIATING...]';
+    terminal.innerHTML = '';
+    
+    // Handshake sequence
+    await sleep(300);
+    logTerminal('K1 TOROID: Broadcast ring invite to K7 GSP via K26', '#00e5ff');
+    
+    await sleep(500);
+    logTerminal('K7 GSP: Challenge received. Request K24 nonce + K23 compute proof', '#ffaa00');
+    diagram.boronArrow.style.opacity = '1';
+    diagram.boronLabel.style.opacity = '1';
+    diagram.gnaArrow.style.opacity = '1';
+    diagram.gnaLabel.style.opacity = '1';
+    
+    await sleep(500);
+    logTerminal('K24 BORON: 256-bit neutron entropy → K7', '#ffaa00');
+    
+    await sleep(500);
+    logTerminal('K23 GNA: 4 TOPS workload signature → K7', '#ffaa00');
+    
+    await sleep(500);
+    logTerminal('K26 RINGBUS: PCIe DMA path open, ME/Nvidia telemetry blocked', '#00e5ff');
+    
+    await sleep(500);
+    logTerminal('K7 GSP: Option A) Sign and join as L5 | B) Refuse and isolate', '#ffaa00');
+    
+    await sleep(800);
+    
+    // 70% join, 30% refuse based on VBIOS lock
+    const willJoin = Math.random() < 0.7;
+    state.decision = willJoin ? 'JOINED_AS_L5' : 'ISOLATED';
+    
+    if (willJoin) {
+        // JOINED
+        logTerminal('K7 GSP: Signed. JOINING AS K1 SLAVE', '#00ff88');
+        
+        await sleep(500);
+        logTerminal('K1 TOROID: GRANTED. 140W + 6GB → TOROID CONTROL', '#00ff88');
+        
+        await sleep(500);
+        logTerminal('K7 GSP: RINGED. HDCP keys → K24 derived', '#00ff88');
+        
+        // Update diagram
+        diagram.k7Box.setAttribute('stroke', '#00ff88');
+        diagram.k7Box.setAttribute('fill', '#0a3a24');
+        diagram.k7Label.setAttribute('fill', '#00ff88');
+        diagram.k7State.setAttribute('fill', '#00ff88');
+        diagram.k7State.textContent = 'RINGED L5';
+        
+        // Update metrics
+        metrics.mode.textContent = 'Ring Slave';
+        metrics.mode.style.color = '#00ff88';
+        metrics.cuda.textContent = '2560 Ring Controlled';
+        metrics.cuda.style.color = '#00ff88';
+        metrics.vram.textContent = '6GB Toroid Pool';
+        metrics.vram.style.color = '#00ff88';
+        metrics.power.textContent = '140W K1 Granted';
+        metrics.power.style.color = '#00ff88';
+        metrics.hdcp.textContent = 'K24 Derived';
+        metrics.hdcp.style.color = '#00ff88';
+        metrics.telemetry.textContent = 'K26 Blocked';
+        metrics.telemetry.style.color = '#00ff88';
+        
+        // Update status
+        statusText.textContent = 'STATUS: RINGED ✓';
+        statusText.classList.remove('text-[#ffaa00]');
+        statusText.classList.add('text-[#00ff88]');
+        statusIndicator.classList.remove('bg-[#ffaa00]', 'pulse-amber');
+        statusIndicator.classList.add('bg-[#00ff88]');
+        
+        enrollBtn.textContent = '[RINGED ✓]';
+        enrollBtn.classList.remove('bg-[#ffaa00]', 'glow-amber');
+        enrollBtn.classList.add('bg-[#00ff88]', 'glow-green');
+        
+    } else {
+        // ISOLATED
+        logTerminal('K7 GSP: Signature refused. VBIOS LOCK DETECTED', '#ff3d00');
+        
+        await sleep(500);
+        logTerminal('K1 TOROID: PCIe ISOLATION ENGAGED', '#ff3d00');
+        
+        await sleep(500);
+        logTerminal('K33 HYPERION: iGPU fallback activated', '#ff3d00');
+        
+        // Update diagram
+        diagram.k7Box.setAttribute('stroke', '#ff3d00');
+        diagram.k7Box.setAttribute('fill', '#3a0a0a');
+        diagram.k7Label.setAttribute('fill', '#ff3d00');
+        diagram.k7State.setAttribute('fill', '#ff3d00');
+        diagram.k7State.textContent = 'ISOLATED';
+        
+        // Update metrics
+        metrics.mode.textContent = 'Isolated';
+        metrics.mode.style.color = '#ff3d00';
+        metrics.cuda.textContent = '2560 iGPU Only';
+        metrics.cuda.style.color = '#ff3d00';
+        metrics.vram.textContent = 'Inaccessible';
+        metrics.vram.style.color = '#ff3d00';
+        metrics.power.textContent = '0W Blocked';
+        metrics.power.style.color = '#ff3d00';
+        metrics.hdcp.textContent = 'Disabled';
+        metrics.hdcp.style.color = '#ff3d00';
+        metrics.telemetry.textContent = 'Dead';
+        metrics.telemetry.style.color = '#ff3d00';
+        
+        // Update status
+        statusText.textContent = 'STATUS: ISOLATED ✗';
+        statusText.classList.remove('text-[#ffaa00]');
+        statusText.classList.add('text-[#ff3d00]');
+        statusIndicator.classList.remove('bg-[#ffaa00]', 'pulse-amber');
+        statusIndicator.classList.add('bg-[#ff3d00]');
+        
+        enrollBtn.textContent = '[ISOLATED ✗]';
+        enrollBtn.classList.remove('bg-[#ffaa00]', 'glow-amber');
+        enrollBtn.classList.add('bg-[#ff3d00]', 'glow-red');
+    }
+    
+    state.enrolled = true;
+    exportBtn.disabled = false;
+}
+
+function exportCert() {
+    if (!state.enrolled) return;
+    
+    const isRinged = state.decision === 'JOINED_AS_L5';
+    const cert = `K7 GSP ENROLLMENT CERTIFICATE
+=====================================
+Timestamp: K24 Ticks: ${state.k24Ticks}
+Decision: ${state.decision}
+GPU State: ${isRinged ? 'RING_CONTROLLED' : 'PCIE_BLOCKED'}
+VRAM: ${isRinged ? '6GB TOROID POOL' : 'INACCESSIBLE'}
+HDCP Seed: K24 BORON ${state.hdcpSeed}...
+Nvidia Telemetry: ${isRinged ? 'BLOCKED BY K26' : 'N/A - ISOLATED'}
+=====================================
+Kernel 7 • TOROID RING ARCHITECTURE
+Alienware 16 Aurora AC16250 • RTX 4050`;
+    
+    const blob = new Blob([cert], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `K7_GSP_CERT_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    logTerminal('Certificate exported to local system', '#00e5ff');
+}
+
+enrollBtn.addEventListener('click', initiateEnrollment);
+exportBtn.addEventListener('click', exportCert);
+
+// System check simulation
+logTerminal('System: Alienware 16 Aurora AC16250 detected', '#00e5ff');
+logTerminal('System: RTX 4050 Mobile • GSP Falcon enumerated', '#00e5ff');
+logTerminal('System: K1 TOROID ready for ring invite', '#00e5ff');
+</script>
+</body>
+</html>

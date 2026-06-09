@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K23 GNA: NEURAL ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#0a0e1a',
+        neon: '#00e5ff',
+        amber: '#ffaa00',
+        success: '#00ff88'
+      },
+      fontFamily: {
+        mono: ['JetBrains Mono', 'monospace']
+      },
+      animation: {
+        'pulse-amber': 'pulse-amber 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate',
+        'dash': 'dash 1.5s linear infinite',
+        'ring': 'ring 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+      },
+      keyframes: {
+        'pulse-amber': {
+          '0%, 100%': { opacity: 1, boxShadow: '0 0 0 0 rgba(255, 170, 0, 0.7)' },
+          '50%': { opacity: 0.8, boxShadow: '0 0 0 8px rgba(255, 170, 0, 0)' }
+        },
+        'glow': {
+          '0%': { filter: 'drop-shadow(0 0 2px #00e5ff)' },
+          '100%': { filter: 'drop-shadow(0 0 12px #00e5ff)' }
+        },
+        'dash': {
+          'to': { strokeDashoffset: -12 }
+        },
+        'ring': {
+          '0%': { transform: 'scale(1)', filter: 'drop-shadow(0 0 0px #00ff88)' },
+          '50%': { transform: 'scale(1.05)', filter: 'drop-shadow(0 0 16px #00ff88)' },
+          '100%': { transform: 'scale(1)', filter: 'drop-shadow(0 0 8px #00ff88)' }
+        }
+      }
+    }
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body {
+  background: radial-gradient(1200px 800px at 50% -20%, #101729 0%, #0a0e1a 50%, #06090f 100%);
+}
+
+.terminal-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.terminal-scrollbar::-webkit-scrollbar-track {
+  background: #0a0e1a;
+}
+.terminal-scrollbar::-webkit-scrollbar-thumb {
+  background: #00e5ff40;
+  border-radius: 3px;
+}
+.terminal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00e5ff80;
+}
+
+.glass {
+  background: rgba(10, 14, 26, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.node {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node.active {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: #00ff88;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.arrow-line {
+  stroke-dasharray: 6 6;
+}
+
+.metric-value {
+  transition: all 0.3s ease;
+}
+
+.metric-value.update {
+  color: #00ff88;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+}
+</style>
+</head>
+<body class="bg-bg text-gray-200 font-mono min-h-screen flex items-center justify-center p-4">
+<div class="w-full max-w-7xl">
+  <!-- Header -->
+  <div class="glass rounded-t-2xl px-4 md:px-8 py-5 border-b border-neon/20">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-neon tracking-wider">KERNEL 23 • GNA GAUSSIAN NEURAL ACCELERATOR</h1>
+        <p class="text-xs text-gray-400 mt-1">Alienware 16 Aurora AC16250</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="statusText" class="text-sm font-semibold text-amber">STATUS: ENUMERATED → RINGING</div>
+        <div id="statusDot" class="w-3 h-3 rounded-full bg-amber animate-pulse-amber"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="glass rounded-b-2xl p-4 md:p-8 shadow-2xl shadow-neon/10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Left: Diagram -->
+      <div class="order-2 lg:order-1">
+        <h2 class="text-sm text-neon font-semibold mb-4 tracking-widest">RING TOPOLOGY</h2>
+        <div class="relative bg-[#050810] rounded-xl p-6 border border-neon/10">
+          <svg viewBox="0 0 400 340" class="w-full h-auto">
+            <!-- K1 TOROID -->
+            <g id="k1" transform="translate(200, 40)">
+              <rect x="-60" y="-18" width="120" height="36" rx="6" fill="rgba(0,229,255,0.1)" stroke="#00e5ff" stroke-width="1.5" class="node"/>
+              <text x="0" y="5" text-anchor="middle" fill="#00e5ff" font-size="12" font-weight="600">K1 TOROID</text>
+            </g>
+
+            <!-- K24 BORON -->
+            <g id="k24" transform="translate(60, 170)">
+              <rect x="-50" y="-18" width="100" height="36" rx="6" fill="rgba(0,229,255,0.1)" stroke="#00e5ff" stroke-width="1.5" class="node"/>
+              <text x="0" y="5" text-anchor="middle" fill="#00e5ff" font-size="12" font-weight="600">K24 BORON</text>
+            </g>
+
+            <!-- K23 GNA CENTER -->
+            <g id="k23" transform="translate(200, 170)">
+              <rect x="-60" y="-18" width="120" height="36" rx="6" fill="rgba(100,116,139,0.3)" stroke="#64748b" stroke-width="1.5" class="node"/>
+              <text id="k23-text" x="0" y="5" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="600">K23 GNA</text>
+              <text id="k23-sub" x="0" y="28" text-anchor="middle" fill="#64748b" font-size="9">ENUMERATED</text>
+            </g>
+
+            <!-- K26 RINGBUS -->
+            <g id="k26" transform="translate(200, 300)">
+              <rect x="-60" y="-18" width="120" height="36" rx="6" fill="rgba(0,229,255,0.1)" stroke="#00e5ff" stroke-width="1.5" class="node"/>
+              <text x="0" y="5" text-anchor="middle" fill="#00e5ff" font-size="12" font-weight="600">K26 RINGBUS</text>
+            </g>
+
+            <!-- K25 P-CORE -->
+            <g id="k25" transform="translate(340, 110)">
+              <rect x="-50" y="-18" width="100" height="36" rx="6" fill="rgba(0,229,255,0.1)" stroke="#00e5ff" stroke-width="1.5" class="node"/>
+              <text x="0" y="5" text-anchor="middle" fill="#00e5ff" font-size="11" font-weight="600">K25 P-CORE</text>
+            </g>
+
+            <!-- K2 E-CORE -->
+            <g id="k2" transform="translate(340, 230)">
+              <rect x="-50" y="-18" width="100" height="36" rx="6" fill="rgba(0,229,255,0.1)" stroke="#00e5ff" stroke-width="1.5" class="node"/>
+              <text x="0" y="5" text-anchor="middle" fill="#00e5ff" font-size="11" font-weight="600">K2 E-CORE</text>
+            </g>
+
+            <!-- Arrows -->
+            <!-- K1 -> K23 -->
+            <line id="arrow-k1-k23" x1="200" y1="58" x2="200" y2="152" stroke="#ffaa00" stroke-width="2" class="arrow-line" opacity="0.6"/>
+            <polygon points="200,152 195,144 205,144" fill="#ffaa00" opacity="0.6"/>
+            <text x="210" y="110" fill="#ffaa00" font-size="9" opacity="0.8">RING INVITE</text>
+
+            <!-- K24 -> K23 -->
+            <line id="arrow-k24-k23" x1="110" y1="170" x2="140" y2="170" stroke="#ffaa00" stroke-width="2" class="arrow-line" opacity="0.6"/>
+            <polygon points="140,170 132,165 132,175" fill="#ffaa00" opacity="0.6"/>
+            <text x="70" y="190" fill="#ffaa00" font-size="9" opacity="0.8">4 TOPS @ 0.302ms</text>
+
+            <!-- K25 -> K23 -->
+            <line id="arrow-k25-k23" x1="290" y1="120" x2="260" y2="155" stroke="#00e5ff" stroke-width="1.5" class="arrow-line" opacity="0.4"/>
+            <polygon points="260,155 267,151 264,160" fill="#00e5ff" opacity="0.4"/>
+
+            <!-- K2 -> K23 -->
+            <line id="arrow-k2-k23" x1="290" y1="220" x2="260" y2="185" stroke="#00e5ff" stroke-width="1.5" class="arrow-line" opacity="0.4"/>
+            <polygon points="260,185 267,189 264,180" fill="#00e5ff" opacity="0.4"/>
+
+            <!-- K23 -> K26 -->
+            <line x1="200" y1="188" x2="200" y2="282" stroke="#00e5ff" stroke-width="1.5" class="arrow-line" opacity="0.4"/>
+            <polygon points="200,282 195,274 205,274" fill="#00e5ff" opacity="0.4"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Right: Metrics + Controls -->
+      <div class="order-1 lg:order-2 flex flex-col">
+        <h2 class="text-sm text-neon font-semibold mb-4 tracking-widest">LIVE METRICS</h2>
+        <div class="bg-[#050810] rounded-xl p-5 border border-neon/10 mb-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <div class="text-[10px] text-gray-500 uppercase">GNA MODE</div>
+              <div id="metric-mode" class="metric-value text-lg font-semibold text-gray-400">Sleep</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-[10px] text-gray-500 uppercase">TOPS</div>
+              <div id="metric-tops" class="metric-value text-lg font-semibold text-gray-400">0</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-[10px] text-gray-500 uppercase">LATENCY</div>
+              <div id="metric-latency" class="metric-value text-lg font-semibold text-gray-400">N/A</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-[10px] text-gray-500 uppercase">WORKLOAD</div>
+              <div id="metric-workload" class="metric-value text-lg font-semibold text-gray-400">None</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-[10px] text-gray-500 uppercase">POWER</div>
+              <div id="metric-power" class="metric-value text-lg font-semibold text-gray-400">0.1W</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-[10px] text-gray-500 uppercase">ME ACCESS</div>
+              <div id="metric-me" class="metric-value text-lg font-semibold text-gray-400">Possible</div>
+            </div>
+          </div>
+        </div>
+
+        <button id="enrollBtn" class="w-full bg-gradient-to-r from-amber to-amber/80 hover:from-amber/90 hover:to-amber/70 text-black font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg shadow-amber/20 hover:shadow-amber/40 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+          [INITIATE GNA ENROLLMENT]
+        </button>
+
+        <button id="exportBtn" class="w-full mt-3 bg-transparent border border-neon/30 hover:border-neon hover:bg-neon/10 text-neon font-semibold py-3 px-6 rounded-xl transition-all duration-300 hidden">
+          [EXPORT CERT]
+        </button>
+      </div>
+    </div>
+
+    <!-- Terminal Log -->
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm text-neon font-semibold tracking-widest">TERMINAL LOG</h2>
+        <div class="text-[10px] text-gray-500">AUTO-SCROLL</div>
+      </div>
+      <div id="terminal" class="bg-[#050810] rounded-xl p-4 border border-neon/10 h-48 overflow-y-auto terminal-scrollbar font-mono text-xs">
+        <div class="text-gray-500">> Awaiting enrollment initiation...</div>
+      </div>
+    </div>
+
+    <!-- Explainer -->
+    <div class="mt-8 bg-[#050810] rounded-xl p-5 border border-neon/10">
+      <h3 class="text-sm text-neon font-semibold mb-3 tracking-widest">GNA SPECIFICATION</h3>
+      <p class="text-xs text-gray-400 leading-relaxed">
+        GNA = 2x DSP slices, 4 TOPS INT8, 2MB SRAM. Stock: Windows voice/noise cancel. Ringed: Toroid's brain. Runs anomaly detect, FFT, speech, thermal prediction on all ring telemetry at 3.3kHz. ME cannot access GNA because K26 blocks DMA. Power: 1.2W for 4 TOPS = 3.3 TOPS/W.
+      </p>
+      <p class="text-[10px] text-gray-600 mt-3 border-t border-gray-800 pt-3">
+        Disclaimer: Maps existing hardware. No firmware writes. All operations simulated client-side.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const enrollBtn = document.getElementById('enrollBtn');
+const exportBtn = document.getElementById('exportBtn');
+const terminal = document.getElementById('terminal');
+const statusText = document.getElementById('statusText');
+const statusDot = document.getElementById('statusDot');
+
+const metrics = {
+  mode: document.getElementById('metric-mode'),
+  tops: document.getElementById('metric-tops'),
+  latency: document.getElementById('metric-latency'),
+  workload: document.getElementById('metric-workload'),
+  power: document.getElementById('metric-power'),
+  me: document.getElementById('metric-me')
+};
+
+const k23Group = document.querySelector('#k23 rect');
+const k23Text = document.getElementById('k23-text');
+const k23Sub = document.getElementById('k23-sub');
+
+const logSequence = [
+  { time: '00:00.000', msg: 'K1 TOROID: Broadcast compute invite to K23 GNA', delay: 0 },
+  { time: '00:00.001', msg: 'K23 GNA: Challenge received, request K24 tick alignment', delay: 400 },
+  { time: '00:00.002', msg: 'K24 BORON: 0.302ms tick sync → K23', delay: 800 },
+  { time: '00:00.003', msg: 'K26 RINGBUS: DMA path open, ME blocked', delay: 1200 },
+  { time: '00:00.004', msg: 'K23 GNA: Aligned. Loading Toroid inference model', delay: 1600 },
+  { time: '00:00.005', msg: 'K1 TOROID: GRANT. GNA = L4 Ring Compute', delay: 2000 },
+  { time: '00:00.006', msg: 'K23 GNA: RINGED. 4 TOPS online @ 0.302ms', delay: 2400 }
+];
+
+let enrolled = false;
+let k24Ticks = 1929103;
+
+function addLogEntry(time, msg, type = 'info') {
+  const entry = document.createElement('div');
+  entry.className = 'mb-1';
+  const color = type === 'success' ? 'text-success' : type === 'warn' ? 'text-amber' : 'text-neon';
+  entry.innerHTML = `<span class="text-gray-600">[${time}]</span> <span class="${color}">${msg}</span>`;
+  terminal.appendChild(entry);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function updateMetric(element, value, delay = 0) {
+  setTimeout(() => {
+    element.textContent = value;
+    element.classList.add('update');
+    setTimeout(() => element.classList.remove('update'), 300);
+  }, delay);
+}
+
+function animateArrows() {
+  document.querySelectorAll('.arrow-line').forEach(line => {
+    line.classList.add('animate-dash');
+  });
+}
+
+function animateK23Ring() {
+  k23Group.style.fill = 'rgba(0, 255, 136, 0.15)';
+  k23Group.style.stroke = '#00ff88';
+  k23Text.style.fill = '#00ff88';
+  k23Sub.textContent = 'RINGED L4 ✓';
+  k23Sub.style.fill = '#00ff88';
+  k23Group.parentElement.classList.add('animate-ring');
+}
+
+async function enrollGNA() {
+  if (enrolled) return;
+  enrolled = true;
+  
+  enrollBtn.disabled = true;
+  enrollBtn.textContent = '[ENROLLING...]';
+  enrollBtn.classList.add('animate-pulse');
+  
+  statusText.textContent = 'STATUS: NEGOTIATING';
+  terminal.innerHTML = '';
+  
+  animateArrows();
+  
+  // Execute log sequence
+  logSequence.forEach((log, i) => {
+    setTimeout(() => {
+      addLogEntry(log.time, log.msg, i === logSequence.length - 1 ? 'success' : 'info');
+      
+      // Update metrics at specific steps
+      if (i === 2) {
+        updateMetric(metrics.mode, 'Ring Compute');
+        updateMetric(metrics.tops, '4.0 TOPS');
+      }
+      if (i === 3) {
+        updateMetric(metrics.me, 'Blocked by K26');
+      }
+      if (i === 4) {
+        updateMetric(metrics.latency, '0.302ms batch');
+        updateMetric(metrics.workload, 'Toroid Telemetry');
+      }
+      if (i === 5) {
+        updateMetric(metrics.power, '1.2W');
+      }
+    }, log.delay);
+  });
+  
+  // Final state
+  setTimeout(() => {
+    animateK23Ring();
+    statusText.textContent = 'STATUS: RINGED L4';
+    statusText.classList.remove('text-amber');
+    statusText.classList.add('text-success');
+    statusDot.classList.remove('bg-amber', 'animate-pulse-amber');
+    statusDot.classList.add('bg-success');
+    statusDot.style.boxShadow = '0 0 12px rgba(0, 255, 136, 0.6)';
+    
+    enrollBtn.textContent = '[GNA RINGED ✓]';
+    enrollBtn.classList.remove('animate-pulse');
+    enrollBtn.classList.remove('from-amber', 'to-amber/80');
+    enrollBtn.classList.add('from-success/40', 'to-success/20', 'text-success', 'border', 'border-success/50');
+    
+    exportBtn.classList.remove('hidden');
+  }, 2800);
+}
+
+function exportCert() {
+  const cert = `K23 GNA ENROLLMENT CERTIFICATE
+================================
+Timestamp: K24 Ticks: ${k24Ticks}
+TOPS: 4.0 INT8 confirmed
+Latency: 0.302ms aligned to K24
+ME Access: BLOCKED BY K26
+Role: L4 TOROID COMPUTE
+Power: 1.2W
+
+Hardware: Alienware 16 Aurora AC16250
+Status: RINGED ✓
+================================
+Disclaimer: Maps existing hardware. No firmware writes.`;
+
+  const blob = new Blob([cert], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `K23_GNA_CERT_${Date.now()}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  addLogEntry(new Date().toISOString().substr(11, 12), 'Certificate exported to downloads', 'success');
+}
+
+enrollBtn.addEventListener('click', enrollGNA);
+exportBtn.addEventListener('click', exportCert);
+
+// Simulate K24 tick counter
+setInterval(() => {
+  k24Ticks += Math.floor(Math.random() * 10);
+}, 302);
+</script>
+</body>
+</html>

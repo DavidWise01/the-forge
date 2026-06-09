@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boronic O₂ Processor — Chaotic Homeostasis</title>
+<style>
+  :root {
+    --bg-0: #00080a;
+    --bg-1: #001318;
+    --bg-2: #00262b;
+    --teal-1: #00ffe0;
+    --teal-2: #00c2b2;
+    --teal-3: #008b80;
+    --teal-dark: #003a3f;
+    --ink: #c8fff6;
+    --muted: #7adbd1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    background: radial-gradient(1200px 800px at 75% 15%, #01333a 0%, var(--bg-1) 38%, var(--bg-0) 100%);
+    color: var(--ink);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      linear-gradient(transparent 0, rgba(0,0,0,0.3) 100%),
+      repeating-linear-gradient(0deg, rgba(0,255,224,0.06) 0px, rgba(0,255,224,0.06) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(90deg, rgba(0,255,224,0.05) 0px, rgba(0,255,224,0.05) 1px, transparent 1px, transparent 40px);
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 24px;
+    padding-bottom: 40px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .logo {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: linear-gradient(145deg, #002a30, #001518);
+    border: 1px solid rgba(0,255,224,0.25);
+    position: relative;
+    box-shadow: 0 0 24px rgba(0,255,224,0.12), inset 0 0 12px rgba(0,255,224,0.08);
+    overflow: hidden;
+  }
+  .logo::before {
+    content: "";
+    position: absolute; inset: 7px; border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--teal-1), var(--teal-3), var(--teal-1));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+    animation: spin 5s linear infinite;
+  }
+  .logo::after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(0,255,224,0.25), transparent 60%);
+    filter: blur(6px);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h1 {
+    font-size: 18px; letter-spacing: 2px; font-weight: 700; color: #eafffd;
+    text-shadow: 0 0 12px rgba(0,255,224,0.25);
+  }
+  .subtitle { font-size: 11px; color: var(--teal-2); letter-spacing: 1.6px; margin-top: 2px; }
+  .status {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 12px; color: #9ffcf2;
+    background: rgba(0,30,34,0.7);
+    border: 1px solid rgba(0,255,224,0.14);
+    padding: 8px 14px; border-radius: 999px; backdrop-filter: blur(6px);
+    box-shadow: inset 0 0 12px rgba(0,255,224,0.06);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--teal-1); box-shadow: 0 0 10px var(--teal-1), 0 0 24px rgba(0,255,224,0.5);
+    animation: pulseDot 2s ease-in-out infinite;
+  }
+  @keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.9); } }
+  .time { opacity: 0.75; font-variant-numeric: tabular-nums; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1.35fr;
+    gap: 22px;
+  }
+  @media (max-width: 1080px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    position: relative;
+    background: linear-gradient(180deg, rgba(2,38,42,0.85), rgba(1,18,20,0.85));
+    border: 1px solid rgba(0,255,224,0.12);
+    border-radius: 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+  .panel::before {
+    content: ""; position: absolute; inset: -1px;
+    background: radial-gradient(500px 180px at 15% -10%, rgba(0,255,224,0.12), transparent 60%);
+    pointer-events: none;
+  }
+  .core-panel { padding: 22px; display: flex; flex-direction: column; min-height: 540px; }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .panel-head h2 { font-size: 12px; letter-spacing: 2px; color: #a8fff4; font-weight: 600; }
+  .tag {
+    font-size: 10px; padding: 4px 8px; border-radius: 6px;
+    color: #001416; background: var(--teal-1);
+    box-shadow: 0 0 12px rgba(0,255,224,0.4);
+    letter-spacing: 1px; font-weight: 700;
+  }
+
+  .lattice {
+    position: relative; flex: 1; min-height: 380px;
+    border-radius: 16px; overflow: hidden;
+    background:
+      radial-gradient(400px 300px at 50% 40%, rgba(0,80,88,0.35), transparent 60%),
+      radial-gradient(600px 400px at 50% 120%, rgba(0,40,44,0.6), rgba(0,10,12,0.9));
+    border: 1px solid rgba(0,255,224,0.08);
+  }
+  .lattice::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(0,255,224,0.07) 1px, transparent 1px);
+    background-size: 22px 22px; opacity: 0.5;
+    animation: drift 30s linear infinite;
+  }
+  @keyframes drift { to { background-position: 220px 220px; } }
+
+  .cluster {
+    position: absolute; width: 140px; height: 140px;
+    transform: translate(-50%, -50%);
+    animation: float 11s ease-in-out infinite;
+    filter: drop-shadow(0 0 18px rgba(0,255,224,0.15));
+  }
+  @keyframes float { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-8px); } }
+
+  .hex {
+    position: absolute; left: 50%; top: 50%;
+    width: 28px; height: 32px; margin-left: -14px; margin-top: -16px;
+    background: linear-gradient(180deg, rgba(0,255,224,0.18), rgba(0,120,110,0.1));
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    border: 1px solid rgba(0,255,224,0.38);
+    box-shadow: 0 0 14px rgba(0,255,224,0.18), inset 0 0 8px rgba(0,255,224,0.15);
+    animation: boronPulse 2.6s ease-in-out infinite;
+  }
+  .hex.core {
+    width: 44px; height: 50px; margin-left: -22px; margin-top: -25px;
+    background: linear-gradient(180deg, rgba(0,255,224,0.38), rgba(0,180,165,0.22));
+    border-color: rgba(0,255,224,0.8);
+    box-shadow: 0 0 26px rgba(0,255,224,0.4), inset 0 0 14px rgba(0,255,224,0.3);
+    z-index: 2;
+  }
+  .hex::after {
+    content: ""; position: absolute; inset: 3px;
+    clip-path: inherit; background: rgba(0,255,224,0.06);
+  }
+  @keyframes boronPulse {
+    0%,100% { transform: scale(1); opacity: 0.9; filter: brightness(1); }
+    50% { transform: scale(1.16); opacity: 1; filter: brightness(1.35); }
+  }
+
+  .beam {
+    position: absolute; left: 50%; top: 50%; width: 2px; height: 52px;
+    background: linear-gradient(to bottom, transparent, rgba(0,255,224,0.5), transparent);
+    transform-origin: top center; opacity: 0.4; filter: blur(0.2px);
+  }
+
+  .note {
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px dashed rgba(0,255,224,0.18);
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); text-align: center;
+  }
+
+  .gauges-panel { padding: 22px; }
+  .gauges-grid {
+    display: grid; grid-template-columns: repeat(2,1fr); gap: 18px;
+  }
+  @media (max-width: 640px) { .gauges-grid { grid-template-columns: 1fr; } }
+
+  .gauge-card {
+    position: relative; min-height: 184px;
+    background: linear-gradient(180deg, rgba(0,28,32,0.72), rgba(0,14,16,0.72));
+    border: 1px solid rgba(0,255,224,0.1); border-radius: 18px;
+    padding: 18px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; isolation: isolate;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+  .gauge-card:hover { transform: translateY(-2px); border-color: rgba(0,255,224,0.28); }
+  .gauge-card::before {
+    content: ""; position: absolute; inset: -50%;
+    background: conic-gradient(from 0deg, transparent, rgba(0,255,224,0.08), transparent 28%);
+    animation: rotate 14s linear infinite; z-index: -1;
+  }
+  @keyframes rotate { to { transform: rotate(360deg); } }
+
+  .gauge-circle {
+    width: 142px; height: 142px; border-radius: 50%;
+    background: conic-gradient(var(--teal-1) 0deg, var(--teal-1) 337deg, var(--teal-dark) 337deg);
+    display: grid; place-items: center;
+    box-shadow: 0 0 30px rgba(0,255,224,0.18), inset 0 0 22px rgba(0,0,0,0.7);
+    position: relative;
+  }
+  .gauge-circle::before {
+    content: ""; position: absolute; inset: 10px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, #012023, #000b0d);
+    box-shadow: inset 0 0 24px rgba(0,0,0,0.9), inset 0 0 40px rgba(0,255,224,0.06);
+  }
+  .gauge-inner { position: relative; z-index: 1; text-align: center; }
+  .gauge-inner .value {
+    font-size: 30px; font-weight: 700; color: #eaffff; font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 14px rgba(0,255,224,0.45);
+  }
+  .gauge-inner .label { font-size: 10px; letter-spacing: 1.8px; color: var(--teal-2); margin-top: 6px; }
+
+  .pressure-wrap { width: 100%; text-align: center; }
+  .pressure-dial {
+    width: 150px; height: 75px; margin: 0 auto 14px; position: relative; overflow: hidden;
+  }
+  .dial-arc {
+    position: absolute; inset: 0; border-radius: 150px 150px 0 0;
+    border: 10px solid #023337; border-bottom: none;
+    box-shadow: inset 0 0 18px rgba(0,0,0,0.6);
+  }
+  .dial-arc::before {
+    content: ""; position: absolute; inset: -10px; border-radius: inherit;
+    border: 10px solid transparent; border-top-color: var(--teal-1); border-left-color: var(--teal-1);
+    transform: rotate(-45deg);
+    mask: linear-gradient(90deg, black 65%, transparent);
+    filter: drop-shadow(0 0 8px rgba(0,255,224,0.5));
+  }
+  .dial-ticks {
+    position: absolute; inset: 0;
+    background: repeating-conic-gradient(from 180deg, rgba(0,255,224,0.25) 0deg 1deg, transparent 1deg 10deg);
+    mask: radial-gradient(farthest-side, transparent 70%, black 71%);
+    opacity: 0.5;
+  }
+  .needle {
+    position: absolute; bottom: 0; left: 50%; width: 2px; height: 66px;
+    background: linear-gradient(to top, var(--teal-1), rgba(0,255,224,0.1));
+    transform-origin: bottom center; transform: translateX(-50%) rotate(-45deg);
+    filter: drop-shadow(0 0 6px var(--teal-1)); transition: transform 0.9s cubic-bezier(0.2,0.8,0.2,1);
+  }
+  .center-dot {
+    position: absolute; bottom: -6px; left: 50%; width: 14px; height: 14px;
+    background: #001416; border: 2px solid var(--teal-1); border-radius: 50%;
+    transform: translateX(-50%); box-shadow: 0 0 12px rgba(0,255,224,0.6);
+  }
+  .pressure-wrap .value { font-size: 26px; color: #eaffff; font-variant-numeric: tabular-nums; }
+  .pressure-wrap .value span { font-size: 13px; margin-left: 5px; color: var(--teal-2); }
+  .pressure-wrap .label { font-size: 10px; letter-spacing: 1.8px; color: var(--teal-2); margin-top: 6px; }
+
+  .rate-wrap { width: 100%; text-align: center; }
+  .rate-wrap .value {
+    font-size: 38px; font-weight: 700; line-height: 1; color: #eaffff;
+    text-shadow: 0 0 16px rgba(0,255,224,0.35); font-variant-numeric: tabular-nums;
+  }
+  .rate-wrap .unit { font-size: 12px; color: var(--teal-2); margin-top: 2px; letter-spacing: 1px; }
+  #rateSpark { width: 100%; height: 64px; margin: 10px 0 4px; opacity: 0.95; }
+  .rate-wrap .label { font-size: 10px; letter-spacing: 1.8px; color: var(--teal-2); }
+
+  .sites-wrap { width: 100%; }
+  .sites-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .sites-head .value { font-size: 24px; color: #eaffff; font-variant-numeric: tabular-nums; }
+  .sites-head .label { font-size: 10px; letter-spacing: 1.8px; color: var(--teal-2); }
+  .sites-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; }
+  .site {
+    width: 100%; aspect-ratio: 1/1.15;
+    background: rgba(0,255,224,0.05);
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    border: 1px solid rgba(0,255,224,0.1);
+    transition: all 0.3s ease;
+  }
+  .site.active {
+    background: linear-gradient(180deg, rgba(0,255,224,0.32), rgba(0,140,125,0.22));
+    border-color: rgba(0,255,224,0.55);
+    box-shadow: 0 0 8px rgba(0,255,224,0.28), inset 0 0 6px rgba(0,255,224,0.2);
+    animation: siteGlow 3.2s ease-in-out infinite;
+  }
+  @keyframes siteGlow { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+  .site.inactive { opacity: 0.22; filter: grayscale(0.7); }
+
+  .ticker-panel {
+    margin-top: 22px; display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(90deg, rgba(0,28,32,0.9), rgba(0,16,18,0.9));
+    border: 1px solid rgba(0,255,224,0.12); border-radius: 14px; padding: 12px 14px;
+    backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .ticker-label {
+    font-size: 11px; letter-spacing: 2px; color: var(--teal-1); white-space: nowrap;
+    padding-right: 12px; border-right: 1px solid rgba(0,255,224,0.15);
+    text-shadow: 0 0 8px rgba(0,255,224,0.3);
+  }
+  .ticker { flex: 1; overflow: hidden; position: relative; height: 24px; }
+  .ticker-track {
+    display: flex; gap: 28px; position: absolute; white-space: nowrap;
+    will-change: transform; animation: tickerScroll linear infinite;
+  }
+  @keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .tick {
+    font-size: 14px; color: #cffff9; opacity: 0.92; font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 6px rgba(0,255,224,0.25);
+  }
+  .tick::after { content: "•"; margin-left: 28px; opacity: 0.28; color: var(--teal-2); }
+
+  .footer-meta {
+    display: flex; justify-content: space-between; margin-top: 10px; font-size: 10px; color: #5fb8b0; opacity: 0.7; padding: 0 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>BORONIC O₂ PROCESSOR</h1>
+          <div class="subtitle">MARK IV • MOLECULAR ARRAY</div>
+        </div>
+      <div class="status">
+        <span class="dot"></span> ONLINE
+        <span class="time" id="clock">00:00:00</span>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="panel core-panel">
+        <div class="panel-head">
+          <h2>BORON LATTICE</h2>
+          <span class="tag">CHAOTIC HOMEOSTASIS</span>
+        </div>
+        <div class="lattice" id="lattice" aria-label="Animated boron clusters"></div>
+        <div class="note">Chemical compute, 72 boron sites, chaotic homeostasis</div>
+      </section>
+
+      <section class="panel gauges-panel">
+        <div class="gauges-grid">
+          <div class="gauge-card" title="System Efficiency">
+            <div class="gauge-circle" id="effGauge">
+              <div class="gauge-inner">
+                <div class="value" id="effValue">93.6%</div>
+                <div class="label">EFFICIENCY</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gauge-card" title="Oxygen Partial Pressure">
+            <div class="pressure-wrap">
+              <div class="pressure-dial">
+                <div class="dial-arc"></div>
+                <div class="dial-ticks"></div>
+                <div class="needle" id="pressNeedle"></div>
+                <div class="center-dot"></div>
+              </div>
+              <div class="value" id="pressValue">1.00<span>atm</span></div>
+              <div class="label">O₂ PRESSURE</div>
+            </div>
+          </div>
+
+          <div class="gauge-card" title="Catalytic Reaction Rate">
+            <div class="rate-wrap">
+              <div class="value" id="rateValue">4.27</div>
+              <div class="unit">mol·s⁻¹</div>
+              <canvas id="rateSpark" width="300" height="80"></canvas>
+              <div class="label">REACTION RATE</div>
+            </div>
+          </div>
+
+          <div class="gauge-card" title="Active Boron Sites">
+            <div class="sites-wrap">
+              <div class="sites-head">
+                <div class="value" id="sitesValue">67/72</div>
+                <div class="label">ACTIVE SITES</div>
+              </div>
+              <div class="sites-grid" id="sitesGrid" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ticker-panel" aria-label="Chaotic sequence">
+      <div class="ticker-label">CHAOTIC SEQ.</div>
+      <div class="ticker">
+        <div class="ticker-track" id="tickerTrack"></div>
+      </div>
+    </footer>
+    <div class="footer-meta">
+      <span>TEAL SPECTRUM // B₁₂ CLUSTERS</span>
+      <span>v4.7.2 — STABLE</span>
+    </div>
+  </div>
+
+<script>
+  // Clock
+  function updateClock(){
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('en-GB', {hour12:false});
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  // Lattice clusters
+  const lattice = document.getElementById('lattice');
+  const clusters = [
+    {x:28, y:32, d:0},
+    {x:72, y:28, d:0.5},
+    {x:50, y:70, d:1.0},
+    {x:18, y:72, d:1.4},
+    {x:82, y:68, d:0.8}
+  ];
+  clusters.forEach((c,i)=>{
+    const cl = document.createElement('div');
+    cl.className = 'cluster';
+    cl.style.left = c.x + '%';
+    cl.style.top = c.y + '%';
+    cl.style.animationDelay = (i*0.2)+'s';
+    // beams
+    for(let b=0;b<3;b++){
+      const beam = document.createElement('div');
+      beam.className='beam';
+      beam.style.transform = `rotate(${b*120}deg)`;
+      beam.style.opacity = 0.25 + Math.random()*0.2;
+      cl.appendChild(beam);
+    }
+    const core = document.createElement('div');
+    core.className = 'hex core';
+    core.style.animationDelay = c.d + 's';
+    cl.appendChild(core);
+    for(let j=0;j<6;j++){
+      const h = document.createElement('div');
+      h.className = 'hex';
+      const ang = j * 60 * Math.PI/180;
+      const r = 54;
+      h.style.transform = `translate(${Math.cos(ang)*r}px, ${Math.sin(ang)*r}px)`;
+      h.style.animationDelay = (c.d + j*0.12)+'s';
+      cl.appendChild(h);
+    }
+    lattice.appendChild(cl);
+  });
+
+  // Active Sites 67/72
+  const sitesGrid = document.getElementById('sitesGrid');
+  for(let i=0;i<72;i++){
+    const s = document.createElement('div');
+    s.className = 'site ' + (i < 67 ? 'active' : 'inactive');
+    sitesGrid.appendChild(s);
+  }
+  function flickerSites(){
+    const actives = document.querySelectorAll('.site.active');
+    const n = 66 + Math.floor(Math.random()*2); // 66-67
+    document.getElementById('sitesValue').textContent = `${n}/72`;
+    // brief random dim
+    const idx = Math.floor(Math.random()*actives.length);
+    const el = actives[idx];
+    if(el){ el.style.opacity='0.45'; setTimeout(()=>el.style.opacity='', 260); }
+  }
+  setInterval(flickerSites, 2800);
+
+  // Efficiency gauge 0.936
+  const effTarget = 0.936;
+  const effGauge = document.getElementById('effGauge');
+  const effValue = document.getElementById('effValue');
+  let eff = 0;
+  const effAnim = setInterval(()=>{
+    eff += 0.012;
+    if(eff > effTarget) eff = effTarget;
+    const deg = eff * 360;
+    effGauge.style.background = `conic-gradient(#00ffe0 0deg, #00ffe0 ${deg}deg, #003a3f ${deg}deg 360deg)`;
+    effValue.textContent = (eff*100).toFixed(1) + '%';
+    if(eff === effTarget) clearInterval(effAnim);
+  }, 22);
+  // tiny drift
+  setInterval(()=>{
+    const wobble = effTarget + (Math.random()-0.5)*0.002;
+    const deg = wobble*360;
+    effGauge.style.background = `conic-gradient(#00ffe0 0deg, #00ffe0 ${deg}deg, #003a3f ${deg}deg 360deg)`;
+    effValue.textContent = (wobble*100).toFixed(1) + '%';
+  }, 3400);
+
+  // O2 Pressure 1.0 atm
+  const needle = document.getElementById('pressNeedle');
+  const pressValue = document.getElementById('pressValue');
+  function setPressure(atm){
+    const ratio = Math.min(Math.max(atm/1.5, 0), 1);
+    const angle = -90 + ratio*180;
+    needle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+    pressValue.innerHTML = atm.toFixed(2) + '<span>atm</span>';
+  }
+  setPressure(1.0);
+  setInterval(()=>{ const atm = 1.0 + (Math.random()-0.5)*0.018; setPressure(atm); }, 2400);
+
+  // Reaction Rate sparkline
+  const canvas = document.getElementById('rateSpark');
+  const ctx = canvas.getContext('2d');
+  let data = Array.from({length:48}, (_,i)=> 4.15 + Math.sin(i*0.3)*0.15 + Math.random()*0.12);
+  function drawSpark(){
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+    // grid
+    ctx.strokeStyle = 'rgba(0,255,224,0.08)';
+    ctx.lineWidth = 1;
+    for(let i=1;i<4;i++){ ctx.beginPath(); ctx.moveTo(0, h*i/4); ctx.lineTo(w, h*i/4); ctx.stroke(); }
+    // line
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    const grad = ctx.createLinearGradient(0,0,w,0);
+    grad.addColorStop(0, 'rgba(0,255,224,0)');
+    grad.addColorStop(0.15, 'rgba(0,255,224,0.9)');
+    grad.addColorStop(1, 'rgba(0,255,224,0.2)');
+    ctx.strokeStyle = grad;
+    data.forEach((v,i)=>{
+      const x = i * (w/(data.length-1));
+      const y = h - ((v - 3.7) / 1.4) * h;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // fill
+    ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath();
+    const fill = ctx.createLinearGradient(0,0,0,h);
+    fill.addColorStop(0, 'rgba(0,255,224,0.28)');
+    fill.addColorStop(1, 'rgba(0,255,224,0)');
+    ctx.fillStyle = fill; ctx.fill();
+    // glow dots
+    const lastX = w - 2, lastY = h - ((data[data.length-1]-3.7)/1.4)*h;
+    ctx.beginPath(); ctx.arc(lastX, lastY, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#00ffe0'; ctx.shadowColor = '#00ffe0'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+  }
+  drawSpark();
+  setInterval(()=>{
+    const last = data[data.length-1];
+    const next = Math.max(3.8, Math.min(4.95, last + (Math.random()-0.5)*0.18));
+    data.push(next); data.shift();
+    document.getElementById('rateValue').textContent = next.toFixed(2);
+    drawSpark();
+  }, 1500);
+
+  // Chaotic sequence ticker: 1,2,3,5,7,9,13,15,17,17.1...
+  const baseSeq = [1,2,3,5,7,9,13,15,17,17.1];
+  let seq = [...baseSeq];
+  let last = 17.1;
+  for(let i=0;i<22;i++){
+    const steps = [0.2,0.3,0.4,0.5,0.7,0.9,1.1,1.3];
+    last = +(last + steps[Math.floor(Math.random()*steps.length)] + (Math.random()-0.5)*0.15).toFixed(1);
+    seq.push(last);
+  }
+  const track = document.getElementById('tickerTrack');
+  function renderTicker(){
+    track.innerHTML = '';
+    [...seq, ...seq].forEach(v=>{
+      const s = document.createElement('span');
+      s.className = 'tick';
+      s.textContent = Number.isInteger(v) ? v : v.toFixed(1);
+      track.appendChild(s);
+    });
+    // duration proportional to length
+    track.style.animationDuration = (seq.length * 1.8) + 's';
+  }
+  renderTicker();
+</script>
+</body>
+</html>

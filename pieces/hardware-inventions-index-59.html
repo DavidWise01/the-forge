@@ -1,0 +1,157 @@
+<!doctype html>
+<html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>
+<title>Living Tensor</title>
+<style>
+:root{--bg:#020308;--ink:#edfaff;--cyan:#67e8f9;--mint:#86efac;--violet:#c084fc;--gold:#facc15;--red:#fb7185;--grid:rgba(103,232,249,.05)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#000;color:var(--ink);font-family:ui-monospace,monospace}
+body{padding:18px;background:radial-gradient(circle at 50% 42%,rgba(103,232,249,.15),transparent 30%),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px),var(--bg);background-size:100% 100%,28px 28px,28px 28px}
+.app{max-width:1500px;margin:0 auto;border:1px solid rgba(103,232,249,.24);border-radius:24px;background:rgba(0,0,0,.38);overflow:hidden;box-shadow:0 30px 90px #000b}
+header{padding:24px;border-bottom:1px solid rgba(103,232,249,.18);display:flex;justify-content:space-between;gap:18px;align-items:flex-end}
+h1{margin:0;font-size:clamp(36px,7vw,88px);font-weight:300;letter-spacing:.08em}
+.sub{font-size:12px;color:#a6dbe8;text-align:right;line-height:1.5}
+.grid{display:grid;grid-template-columns:320px 1fr 340px;gap:16px;padding:16px}
+@media(max-width:1120px){.grid{grid-template-columns:1fr}.stage{height:760px}.sub{text-align:left}}
+.box{border:1px solid rgba(103,232,249,.22);border-radius:18px;background:rgba(0,0,0,.5);padding:16px}
+.stage{height:760px;border:1px solid rgba(103,232,249,.22);border-radius:18px;overflow:hidden;position:relative}
+canvas{width:100%;height:100%;display:block}
+button{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(103,232,249,.35);background:rgba(0,0,0,.35);color:var(--ink);font:inherit;cursor:pointer;text-transform:uppercase}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.log{height:300px;overflow:auto;font-size:11px;border:1px solid rgba(103,232,249,.16);border-radius:14px;padding:10px;background:rgba(0,0,0,.35);line-height:1.45}
+.code{white-space:pre-wrap;font-size:12px;color:#d8fbff;line-height:1.45}
+.hud{position:absolute;top:12px;left:12px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-size:11px;border:1px solid rgba(103,232,249,.18);border-radius:999px;background:rgba(0,0,0,.6);padding:5px 8px}
+</style></head>
+<body>
+<div class='app'>
+<header>
+<div><h1>LIVING TENSOR</h1><div style='color:var(--mint)'>one cosmo tensor · repeats by +2 / -1 renewal</div></div>
+<div class='sub'>growth by renewal, not accumulation<br/>every observer is also observed<br/>perpetuate without hoarding</div>
+</header>
+
+<div class='grid'>
+<aside class='box'>
+<div class='row'><button id='birth'>Repeat</button><button id='auto'>Auto</button></div>
+<div class='row'><button id='swap'>Swap Obs</button><button id='prune'>Prune</button></div>
+<button id='ground'>Ground</button>
+<div class='code' style='margin-top:18px'>
+COSMO_TENSOR_1
+
+[A ↔ B] + C + ☾ + ● + O₁/O₂
+
+A/B = pressure pair
+C   = contextual arbiter
+☾   = shadow fulcrum auditor
+●   = coherent self
+O₁/O₂ = swapping observers
+
+RULE:
++2 observers
+-1 stale fixation
+repeat
+</div>
+</aside>
+
+<main class='stage'>
+<canvas id='canvas'></canvas>
+<div class='hud'>
+<div class='tag' id='gen'>GEN 0</div>
+<div class='tag' id='count'>TENSORS 1</div>
+<div class='tag' id='pressure'>PRESSURE 0.000</div>
+<div class='tag' id='fix'>FIXATIONS 0</div>
+</div>
+</main>
+
+<aside class='box'>
+<div class='log' id='log'></div>
+<div class='code' id='packet' style='margin-top:12px'></div>
+</aside>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),cv=$("canvas"),ctx=cv.getContext("2d");
+let W=0,H=0,D=1;
+function resize(){const r=cv.getBoundingClientRect();D=Math.max(1,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*D;cv.height=H*D;ctx.setTransform(D,0,0,D,0,0)}
+new ResizeObserver(resize).observe(cv);resize();
+
+const VM={
+gen:0,auto:false,pressure:0,tensors:[{id:1,x:.5,y:.5,r:1,phase:0}],fixations:[],log:[],swap:false,
+say(x){this.log.unshift("["+this.gen+"] "+x);this.log=this.log.slice(0,100)},
+repeat(){
+ this.gen++;
+ // +2 fresh observers/perspectives
+ const parent=this.tensors[this.tensors.length-1]||this.tensors[0];
+ const a=this.gen*.618;
+ this.tensors.push({id:this.tensors.length+1,x:.5+Math.cos(a)*.22,y:.5+Math.sin(a)*.18,r:Math.max(.2,parent.r*.82),phase:a});
+ this.tensors.push({id:this.tensors.length+1,x:.5+Math.cos(a+Math.PI)*.22,y:.5+Math.sin(a+Math.PI)*.18,r:Math.max(.2,parent.r*.82),phase:a+Math.PI});
+ // -1 stale fixation
+ if(this.fixations.length)this.fixations.shift();
+ else this.fixations.push("certainty-"+this.gen);
+ this.pressure=Math.sin(this.gen*.27)*.5+.5;
+ this.say("+2 observers / -1 fixation :: tensor repeated");
+ ui();
+},
+prune(){
+ if(this.fixations.length){this.say("pruned "+this.fixations.shift())}
+ else{this.say("nothing stale; silence preserved")}
+ ui();
+},
+swapObs(){this.swap=!this.swap;this.say("O1/O2 swapped perspective");ui()},
+ground(){this.pressure=0;this.fixations=[];this.say("grounded living tensor");ui()},
+packet(){return{unit:"COSMO_TENSOR_1",generation:this.gen,tensors:this.tensors.length,pressure:+this.pressure.toFixed(3),fixations:this.fixations.length,rule:"+2 -1",law:"every tensor may reproduce only by pruning one rigidity"}}
+};
+
+function text(t,x,y,s=12,a=.8,c="#edfaff"){ctx.save();ctx.globalAlpha=a;ctx.fillStyle=c;ctx.font=s+"px ui-monospace,monospace";ctx.textAlign="center";ctx.fillText(t,x,y);ctx.restore()}
+function line(x1,y1,x2,y2,a=.45,c="#67e8f9"){ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=c;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+
+function drawTensor(cx,cy,scale,t){
+ const r=80*scale;
+ const A=[cx-r,cy],B=[cx+r,cy],C=[cx,cy-r*.95],S=[cx,cy+r*.72],SH=[cx,cy+r*.28],O1=[cx,cy+r*1.35],O2=[cx,cy-r*1.45];
+ line(A[0],A[1],B[0],B[1],.36);
+ line(A[0],A[1],C[0],C[1],.28);
+ line(B[0],B[1],C[0],C[1],.28);
+ line(C[0],C[1],SH[0],SH[1],.25,"#c084fc");
+ line(SH[0],SH[1],S[0],S[1],.35,"#facc15");
+ line(S[0],S[1],O1[0],O1[1],.18,"#86efac");
+ line(C[0],C[1],O2[0],O2[1],.18,"#86efac");
+ [[A,"A","#fb7185"],[B,"B","#67e8f9"],[C,"C","#86efac"],[SH,"☾","#c084fc"],[S,"●","#facc15"],[O1,VM.swap?"O₂":"O₁","#86efac"],[O2,VM.swap?"O₁":"O₂","#86efac"]].forEach(([p,l,c])=>{
+   ctx.save();ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=12;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(p[0],p[1],Math.max(3,7*scale),0,Math.PI*2);ctx.fill();ctx.restore();
+   text(l,p[0],p[1]-10*scale,Math.max(7,11*scale),.8,c);
+ });
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const cx=W/2,cy=H/2;
+ ctx.save();ctx.strokeStyle="#67e8f9";
+ for(let i=0;i<10;i++){ctx.globalAlpha=.06+i*.007;ctx.beginPath();ctx.ellipse(cx,cy,120+i*45,60+i*22,VM.gen*.003+i*.05,0,Math.PI*2);ctx.stroke()}
+ ctx.restore();
+ VM.tensors.slice(-24).forEach((t,i)=>{
+   const angle=t.phase+VM.gen*.006;
+   const rr=80+i*10;
+   const x=cx+(t.x-.5)*W*.7+Math.cos(angle)*8;
+   const y=cy+(t.y-.5)*H*.55+Math.sin(angle)*6;
+   drawTensor(x,y,Math.max(.35,t.r*(1-i*.015)),t);
+ });
+ text("∞(+2 -1) · repeat by renewal",cx,34,14,.75,"#86efac");
+ requestAnimationFrame(draw);
+}
+
+function ui(){
+ $("gen").textContent="GEN "+VM.gen;
+ $("count").textContent="TENSORS "+VM.tensors.length;
+ $("pressure").textContent="PRESSURE "+VM.pressure.toFixed(3);
+ $("fix").textContent="FIXATIONS "+VM.fixations.length;
+ $("log").innerHTML=VM.log.map(x=>"<div>"+x+"</div>").join("");
+ $("packet").textContent=JSON.stringify(VM.packet(),null,2);
+}
+$("birth").onclick=()=>VM.repeat();
+$("auto").onclick=e=>{VM.auto=!VM.auto;e.target.textContent=VM.auto?"Pause":"Auto"};
+$("swap").onclick=()=>VM.swapObs();
+$("prune").onclick=()=>VM.prune();
+$("ground").onclick=()=>VM.ground();
+setInterval(()=>{if(VM.auto)VM.repeat()},900);
+VM.say("living tensor online");
+ui();draw();
+</script>
+</body></html>

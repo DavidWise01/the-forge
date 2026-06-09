@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Substrate-Invariant Core → Plasma → Nanites</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background:#020617; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .glass { background: linear-gradient(180deg, rgba(15,23,42,.85), rgba(2,6,23,.8)); backdrop-filter: blur(20px); border:1px solid rgba(148,163,184,.12); }
+  .tick::-webkit-slider-thumb { appearance:none; width:14px; height:14px; border-radius:50%; background:#38bdf8; border:2px solid #0e7490; box-shadow:0 0 10px rgba(56,189,248,.5); }
+  .tick::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:#38bdf8; border:2px solid #0e7490; }
+  canvas { touch-action: none; }
+  #nanite { image-rendering: pixelated; image-rendering: crisp-edges; }
+</style>
+</head>
+<body class="text-slate-200 min-h-screen overflow-x-hidden">
+<div class="fixed inset-0 pointer-events-none">
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(56,189,248,0.12),transparent_50%),radial-gradient(ellipse_at_bottom,_rgba(139,92,246,0.1),transparent_50%)]"></div>
+  <div class="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-cyan-500/10 rounded-full blur-[120px]"></div>
+  <div class="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-violet-500/10 rounded-full blur-[120px]"></div>
+</div>
+
+<header class="relative z-20 border-b border-slate-800/60 sticky top-0 backdrop-blur-xl bg-slate-950/70">
+  <div class="max-w-[1800px] mx-auto px-4 md:px-6 py-3 flex flex-col lg:flex-row lg:items-center gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-600 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="white" stroke-opacity=".9" stroke-width="1.5"/><circle cx="12" cy="12" r="5" stroke="white" stroke-width="1.5"/><circle cx="12" cy="12" r="1.5" fill="white"/></svg>
+      </div>
+      <h1 class="text-[20px] md:text-[26px] font-black tracking-tight leading-none">Substrate-Invariant Core <span class="text-cyan-400">→</span> Plasma <span class="text-cyan-400">→</span> Nanites</h1>
+    </div>
+    <div class="lg:ml-auto flex flex-wrap gap-2">
+      <button data-preset="warp" class="preset px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold tracking-wide transition">WARP LATTICE</button>
+      <button data-preset="wormhole" class="preset px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold tracking-wide transition">WORMHOLE SUBSTRATE</button>
+      <button data-preset="o3" class="preset px-3 py-1.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 text-orange-300 text-xs font-semibold tracking-wide transition">MAX O3 ASSEMBLY</button>
+      <button data-preset="dissolve" class="preset px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-rose-300 text-xs font-semibold tracking-wide transition">DISSOLVE</button>
+    </div>
+  </div>
+</header>
+
+<main class="relative z-10 max-w-[1800px] mx-auto p-3 md:p-6 grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-5">
+  <!-- LEFT: CORE -->
+  <section class="xl:col-span-5 glass rounded-[24px] p-4 md:p-5 shadow-2xl shadow-black/40">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold tracking-wider text-slate-300">10-LAYER CORE</h2>
+      <div class="flex items-center gap-2 text-[11px] mono">
+        <span class="px-2 py-1 rounded bg-slate-900/70 border border-slate-800">CORE GLOW</span>
+        <span id="coreGlow" class="w-3 h-3 rounded-full ring-2 ring-white/20"></span>
+      </div>
+    <div class="grid md:grid-cols-[1.15fr_0.85fr] gap-4">
+      <div class="relative">
+        <canvas id="core" width="500" height="500" class="w-full aspect-square rounded-2xl bg-[#050b18] border border-slate-800 shadow-inner cursor-pointer"></canvas>
+        <div class="absolute left-3 bottom-3 mono text-[11px] leading-tight bg-black/70 border border-slate-800 rounded-lg px-2.5 py-1.5">
+          <div>ΣF: <span id="sumField" class="text-cyan-300">0</span></div>
+          <div>|V|: <span id="vecField" class="text-violet-300">0</span></div>
+        </div>
+        <div class="absolute right-3 top-3 mono text-[10px] bg-black/60 border border-slate-800 rounded px-2 py-1">CLICK RING TO SELECT</div>
+      </div>
+
+      <div class="flex flex-col">
+        <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3 mb-3">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-semibold">Layer <span id="selNum" class="text-cyan-400">1</span> <span class="text-slate-500">/10</span></div>
+            <div id="selModeBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 uppercase tracking-widest">exotic</div>
+          </div>
+          <div class="mt-3 space-y-3">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Field Strength</span><span class="mono text-cyan-300" id="fieldVal">0</span></div>
+              <input id="field" type="range" min="-100" max="100" value="0" class="tick w-full h-1.5 bg-slate-800 rounded">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Rotation</span><span class="mono text-cyan-300" id="rotVal">0</span></div>
+              <input id="rot" type="range" min="-5" max="5" step="0.1" value="0" class="tick w-full h-1.5 bg-slate-800 rounded">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Thickness</span><span class="mono text-cyan-300" id="thickVal">18</span></div>
+              <input id="thick" type="range" min="5" max="40" value="18" class="tick w-full h-1.5 bg-slate-800 rounded">
+            </div>
+            <div>
+              <div class="text-[11px] mb-1 text-slate-400">Mode</div>
+              <select id="mode" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-cyan-500/50">
+                <option>exotic</option><option>plasma</option><option>superconductor</option><option>negative</option><option>neutral</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-slate-950/40 border border-slate-800/70 p-3 text-[11px] space-y-2">
+          <div class="font-semibold text-slate-300 tracking-wide">WIRING</div>
+          <div class="flex items-center gap-2"><span class="w-8 h-[2px] bg-orange-500 shadow shadow-orange-500/50"></span><span class="text-slate-400">Layers 3-5 →</span><span class="text-orange-300">Plasma O₃</span></div>
+          <div class="flex items-center gap-2"><span class="w-8 h-[2px] bg-sky-500 shadow shadow-sky-500/50"></span><span class="text-slate-400">Layers 1-2 →</span><span class="text-sky-300">Nanite Activation</span></div>
+          <div class="flex items-center gap-2"><span class="w-8 h-[2px] bg-emerald-500 shadow shadow-emerald-500/50"></span><span class="text-slate-400">Layers 6-7 →</span><span class="text-emerald-300">Shear / Pores</span></div>
+          <div class="flex items-center gap-2"><span class="w-8 h-[2px] bg-violet-500 shadow shadow-violet-500/50"></span><span class="text-slate-400">Layers 8-10 →</span><span class="text-violet-300">Lattice & Stability</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CENTER: PLASMA -->
+  <section class="xl:col-span-3 glass rounded-[24px] p-4 md:p-5 shadow-2xl shadow-black/40 flex flex-col">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold tracking-wider text-slate-300">PLASMA O₃ GENERATOR</h2>
+      <div class="text-[10px] mono px-2 py-1 rounded bg-orange-500/15 text-orange-300 border border-orange-500/20">WIRED</div>
+    </div>
+    <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-[#040915]">
+      <canvas id="plasma" width="400" height="440" class="w-full aspect-[10/11]"></canvas>
+      <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(60% 40% at 50% 30%, rgba(249,115,22,0.15), transparent 70%);"></div>
+      <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-70" id="beam"></div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mt-3">
+      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5 text-center">
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest">Voltage</div>
+        <div class="mono text-lg font-semibold text-orange-300"><span id="vVal">12.5</span><span class="text-[11px] ml-0.5">kV</span></div>
+      </div>
+      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5 text-center">
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest">O₃ ppm</div>
+        <div class="mono text-lg font-semibold text-emerald-300" id="o3Val">84</div>
+      </div>
+      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5 text-center">
+        <div class="text-[10px] text-slate-400 uppercase tracking-widest">e⁻ flux</div>
+        <div class="mono text-[13px] font-semibold text-sky-300" id="fluxVal">2.1e15</div>
+      </div>
+    </div>
+    <div class="mt-3 text-[11px] text-slate-400 leading-snug">Voltage = 5 + avg(L3-5). Beam brightness = Layer 3 field. O₃ visualizes as teal micro-bubbles.</div>
+  </section>
+
+  <!-- RIGHT: NANITES -->
+  <section class="xl:col-span-4 glass rounded-[24px] p-4 md:p-5 shadow-2xl shadow-black/40">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold tracking-wider text-slate-300">NANITE SUBSTRATE</h2>
+      <div class="text-[10px] mono px-2 py-1 rounded bg-slate-800/80 border border-slate-700">80×80 • 6,400</div>
+    </div>
+    <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-black">
+      <canvas id="nanite" width="80" height="80" class="w-full aspect-square"></canvas>
+      <div class="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5 rounded-2xl"></div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mt-3">
+      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5">
+        <div class="text-[10px] text-slate-400">Bound</div>
+        <div class="mono text-xl font-semibold text-emerald-400"><span id="mBound">0</span><span class="text-[12px]">%</span></div>
+        <div class="mt-1 h-1 rounded bg-slate-800 overflow-hidden"><div id="bBound" class="h-full w-0 bg-emerald-500 transition-all duration-300"></div></div>
+      </div>
+      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5">
+        <div class="text-[10px] text-slate-400">Pore Density</div>
+        <div class="mono text-xl font-semibold text-violet-400"><span id="mPore">0</span><span class="text-[12px]">%</span></div>
+        <div class="mt-1 h-1 rounded bg-slate-800 overflow-hidden"><div id="bPore" class="h-full w-0 bg-violet-500 transition-all duration-300"></div></div>
+      </div>
+      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-2.5">
+        <div class="text-[10px] text-slate-400">Lattice Order</div>
+        <div class="mono text-xl font-semibold text-cyan-300"><span id="mOrder">0</span><span class="text-[12px]">%</span></div>
+        <div class="mt-1 h-1 rounded bg-slate-800 overflow-hidden"><div id="bOrder" class="h-full w-0 bg-cyan-500 transition-all duration-300"></div></div>
+      </div>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-2 text-[10px] mono">
+      <span class="px-2 py-1 rounded bg-slate-800/70 border border-slate-700"><i class="inline-block w-2 h-2 rounded-[2px] bg-[#334155] mr-1"></i>free</span>
+      <span class="px-2 py-1 rounded bg-slate-800/70 border border-slate-700"><i class="inline-block w-2 h-2 rounded-[2px] bg-[#3b82f6] mr-1"></i>activated</span>
+      <span class="px-2 py-1 rounded bg-slate-800/70 border border-slate-700"><i class="inline-block w-2 h-2 rounded-[2px] bg-[#10b981] mr-1"></i>bound</span>
+      <span class="px-2 py-1 rounded bg-slate-800/70 border border-slate-700"><i class="inline-block w-2 h-2 rounded-[2px] bg-[#a855f7] mr-1"></i>pore</span>
+    </div>
+    <p class="mt-3 text-[11px] text-slate-400">L1-2 → activation • L3-5 → O₃ binding • L6-7 → shear pores • L8-9 → hex/cubic • L10 → global stability (|ΣF|≈0 holds)</p>
+  </section>
+</main>
+
+<div class="relative z-10 max-w-[1800px] mx-auto px-6 pb-10 -mt-2">
+  <div class="text-[11px] text-slate-500 mono">Tip: Twist Layer 6-7 rotation to shear 6,400 nanites in real time. Max O₃ then watch binding cascade.</div>
+</div>
+
+<script>
+(() => {
+  // ----- Core State -----
+  const modes = ['exotic','plasma','superconductor','negative','neutral'];
+  const modeColors = { exotic:'#ec4899', plasma:'#f97316', superconductor:'#22d3ee', negative:'#8b5cf6', neutral:'#64748b' };
+  const layers = Array.from({length:10}, (_,i)=>({
+    field: (Math.random()-0.5)*30,
+    rotation: (Math.random()-0.5)*1.5,
+    thickness: 14 + Math.random()*8,
+    mode: modes[i%5],
+    angle: Math.random()*Math.PI*2
+  }));
+  let selected = 0;
+
+  // DOM
+  const core = document.getElementById('core');
+  const cctx = core.getContext('2d');
+  const plasma = document.getElementById('plasma');
+  const pctx = plasma.getContext('2d');
+  const nanite = document.getElementById('nanite');
+  const nctx = nanite.getContext('2d');
+  nctx.imageSmoothingEnabled = false;
+
+  const el = id => document.getElementById(id);
+  const fieldIn = el('field'), rotIn = el('rot'), thickIn = el('thick'), modeIn = el('mode');
+  const fieldVal = el('fieldVal'), rotVal = el('rotVal'), thickVal = el('thickVal');
+  const selNum = el('selNum'), selModeBadge = el('selModeBadge');
+  const sumField = el('sumField'), vecField = el('vecField'), coreGlow = el('coreGlow');
+  const vVal = el('vVal'), o3Val = el('o3Val'), fluxVal = el('fluxVal'), beam = el('beam');
+  const mBound = el('mBound'), mPore = el('mPore'), mOrder = el('mOrder');
+  const bBound = el('bBound'), bPore = el('bPore'), bOrder = el('bOrder');
+
+  // Nanite grid 80x80
+  const W=80, H=80, N=W*H;
+  const grid = new Uint8Array(N); // 0 free,1 act,2 bound,3 pore
+  const curR = new Float32Array(N), curG = new Float32Array(N), curB = new Float32Array(N);
+  const colMap = {0:[31,41,55],1:[59,130,246],2:[16,185,129],3:[168,85,247]};
+  for(let i=0;i<N;i++){ curR[i]=31; curG[i]=41; curB[i]=55; }
+  const nImg = nctx.createImageData(W,H);
+  const nData = nImg.data;
+
+  // Plasma particles
+  const o3parts = [];
+  function spawnO3(x,y,n=1){ for(let i=0;i<n;i++) o3parts.push({x:x+(Math.random()-0.5)*6, y:y+Math.random()*4, vx:(Math.random()-0.5)*0.3, vy:-0.5-Math.random()*0.8, life:60+Math.random()*40, r:1+Math.random()*1.5}); }
+
+  // UI sync
+  function syncControls(){
+    const L = layers[selected];
+    selNum.textContent = selected+1;
+    fieldIn.value = L.field; rotIn.value = L.rotation; thickIn.value = L.thickness; modeIn.value = L.mode;
+    fieldVal.textContent = Math.round(L.field); rotVal.textContent = (+L.rotation).toFixed(1); thickVal.textContent = Math.round(L.thickness);
+    selModeBadge.textContent = L.mode;
+    selModeBadge.style.background = modeColors[L.mode]+'22';
+    selModeBadge.style.borderColor = modeColors[L.mode]+'55';
+    selModeBadge.style.color = modeColors[L.mode];
+  }
+  syncControls();
+
+  fieldIn.oninput = e => { layers[selected].field = +e.target.value; fieldVal.textContent = e.target.value; };
+  rotIn.oninput = e => { layers[selected].rotation = +e.target.value; rotVal.textContent = (+e.target.value).toFixed(1); };
+  thickIn.oninput = e => { layers[selected].thickness = +e.target.value; thickVal.textContent = e.target.value; };
+  modeIn.onchange = e => { layers[selected].mode = e.target.value; syncControls(); };
+
+  core.addEventListener('click', (e)=>{
+    const rect = core.getBoundingClientRect();
+    const sx = 500/rect.width, sy = 500/rect.height;
+    const x = (e.clientX - rect.left)*sx - 250;
+    const y = (e.clientY - rect.top)*sy - 250;
+    const d = Math.hypot(x,y);
+    // rings from innermost
+    for(let i=0;i<10;i++){
+      const r = 38 + i*21;
+      const t = layers[i].thickness;
+      if(Math.abs(d - r) < t*0.6 + 6){ selected = i; syncControls(); break; }
+    }
+  });
+
+  // Presets
+  document.querySelectorAll('.preset').forEach(b=>b.addEventListener('click', ()=>{
+    const p = b.dataset.preset;
+    if(p==='warp'){
+      for(let i=0;i<5;i++){ layers[i].field=75+Math.random()*15; layers[i].rotation=3.2+Math.random(); layers[i].mode='exotic'; layers[i].thickness=18; }
+      for(let i=5;i<10;i++){ layers[i].field=-75-Math.random()*15; layers[i].rotation=(i%2? -3.5:3.5); layers[i].mode='negative'; layers[i].thickness=22; }
+    } else if(p==='wormhole'){
+      for(let i=0;i<5;i++){ layers[i].field=-85; layers[i].rotation=-0.8; layers[i].mode='negative'; }
+      for(let i=5;i<10;i++){ layers[i].field=85; layers[i].rotation=0.8; layers[i].mode='superconductor'; }
+    } else if(p==='o3'){
+      layers[2].field=100; layers[3].field=100; layers[4].field=100;
+      layers[2].mode='plasma'; layers[3].mode='plasma'; layers[4].mode='plasma';
+      layers[2].rotation=0.6; layers[3].rotation=0.4; layers[4].rotation=0.5;
+    } else if(p==='dissolve'){
+      layers.forEach(l=>{ l.field=0; l.rotation=0; l.thickness=15; l.mode='neutral'; });
+      grid.fill(0);
+    }
+    syncControls();
+  }));
+
+  // Drawing core
+  function drawCore(dt){
+    cctx.clearRect(0,0,500,500);
+    const cx=250, cy=250;
+    // background
+    const bg = cctx.createRadialGradient(cx,cy,0,cx,cy,250);
+    bg.addColorStop(0,'#061123'); bg.addColorStop(1,'#020617');
+    cctx.fillStyle=bg; cctx.fillRect(0,0,500,500);
+
+    // sum fields
+    let sum=0, vx=0, vy=0;
+    layers.forEach(l=>{ sum+=l.field; vx+= l.field*Math.cos(l.angle); vy+= l.field*Math.sin(l.angle); l.angle += l.rotation*0.015*dt; });
+    const avg = sum/10;
+    const mag = Math.hypot(vx,vy);
+    sumField.textContent = sum.toFixed(0);
+    vecField.textContent = mag.toFixed(1);
+
+    // core glow
+    const hue = 200 + avg*0.7; // 130..270
+    coreGlow.style.background = `hsl(${hue} 100% 60%)`;
+    coreGlow.style.boxShadow = `0 0 16px hsl(${hue} 100% 60% / .7)`;
+    const coreGrad = cctx.createRadialGradient(cx,cy,0,cx,cy,90);
+    coreGrad.addColorStop(0, `hsla(${hue},100%,70%,0.95)`);
+    coreGrad.addColorStop(0.4, `hsla(${hue+20},100%,60%,0.5)`);
+    coreGrad.addColorStop(1, `hsla(${hue+40},100%,50%,0)`);
+    cctx.fillStyle = coreGrad;
+    cctx.beginPath(); cctx.arc(cx,cy,90,0,Math.PI*2); cctx.fill();
+
+    // draw rings outer to inner
+    for(let i=9;i>=0;i--){
+      const L = layers[i];
+      const r = 38 + i*21;
+      const base = modeColors[L.mode] || '#64748b';
+      // field tint
+      const t = Math.max(-1, Math.min(1, L.field/100));
+      const col = t>0 ? `rgba(56,189,248,${0.25+0.65*t})` : `rgba(236,72,153,${0.25-0.55*t})`;
+      // ring
+      cctx.beginPath();
+      cctx.arc(cx,cy,r,0,Math.PI*2); // 5 params ok
+      cctx.lineWidth = L.thickness;
+      cctx.strokeStyle = '#0b1222';
+      cctx.stroke();
+      cctx.beginPath();
+      cctx.arc(cx,cy,r,0,Math.PI*2);
+      cctx.lineWidth = Math.max(2, L.thickness-4);
+      cctx.strokeStyle = base+'aa';
+      cctx.stroke();
+      cctx.beginPath();
+      cctx.arc(cx,cy,r,0,Math.PI*2);
+      cctx.lineWidth = Math.max(1, L.thickness-8);
+      cctx.strokeStyle = col;
+      cctx.stroke();
+
+      // rotation ticks
+      cctx.save(); cctx.translate(cx,cy); cctx.rotate(L.angle);
+      cctx.strokeStyle = 'rgba(255,255,255,0.25)'; cctx.lineWidth=1.5;
+      for(let k=0;k<12;k++){
+        const a = k*Math.PI/6;
+        const x1 = Math.cos(a)*(r - L.thickness*0.35);
+        const y1 = Math.sin(a)*(r - L.thickness*0.35);
+        const x2 = Math.cos(a)*(r + L.thickness*0.35);
+        const y2 = Math.sin(a)*(r + L.thickness*0.35);
+        cctx.beginPath(); cctx.moveTo(x1,y1); cctx.lineTo(x2,y2); cctx.stroke();
+      }
+      cctx.restore();
+
+      // label
+      cctx.fillStyle = i===selected ? '#e2e8f0' : '#64748b';
+      cctx.font = '600 11px JetBrains Mono';
+      cctx.fillText(String(i+1), cx + r + 6, cy + 3);
+
+      // selection halo
+      if(i===selected){
+        cctx.beginPath(); cctx.arc(cx,cy,r,0,Math.PI*2);
+        cctx.lineWidth = L.thickness+8; cctx.strokeStyle='rgba(56,189,248,0.18)'; cctx.stroke();
+      }
+    }
+
+    // center
+    cctx.beginPath(); cctx.arc(cx,cy,12,0,Math.PI*2); cctx.fillStyle='#0ea5e9'; cctx.shadowColor='#0ea5e9'; cctx.shadowBlur=18; cctx.fill(); cctx.shadowBlur=0;
+  }
+
+  // Plasma draw
+  function drawPlasma(dt){
+    pctx.clearRect(0,0,400,440);
+    // tube
+    const grad = pctx.createLinearGradient(0,0,0,440);
+    grad.addColorStop(0,'#071125'); grad.addColorStop(1,'#020617');
+    pctx.fillStyle=grad; pctx.fillRect(0,0,400,440);
+
+    const avg345 = (layers[2].field + layers[3].field + layers[4].field)/3;
+    let voltage = 5 + ((avg345+100)/200)*25; // 5-30
+    voltage = Math.max(5, Math.min(30, voltage));
+    vVal.textContent = voltage.toFixed(1);
+    const o3ppm = Math.max(0, (voltage-5)*7.5 + (avg345+100)*0.25 + Math.random()*3);
+    o3Val.textContent = Math.round(o3ppm);
+    const flux = voltage*1.85e14 * (1 + Math.random()*0.05);
+    fluxVal.textContent = flux.toExponential(1);
+
+    // beam brightness from layer3
+    const b = (layers[2].field+100)/200;
+    beam.style.opacity = 0.2 + b*0.8;
+    beam.style.boxShadow = `0 0 ${8+b*24}px rgba(56,189,248,${0.5+b*0.5})`;
+
+    // DBD tube
+    const tx=80, ty=70, tw=240, th=300;
+    pctx.fillStyle='rgba(148,163,184,0.08)'; pctx.fillRect(tx-12,ty-10,tw+24,th+20);
+    pctx.strokeStyle='rgba(148,163,184,0.25)'; pctx.lineWidth=1; pctx.strokeRect(tx-12,ty-10,tw+24,th+20);
+    // glass
+    pctx.fillStyle='rgba(2,6,23,0.9)'; pctx.fillRect(tx,ty,tw,th);
+    pctx.strokeStyle='rgba(56,189,248,0.3)'; pctx.lineWidth=2; pctx.strokeRect(tx,ty,tw,th);
+
+    // electrodes
+    pctx.fillStyle='#94a3b8'; pctx.fillRect(tx+20, ty-6, tw-40, 6); pctx.fillRect(tx+20, ty+th, tw-40, 6);
+
+    // discharge arcs
+    const intensity = (voltage-5)/25;
+    pctx.lineWidth = 1 + intensity*2;
+    for(let i=0;i<4+intensity*6;i++){
+      const y1 = ty+12, y2 = ty+th-12;
+      const x = tx + 30 + Math.random()*(tw-60);
+      pctx.beginPath(); pctx.moveTo(x, y1);
+      const mid = (y1+y2)/2 + (Math.random()-0.5)*40;
+      pctx.quadraticCurveTo(x+(Math.random()-0.5)*60, mid, x+(Math.random()-0.5)*20, y2);
+      pctx.strokeStyle=`rgba(249,115,22,${0.25+Math.random()*0.5*intensity})`; pctx.stroke();
+      pctx.beginPath(); pctx.moveTo(x, y1);
+      pctx.quadraticCurveTo(x+(Math.random()-0.5)*50, mid, x+(Math.random()-0.5)*20, y2);
+      pctx.strokeStyle=`rgba(56,189,248,${0.2+Math.random()*0.4*intensity})`; pctx.stroke();
+    }
+
+    // O3 particles
+    const emit = Math.floor(intensity*5 + Math.random()*2);
+    const emitX = tx+tw/2, emitY = ty+th*0.55;
+    spawnO3(emitX, emitY, emit);
+    for(let i=o3parts.length-1;i>=0;i--){
+      const p = o3parts[i];
+      p.x += p.vx; p.y += p.vy; p.vy -= 0.01; p.life--;
+      if(p.life<=0 || p.y < ty-20){ o3parts.splice(i,1); continue; }
+      pctx.beginPath(); pctx.arc(p.x, p.y, p.r, 0, Math.PI*2); pctx.fillStyle = `rgba(45,212,191,${Math.max(0, p.life/90)})`; pctx.fill();
+    }
+
+    // glow inside
+    const ig = pctx.createRadialGradient(tx+tw/2, ty+th/2, 10, tx+tw/2, ty+th/2, 140);
+    ig.addColorStop(0, `rgba(56,189,248,${0.08+intensity*0.12})`);
+    ig.addColorStop(1,'transparent');
+    pctx.fillStyle=ig; pctx.beginPath(); pctx.arc(tx+tw/2, ty+th/2, 140,0,Math.PI*2); pctx.fill();
+  }
+
+  // Nanites update & draw
+  function updateNanites(dt, time){
+    const actE = (layers[0].field + layers[1].field + 200)/400; //0-1
+    const o3 = (layers[2].field + layers[3].field + layers[4].field + 300)/600;
+    const shear = (layers[5].rotation + layers[6].rotation)/10; // -1..1
+    const lattice = (layers[7].field + layers[8].field)/2;
+    let sum=0; for(const l of layers) sum+=l.field;
+    const stability = 1 - Math.min(1, Math.abs(sum)/700);
+
+    let cntB=0,cntP=0;
+    for(let i=0;i<N;i++){
+      const s = grid[i];
+      const x = i % W, y = (i / W)|0;
+      let ns = s;
+      if(s===0){ if(Math.random() < actE*0.018) ns=1; }
+      else if(s===1){ if(Math.random() < o3*0.025) ns=2; if(stability<0.25 && Math.random()<0.02) ns=0; }
+      else if(s===2){
+        cntB++;
+        // shear pores
+        if(Math.abs(shear)>0.2){
+          const wave = Math.sin((x*0.35 + y*shear*1.8 + time*0.0015));
+          if(wave>0.82 && Math.random()<0.015) ns=3;
+        }
+        if(lattice < -15 && ((x + (y*3)) % 7 === 0) && Math.random()<0.008) ns=3;
+        if(stability<0.3 && Math.random() > stability+0.2) ns=1;
+      } else if(s===3){
+        cntP++;
+        if(stability<0.18 && Math.random()<0.04) ns=0;
+        if(o3<0.2 && Math.random()<0.01) ns=2;
+      }
+      if(stability<0.12 && Math.random()<0.03) ns=0;
+      grid[i]=ns;
+
+      // smooth color
+      const tgt = colMap[ns];
+      const idx3 = i*3;
+      // we store cur in separate arrays but use idx
+      curR[i] += (tgt[0]-curR[i])*0.22;
+      curG[i] += (tgt[1]-curG[i])*0.22;
+      curB[i] += (tgt[2]-curB[i])*0.22;
+      const d4 = i*4;
+      nData[d4] = curR[i]|0;
+      nData[d4+1] = curG[i]|0;
+      nData[d4+2] = curB[i]|0;
+      nData[d4+3] = 255;
+    }
+    nctx.putImageData(nImg,0,0);
+
+    // metrics
+    const boundPct = (cntB/N*100);
+    const porePct = (cntP/N*100);
+    const order = Math.max(0, Math.min(100, stability*100 * (lattice>0?0.95:0.75) * (1 - Math.abs(shear)*0.3)));
+    mBound.textContent = boundPct.toFixed(1);
+    mPore.textContent = porePct.toFixed(1);
+    mOrder.textContent = order.toFixed(0);
+    bBound.style.width = boundPct + '%';
+    bPore.style.width = porePct + '%';
+    bOrder.style.width = order + '%';
+  }
+
+  // Animation loop
+  let last=performance.now();
+  function frame(now){
+    const dt = Math.min(33, now-last); last=now;
+    drawCore(dt);
+    drawPlasma(dt);
+    updateNanites(dt, now);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // initial touches for mobile: set a nice state
+  layers[0].field=28; layers[1].field=22;
+  layers[2].field=45; layers[3].field=52; layers[4].field=48;
+  layers[5].rotation=1.2; layers[6].rotation=-1.1;
+  layers[7].field=35; layers[8].field=30;
+  syncControls();
+})();
+</script>
+</body>
+</html>

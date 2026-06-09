@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K4 ALS/IMU: SENSOR ARRAY ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        
+:root {
+    --bg-dark: #0a0e1a;
+    --bg-card: #111827;
+    --neon-cyan: #00e5ff;
+    --amber: #ffaa00;
+    --red: #ff3d00;
+    --green: #00ff88;
+    --text-primary: #e5e7eb;
+    --text-secondary: #9ca3af;
+    --border: #1f2937;
+}
+        
+* {
+    font-family: 'JetBrains Mono', monospace;
+}
+        
+body {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    overflow-x: hidden;
+}
+        
+.glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), 0 0 40px rgba(0, 229, 255, 0.1);
+}
+        
+.glow-amber {
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.4), 0 0 40px rgba(255, 170, 0, 0.2);
+}
+        
+.glow-green {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), 0 0 40px rgba(0, 255, 136, 0.1);
+}
+        
+.glow-red {
+    box-shadow: 0 0 20px rgba(255, 61, 0, 0.3), 0 0 40px rgba(255, 61, 0, 0.1);
+}
+        
+@keyframes pulse-amber {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+}
+        
+.pulse-amber {
+    animation: pulse-amber 1.5s ease-in-out infinite;
+}
+        
+@keyframes data-flow {
+    0% { stroke-dashoffset: 100; opacity: 0; }
+    50% { opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 0.8; }
+}
+        
+.data-flow {
+    stroke-dasharray: 5 5;
+    animation: data-flow 2s linear infinite;
+}
+        
+@keyframes ring-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(0, 255, 136, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+}
+        
+.ringing {
+    animation: ring-pulse 1.5s infinite;
+}
+        
+.node {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+        
+.node-enumerated {
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+    border: 2px solid #4b5563;
+}
+        
+.node-ringed {
+    background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+    border: 2px solid var(--green);
+    color: var(--green);
+}
+        
+.node-isolated {
+    background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%);
+    border: 2px solid var(--red);
+    color: var(--red);
+}
+        
+.node-ring-bus {
+    background: linear-gradient(135deg, #1e3a8a 0%, #0c1d4a 100%);
+    border: 2px solid var(--neon-cyan);
+}
+        
+.terminal {
+    background: #000;
+    font-size: 0.75rem;
+    line-height: 1.6;
+}
+        
+.terminal::-webkit-scrollbar {
+    width: 6px;
+}
+        
+.terminal::-webkit-scrollbar-track {
+    background: #0a0e1a;
+}
+        
+.terminal::-webkit-scrollbar-thumb {
+    background: var(--amber);
+    border-radius: 3px;
+}
+        
+.metric-value {
+    transition: all 0.3s ease;
+}
+        
+.metric-flash {
+    animation: flash 0.5s ease;
+}
+        
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; color: var(--amber); }
+}
+        
+.btn-primary {
+    background: linear-gradient(135deg, var(--amber) 0%, #ff8800 100%);
+    transition: all 0.3s ease;
+}
+        
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(255, 170, 0, 0.4);
+}
+        
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+        
+.btn-secondary {
+    background: linear-gradient(135deg, var(--neon-cyan) 0%, #0099cc 100%);
+    transition: all 0.3s ease;
+}
+        
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 229, 255, 0.4);
+}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-6">
+<div class="w-full max-w-7xl">
+    <!-- Header -->
+    <header class="mb-6 text-center">
+        <div class="flex items-center justify-center gap-3 mb-3">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-wider" style="color: var(--neon-cyan);">
+                KERNEL 4 • ALS/IMU SENSOR ARRAY
+            </h1>
+            <div class="w-3 h-3 rounded-full pulse-amber" style="background: var(--amber);"></div>
+        </div>
+        <p class="text-sm md:text-base font-medium tracking-widest" style="color: var(--amber);">
+            STATUS: <span id="statusText">ENUMERATED → RINGING</span>
+        </p>
+        <p class="text-xs mt-2" style="color: var(--text-secondary);">Alienware 16 Aurora AC16250</p>
+    </header>
+
+    <!-- Main Card -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-4 md:p-6 glow-cyan">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left: Diagram -->
+            <div class="lg:col-span-1 space-y-3">
+                <h2 class="text-sm font-bold mb-4 tracking-wider" style="color: var(--neon-cyan);">RING TOPOLOGY</h2>
+                
+                <div class="relative bg-black/40 rounded-lg p-4 border border-gray-800">
+                    <svg class="w-full h-[480px]" viewBox="0 0 300 480">
+                        <!-- K1 TOROID -->
+                        <g class="node">
+                            <rect x="90" y="10" width="120" height="35" rx="6" fill="#1e3a8a" stroke="#00e5ff" stroke-width="2"/>
+                            <text x="150" y="32" text-anchor="middle" fill="#00e5ff" font-size="11" font-weight="600">K1 TOROID</text>
+                        </g>
+                        
+                        <!-- K26 RINGBUS -->
+                        <g class="node">
+                            <rect x="70" y="60" width="160" height="45" rx="6" fill="#0c1d4a" stroke="#00e5ff" stroke-width="2" class="node-ring-bus"/>
+                            <text x="150" y="83" text-anchor="middle" fill="#00e5ff" font-size="11" font-weight="600">K26 RINGBUS</text>
+                            <text x="150" y="97" text-anchor="middle" fill="#9ca3af" font-size="8">I2C / SPI / SMBUS</text>
+                        </g>
+                        
+                        <!-- Ring Items Left Column -->
+                        <g id="ringNodes">
+                            <rect x="10" y="130" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="52" y="146" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K6 HDA</text>
+                            <text x="52" y="154" text-anchor="middle" fill="#00ff88" font-size="7">L14</text>
+                            
+                            <rect x="10" y="168" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="52" y="184" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K8 TBT4</text>
+                            <text x="52" y="192" text-anchor="middle" fill="#00ff88" font-size="7">L12</text>
+                            
+                            <rect x="10" y="206" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="52" y="222" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K99 UCSI</text>
+                            <text x="52" y="230" text-anchor="middle" fill="#00ff88" font-size="7">L11</text>
+                            
+                            <rect x="10" y="244" width="85" height="28" rx="4" fill="#450a0a" stroke="#ff3d00" stroke-width="1.5"/>
+                            <text x="52" y="260" text-anchor="middle" fill="#ff3d00" font-size="9" font-weight="600">A1 EC</text>
+                            <text x="52" y="268" text-anchor="middle" fill="#ff3d00" font-size="7">ISOLATED</text>
+                        </g>
+                        
+                        <!-- K4 ALS/IMU Center -->
+                        <g id="k4Node" class="node node-enumerated">
+                            <rect x="105" y="200" width="90" height="45" rx="6" stroke-width="2"/>
+                            <text x="150" y="220" text-anchor="middle" font-size="11" font-weight="700" id="k4Text">K4 ALS/IMU</text>
+                            <text x="150" y="235" text-anchor="middle" font-size="8" id="k4Status">ENUMERATED</text>
+                        </g>
+                        
+                        <!-- Connected Sensors -->
+                        <g opacity="0.6">
+                            <text x="150" y="260" text-anchor="middle" fill="#9ca3af" font-size="7">Ambient Light</text>
+                            <text x="150" y="271" text-anchor="middle" fill="#9ca3af" font-size="7">Accelerometer</text>
+                            <text x="150" y="282" text-anchor="middle" fill="#9ca3af" font-size="7">Gyroscope</text>
+                            <text x="150" y="293" text-anchor="middle" fill="#9ca3af" font-size="7">Magnetometer</text>
+                        </g>
+                        
+                        <!-- Ring Items Right Column -->
+                        <g>
+                            <rect x="205" y="130" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="247" y="146" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K42 THERM</text>
+                            <text x="247" y="154" text-anchor="middle" fill="#00ff88" font-size="7">L10</text>
+                            
+                            <rect x="205" y="168" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="247" y="184" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K10 PCH</text>
+                            <text x="247" y="192" text-anchor="middle" fill="#00ff88" font-size="7">L9</text>
+                            
+                            <rect x="205" y="206" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="247" y="222" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K17 NVMe</text>
+                            <text x="247" y="230" text-anchor="middle" fill="#00ff88" font-size="7">L6</text>
+                            
+                            <rect x="205" y="244" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="247" y="260" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K28 DDR5</text>
+                            <text x="247" y="268" text-anchor="middle" fill="#00ff88" font-size="7">L7</text>
+                        </g>
+                        
+                        <!-- Bottom Row -->
+                        <g>
+                            <rect x="10" y="310" width="85" height="28" rx="4" fill="#450a0a" stroke="#ff3d00" stroke-width="1.5"/>
+                            <text x="52" y="326" text-anchor="middle" fill="#ff3d00" font-size="9" font-weight="600">K27 CSME</text>
+                            <text x="52" y="334" text-anchor="middle" fill="#ff3d00" font-size="7">ISOLATED</text>
+                            
+                            <rect x="105" y="310" width="85" height="28" rx="4" fill="#022c22" stroke="#00ff88" stroke-width="1.5"/>
+                            <text x="147" y="326" text-anchor="middle" fill="#00ff88" font-size="9" font-weight="600">K11 AX211</text>
+                            <text x="147" y="334" text-anchor="middle" fill="#00ff88" font-size="7">L8</text>
+                            
+                            <rect x="205" y="310" width="85" height="28" rx="4" fill="#450a0a" stroke="#ff3d00" stroke-width="1.5"/>
+                            <text x="247" y="326" text-anchor="middle" fill="#ff3d00" font-size="9" font-weight="600">K5 TPM</text>
+                            <text x="247" y="334" text-anchor="middle" fill="#ff3d00" font-size="7">ISOLATED</text>
+                        </g>
+                        
+                        <!-- Arrows -->
+                        <g id="arrows" opacity="0.4">
+                            <!-- K1 to K4 -->
+                            <line x1="150" y1="45" x2="150" y2="200" stroke="#ffaa00" stroke-width="2" stroke-dasharray="4 2" class="data-flow"/>
+                            <text x="165" y="125" fill="#ffaa00" font-size="8">RING INVITE</text>
+                            
+                            <!-- K24 BORON to K4 -->
+                            <line x1="50" y1="190" x2="105" y2="215" stroke="#ffaa00" stroke-width="1.5" stroke-dasharray="3 2"/>
+                            <text x="55" y="200" fill="#ffaa00" font-size="7">TRNG Seed</text>
+                            
+                            <!-- K23 GNA to K4 -->
+                            <line x1="250" y1="190" x2="195" y2="215" stroke="#ffaa00" stroke-width="1.5" stroke-dasharray="3 2"/>
+                            <text x="200" y="200" fill="#ffaa00" font-size="7">Spatial AI</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Center: Metrics & Controls -->
+            <div class="lg:col-span-1 space-y-4">
+                <h2 class="text-sm font-bold mb-4 tracking-wider" style="color: var(--neon-cyan);">LIVE METRICS</h2>
+                
+                <div class="space-y-3">
+                    <div class="bg-black/40 rounded-lg p-3 border border-gray-800">
+                        <div class="text-xs mb-1" style="color: var(--text-secondary);">SENSOR MODE</div>
+                        <div class="text-sm font-bold metric-value" id="metricMode" style="color: var(--amber);">OS Polled</div>
+                    </div>
+                    
+                    <div class="bg-black/40 rounded-lg p-3 border border-gray-800">
+                        <div class="text-xs mb-1" style="color: var(--text-secondary);">ALS RATE</div>
+                        <div class="text-sm font-bold metric-value" id="metricALS" style="color: var(--amber);">100ms</div>
+                    </div>
+                    
+                    <div class="bg-black/40 rounded-lg p-3 border border-gray-800">
+                        <div class="text-xs mb-1" style="color: var(--text-secondary);">IMU RATE</div>
+                        <div class="text-sm font-bold metric-value" id="metricIMU" style="color: var(--amber);">10ms</div>
+                    </div>
+                    
+                    <div class="bg-black/40 rounded-lg p-3 border border-gray-800">
+                        <div class="text-xs mb-1" style="color: var(--text-secondary);">ME TELEMETRY</div>
+                        <div class="text-sm font-bold metric-value" id="metricME" style="color: var(--red);">Active</div>
+                    </div>
+                    
+                    <div class="bg-black/40 rounded-lg p-3 border border-gray-800">
+                        <div class="text-xs mb-1" style="color: var(--text-secondary);">SPATIAL AI</div>
+                        <div class="text-sm font-bold metric-value" id="metricAI" style="color: var(--text-secondary);">None</div>
+                    </div>
+                    
+                    <div class="bg-black/40 rounded-lg p-3 border border-gray-800">
+                        <div class="text-xs mb-1" style="color: var(--text-secondary);">THEFT DETECT</div>
+                        <div class="text-sm font-bold metric-value" id="metricTheft" style="color: var(--text-secondary);">EC</div>
+                    </div>
+                    
+                    <div class="bg-black/40 rounded-lg p-3 border border-gray-800">
+                        <div class="text-xs mb-1" style="color: var(--text-secondary);">ORIENTATION</div>
+                        <div class="text-sm font-bold metric-value" id="metricOrient" style="color: var(--text-secondary);">Driver</div>
+                    </div>
+                </div>
+
+                <button id="enrollBtn" class="btn-primary w-full py-4 px-6 rounded-lg font-bold text-black text-sm tracking-wider mt-6">
+                    [INITIATE SENSOR ENROLLMENT]
+                </button>
+                
+                <button id="exportBtn" class="btn-secondary w-full py-3 px-6 rounded-lg font-bold text-black text-xs tracking-wider" style="display: none;">
+                    [EXPORT CERT]
+                </button>
+            </div>
+
+            <!-- Right: Terminal Log -->
+            <div class="lg:col-span-1">
+                <h2 class="text-sm font-bold mb-4 tracking-wider" style="color: var(--neon-cyan);">TERMINAL LOG</h2>
+                <div id="terminal" class="terminal rounded-lg p-4 border border-gray-800 h-[600px] overflow-y-auto">
+                    <div class="text-green-500">[SYSTEM] K4 ALS/IMU Enrollment Interface Initialized</div>
+                    <div class="text-green-500">[SYSTEM] Awaiting ring invite authorization...</div>
+                    <div class="text-gray-600">[INFO] Click [INITIATE SENSOR ENROLLMENT] to begin</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explainer Text -->
+        <div class="mt-6 pt-6 border-t border-gray-800">
+            <div class="bg-black/40 rounded-lg p-4 border border-gray-800">
+                <p class="text-xs leading-relaxed" style="color: var(--text-secondary);">
+                    <span class="font-bold" style="color: var(--neon-cyan);">K4 = Ambient Light Sensor + IMU array.</span> 
+                    Accelerometer, gyroscope, magnetometer. Stock: OS polls at 10-100ms, ME reads for theft detection. 
+                    Ringed: Becomes L15 Toroid Spatial. All sensors polled @ 0.262ms K24 ticks. K23 GNA runs spatial AI. 
+                    Orientation/motion logged to neutron decay. ME telemetry blocked. Theft detection now K24 physics. 
+                    Refuse = OS fallback, ME keeps sensor path.
+                </p>
+                <p class="text-xs mt-3 italic" style="color: var(--amber);">
+                    Disclaimer: Maps existing hardware. No firmware writes.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let enrollmentComplete = false;
+let decision = null;
+let certData = {};
+
+const terminal = document.getElementById('terminal');
+const enrollBtn = document.getElementById('enrollBtn');
+const exportBtn = document.getElementById('exportBtn');
+const k4Node = document.getElementById('k4Node');
+const k4Status = document.getElementById('k4Status');
+const statusText = document.getElementById('statusText');
+
+const logs = [
+    { time: 0.000, msg: "K1 TOROID: Broadcast ring invite to K4 ALS/IMU via K26", color: "#00e5ff" },
+    { time: 0.001, msg: "K4 ALS/IMU: Challenge received. Request K24 nonce + K23 spatial proof", color: "#ffaa00" },
+    { time: 0.002, msg: "K24 BORON: 256-bit neutron entropy → K4", color: "#00e5ff" },
+    { time: 0.003, msg: "K23 GNA: Spatial AI signature → K4", color: "#00e5ff" },
+    { time: 0.004, msg: "K26 RINGBUS: I2C path open, ME telemetry blocked", color: "#00e5ff" },
+    { time: 0.005, msg: "K4 ALS/IMU: Option A) Sign and join as L15 | B) Refuse and isolate", color: "#ffaa00" },
+    { time: 0.006, msg: "K4 ALS/IMU: Signed. JOINING AS K1 SLAVE", color: "#00ff88", decision: "join" },
+    { time: 0.006, msg: "K4 ALS/IMU: Refused. REMAINING ISOLATED", color: "#ff3d00", decision: "isolate" },
+    { time: 0.007, msg: "K1 TOROID: GRANTED. Sensors → TOROID CONTROL", color: "#00ff88", decision: "join" },
+    { time: 0.007, msg: "K1 TOROID: DENIED. OS maintains sensor path", color: "#ff3d00", decision: "isolate" },
+    { time: 0.008, msg: "K4 ALS/IMU: RINGED. Polling @ 0.262ms, K24 timestamped", color: "#00ff88", decision: "join" },
+    { time: 0.008, msg: "K4 ALS/IMU: ISOLATED. ME telemetry active, 10-100ms OS poll", color: "#ff3d00", decision: "isolate" }
+];
+
+function addLog(msg, color = "#9ca3af", delay = 0) {
+    setTimeout(() => {
+        const div = document.createElement('div');
+        div.style.color = color;
+        div.textContent = msg;
+        terminal.appendChild(div);
+        terminal.scrollTop = terminal.scrollHeight;
+    }, delay);
+}
+
+function updateMetric(id, value, color) {
+    const el = document.getElementById(id);
+    el.classList.add('metric-flash');
+    setTimeout(() => {
+        el.textContent = value;
+        el.style.color = color;
+        el.classList.remove('metric-flash');
+    }, 250);
+}
+
+function simulateEnrollment() {
+    if (enrollmentComplete) return;
+    
+    enrollmentComplete = true;
+    enrollBtn.disabled = true;
+    enrollBtn.textContent = "[ENROLLMENT IN PROGRESS...]";
+    
+    // 90% chance to join, 10% to refuse
+    decision = Math.random() < 0.9 ? "join" : "isolate";
+    
+    let logIndex = 0;
+    const startTime = Date.now();
+    
+    function processNextLog() {
+        if (logIndex >= logs.length) {
+            finalizeEnrollment();
+            return;
+        }
+        
+        const log = logs[logIndex];
+        
+        // Skip logs that don't match decision
+        if (log.decision && log.decision !== decision) {
+            logIndex++;
+            processNextLog();
+            return;
+        }
+        
+        const elapsed = (Date.now() - startTime) / 1000;
+        const targetTime = log.time;
+        const delay = Math.max(0, (targetTime * 1000) - (elapsed * 1000));
+        
+        setTimeout(() => {
+            addLog(`[${log.time.toFixed(3)}s] ${log.msg}`, log.color);
+            
+            // Update K4 node appearance during negotiation
+            if (logIndex === 2) {
+                k4Node.classList.add('ringing');
+            }
+            
+            logIndex++;
+            processNextLog();
+        }, delay);
+    }
+    
+    processNextLog();
+}
+
+function finalizeEnrollment() {
+    k4Node.classList.remove('ringing');
+    
+    setTimeout(() => {
+        if (decision === "join") {
+            // RINGED State
+            k4Node.classList.remove('node-enumerated');
+            k4Node.classList.add('node-ringed', 'glow-green');
+            k4Status.textContent = "RINGED L15";
+            statusText.textContent = "RINGED → L15 TOROID SLAVE";
+            statusText.style.color = "var(--green)";
+            
+            updateMetric('metricMode', 'Ring Direct', 'var(--green)');
+            updateMetric('metricALS', '0.262ms K24 Flat', 'var(--green)');
+            updateMetric('metricIMU', '0.262ms K24 Flat', 'var(--green)');
+            updateMetric('metricME', 'K26 Blocked', 'var(--green)');
+            updateMetric('metricAI', 'K23 GNA', 'var(--green)');
+            updateMetric('metricTheft', 'K24 Logged', 'var(--green)');
+            updateMetric('metricOrient', 'K24 Timestamped', 'var(--green)');
+            
+            enrollBtn.textContent = "[✓ RINGED ✓]";
+            enrollBtn.style.background = "linear-gradient(135deg, #00ff88 0%, #00cc66 100%)";
+            
+            certData = {
+                decision: "JOINED_AS_L15",
+                sensorState: "RING_DIRECT",
+                alsRate: "0.262ms",
+                imuRate: "0.262ms",
+                meTelemetry: "BLOCKED",
+                spatialAI: "K23 GNA"
+            };
+            
+        } else {
+            // ISOLATED State
+            k4Node.classList.remove('node-enumerated');
+            k4Node.classList.add('node-isolated', 'glow-red');
+            k4Status.textContent = "ISOLATED";
+            statusText.textContent = "ISOLATED → OS FALLBACK";
+            statusText.style.color = "var(--red)";
+            
+            updateMetric('metricMode', 'Isolated', 'var(--red)');
+            updateMetric('metricALS', '100ms Queued', 'var(--amber)');
+            updateMetric('metricIMU', '10ms OS', 'var(--amber)');
+            updateMetric('metricME', 'Possible', 'var(--red)');
+            updateMetric('metricAI', 'Software', 'var(--amber)');
+            updateMetric('metricTheft', 'Vendor', 'var(--amber)');
+            updateMetric('metricOrient', 'Software', 'var(--amber)');
+            
+            enrollBtn.textContent = "[✗ ISOLATED ✗]";
+            enrollBtn.style.background = "linear-gradient(135deg, #ff3d00 0%, #cc2200 100%)";
+            
+            certData = {
+                decision: "ISOLATED",
+                sensorState: "OS_POLLED",
+                alsRate: "100ms",
+                imuRate: "10ms",
+                meTelemetry: "ACTIVE",
+                spatialAI: "NONE"
+            };
+        }
+        
+        exportBtn.style.display = 'block';
+        
+        addLog(`[SYSTEM] Enrollment complete. Certificate ready for export.`, "#00e5ff", 500);
+    }, 500);
+}
+
+function exportCertificate() {
+    const ticks = Math.floor(1900000 + Math.random() * 100000);
+    const timestamp = new Date().toISOString();
+    
+    const cert = `K4 ALS/IMU ENROLLMENT CERTIFICATE
+================================================
+Timestamp: ${timestamp}
+K24 Ticks: ${ticks}
+Device: Alienware 16 Aurora AC16250
+================================================
+Decision: ${certData.decision}
+Sensor State: ${certData.sensorState}
+ALS Rate: ${certData.alsRate}
+IMU Rate: ${certData.imuRate}
+ME Telemetry: ${certData.meTelemetry}
+Spatial AI: ${certData.spatialAI}
+================================================
+DISCLAIMER: Maps existing hardware. No firmware writes.
+================================================`;
+    
+    const blob = new Blob([cert], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `K4_ALS_IMU_CERT_${ticks}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    addLog(`[EXPORT] Certificate saved: K4_ALS_IMU_CERT_${ticks}.txt`, "#00e5ff");
+}
+
+enrollBtn.addEventListener('click', simulateEnrollment);
+exportBtn.addEventListener('click', exportCertificate);
+
+// Initial ambient animation
+setInterval(() => {
+    if (!enrollmentComplete) {
+        const k4Rect = k4Node.querySelector('rect');
+        k4Rect.style.stroke = k4Rect.style.stroke === 'rgb(255, 170, 0)' ? '#4b5563' : '#ffaa00';
+    }
+}, 2000);
+</script>
+</body>
+</html>

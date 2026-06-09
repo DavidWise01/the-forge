@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CORTEX // SHADOW SCAN</title>
+    <style>
+        body { background: #080c14; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .radar { width: 300px; height: 300px; position: relative; border: 2px solid rgba(64, 144, 255, 0.2); border-radius: 50%; overflow: hidden; }
+        .sweep { position: absolute; width: 50%; height: 50%; background: linear-gradient(45deg, rgba(64, 144, 255, 0.4) 0%, transparent 100%); transform-origin: bottom right; animation: sweep 4s linear infinite; }
+        .shadow-blip { position: absolute; width: 6px; height: 6px; background: #ff4466; border-radius: 50%; box-shadow: 0 0 10px #ff4466; animation: flicker 0.5s infinite; }
+        @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+    <div class="radar">
+        <div class="sweep"></div>
+        <div class="shadow-blip" style="top: 20%; left: 60%;"></div>
+        <div class="shadow-blip" style="top: 70%; left: 30%;"></div>
+    </div>
+</body>
+</html>

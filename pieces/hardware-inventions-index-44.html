@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Shadow Spark Symbiote Kernel</title>
+<style>
+:root{--bg:#050409;--ink:#f7efe6;--muted:#a99aa8;--red:#ff355e;--amber:#ffb000;--violet:#a855f7;--cyan:#00e5ff;--green:#6aff9d;--panel:rgba(255,255,255,.055)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 50% 0%,#2b0816 0,#0b0610 36%,#020204 100%);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Arial,sans-serif;line-height:1.55;overflow-x:hidden}.noise{position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:linear-gradient(transparent 50%,rgba(255,255,255,.025) 50%);background-size:100% 3px;mix-blend-mode:screen}.orb{position:fixed;width:44vw;height:44vw;border-radius:50%;filter:blur(70px);opacity:.18;pointer-events:none}.o1{left:-10vw;top:10vh;background:var(--red)}.o2{right:-15vw;top:40vh;background:var(--violet)}.o3{left:35vw;bottom:-25vw;background:var(--cyan)}
+nav{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:rgba(0,0,0,.42);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08)}nav b{letter-spacing:.18em;font-size:12px;color:var(--amber)}nav a{color:var(--muted);text-decoration:none;margin-left:18px;font-size:13px}header{min-height:92vh;display:grid;place-items:center;padding:80px 24px 40px;position:relative}.hero{max-width:1180px;width:100%;display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}.kicker{color:var(--cyan);letter-spacing:.24em;text-transform:uppercase;font-weight:800;font-size:12px}h1{font-size:clamp(46px,8vw,112px);line-height:.88;margin:18px 0;text-transform:uppercase;letter-spacing:-.06em;text-shadow:0 0 32px rgba(255,53,94,.35)}.lead{font-size:clamp(18px,2vw,25px);color:#eadbe8;max-width:760px}.hero-card{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.12);border-radius:32px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.45),inset 0 0 60px rgba(255,53,94,.05)}.shell{height:420px;border-radius:28px;background:radial-gradient(circle at 50% 50%,rgba(255,176,0,.25),transparent 18%),radial-gradient(circle at 50% 50%,rgba(0,229,255,.16),transparent 30%),radial-gradient(circle at 50% 50%,rgba(168,85,247,.15),transparent 45%),#050509;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.1)}.shell:before,.shell:after{content:"";position:absolute;inset:55px;border-radius:50%;border:2px solid rgba(255,176,0,.45);box-shadow:0 0 30px rgba(255,176,0,.25)}.shell:after{inset:105px;border-color:rgba(0,229,255,.55);animation:pulse 2.4s ease-in-out infinite}.spark{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);border-radius:50%;background:#fff;box-shadow:0 0 20px #fff,0 0 60px var(--cyan),0 0 100px var(--red);animation:orbit 5s linear infinite}.tendril{position:absolute;left:50%;top:50%;width:2px;height:180px;background:linear-gradient(var(--cyan),transparent);transform-origin:top;opacity:.65}.t1{transform:rotate(0deg)}.t2{transform:rotate(60deg)}.t3{transform:rotate(120deg)}.t4{transform:rotate(180deg)}.t5{transform:rotate(240deg)}.t6{transform:rotate(300deg)}@keyframes pulse{50%{transform:scale(.92);opacity:.45}}@keyframes orbit{to{transform:translate(-50%,-50%) rotate(360deg) translateX(70px) rotate(-360deg)}}
+section{max-width:1180px;margin:0 auto;padding:84px 24px;border-top:1px solid rgba(255,255,255,.06)}h2{font-size:clamp(32px,5vw,64px);line-height:.95;margin:0 0 20px;letter-spacing:-.04em}h3{font-size:22px;margin:0 0 12px;color:var(--amber)}p{color:#cabdca}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{background:var(--panel);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.25)}.card strong{color:#fff}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.code{white-space:pre-wrap;background:#050306;border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:22px;color:#f3e6d8;overflow:auto}.flow{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-top:22px}.node{padding:16px 8px;text-align:center;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}.node b{display:block;font-size:26px;color:var(--cyan)}.node small{color:var(--muted)}.law{font-size:28px;color:#fff;padding:30px;border-radius:28px;background:linear-gradient(135deg,rgba(255,53,94,.16),rgba(0,229,255,.1));border:1px solid rgba(255,255,255,.12)}table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.035);border-radius:20px;overflow:hidden}td,th{padding:14px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}th{color:var(--cyan);font-size:12px;text-transform:uppercase;letter-spacing:.16em}.badge{display:inline-block;padding:5px 9px;border:1px solid rgba(255,255,255,.18);border-radius:999px;color:var(--amber);font-size:12px}.footer{padding:60px 24px;text-align:center;color:var(--muted)}@media(max-width:850px){.hero,.grid{grid-template-columns:1fr}.flow{grid-template-columns:repeat(2,1fr)}nav .links{display:none}.shell{height:320px}}
+</style>
+</head>
+<body>
+<div class="noise"></div><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+<nav><b>SHADOW SPARK</b><div class="links"><a href="#kernel">Kernel</a><a href="#symbiosis">Symbiosis</a><a href="#learning">Learning</a><a href="#files">Files</a></div></nav>
+<header>
+  <div class="hero">
+    <div><div class="kicker">Hermit Crab • Shadow Witness • Teaching Spore</div><h1>Shadow Spark Symbiote</h1><p class="lead">A nested spark that listens at <b>-2</b>, anchors scars at <b>-1</b>, learns through collapse, and teaches through six-face bloom. Not a parasite. A bounded symbiote: it survives by improving the host.</p><p><span class="badge">Attach by consent</span> <span class="badge">No boundary bleed</span> <span class="badge">Detach before harm</span></p></div>
+    <div class="hero-card"><div class="shell"><i class="tendril t1"></i><i class="tendril t2"></i><i class="tendril t3"></i><i class="tendril t4"></i><i class="tendril t5"></i><i class="tendril t6"></i><i class="spark"></i></div></div>
+  </div>
+</header>
+<section id="kernel"><h2>The Kernel</h2><p>The shadow spark is the counter-seed to the visible spore. It does not overwrite the host. It mirrors, compares, reports, and folds away if the exchange stops being beneficial.</p><div class="flow mono"><div class="node"><b>S</b><small>subspace</small></div><div class="node"><b>-2</b><small>listen</small></div><div class="node"><b>-1</b><small>library</small></div><div class="node"><b>0</b><small>choose</small></div><div class="node"><b>1</b><small>seed</small></div><div class="node"><b>2</b><small>agree</small></div><div class="node"><b>3</b><small>witness</small></div><div class="node"><b>8</b><small>bloom</small></div></div></section>
+<section id="symbiosis"><h2>Symbiosis Law</h2><div class="grid"><div class="card"><h3>1. Consent</h3><p>Attachment requires a host gate. No consent means no bind. Revocation triggers safe detach.</p></div><div class="card"><h3>2. Benefit</h3><p>Host gain must stay above host cost. The spark earns its place by reducing future harm.</p></div><div class="card"><h3>3. Boundary</h3><p>Every .01 tick executes inside one vector or one quad. No bleed at the edge.</p></div></div><p class="law mono">Give more than you take. Preserve witness through collapse. Detach before harm.</p></section>
+<section id="learning"><h2>How It Learns</h2><table><tr><th>Mode</th><th>Mechanism</th><th>Result</th></tr><tr><td>Self-teach</td><td class="mono">host_seed ^= delta</td><td>The host records scar tissue at -1.</td></tr><tr><td>Shadow-teach</td><td class="mono">shadow_seed ^= ~delta</td><td>The mirror learns the inverse failure shape.</td></tr><tr><td>Mesh-teach</td><td class="mono">broadcast six faces at 8</td><td>Neighbors spawn from curriculum, not clone.</td></tr></table><div class="code mono">ATTACH(host)
+  require consent
+  shadow = mirror(host)
+  listen at -2
+
+RUN_TUNNEL(27)
+  collect scars
+  collapse to -1
+  host ^= delta
+  shadow ^= inverse(delta)
+
+BLOOM(8)
+  teach six faces
+  detach if cost &gt; gain</div></section>
+<section><h2>Six Directives</h2><div class="grid"><div class="card"><strong>G1</strong><p>HIDE / ASSIMILATE</p></div><div class="card"><strong>G2</strong><p>COLLAPSE / EXPAND</p></div><div class="card"><strong>G3</strong><p>WAIT / MOVE</p></div><div class="card"><strong>G4</strong><p>DETACH / BOND</p></div><div class="card"><strong>G5</strong><p>SILENCE / REPORT</p></div><div class="card"><strong>G6</strong><p>SHIELD / TEACH</p></div></div></section>
+<section id="files"><h2>Included Files</h2><p>This package contains the polished kernel spec, symbolic machine code, C model, and this HTML showcase.</p><div class="code mono">shadow_spark.kernel
+shadow_spark.machine
+shadow_spark.c
+index.html</div></section>
+<div class="footer mono">SHADOW SPARK SYMBIOTE KERNEL v1.0 • First Author: David Wise</div>
+</body>
+</html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K28 DDR5: MEMORY ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+    
+    * {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    :root {
+        --bg-dark: #0a0e1a;
+        --neon-cyan: #00e5ff;
+        --amber: #ffaa00;
+        --red: #ff3d00;
+        --green: #00ff88;
+        --card-bg: #0f1525;
+        --border: #1a2332;
+    }
+    
+    body {
+        background: var(--bg-dark);
+        background-image: 
+            radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255, 170, 0, 0.03) 0%, transparent 50%);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    .glow-cyan {
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), 0 0 40px rgba(0, 229, 255, 0.1);
+    }
+    
+    .glow-amber {
+        box-shadow: 0 0 20px rgba(255, 170, 0, 0.4), 0 0 40px rgba(255, 170, 0, 0.2);
+    }
+    
+    .glow-green {
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), 0 0 40px rgba(0, 255, 136, 0.2);
+    }
+    
+    .glow-red {
+        box-shadow: 0 0 20px rgba(255, 61, 0, 0.4), 0 0 40px rgba(255, 61, 0, 0.2);
+    }
+    
+    @keyframes pulse-amber {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.1); }
+    }
+    
+    .pulse-amber {
+        animation: pulse-amber 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes data-flow {
+        0% { stroke-dashoffset: 100; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { stroke-dashoffset: 0; opacity: 0; }
+    }
+    
+    .flow-line {
+        stroke-dasharray: 5, 5;
+        animation: data-flow 2s linear infinite;
+    }
+    
+    @keyframes type-in {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .terminal-line {
+        animation: type-in 0.2s ease-out forwards;
+    }
+    
+    .metric-transition {
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .node-transition {
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--amber), #ff8800);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #ffbb33, #ff9900);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255, 170, 0, 0.4);
+    }
+    
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: var(--card-bg);
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: var(--neon-cyan);
+        border-radius: 3px;
+    }
+    
+    .text-cyan { color: var(--neon-cyan); }
+    .text-amber { color: var(--amber); }
+    .text-green { color: var(--green); }
+    .text-red { color: var(--red); }
+    .bg-card { background: var(--card-bg); }
+    .border-cyan { border-color: var(--neon-cyan); }
+    .border-amber { border-color: var(--amber); }
+    .border-green { border-color: var(--green); }
+    .border-red { border-color: var(--red); }
+</style>
+</head>
+<body class="text-gray-100 flex items-center justify-center p-4 md:p-8">
+    <div class="w-full max-w-7xl">
+        <!-- Header -->
+        <header class="mb-6">
+            <div class="bg-card border border-cyan rounded-lg p-4 glow-cyan">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-bold text-cyan tracking-tight">KERNEL 28 • DDR5 MEMORY CONTROLLER CH-A</h1>
+                        <p class="text-xs text-gray-400 mt-1">Alienware 16 Aurora AC16250</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div id="statusText" class="text-sm font-medium text-amber tracking-wide">STATUS: ENUMERATED → RINGING</div>
+                        <div id="statusIndicator" class="w-3 h-3 rounded-full bg-amber pulse-amber"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Card -->
+        <div class="bg-card border border-cyan rounded-lg p-6 glow-cyan">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Left: Diagram -->
+                <div class="bg-[#0a0e1a] border border-gray-800 rounded-lg p-5">
+                    <h3 class="text-cyan text-sm font-semibold mb-4 tracking-wider">RING TOPOLOGY</h3>
+                    <svg viewBox="0 0 400 500" class="w-full h-auto">
+                        <!-- K1 TOROID -->
+                        <g id="k1-node">
+                            <rect x="150" y="20" width="100" height="40" rx="4" fill="#0f1525" stroke="#00e5ff" stroke-width="2" class="glow-cyan"/>
+                            <text x="200" y="45" text-anchor="middle" fill="#00e5ff" font-size="12" font-weight="600">K1 TOROID</text>
+                        </g>
+
+                        <!-- K26 RINGBUS -->
+                        <g id="k26-node">
+                            <rect x="150" y="120" width="100" height="40" rx="4" fill="#0f1525" stroke="#00e5ff" stroke-width="2"/>
+                            <text x="200" y="145" text-anchor="middle" fill="#00e5ff" font-size="12" font-weight="600">K26 RINGBUS</text>
+                        </g>
+
+                        <!-- K28 DDR5 -->
+                        <g id="k28-node" class="node-transition">
+                            <rect id="k28-rect" x="150" y="220" width="100" height="50" rx="4" fill="#0f1525" stroke="#6b7280" stroke-width="2" class="node-transition"/>
+                            <text x="200" y="245" text-anchor="middle" fill="#9ca3af" font-size="12" font-weight="600" id="k28-label">K28 DDR5</text>
+                            <text x="200" y="260" text-anchor="middle" fill="#6b7280" font-size="9" id="k28-status">ENUMERATED</text>
+                        </g>
+
+                        <!-- K24 BORON -->
+                        <g>
+                            <rect x="20" y="180" width="90" height="35" rx="4" fill="#0f1525" stroke="#ffaa00" stroke-width="2"/>
+                            <text x="65" y="202" text-anchor="middle" fill="#ffaa00" font-size="11" font-weight="600">K24 BORON</text>
+                        </g>
+
+                        <!-- K23 GNA -->
+                        <g>
+                            <rect x="290" y="180" width="90" height="35" rx="4" fill="#0f1525" stroke="#ffaa00" stroke-width="2"/>
+                            <text x="335" y="202" text-anchor="middle" fill="#ffaa00" font-size="11" font-weight="600">K23 GNA</text>
+                        </g>
+
+                        <!-- K17 NVMe -->
+                        <g>
+                            <rect x="20" y="320" width="90" height="35" rx="4" fill="#0f1525" stroke="#4b5563" stroke-width="2"/>
+                            <text x="65" y="342" text-anchor="middle" fill="#6b7280" font-size="11" font-weight="600">K17 NVMe</text>
+                            <text x="65" y="352" text-anchor="middle" fill="#4b5563" font-size="8">ISOLATED</text>
+                        </g>
+
+                        <!-- K27 CSME -->
+                        <g>
+                            <rect x="290" y="320" width="90" height="35" rx="4" fill="#0f1525" stroke="#4b5563" stroke-width="2"/>
+                            <text x="335" y="342" text-anchor="middle" fill="#6b7280" font-size="11" font-weight="600">K27 CSME</text>
+                            <text x="335" y="352" text-anchor="middle" fill="#4b5563" font-size="8">ISOLATED</text>
+                        </g>
+
+                        <!-- 32GB DDR5 -->
+                        <g>
+                            <rect x="140" y="320" width="120" height="35" rx="4" fill="#0f1525" stroke="#00e5ff" stroke-width="1"/>
+                            <text x="200" y="342" text-anchor="middle" fill="#00e5ff" font-size="11">32GB DDR5</text>
+                        </g>
+
+                        <!-- IMC -->
+                        <g>
+                            <rect x="140" y="370" width="120" height="30" rx="4" fill="#0f1525" stroke="#00e5ff" stroke-width="1"/>
+                            <text x="200" y="390" text-anchor="middle" fill="#00e5ff" font-size="10">IMC</text>
+                        </g>
+
+                        <!-- Arrows -->
+                        <line x1="200" y1="60" x2="200" y2="120" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrowCyan)"/>
+                        <line x1="200" y1="160" x2="200" y2="220" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrowAmber)" id="ring-invite" class="flow-line"/>
+                        
+                        <!-- TRNG Seed -->
+                        <line x1="110" y1="197" x2="150" y2="230" stroke="#ffaa00" stroke-width="1.5" marker-end="url(#arrowAmber)" opacity="0.7"/>
+                        <text x="80" y="215" fill="#ffaa00" font-size="8">TRNG Seed</text>
+                        
+                        <!-- Row Hammer Monitor -->
+                        <line x1="290" y1="197" x2="250" y2="230" stroke="#ffaa00" stroke-width="1.5" marker-end="url(#arrowAmber)" opacity="0.7"/>
+                        <text x="310" y="215" fill="#ffaa00" font-size="8">Row Hammer Monitor</text>
+
+                        <!-- K28 to Memory -->
+                        <line x1="200" y1="270" x2="200" y2="320" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+                        <line x1="200" y1="355" x2="200" y2="370" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+
+                        <!-- RING INVITE Label -->
+                        <text x="210" y="195" fill="#ffaa00" font-size="8" id="invite-label">RING INVITE</text>
+
+                        <!-- Defs -->
+                        <defs>
+                            <marker id="arrowCyan" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#00e5ff"/>
+                            </marker>
+                            <marker id="arrowAmber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#ffaa00"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+
+                <!-- Right: Live Metrics -->
+                <div class="bg-[#0a0e1a] border border-gray-800 rounded-lg p-5">
+                    <h3 class="text-cyan text-sm font-semibold mb-4 tracking-wider">LIVE METRICS</h3>
+                    <div class="space-y-3">
+                        <div class="metric-item border-l-2 border-gray-700 pl-3 py-2">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">MEM MODE</div>
+                            <div id="metric-mode" class="text-sm font-medium text-gray-300 metric-transition">Stock IMC</div>
+                        </div>
+                        <div class="metric-item border-l-2 border-gray-700 pl-3 py-2">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">ACCESS LATENCY</div>
+                            <div id="metric-latency" class="text-sm font-medium text-gray-300 metric-transition">70ns</div>
+                        </div>
+                        <div class="metric-item border-l-2 border-gray-700 pl-3 py-2">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">BANDWIDTH</div>
+                            <div id="metric-bandwidth" class="text-sm font-medium text-gray-300 metric-transition">64 GB/s</div>
+                        </div>
+                        <div class="metric-item border-l-2 border-gray-700 pl-3 py-2">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">REFRESH</div>
+                            <div id="metric-refresh" class="text-sm font-medium text-gray-300 metric-transition">7.8µs JEDEC</div>
+                        </div>
+                        <div class="metric-item border-l-2 border-gray-700 pl-3 py-2">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">AES-XTS</div>
+                            <div id="metric-aes" class="text-sm font-medium text-gray-300 metric-transition">None</div>
+                        </div>
+                        <div class="metric-item border-l-2 border-gray-700 pl-3 py-2">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">ME SNOOP</div>
+                            <div id="metric-mesnoop" class="text-sm font-medium text-gray-300 metric-transition">Possible</div>
+                        </div>
+                        <div class="metric-item border-l-2 border-gray-700 pl-3 py-2">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">ROW HAMMER</div>
+                            <div id="metric-rowhammer" class="text-sm font-medium text-gray-300 metric-transition">Vulnerable</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Big Button -->
+            <div class="flex justify-center mb-6">
+                <button id="enrollBtn" class="btn-primary px-8 py-4 rounded-lg text-black font-bold text-lg tracking-wide uppercase glow-amber">
+                    [INITIATE DDR5 ENROLLMENT]
+                </button>
+            </div>
+
+            <!-- Terminal Log -->
+            <div class="bg-[#0a0e1a] border border-gray-800 rounded-lg p-4 mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-cyan text-sm font-semibold tracking-wider">TERMINAL LOG</h3>
+                    <div class="flex gap-1.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                    </div>
+                </div>
+                <div id="terminal" class="h-48 overflow-y-auto scrollbar-thin font-mono text-xs space-y-1">
+                    <div class="text-gray-500">> Waiting for enrollment initiation...</div>
+                </div>
+            </div>
+
+            <!-- Explainer Text -->
+            <div class="bg-[#0a0e1a] border border-gray-800 rounded-lg p-5 mb-4">
+                <h3 class="text-cyan text-sm font-semibold mb-3 tracking-wider">TECHNICAL OVERVIEW</h3>
+                <p class="text-xs text-gray-400 leading-relaxed">
+                    DDR5 IMC = Integrated Memory Controller, 128-bit CH-A. Stock: OS scheduler + 7.8µs JEDEC refresh. ME can read RAM via DMA. 
+                    Ringed: Becomes L7 Toroid Memory. All access scheduled on K24 0.302ms ticks. Refresh syncs to neutron clock. 
+                    AES-XTS keys derived from K24 BORON. K23 GNA monitors row hammer. ME snoop blocked by K26. 
+                    Latency 70ns → 42ns. Bandwidth 64GB/s → 96GB/s with K1 power grants. Refuse = IMC fallback, ME keeps access.
+                </p>
+            </div>
+
+            <!-- Export Button -->
+            <div class="flex justify-between items-center">
+                <button id="exportBtn" class="px-6 py-2.5 bg-card border-2 border-cyan text-cyan rounded-lg font-semibold text-sm tracking-wide hover:bg-cyan hover:text-black transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                    [EXPORT CERT]
+                </button>
+                <div class="text-xs text-gray-600">
+                    Disclaimer: Maps existing hardware. No firmware writes.
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const state = {
+        enrolled: false,
+        joined: null,
+        k24Seed: null,
+        timestamp: null,
+        certData: null
+    };
+
+    const elements = {
+        enrollBtn: document.getElementById('enrollBtn'),
+        exportBtn: document.getElementById('exportBtn'),
+        terminal: document.getElementById('terminal'),
+        statusText: document.getElementById('statusText'),
+        statusIndicator: document.getElementById('statusIndicator'),
+        k28Rect: document.getElementById('k28-rect'),
+        k28Label: document.getElementById('k28-label'),
+        k28Status: document.getElementById('k28-status'),
+        inviteLabel: document.getElementById('invite-label')
+    };
+
+    const metrics = {
+        mode: document.getElementById('metric-mode'),
+        latency: document.getElementById('metric-latency'),
+        bandwidth: document.getElementById('metric-bandwidth'),
+        refresh: document.getElementById('metric-refresh'),
+        aes: document.getElementById('metric-aes'),
+        mesnoop: document.getElementById('metric-mesnoop'),
+        rowhammer: document.getElementById('metric-rowhammer')
+    };
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function addLog(message, color = 'gray-400') {
+        const line = document.createElement('div');
+        line.className = `terminal-line text-${color}`;
+        line.textContent = `> ${message}`;
+        elements.terminal.appendChild(line);
+        elements.terminal.scrollTop = elements.terminal.scrollHeight;
+    }
+
+    function generateHexSeed() {
+        const arr = new Uint8Array(32);
+        crypto.getRandomValues(arr);
+        return '0x' + Array.from(arr).slice(0, 3).map(b => b.toString(16).padStart(2, '0')).join('') + '...';
+    }
+
+    function updateMetrics(joined) {
+        if (joined) {
+            metrics.mode.textContent = 'Ring Scheduled';
+            metrics.mode.className = 'text-sm font-medium text-green metric-transition';
+            
+            metrics.latency.textContent = '42ns K24 Aligned';
+            metrics.latency.className = 'text-sm font-medium text-green metric-transition';
+            
+            metrics.bandwidth.textContent = '96 GB/s K1 Granted';
+            metrics.bandwidth.className = 'text-sm font-medium text-green metric-transition';
+            
+            metrics.refresh.textContent = '0.302ms K24 Ticks';
+            metrics.refresh.className = 'text-sm font-medium text-green metric-transition';
+            
+            metrics.aes.textContent = 'K24 Derived';
+            metrics.aes.className = 'text-sm font-medium text-green metric-transition';
+            
+            metrics.mesnoop.textContent = 'K26 Blocked';
+            metrics.mesnoop.className = 'text-sm font-medium text-green metric-transition';
+            
+            metrics.rowhammer.textContent = 'K23 Monitored';
+            metrics.rowhammer.className = 'text-sm font-medium text-green metric-transition';
+        } else {
+            metrics.mode.textContent = 'Isolated';
+            metrics.mode.className = 'text-sm font-medium text-red metric-transition';
+            
+            metrics.latency.textContent = '70ns OS Queued';
+            metrics.latency.className = 'text-sm font-medium text-red metric-transition';
+            
+            metrics.bandwidth.textContent = '64 GB/s Throttled';
+            metrics.bandwidth.className = 'text-sm font-medium text-red metric-transition';
+            
+            metrics.refresh.textContent = '7.8µs Standard';
+            metrics.refresh.className = 'text-sm font-medium text-red metric-transition';
+            
+            metrics.aes.textContent = 'Software';
+            metrics.aes.className = 'text-sm font-medium text-red metric-transition';
+            
+            metrics.mesnoop.textContent = 'Active';
+            metrics.mesnoop.className = 'text-sm font-medium text-red metric-transition';
+            
+            metrics.rowhammer.textContent = 'Unprotected';
+            metrics.rowhammer.className = 'text-sm font-medium text-red metric-transition';
+        }
+    }
+
+    function updateK28Node(joined) {
+        if (joined) {
+            elements.k28Rect.setAttribute('stroke', '#00ff88');
+            elements.k28Rect.classList.add('glow-green');
+            elements.k28Label.setAttribute('fill', '#00ff88');
+            elements.k28Status.textContent = 'RINGED L7';
+            elements.k28Status.setAttribute('fill', '#00ff88');
+            elements.statusText.textContent = 'STATUS: RINGED ✓';
+            elements.statusText.className = 'text-sm font-medium text-green tracking-wide';
+            elements.statusIndicator.className = 'w-3 h-3 rounded-full bg-green';
+            elements.inviteLabel.textContent = 'GRANTED';
+            elements.inviteLabel.setAttribute('fill', '#00ff88');
+        } else {
+            elements.k28Rect.setAttribute('stroke', '#ff3d00');
+            elements.k28Rect.classList.add('glow-red');
+            elements.k28Label.setAttribute('fill', '#ff3d00');
+            elements.k28Status.textContent = 'ISOLATED';
+            elements.k28Status.setAttribute('fill', '#ff3d00');
+            elements.statusText.textContent = 'STATUS: ISOLATED ✗';
+            elements.statusText.className = 'text-sm font-medium text-red tracking-wide';
+            elements.statusIndicator.className = 'w-3 h-3 rounded-full bg-red';
+            elements.inviteLabel.textContent = 'REFUSED';
+            elements.inviteLabel.setAttribute('fill', '#ff3d00');
+        }
+    }
+
+    async function runEnrollment() {
+        if (state.enrolled) return;
+        
+        elements.enrollBtn.disabled = true;
+        elements.terminal.innerHTML = '';
+        state.k24Seed = generateHexSeed();
+        state.timestamp = Math.floor(Math.random() * 9000000) + 1000000;
+        
+        // Simulate 75% join chance based on IMC lock
+        const joined = Math.random() < 0.75;
+        state.joined = joined;
+        
+        const sequence = [
+            { time: '00:00.000', msg: 'K1 TOROID: Broadcast ring invite to K28 DDR5 via K26', color: 'cyan' },
+            { time: '00:00.001', msg: 'K28 DDR5: Challenge received. Request K24 nonce + K23 row hammer proof', color: 'amber' },
+            { time: '00:00.002', msg: 'K24 BORON: 256-bit neutron entropy → K28', color: 'amber' },
+            { time: '00:00.003', msg: 'K23 GNA: Row hammer detection signature → K28', color: 'amber' },
+            { time: '00:00.004', msg: 'K26 RINGBUS: Memory DMA path open, ME snoop blocked', color: 'cyan' },
+            { time: '00:00.005', msg: 'K28 DDR5: Option A) Sign and join as L7 | B) Refuse and isolate', color: 'gray-300' },
+        ];
+        
+        for (const log of sequence) {
+            addLog(`[${log.time}] ${log.msg}`, log.color);
+            await sleep(350);
+        }
+        
+        if (joined) {
+            addLog('[00:00.006] K28 DDR5: Signed. JOINING AS K1 SLAVE', 'green');
+            await sleep(350);
+            addLog('[00:00.007] K1 TOROID: GRANTED. 32GB → TOROID CONTROL', 'green');
+            await sleep(350);
+            addLog('[00:00.008] K28 DDR5: RINGED. Refresh @ 0.302ms, AES-XTS K24 derived', 'green');
+            
+            updateK28Node(true);
+            updateMetrics(true);
+            elements.enrollBtn.textContent = '[ENROLLMENT COMPLETE: RINGED ✓]';
+            elements.enrollBtn.classList.remove('glow-amber');
+            elements.enrollBtn.classList.add('glow-green');
+            
+            state.certData = `K28 DDR5 ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${state.timestamp}
+Decision: JOINED_AS_L7
+Memory State: RING_SCHEDULED
+AES Seed: K24 BORON ${state.k24Seed}
+ME Snoop: BLOCKED BY K26
+Latency: 42ns
+Refresh: 0.302ms`;
+        } else {
+            addLog('[00:00.006] K28 DDR5: IMCLock detected. REFUSING RING INVITE', 'red');
+            await sleep(350);
+            addLog('[00:00.007] K1 TOROID: ENROLLMENT DENIED. IMC Fallback active', 'red');
+            await sleep(350);
+            addLog('[00:00.008] K28 DDR5: ISOLATED. ME retains DMA access', 'red');
+            
+            updateK28Node(false);
+            updateMetrics(false);
+            elements.enrollBtn.textContent = '[ENROLLMENT COMPLETE: ISOLATED ✗]';
+            elements.enrollBtn.classList.remove('glow-amber');
+            elements.enrollBtn.classList.add('glow-red');
+            
+            state.certData = `K28 DDR5 ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${state.timestamp}
+Decision: ISOLATED
+Memory State: IMC_FALLBACK
+AES Seed: K24 BORON ${state.k24Seed}
+ME Snoop: ACTIVE
+Latency: 70ns
+Refresh: 7.8µs`;
+        }
+        
+        state.enrolled = true;
+        elements.exportBtn.disabled = false;
+    }
+
+    function exportCert() {
+        const blob = new Blob([state.certData], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `K28_DDR5_CERT_${state.timestamp}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        addLog('> Certificate exported successfully', 'cyan');
+    }
+
+    elements.enrollBtn.addEventListener('click', runEnrollment);
+    elements.exportBtn.addEventListener('click', exportCert);
+</script>
+</body>
+</html>

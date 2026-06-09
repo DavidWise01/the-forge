@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nano Factory — Pantheon Engine Core</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui; background: #020617; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .pt-btn { transition: all .12s; }
+  .pt-btn:hover { transform: translateY(-1px) scale(1.05); z-index: 10; filter: brightness(1.2); }
+  .glass { backdrop-filter: blur(12px); background: rgba(15,23,42,.7); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+</style>
+</head>
+<body class="min-h-screen flex flex-col overflow-hidden">
+  <!-- TOP PANTHEON CORE -->
+  <header class="glass border-b border-slate-800 px-3 py-2 z-40">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-600 flex items-center justify-center font-bold text-black">N</div>
+        <div>
+          <div class="text-sm font-semibold leading-none">NANO FACTORY</div>
+          <div class="text-[10px] text-slate-400 mono">PANTHEON ENGINE CORE v10</div>
+        </div>
+      <div class="flex-1 grid grid-cols-5 md:grid-cols-10 gap-2 ml-4" id="coreSliders"></div>
+    </div>
+  </header>
+
+  <main class="flex-1 grid grid-cols-1 xl:grid-cols-[380px_1fr_320px] min-h-0">
+    <!-- LEFT: PERIODIC TABLE -->
+    <aside class="glass border-r border-slate-800 flex flex-col min-h-0 max-h-[40vh] xl:max-h-none">
+      <div class="px-3 py-2 border-b border-slate-800 flex items-center justify-between">
+        <h2 class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Periodic Table — 118 Elements</h2>
+        <div class="text-[10px] mono px-2 py-0.5 rounded bg-slate-800" id="selectedEl">Select → Place</div>
+      </div>
+      <div class="p-2 overflow-auto">
+        <div id="periodic" class="grid gap-[3px]" style="grid-template-columns: repeat(18, minmax(0, 1fr));"></div>
+        <div class="mt-3 grid grid-cols-2 gap-1 text-[10px]">
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#f87171"></span>Alkali</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#fb923c"></span>Alkaline</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#60a5fa"></span>Transition</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#22d3ee"></span>Post</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#2dd4bf"></span>Metalloid</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#facc15"></span>Nonmetal</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#e879f9"></span>Halogen</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#94a3b8"></span>Noble</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#a78bfa"></span>Lanthanide</div>
+          <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#c084fc"></span>Actinide</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: 3D CANVAS -->
+    <section class="relative min-h-[50vh] xl:min-h-0 bg-[#030712]">
+      <canvas id="canvas" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <!-- HUD -->
+      <div class="absolute top-3 left-3 right-3 flex justify-between pointer-events-none">
+        <div class="glass rounded-lg px-3 py-2 border border-slate-800">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Lattice</div>
+          <div class="mono text-sm">12×12×12 <span class="text-slate-500">×</span> <span id="layerDisplay" class="text-cyan-400">L1</span></div>
+        </div>
+        <div class="glass rounded-lg px-3 py-2 border border-slate-800 text-right">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Camera</div>
+          <div class="mono text-xs">Drag: Orbit • Scroll: Zoom • Shift+Drag: Pan</div>
+        </div>
+      </div>
+
+      <div class="absolute bottom-3 left-3 glass rounded-lg px-3 py-2 border border-slate-800">
+        <div class="flex items-center gap-4">
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase">4th Dimension</div>
+            <input id="layerSlider" type="range" min="1" max="12" value="1" class="w-40 accent-cyan-500">
+          </div>
+          <div class="w-px h-8 bg-slate-700"></div>
+          <div class="mono text-xs">
+            <div>Atoms: <span id="statAtoms" class="text-cyan-400">0</span></div>
+            <div>Bonds: <span id="statBonds" class="text-violet-400">0</span></div>
+          </div>
+          <div class="w-px h-8 bg-slate-700"></div>
+          <div class="mono text-xs">
+            <div>Energy: <span id="statEnergy" class="text-amber-400">0.00</span> eV</div>
+            <div>Temp: <span id="statTemp" class="text-orange-400">0</span>K</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tooltip" class="fixed z-50 pointer-events-none hidden glass px-2 py-1 rounded text-xs border border-slate-700"></div>
+    </section>
+
+    <!-- RIGHT: CONTROLS -->
+    <aside class="glass border-l border-slate-800 flex flex-col min-h-0">
+      <div class="p-3 border-b border-slate-800">
+        <h2 class="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">Assembly Controls</h2>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btnCarbon" class="pt-btn bg-slate-800 hover:bg-slate-700 rounded-lg py-2 text-xs font-medium">Fill Carbon</button>
+          <button id="btnAlloy" class="pt-btn bg-slate-800 hover:bg-slate-700 rounded-lg py-2 text-xs font-medium">Random Alloy</button>
+          <button id="btnRun" class="pt-btn bg-gradient-to-r from-cyan-600 to-violet-600 hover:opacity-90 rounded-lg py-2 text-xs font-semibold">Run Assembly</button>
+          <button id="btnClear" class="pt-btn bg-rose-900/50 hover:bg-rose-800 rounded-lg py-2 text-xs font-medium text-rose-200">Clear Layer</button>
+        </div>
+      </div>
+      
+      <div class="p-3 space-y-3 overflow-auto">
+        <div>
+          <div class="text-[11px] uppercase tracking-wide text-slate-400 mb-1">Core Field Biases</div>
+          <div class="space-y-2 text-xs">
+            <div class="p-2 rounded bg-slate-900/60 border border-slate-800">
+              <div class="flex justify-between"><span>L1-L3 Attraction</span><span class="mono text-cyan-400" id="biasAttr">1.00x</span></div>
+              <div class="h-1 mt-1 bg-slate-800 rounded overflow-hidden"><div id="barAttr" class="h-full bg-cyan-500 w-1/2"></div></div>
+            </div>
+            <div class="p-2 rounded bg-slate-900/60 border border-slate-800">
+              <div class="flex justify-between"><span>L4-L6 Ionic ↔ Covalent</span><span class="mono text-violet-400" id="biasBond">50/50</span></div>
+              <div class="h-1 mt-1 bg-slate-800 rounded overflow-hidden"><div id="barBond" class="h-full bg-violet-500 w-1/2"></div></div>
+            </div>
+            <div class="p-2 rounded bg-slate-900/60 border border-slate-800">
+              <div class="flex justify-between"><span>L7-L8 Temperature</span><span class="mono text-orange-400" id="biasTemp">0K</span></div>
+              <div class="h-1 mt-1 bg-slate-800 rounded overflow-hidden"><div id="barTemp" class="h-full bg-orange-500 w-0"></div></div>
+            </div>
+            <div class="p-2 rounded bg-slate-900/60 border border-slate-800">
+              <div class="flex justify-between"><span>L9-L10 Field Vector</span><span class="mono text-emerald-400" id="biasField">0°,0°</span></div>
+              <div class="h-1 mt-1 bg-slate-800 rounded overflow-hidden"><div id="barField" class="h-full bg-emerald-500 w-1/2"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-lg bg-slate-900/40 border border-slate-800">
+          <div class="text-[11px] uppercase tracking-wide text-slate-400 mb-2">Interaction</div>
+          <ul class="text-[12px] space-y-1 text-slate-300 leading-snug">
+            <li>• Click element → click lattice to place</li>
+            <li>• Drag atom to reposition</li>
+            <li>• Bonds form &lt;1.5 units if EN diff &gt;0.5 or valence match</li>
+            <li>• Noble gases repel, same charge repels</li>
+            <li>• 20,736 total sites (12⁴), rendering current layer</li>
+          </ul>
+        </div>
+
+        <div class="p-3 rounded-lg bg-gradient-to-br from-cyan-950/40 to-violet-950/40 border border-cyan-900/50">
+          <div class="text-[11px] uppercase tracking-wide text-cyan-300 mb-1">Nano-Factory Status</div>
+          <div class="mono text-[11px] leading-relaxed">
+            <div>System: <span class="text-emerald-400">ONLINE</span></div>
+            <div>Mode: <span id="modeStatus" class="text-slate-200">Idle</span></div>
+            <div>FPS: <span id="fps" class="text-slate-200">60</span></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ----- ELEMENT DATA -----
+const rawElements = [
+[1,'H','Hydrogen',2.2,1,31,1.008,'nonmetal'],[2,'He','Helium',0,8,28,4.003,'noble'],[3,'Li','Lithium',0.98,1,128,6.94,'alkali'],[4,'Be','Beryllium',1.57,2,96,9.012,'alkaline'],[5,'B','Boron',2.04,3,84,10.81,'metalloid'],[6,'C','Carbon',2.55,4,76,12.011,'nonmetal'],[7,'N','Nitrogen',3.04,3,71,14.007,'nonmetal'],[8,'O','Oxygen',3.44,2,66,15.999,'nonmetal'],[9,'F','Fluorine',3.98,1,57,18.998,'halogen'],[10,'Ne','Neon',0,8,58,20.18,'noble'],[11,'Na','Sodium',0.93,1,166,22.99,'alkali'],[12,'Mg','Magnesium',1.31,2,141,24.305,'alkaline'],[13,'Al','Aluminium',1.61,3,121,26.982,'post'],[14,'Si','Silicon',1.9,4,111,28.085,'metalloid'],[15,'P','Phosphorus',2.19,3,107,30.974,'nonmetal'],[16,'S','Sulfur',2.58,2,105,32.06,'nonmetal'],[17,'Cl','Chlorine',3.16,1,102,35.45,'halogen'],[18,'Ar','Argon',0,8,106,39.948,'noble'],[19,'K','Potassium',0.82,1,203,39.098,'alkali'],[20,'Ca','Calcium',1,2,176,40.078,'alkaline'],[21,'Sc','Scandium',1.36,3,170,44.956,'transition'],[22,'Ti','Titanium',1.54,4,160,47.867,'transition'],[23,'V','Vanadium',1.63,5,153,50.942,'transition'],[24,'Cr','Chromium',1.66,3,139,51.996,'transition'],[25,'Mn','Manganese',1.55,2,139,54.938,'transition'],[26,'Fe','Iron',1.83,2,132,55.845,'transition'],[27,'Co','Cobalt',1.88,2,126,58.933,'transition'],[28,'Ni','Nickel',1.91,2,124,58.693,'transition'],[29,'Cu','Copper',1.9,1,132,63.546,'transition'],[30,'Zn','Zinc',1.65,2,122,65.38,'transition'],[31,'Ga','Gallium',1.81,3,122,69.723,'post'],[32,'Ge','Germanium',2.01,4,120,72.63,'metalloid'],[33,'As','Arsenic',2.18,3,119,74.922,'metalloid'],[34,'Se','Selenium',2.55,2,120,78.971,'nonmetal'],[35,'Br','Bromine',2.96,1,120,79.904,'halogen'],[36,'Kr','Krypton',3,8,116,83.798,'noble'],[37,'Rb','Rubidium',0.82,1,220,85.468,'alkali'],[38,'Sr','Strontium',0.95,2,195,87.62,'alkaline'],[39,'Y','Yttrium',1.22,3,190,88.906,'transition'],[40,'Zr','Zirconium',1.33,4,175,91.224,'transition'],[41,'Nb','Niobium',1.6,5,164,92.906,'transition'],[42,'Mo','Molybdenum',2.16,6,154,95.95,'transition'],[43,'Tc','Technetium',1.9,7,147,98,'transition'],[44,'Ru','Ruthenium',2.2,3,146,101.07,'transition'],[45,'Rh','Rhodium',2.28,3,142,102.906,'transition'],[46,'Pd','Palladium',2.2,2,139,106.42,'transition'],[47,'Ag','Silver',1.93,1,145,107.868,'transition'],[48,'Cd','Cadmium',1.69,2,144,112.414,'transition'],[49,'In','Indium',1.78,3,142,114.818,'post'],[50,'Sn','Tin',1.96,4,139,118.71,'post'],[51,'Sb','Antimony',2.05,3,139,121.76,'metalloid'],[52,'Te','Tellurium',2.1,2,138,127.6,'metalloid'],[53,'I','Iodine',2.66,1,139,126.904,'halogen'],[54,'Xe','Xenon',2.6,8,140,131.293,'noble'],[55,'Cs','Cesium',0.79,1,244,132.905,'alkali'],[56,'Ba','Barium',0.89,2,215,137.327,'alkaline'],[57,'La','Lanthanum',1.1,3,207,138.905,'lanthanide'],[58,'Ce','Cerium',1.12,3,204,140.116,'lanthanide'],[59,'Pr','Praseodymium',1.13,3,203,140.908,'lanthanide'],[60,'Nd','Neodymium',1.14,3,201,144.242,'lanthanide'],[61,'Pm','Promethium',1.13,3,199,145,'lanthanide'],[62,'Sm','Samarium',1.17,3,198,150.36,'lanthanide'],[63,'Eu','Europium',1.2,2,198,151.964,'lanthanide'],[64,'Gd','Gadolinium',1.2,3,196,157.25,'lanthanide'],[65,'Tb','Terbium',1.1,3,194,158.925,'lanthanide'],[66,'Dy','Dysprosium',1.22,3,192,162.5,'lanthanide'],[67,'Ho','Holmium',1.23,3,192,164.93,'lanthanide'],[68,'Er','Erbium',1.24,3,189,167.259,'lanthanide'],[69,'Tm','Thulium',1.25,3,190,168.934,'lanthanide'],[70,'Yb','Ytterbium',1.1,2,187,173.045,'lanthanide'],[71,'Lu','Lutetium',1.27,3,187,174.967,'lanthanide'],[72,'Hf','Hafnium',1.3,4,175,178.49,'transition'],[73,'Ta','Tantalum',1.5,5,170,180.948,'transition'],[74,'W','Tungsten',2.36,6,162,183.84,'transition'],[75,'Re','Rhenium',1.9,7,151,186.207,'transition'],[76,'Os','Osmium',2.2,4,144,190.23,'transition'],[77,'Ir','Iridium',2.2,3,141,192.217,'transition'],[78,'Pt','Platinum',2.28,2,136,195.084,'transition'],[79,'Au','Gold',2.54,1,136,196.967,'transition'],[80,'Hg','Mercury',2,2,132,200.592,'transition'],[81,'Tl','Thallium',1.62,1,145,204.38,'post'],[82,'Pb','Lead',2.33,2,146,207.2,'post'],[83,'Bi','Bismuth',2.02,3,148,208.98,'post'],[84,'Po','Polonium',2,2,140,209,'post'],[85,'At','Astatine',2.2,1,150,210,'halogen'],[86,'Rn','Radon',0,8,150,222,'noble'],[87,'Fr','Francium',0.7,1,260,223,'alkali'],[88,'Ra','Radium',0.9,2,221,226,'alkaline'],[89,'Ac','Actinium',1.1,3,215,227,'actinide'],[90,'Th','Thorium',1.3,4,206,232.038,'actinide'],[91,'Pa','Protactinium',1.5,5,200,231.036,'actinide'],[92,'U','Uranium',1.38,6,196,238.029,'actinide'],[93,'Np','Neptunium',1.36,5,190,237,'actinide'],[94,'Pu','Plutonium',1.28,4,187,244,'actinide'],[95,'Am','Americium',1.13,3,180,243,'actinide'],[96,'Cm','Curium',1.28,3,169,247,'actinide'],[97,'Bk','Berkelium',1.3,3,168,247,'actinide'],[98,'Cf','Californium',1.3,3,168,251,'actinide'],[99,'Es','Einsteinium',1.3,3,165,252,'actinide'],[100,'Fm','Fermium',1.3,3,167,257,'actinide'],[101,'Md','Mendelevium',1.3,2,173,258,'actinide'],[102,'No','Nobelium',1.3,2,176,259,'actinide'],[103,'Lr','Lawrencium',1.3,3,161,266,'actinide'],[104,'Rf','Rutherfordium',0,4,157,267,'transition'],[105,'Db','Dubnium',0,5,149,268,'transition'],[106,'Sg','Seaborgium',0,6,143,269,'transition'],[107,'Bh','Bohrium',0,7,141,270,'transition'],[108,'Hs','Hassium',0,8,134,277,'transition'],[109,'Mt','Meitnerium',0,3,129,278,'transition'],[110,'Ds','Darmstadtium',0,2,128,281,'transition'],[111,'Rg','Roentgenium',0,1,121,282,'transition'],[112,'Cn','Copernicium',0,2,122,285,'transition'],[113,'Nh','Nihonium',0,1,136,286,'post'],[114,'Fl','Flerovium',0,2,143,289,'post'],[115,'Mc','Moscovium',0,1,162,290,'post'],[116,'Lv','Livermorium',0,2,175,293,'post'],[117,'Ts','Tennessine',0,1,165,294,'halogen'],[118,'Og','Oganesson',0,8,157,294,'noble']
+];
+const elements = [null, ...rawElements.map(e=>({n:e[0],s:e[1],name:e[2],en:e[3],v:e[4],r:e[5],m:e[6],cat:e[7]}))];
+
+const catColors = {alkali:'#f87171',alkaline:'#fb923c',transition:'#60a5fa',post:'#22d3ee',metalloid:'#2dd4bf',nonmetal:'#facc15',halogen:'#e879f9',noble:'#94a3b8',lanthanide:'#a78bfa',actinide:'#c084fc'};
+
+// Positions for periodic table
+const pos = {1:[1,1],2:[18,1],3:[1,2],4:[2,2],5:[13,2],6:[14,2],7:[15,2],8:[16,2],9:[17,2],10:[18,2],11:[1,3],12:[2,3],13:[13,3],14:[14,3],15:[15,3],16:[16,3],17:[17,3],18:[18,3],19:[1,4],20:[2,4],21:[3,4],22:[4,4],23:[5,4],24:[6,4],25:[7,4],26:[8,4],27:[9,4],28:[10,4],29:[11,4],30:[12,4],31:[13,4],32:[14,4],33:[15,4],34:[16,4],35:[17,4],36:[18,4],37:[1,5],38:[2,5],39:[3,5],40:[4,5],41:[5,5],42:[6,5],43:[7,5],44:[8,5],45:[9,5],46:[10,5],47:[11,5],48:[12,5],49:[13,5],50:[14,5],51:[15,5],52:[16,5],53:[17,5],54:[18,5],55:[1,6],56:[2,6],57:[3,6],72:[4,6],73:[5,6],74:[6,6],75:[7,6],76:[8,6],77:[9,6],78:[10,6],79:[11,6],80:[12,6],81:[13,6],82:[14,6],83:[15,6],84:[16,6],85:[17,6],86:[18,6],87:[1,7],88:[2,7],89:[3,7],104:[4,7],105:[5,7],106:[6,7],107:[7,7],108:[8,7],109:[9,7],110:[10,7],111:[11,7],112:[12,7],113:[13,7],114:[14,7],115:[15,7],116:[16,7],117:[17,7],118:[18,7],58:[4,9],59:[5,9],60:[6,9],61:[7,9],62:[8,9],63:[9,9],64:[10,9],65:[11,9],66:[12,9],67:[13,9],68:[14,9],69:[15,9],70:[16,9],71:[17,9],90:[4,10],91:[5,10],92:[6,10],93:[7,10],94:[8,10],95:[9,10],96:[10,10],97:[11,10],98:[12,10],99:[13,10],100:[14,10],101:[15,10],102:[16,10],103:[17,10]};
+
+const periodicEl = document.getElementById('periodic');
+let selectedElement = elements[6]; // Carbon
+elements.slice(1).forEach(el=>{
+  const [x,y]=pos[el.n]||[1,1];
+  const btn=document.createElement('button');
+  btn.className='pt-btn w-[18px] h-[20px] xl:w-[20px] xl:h-[22px] rounded-[3px] text-[9px] font-medium flex items-center justify-center text-black/80';
+  btn.style.gridColumn=x; btn.style.gridRow=y;
+  btn.style.background=catColors[el.cat];
+  btn.textContent=el.s;
+  btn.title=`${el.n}. ${el.name}`;
+  btn.onclick=()=>{selectedElement=el; document.getElementById('selectedEl').textContent=`${el.s} — ${el.name}`; document.querySelectorAll('.pt-btn').forEach(b=>b.classList.remove('ring-2','ring-white')); btn.classList.add('ring-2','ring-white');};
+  btn.onmouseenter=(e)=>{ const t=document.getElementById('tooltip'); t.textContent=`${el.name} (${el.s}) EN:${el.en} V:${el.v}`; t.style.left=e.clientX+10+'px'; t.style.top=e.clientY+10+'px'; t.classList.remove('hidden'); };
+  btn.onmouseleave=()=>document.getElementById('tooltip').classList.add('hidden');
+  periodicEl.appendChild(btn);
+});
+document.querySelectorAll('.pt-btn')[5].classList.add('ring-2','ring-white');
+
+// ----- THREE SETUP -----
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x020617, 0.025);
+const camera = new THREE.PerspectiveCamera(55, 2, 0.1, 200);
+camera.position.set(14,12,14);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping=true; controls.dampingFactor=0.07;
+
+const light1 = new THREE.DirectionalLight(0x88ccff,1.2); light1.position.set(10,20,10); scene.add(light1);
+scene.add(new THREE.AmbientLight(0x334155,0.8));
+
+const gridGroup = new THREE.Group(); scene.add(gridGroup);
+const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(12,12,12)), new THREE.LineBasicMaterial({color:0x1e293b}));
+box.position.set(0,0,0); gridGroup.add(box);
+
+// lattice points
+const latticePos=[]; for(let x=0;x<12;x++)for(let y=0;y<12;y++)for(let z=0;z<12;z++) latticePos.push(x-5.5,y-5.5,z-5.5);
+const latticeGeo=new THREE.BufferGeometry(); latticeGeo.setAttribute('position', new THREE.Float32BufferAttribute(latticePos,3));
+const latticePoints=new THREE.Points(latticeGeo, new THREE.PointsMaterial({color:0x334155,size:0.04,transparent:true,opacity:0.3})); gridGroup.add(latticePoints);
+
+// invisible bounds for raycast
+const bounds = new THREE.Mesh(new THREE.BoxGeometry(12,12,12), new THREE.MeshBasicMaterial({visible:false})); scene.add(bounds);
+
+const atomsGroup = new THREE.Group(); scene.add(atomsGroup);
+const bondsGroup = new THREE.Group(); scene.add(bondsGroup);
+
+let atoms=[]; let currentLayer=1; let assemblySteps=0;
+const core = Array(10).fill(50);
+core[0]=70; core[1]=70; core[2]=70;
+
+// core sliders UI
+const coreSliders = document.getElementById('coreSliders');
+for(let i=0;i<10;i++){
+  const wrap=document.createElement('div'); wrap.className='flex items-center gap-1';
+  wrap.innerHTML=`<span class="text-[10px] mono w-5 text-slate-500">L${i+1}</span><input type="range" min="0" max="100" value="${core[i]}" data-i="${i}" class="w-full h-1 accent-violet-500">`;
+  coreSliders.appendChild(wrap);
+}
+coreSliders.querySelectorAll('input').forEach(inp=>inp.oninput=e=>{core[+e.target.dataset.i]=+e.target.value; updateCoreUI();});
+
+function updateCoreUI(){
+  const attr=(core[0]+core[1]+core[2])/3; document.getElementById('biasAttr').textContent=(attr/50).toFixed(2)+'x'; document.getElementById('barAttr').style.width=attr+'%';
+  const ionic=(core[3]+core[4]+core[5])/3; document.getElementById('biasBond').textContent=`${Math.round(ionic)} / ${Math.round(100-ionic)}`; document.getElementById('barBond').style.width=ionic+'%';
+  const temp=(core[6]+core[7])/2; document.getElementById('biasTemp').textContent=Math.round(temp*3)+'K'; document.getElementById('barTemp').style.width=temp+'%'; document.getElementById('statTemp').textContent=Math.round(temp*3);
+  const fx=core[8]-50, fz=core[9]-50; document.getElementById('biasField').textContent=`${fx},${fz}`; document.getElementById('barField').style.width=(50+Math.hypot(fx,fz)/1.4)+'%';
+}
+updateCoreUI();
+
+// ----- ATOM FUNCTIONS -----
+function atomRadius(el){ return 0.18 + (el.r-50)/600; }
+function addAtom(el, x,y,z,w){
+  x=Math.max(0,Math.min(11,Math.round(x))); y=Math.max(0,Math.min(11,Math.round(y))); z=Math.max(0,Math.min(11,Math.round(z)));
+  // remove existing at spot
+  atoms = atoms.filter(a=>{ if(a.w===w && Math.abs(a.x-x)<0.1 && Math.abs(a.y-y)<0.1 && Math.abs(a.z-z)<0.1){ atomsGroup.remove(a.mesh); return false;} return true;});
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(atomRadius(el),24,16), new THREE.MeshStandardMaterial({color:catColors[el.cat], emissive:catColors[el.cat], emissiveIntensity:0.25, roughness:0.3, metalness:0.2}));
+  mesh.position.set(x-5.5,y-5.5,z-5.5); mesh.userData.isAtom=true;
+  const atom={el, x,y,z,w, mesh, vx:0,vy:0,vz:0}; atoms.push(atom); atomsGroup.add(mesh); updateVisibility();
+}
+function updateVisibility(){
+  atoms.forEach(a=>{ a.mesh.visible = (a.w===currentLayer); a.mesh.position.set(a.x-5.5,a.y-5.5,a.z-5.5); });
+  bondsGroup.visible=true;
+}
+
+// ----- PHYSICS -----
+function stepPhysics(){
+  const layerAtoms=atoms.filter(a=>a.w===currentLayer);
+  const attr = (core[0]+core[1]+core[2])/150; //0-2
+  const ionicBias=(core[3]+core[4]+core[5])/300; const covBias=1-ionicBias;
+  const temp=(core[6]+core[7])/200; const fx=(core[8]-50)/50*0.006; const fz=(core[9]-50)/50*0.006;
+  let totalEnergy=0;
+  for(let i=0;i<layerAtoms.length;i++){
+    const a=layerAtoms[i]; let ax=fx + (Math.random()-0.5)*temp*0.02, ay=(Math.random()-0.5)*temp*0.02 -0.0005, az=fz + (Math.random()-0.5)*temp*0.02;
+    for(let j=0;j<layerAtoms.length;j++) if(i!==j){
+      const b=layerAtoms[j]; const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z; const d2=dx*dx+dy*dy+dz*dz; if(d2>6.25||d2<0.0001) continue; const d=Math.sqrt(d2);
+      const enDiff=Math.abs(a.el.en-b.el.en); const cov=Math.abs((8-a.el.v)-b.el.v)<=1; const ionic=enDiff>0.5;
+      let base=0; if(a.el.cat==='noble'||b.el.cat==='noble') base-=0.4; else { if(ionic) base+=enDiff*0.35*ionicBias; if(cov) base+=0.25*covBias; if(a.el.v===b.el.v&&a.el.v>0) base-=0.08; }
+      base*=attr; const ideal=1.0; const force=base*(ideal-d)*0.03; const f=force/d; ax+=dx*f; ay+=dy*f; az+=dz*f;
+    }
+    a.vx = a.vx*0.88 + ax; a.vy = a.vy*0.88 + ay; a.vz = a.vz*0.88 + az;
+    a.x = Math.max(0,Math.min(11,a.x+a.vx)); a.y = Math.max(0,Math.min(11,a.y+a.vy)); a.z = Math.max(0,Math.min(11,a.z+a.vz));
+    totalEnergy += (a.vx*a.vx+a.vy*a.vy+a.vz*a.vz)*a.el.m*0.5;
+  }
+  // update bonds
+  bondsGroup.clear(); let bondCount=0; const mat=new THREE.LineBasicMaterial({color:0x38bdf8,transparent:true,opacity:0.7});
+  for(let i=0;i<layerAtoms.length;i++) for(let j=i+1;j<layerAtoms.length;j++){ const a=layerAtoms[i], b=layerAtoms[j]; const dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z; const d=Math.hypot(dx,dy,dz); if(d<1.5){ const enDiff=Math.abs(a.el.en-b.el.en); if(enDiff>0.4 || Math.abs((8-a.el.v)-b.el.v)<=1){ const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a.x-5.5,a.y-5.5,a.z-5.5), new THREE.Vector3(b.x-5.5,b.y-5.5,b.z-5.5)]); bondsGroup.add(new THREE.Line(geo,mat)); bondCount++; } } }
+  document.getElementById('statAtoms').textContent=layerAtoms.length;
+  document.getElementById('statBonds').textContent=bondCount;
+  document.getElementById('statEnergy').textContent=totalEnergy.toFixed(2);
+}
+
+// ----- INTERACTION -----
+const raycaster=new THREE.Raycaster(); const mouse=new THREE.Vector2(); let dragging=null;
+canvas.addEventListener('pointerdown',e=>{ const rect=canvas.getBoundingClientRect(); mouse.x=((e.clientX-rect.left)/rect.width)*2-1; mouse.y=-((e.clientY-rect.top)/rect.height)*2+1; raycaster.setFromCamera(mouse,camera); const hits=raycaster.intersectObjects(atomsGroup.children); if(hits.length){ dragging=atoms.find(a=>a.mesh===hits[0].object && a.w===currentLayer); controls.enabled=false; }});
+canvas.addEventListener('pointermove',e=>{ if(!dragging) return; const rect=canvas.getBoundingClientRect(); mouse.x=((e.clientX-rect.left)/rect.width)*2-1; mouse.y=-((e.clientY-rect.top)/rect.height)*2+1; raycaster.setFromCamera(mouse,camera); const hit=raycaster.intersectObject(bounds)[0]; if(hit){ const p=hit.point; dragging.x=Math.max(0,Math.min(11,Math.round(p.x+5.5))); dragging.y=Math.max(0,Math.min(11,Math.round(p.y+5.5))); dragging.z=Math.max(0,Math.min(11,Math.round(p.z+5.5))); }});
+window.addEventListener('pointerup',()=>{ dragging=null; controls.enabled=true; });
+canvas.addEventListener('click',e=>{ if(dragging) return; const rect=canvas.getBoundingClientRect(); mouse.x=((e.clientX-rect.left)/rect.width)*2-1; mouse.y=-((e.clientY-rect.top)/rect.height)*2+1; raycaster.setFromCamera(mouse,camera); const hit=raycaster.intersectObject(bounds)[0]; if(hit && selectedElement && !raycaster.intersectObjects(atomsGroup.children).length){ const p=hit.point; addAtom(selectedElement, p.x+5.5, p.y+5.5, p.z+5.5, currentLayer); }});
+
+// ----- CONTROLS -----
+document.getElementById('layerSlider').oninput=e=>{ currentLayer=+e.target.value; document.getElementById('layerDisplay').textContent='L'+currentLayer; updateVisibility(); };
+document.getElementById('btnCarbon').onclick=()=>{ for(let i=0;i<80;i++) addAtom(elements[6], Math.random()*12,Math.random()*12,Math.random()*12,currentLayer); };
+document.getElementById('btnAlloy').onclick=()=>{ const picks=[13,14,26,28,29,47,79,82]; for(let i=0;i<120;i++){ const el=elements[picks[Math.floor(Math.random()*picks.length)]]; addAtom(el, Math.random()*12,Math.random()*12,Math.random()*12,currentLayer);} };
+document.getElementById('btnClear').onclick=()=>{ atoms.filter(a=>a.w===currentLayer).forEach(a=>atomsGroup.remove(a.mesh)); atoms=atoms.filter(a=>a.w!==currentLayer); updateVisibility(); };
+document.getElementById('btnRun').onclick=()=>{ assemblySteps=500; document.getElementById('modeStatus').textContent='Assembling…'; };
+
+// ----- RENDER LOOP -----
+let last=performance.now(), frames=0, fps=60;
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(); frames++; if(now-last>1000){ fps=frames; frames=0; last=now; document.getElementById('fps').textContent=fps; }
+  if(assemblySteps>0){ for(let i=0;i<3;i++) stepPhysics(); assemblySteps-=3; if(assemblySteps<=0){ assemblySteps=0; document.getElementById('modeStatus').textContent='Idle'; } else document.getElementById('modeStatus').textContent=`Assembling ${assemblySteps}`; } else if(atoms.length) { if(Math.random()<0.3) stepPhysics(); }
+  updateVisibility(); controls.update(); renderer.render(scene,camera);
+}
+function resize(){ const w=canvas.clientWidth, h=canvas.clientHeight; if(canvas.width!==w||canvas.height!==h){ renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); } }
+window.addEventListener('resize',resize); resize(); animate();
+
+// initial demo
+for(let i=0;i<30;i++) addAtom(elements[6], 5+Math.cos(i*0.5)*3,5+Math.sin(i*0.7)*2,5+Math.sin(i*0.3)*2,1);
+for(let i=0;i<12;i++) addAtom(elements[8], 3+i%4,7,3+Math.floor(i/4),1);
+for(let i=0;i<8;i++) addAtom(elements[1], 8,3+i%3,8,1);
+updateVisibility();
+</script>
+</body>
+</html>

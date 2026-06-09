@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NanoFactory Auto</title>
+<style>
+  :root {
+    --bg:#050810;
+    --cyan:#00e5ff;
+    --mag:#ff2ea6;
+    --glass:rgba(12,18,32,0.7);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:#d5f7ff;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    overflow-x:hidden;
+    background-image:
+      radial-gradient(1200px 800px at 80% -10%, rgba(0,229,255,0.12), transparent),
+      radial-gradient(900px 600px at 10% 110%, rgba(255,46,166,0.1), transparent),
+      linear-gradient(180deg,#050810,#070b14);
+  }
+  #app{min-height:100vh;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;gap:12px;padding:10px 14px;position:sticky;top:0;z-index:20;
+    background:rgba(5,8,16,0.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,229,255,0.15);
+    flex-wrap:wrap;
+  }
+  .stat{
+    display:flex;align-items:center;gap:6px;padding:7px 12px;background:rgba(0,229,255,0.06);
+    border:1px solid rgba(0,229,255,0.18);border-radius:12px;font-size:14px;white-space:nowrap
+  }
+  .stat b{color:#fff;font-variant-numeric:tabular-nums}
+  .toggle-wrap{
+    display:flex;align-items:center;gap:10px;margin-left:auto;padding:6px 12px;
+    background:rgba(255,46,166,0.08);border:1px solid rgba(255,46,166,0.28);border-radius:999px
+  }
+  .toggle-wrap span{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#ffd6f3}
+  .switch{position:relative;width:48px;height:26px}
+  .switch input{display:none}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#0a1222;border:1px solid rgba(0,229,255,0.35);border-radius:999px;transition:.2s}
+  .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:2px;background:var(--cyan);border-radius:50%;transition:.2s;box-shadow:0 0 12px var(--cyan)}
+  input:checked+.slider{background:rgba(0,229,255,0.15)}
+  input:checked+.slider:before{transform:translateX(22px);background:var(--mag);box-shadow:0 0 12px var(--mag)}
+  .controls{display:flex;gap:6px}
+  .controls button{
+    background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#bfefff;
+    padding:7px 11px;border-radius:10px;cursor:pointer;font-size:13px;transition:.15s
+  }
+  .controls button:hover{background:rgba(0,229,255,0.18)}
+
+  .layout{display:grid;grid-template-columns:320px 1fr 340px;gap:14px;padding:14px;flex:1;align-items:start}
+  @media(max-width:1120px){.layout{grid-template-columns:1fr 1fr}.layout .center{grid-column:1/-1;order:-1}}
+  @media(max-width:720px){.layout{grid-template-columns:1fr;padding:10px}}
+
+  .panel{
+    background:linear-gradient(180deg,rgba(15,23,42,0.72),rgba(5,8,16,0.72));
+    border:1px solid rgba(0,229,255,0.14);border-radius:18px;padding:14px;
+    backdrop-filter:blur(10px);box-shadow:0 0 40px rgba(0,229,255,0.04), inset 0 0 24px rgba(255,46,166,0.03);
+  }
+  h2{margin:0 0 12px;font-size:14px;letter-spacing:.8px;color:#aefcff;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+  h3{margin:14px 0 8px;font-size:12px;color:#7dd3fc;opacity:.85;text-transform:uppercase;letter-spacing:.6px}
+
+  .atom-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .atom-btn{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;
+    background:linear-gradient(180deg,rgba(0,229,255,0.09),rgba(0,0,0,0.15));
+    border:1px solid rgba(0,229,255,0.22);border-radius:14px;cursor:pointer;transition:.15s;touch-action:manipulation;
+  }
+  .atom-btn:active{transform:scale(.97);box-shadow:inset 0 0 22px rgba(0,229,255,0.25)}
+  .atom-btn.disabled{opacity:.45;pointer-events:none}
+  .atom-left{display:flex;align-items:center;gap:10px}
+  .atom-name{font-weight:600;color:#e6fdff;line-height:1}
+  .atom-sub{font-size:11px;opacity:.6}
+  .orb{width:26px;height:26px;border-radius:50%;flex-shrink:0;position:relative}
+  .orb.C{background:#0a0a0a;border:2px solid #fff;box-shadow:0 0 14px rgba(255,255,255,0.45), inset 0 0 6px rgba(255,255,255,0.2)}
+  .orb.H{background:#fff;box-shadow:0 0 14px #fff, 0 0 28px rgba(255,255,255,0.3)}
+  .orb.O{background:#ff3b3b;box-shadow:0 0 14px #ff3b3b}
+  .orb.Si{background:#3b82f6;box-shadow:0 0 14px #3b82f6}
+  .orb.Fe{background:#ff8c00;box-shadow:0 0 14px #ff8c00}
+  .atom-count{font-variant-numeric:tabular-nums;color:#e0faff;font-weight:700;font-size:16px}
+
+  .energy-buy button{
+    width:100%;margin-top:10px;padding:12px;background:linear-gradient(90deg,rgba(0,229,255,0.22),rgba(255,46,166,0.22));
+    border:1px solid rgba(0,229,255,0.45);color:#eaffff;border-radius:14px;cursor:pointer;font-weight:700;letter-spacing:.3px;
+    transition:.15s;touch-action:manipulation
+  }
+  .energy-buy button:active{transform:scale(.98)}
+
+  .miner-list{display:flex;flex-direction:column;gap:8px}
+  .miner{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px}
+  .miner-left{display:flex;align-items:center;gap:9px;font-size:13px}
+  .miner button{padding:6px 10px;background:rgba(255,46,166,0.16);border:1px solid rgba(255,46,166,0.38);color:#ffe4f7;border-radius:9px;cursor:pointer;font-size:12px;font-weight:600;transition:.15s}
+  .miner button:hover{background:rgba(255,46,166,0.26)}
+  .miner button:disabled{opacity:.4;cursor:not-allowed}
+
+  .core-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px;flex-wrap:wrap}
+  .auto-sell-wrap{display:flex;align-items:center;gap:10px}
+  .auto-sell-wrap label{display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 11px;background:rgba(255,255,255,0.05);border-radius:999px;border:1px solid rgba(255,255,255,0.12);cursor:pointer}
+  #sellAll{padding:7px 12px;background:rgba(0,229,255,0.16);border:1px solid rgba(0,229,255,0.42);color:#cffaff;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600}
+  #sellAll:hover{background:rgba(0,229,255,0.26)}
+
+  #core{width:100%;height:360px;display:block;border-radius:16px;background:
+    radial-gradient(500px 300px at 50% 40%,rgba(0,229,255,0.09),transparent 60%),
+    linear-gradient(180deg,rgba(5,8,16,0.9),rgba(5,8,16,0.5));
+    border:1px solid rgba(0,229,255,0.14);box-shadow:inset 0 0 50px rgba(0,0,0,0.65)}
+
+  .log{margin-top:10px;height:90px;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#8deeff;background:rgba(0,0,0,0.35);border:1px solid rgba(0,229,255,0.12);border-radius:12px;padding:8px 10px}
+  .log-entry{opacity:.92;animation:slideIn .28s ease-out}
+  @keyframes slideIn{from{transform:translateY(5px);opacity:0}to{transform:none;opacity:.92}}
+
+  .recipes{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow:auto;padding-right:4px}
+  .recipes::-webkit-scrollbar{width:8px}
+  .recipes::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.2);border-radius:8px}
+  .recipe{
+    display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;padding:10px 11px;
+    background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;position:relative;overflow:hidden;transition:.2s
+  }
+  .recipe.unlocked{border-color:rgba(0,229,255,0.28);background:linear-gradient(90deg,rgba(0,229,255,0.07),transparent 60%)}
+  .recipe.locked{opacity:.65}
+  .recipe-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);box-shadow:0 0 14px currentColor;position:relative}
+  .recipe-icon.pulse::after{content:"";position:absolute;inset:-4px;border-radius:inherit;border:1px solid currentColor;animation:pulse 2s infinite}
+  @keyframes pulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.35);opacity:0}}
+  .recipe-name{font-weight:700;color:#e6fdff;font-size:14px;line-height:1.1}
+  .recipe-formula{font-size:11px;color:#7dd3fc;opacity:.85}
+  .recipe-count{font-variant-numeric:tabular-nums;font-weight:800;color:#aefcff;font-size:18px;text-align:right}
+  .recipe-unlock{margin-top:4px;padding:6px 10px;background:rgba(255,46,166,0.18);border:1px solid rgba(255,46,166,0.42);color:#ffe4f5;border-radius:9px;cursor:pointer;font-size:12px;white-space:nowrap;font-weight:600}
+  .recipe-unlock:hover{background:rgba(255,46,166,0.28)}
+  .recipe-unlock:disabled{opacity:.4;cursor:not-allowed}
+  .lock-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,8,16,0.68),rgba(5,8,16,0.92));display:grid;place-items:center;font-size:22px;backdrop-filter:blur(2px)}
+
+  .stats-foot{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:#7dd3fc;display:flex;justify-content:space-between}
+
+  .banner{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:50;padding:14px 24px;background:linear-gradient(90deg,rgba(0,229,255,0.22),rgba(255,46,166,0.22));border:1px solid rgba(0,229,255,0.55);border-radius:16px;color:#fff;font-weight:800;letter-spacing:.6px;box-shadow:0 12px 44px rgba(0,229,255,0.28),0 0 70px rgba(255,46,166,0.18);backdrop-filter:blur(12px);transition:.4s}
+  .banner.hidden{opacity:0;transform:translate(-50%,-18px);pointer-events:none}
+  .banner.show{animation:bannerPop .55s cubic-bezier(.2,1.4,.3,1)}
+  @keyframes bannerPop{0%{transform:translate(-50%,-8px) scale(.92)}60%{transform:translate(-50%,2px) scale(1.04)}100%{transform:translate(-50%,0) scale(1)}}
+
+  .tutorial{position:fixed;inset:0;background:rgba(5,8,16,0.92);backdrop-filter:blur(10px);z-index:100;display:grid;place-items:center;padding:20px;transition:.3s}
+  .tutorial.hidden{opacity:0;pointer-events:none}
+  .tut-card{max-width:520px;width:100%;background:linear-gradient(180deg,rgba(15,23,42,0.94),rgba(5,8,16,0.94));border:1px solid rgba(0,229,255,0.32);border-radius:26px;padding:30px;box-shadow:0 0 90px rgba(0,229,255,0.15),inset 0 0 40px rgba(255,46,166,0.06);text-align:center}
+  .tut-card h1{font-size:36px;margin:0 0 8px;color:#e0faff;letter-spacing:.5px}
+  .tut-card h1 span{color:var(--cyan);text-shadow:0 0 22px var(--cyan)}
+  .tut-card p{color:#aefcff;margin:0 0 18px;font-size:15px}
+  .tut-card ol{text-align:left;color:#c7f9ff;opacity:.92;margin:0 0 22px;padding-left:20px;line-height:1.6}
+  .tut-card button{padding:13px 26px;font-size:16px;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--mag));border:none;color:#001018;border-radius:14px;cursor:pointer;box-shadow:0 0 34px rgba(0,229,255,0.42);transition:.15s}
+  .tut-card button:active{transform:scale(.97)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="stat">⚡ <b id="energy">200</b> Energy</div>
+    <div class="stat">💰 <b id="credits">0</b> Credits</div>
+    <div class="stat">📈 <b id="pps">0.0</b>/s</div>
+    <div class="toggle-wrap">
+      <span>Auto-Combine</span>
+      <label class="switch"><input type="checkbox" id="autoCombine" checked><span class="slider"></span></label>
+    </div>
+    <div class="controls">
+      <button id="speedBtn" title="Game Speed">1x</button>
+      <button id="pauseBtn" title="Pause">⏸</button>
+      <button id="resetBtn" title="Reset">↺</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel left">
+      <h2>Atom Mines</h2>
+      <div id="atomMines"></div>
+      <div class="energy-buy"><button id="buyEnergy">+100⚡ for 50💰</button></div>
+      <h3>Auto-Miners <span style="opacity:.6;font-size:11px">(0.5⚡/s each)</span></h3>
+      <div id="miners" class="miner-list"></div>
+    </section>
+
+    <section class="panel center">
+      <div class="core-header">
+        <h2 style="margin:0">Nano Core Visualizer</h2>
+        <div class="auto-sell-wrap">
+          <label><input type="checkbox" id="autoSell"> Auto-Sell</label>
+          <button id="sellAll">Sell All</button>
+        </div>
+      </div>
+      <canvas id="core"></canvas>
+      <div id="log" class="log"></div>
+    </section>
+
+    <section class="panel right">
+      <h2>Discoveries <span id="discoverCount" style="color:#ff2ea6">0/9</span></h2>
+      <div id="recipes" class="recipes"></div>
+      <div class="stats-foot">
+        <div>Total Value Created: <b id="totalValue">0</b>💰</div>
+        <div style="opacity:.7">Auto prioritizes highest value</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="discoveryBanner" class="banner hidden"></div>
+
+<div id="tutorial" class="tutorial">
+  <div class="tut-card">
+    <h1>NanoFactory <span>Auto</span></h1>
+    <p>Mine atoms → Turn on Auto-Combine → Watch it build to Nanobots</p>
+    <ol>
+      <li>Click atoms to mine (costs 1⚡ each)</li>
+      <li>Auto-Combine crafts highest discoveries first</li>
+      <li>Research unlocks add to priority chain</li>
+      <li>Buy miners, enable Auto-Sell, scale up</li>
+    </ol>
+    <button id="startBtn">Start Factory</button>
+  </div>
+</div>
+
+<script>
+const ATOMS = {
+  C:{name:'Carbon', color:'#ffffff'},
+  H:{name:'Hydrogen', color:'#ffffff'},
+  O:{name:'Oxygen', color:'#ff3b3b'},
+  Si:{name:'Silicon', color:'#3b82f6'},
+  Fe:{name:'Iron', color:'#ff8c00'}
+};
+
+const RECIPES = [
+  {id:'swarm', name:'Nano Swarm', inputs:{nanobot:3, circuit:2, fullerene:1}, value:5000, unlockCost:50000, color:'#ff2ea6', icon:'⬢'},
+  {id:'circuit', name:'Graphene Circuit', inputs:{graphene:2, quantum:1, Si:1}, value:650, unlockCost:15000, color:'#00e5ff', icon:'◈'},
+  {id:'nanobot', name:'Nanobot', inputs:{nanotube:1, quantum:1, Fe:2}, value:500, unlockCost:7500, color:'#ffd700', icon:'🤖'},
+  {id:'fullerene', name:'Fullerene', inputs:{C:20}, value:400, unlockCost:5000, color:'#9ca3af', icon:'⚽'},
+  {id:'quantum', name:'Quantum Dot', inputs:{Si:3, C:2}, value:150, unlockCost:2000, color:'#3b82f6', icon:'✦'},
+  {id:'nanotube', name:'Nanotube', inputs:{graphene:1, C:4}, value:80, unlockCost:800, color:'#ff2ea6', icon:'≡'},
+  {id:'graphene', name:'Graphene', inputs:{C:6}, value:25, unlockCost:200, color:'#a855f7', icon:'⬡'},
+  {id:'methane', name:'Methane', inputs:{C:1, H:4}, value:8, unlockCost:50, color:'#22c55e', icon:'💨'},
+  {id:'water', name:'Water', inputs:{H:2, O:1}, value:5, unlockCost:0, color:'#00e5ff', icon:'💧'},
+];
+
+const MINER_BASE = {C:100,H:100,O:150,Si:500,Fe:750};
+
+let state, earnings=[], particles=[], coreFlash=0, audioCtx;
+let cw=0,ch=0,cx=0,cy=0;
+const canvas = document.getElementById('core');
+const ctx = canvas.getContext('2d');
+
+function defaultState(){return{
+  energy:200, credits:0,
+  inv:{C:0,H:0,O:0,Si:0,Fe:0, water:0, methane:0, graphene:0, nanotube:0, quantum:0, fullerene:0, nanobot:0, circuit:0, swarm:0},
+  miners:{C:0,H:0,O:0,Si:0,Fe:0},
+  recipes:{water:true}, discovered:{},
+  autoCombine:true, autoSell:false,
+  totalValue:0, pps:0, speed:1, paused:false
+}};
+
+function loadGame(){
+  const saved = localStorage.getItem('nanofactoryAuto');
+  state = saved ? {...defaultState(), ...JSON.parse(saved)} : defaultState();
+  state.inv = {...defaultState().inv, ...state.inv};
+  state.miners = {...defaultState().miners, ...state.miners};
+  state.recipes = {...defaultState().recipes, ...state.recipes};
+  state.discovered = state.discovered||{};
+}
+function saveGame(){ localStorage.setItem('nanofactoryAuto', JSON.stringify(state)); }
+
+function getMinerCost(id){ return Math.floor(MINER_BASE[id] * Math.pow(1.6, state.miners[id]||0)); }
+function getColor(id){
+  if(ATOMS[id]) return ATOMS[id].color;
+  const r = RECIPES.find(x=>x.id===id);
+  return r ? r.color : '#00e5ff';
+}
+function getRecipe(id){ return RECIPES.find(r=>r.id===id); }
+
+function buildAtomMines(){
+  const wrap = document.getElementById('atomMines');
+  wrap.innerHTML=''; wrap.className='atom-grid';
+  Object.entries(ATOMS).forEach(([id,a])=>{
+    const btn=document.createElement('button');
+    btn.className='atom-btn'; btn.dataset.atom=id;
+    btn.innerHTML=`<div class="atom-left"><div class="orb ${id}"></div><div><div class="atom-name">${a.name}</div><div class="atom-sub">${id} • -1⚡</div></div></div><div class="atom-count">0</div>`;
+    btn.onclick=()=>{
+      if(state.energy>=1){ state.energy--; state.inv[id]++; spawnMineParticle(id); beep(300+Math.random()*100,0.04); refreshUI(); }
+    };
+    wrap.appendChild(btn);
+  });
+}
+function buildMiners(){
+  const wrap=document.getElementById('miners'); wrap.innerHTML='';
+  Object.entries(ATOMS).forEach(([id,a])=>{
+    const div=document.createElement('div'); div.className='miner'; div.dataset.atom=id;
+    div.innerHTML=`<div class="miner-left"><div class="orb ${id}" style="width:18px;height:18px"></div><div>${id} Miner <span style="opacity:.6">×<span class="miner-count">0</span></span></div></div><button>Buy <span class="miner-cost">0</span>💰</button>`;
+    div.querySelector('button').onclick=()=>{
+      const cost=getMinerCost(id);
+      if(state.credits>=cost){state.credits-=cost; state.miners[id]++; beep(600,0.06); refreshUI();}
+    };
+    wrap.appendChild(div);
+  });
+}
+function buildRecipes(){
+  const wrap=document.getElementById('recipes'); wrap.innerHTML='';
+  [...RECIPES].reverse().forEach(r=>{
+    const card=document.createElement('div'); card.className='recipe'; card.dataset.id=r.id;
+    const formula=Object.entries(r.inputs).map(([k,v])=>`${v>1?v:''}${k.toUpperCase()}`).join(' + ');
+    card.innerHTML=`
+      <div class="recipe-icon" style="color:${r.color}">${r.icon}</div>
+      <div class="recipe-main">
+        <div class="recipe-name">${r.name}</div>
+        <div class="recipe-formula">${formula} → ${r.value}💰</div>
+      </div>
+      <div style="text-align:right">
+        <div class="recipe-count">0</div>
+        <button class="recipe-unlock">Unlock ${r.unlockCost}💰</button>
+      </div>
+      <div class="lock-overlay">🔒</div>`;
+    card.querySelector('.recipe-unlock').onclick=e=>{
+      e.stopPropagation();
+      if(!state.recipes[r.id] && state.credits>=r.unlockCost){
+        state.credits-=r.unlockCost; state.recipes[r.id]=true;
+        addLog(`Researched ${r.name}`); beep(660,0.08); setTimeout(()=>beep(990,0.12),90); refreshUI();
+      }
+    };
+    wrap.appendChild(card);
+  });
+}
+
+function refreshUI(){
+  document.getElementById('energy').textContent=Math.floor(state.energy);
+  document.getElementById('credits').textContent=Math.floor(state.credits);
+  document.getElementById('autoCombine').checked=state.autoCombine;
+  document.getElementById('autoSell').checked=state.autoSell;
+  document.getElementById('totalValue').textContent=Math.floor(state.totalValue).toLocaleString();
+  const disc=Object.values(state.discovered).filter(Boolean).length;
+  document.getElementById('discoverCount').textContent=`${disc}/9`;
+
+  document.querySelectorAll('.atom-btn').forEach(btn=>{
+    const at=btn.dataset.atom;
+    btn.querySelector('.atom-count').textContent=state.inv[at]||0;
+    btn.classList.toggle('disabled', state.energy<1);
+  });
+  document.querySelectorAll('.miner').forEach(div=>{
+    const at=div.dataset.atom;
+    div.querySelector('.miner-count').textContent=state.miners[at]||0;
+    const cost=getMinerCost(at);
+    div.querySelector('.miner-cost').textContent=cost;
+    div.querySelector('button').disabled=state.credits<cost;
+  });
+  document.querySelectorAll('.recipe').forEach(card=>{
+    const id=card.dataset.id; const r=getRecipe(id); const unlocked=!!state.recipes[id];
+    card.classList.toggle('unlocked', unlocked); card.classList.toggle('locked', !unlocked);
+    card.querySelector('.recipe-count').textContent=state.inv[id]||0;
+    const lock=card.querySelector('.lock-overlay'); if(lock) lock.style.display=unlocked?'none':'grid';
+    const btn=card.querySelector('.recipe-unlock'); if(btn){ btn.style.display=unlocked?'none':'block'; btn.disabled=state.credits<r.unlockCost; }
+    const icon=card.querySelector('.recipe-icon'); if(unlocked && state.inv[id]>0) icon.classList.add('pulse'); else icon.classList.remove('pulse');
+  });
+}
+
+function addLog(text){
+  const log=document.getElementById('log');
+  const el=document.createElement('div'); el.className='log-entry';
+  el.textContent=`[${new Date().toLocaleTimeString().slice(0,8)}] ${text}`;
+  log.prepend(el); while(log.children.length>6) log.removeChild(log.lastChild);
+}
+
+function beep(freq=440,dur=0.1){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='triangle'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.07, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
+    o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+
+function showDiscovery(r){
+  const b=document.getElementById('discoveryBanner');
+  b.textContent=`✨ NEW DISCOVERY: ${r.name} ✨`;
+  b.classList.remove('hidden'); b.classList.add('show');
+  beep(523,0.1); setTimeout(()=>beep(784,0.12),120); setTimeout(()=>beep(1046,0.15),260);
+  setTimeout(()=>{b.classList.remove('show'); b.classList.add('hidden');},2800);
+}
+
+function updatePPS(amount=0){
+  const now=Date.now();
+  if(amount>0) earnings.push({t:now,a:amount});
+  earnings=earnings.filter(e=>now-e.t<5000);
+  const sum=earnings.reduce((s,e)=>s+e.a,0);
+  state.pps=sum/5;
+  document.getElementById('pps').textContent=state.pps.toFixed(1);
+}
+
+function processMiners(){
+  if(state.paused) return;
+  let need=0; Object.entries(state.miners).forEach(([id,c])=>{need+=c*0.5;});
+  if(need===0) return;
+  if(state.energy>=need){
+    state.energy-=need;
+    Object.entries(state.miners).forEach(([id,c])=>{ if(c>0){ state.inv[id]+=c; for(let i=0;i<Math.min(c,2);i++) spawnMineParticle(id); }});
+  }else{
+    const ratio=state.energy/need; state.energy=0;
+    Object.entries(state.miners).forEach(([id,c])=>{ const prod=Math.floor(c*ratio); if(prod>0){ state.inv[id]+=prod; spawnMineParticle(id); }});
+  }
+  refreshUI();
+}
+
+function runAutocombine(){
+  if(!state.autoCombine || state.paused) return;
+  const crafted={};
+  for(const r of RECIPES){
+    if(!state.recipes[r.id]) continue;
+    let max=Infinity;
+    for(const [ing,qty] of Object.entries(r.inputs)){
+      const have=state.inv[ing]||0;
+      max=Math.min(max, Math.floor(have/qty));
+    }
+    if(max>0 && max!==Infinity){
+      for(const [ing,qty] of Object.entries(r.inputs)) state.inv[ing]-=qty*max;
+      state.inv[r.id]=(state.inv[r.id]||0)+max;
+      state.totalValue+=max*r.value;
+      crafted[r.name]=max;
+      if(!state.discovered[r.id]){ state.discovered[r.id]=true; showDiscovery(r); }
+      spawnCraftParticles(r,max);
+    }
+  }
+  if(Object.keys(crafted).length){
+    const msg='Combined → '+Object.entries(crafted).map(([k,v])=>`${v}x ${k}`).join(', ');
+    addLog(msg);
+  }
+  refreshUI();
+}
+
+function sellAll(log=true){
+  let sold=0,gain=0;
+  RECIPES.forEach(r=>{ const cnt=state.inv[r.id]||0; if(cnt>0){ gain+=cnt*r.value; sold+=cnt; state.inv[r.id]=0; }});
+  if(gain>0){ state.credits+=gain; updatePPS(gain); if(log) addLog(`Sold ${sold} products for ${gain.toLocaleString()}💰`); beep(440,0.05); refreshUI(); }
+}
+
+function spawnMineParticle(id){
+  particles.push({x:30*devicePixelRatio, y:Math.random()*ch, tx:cx+(Math.random()-0.5)*60, ty:cy+(Math.random()-0.5)*60, t:0, dur:0.7+Math.random()*0.3, color:getColor(id), type:'in'});
+}
+function spawnCraftParticles(r,max){
+  const ins=Object.keys(r.inputs);
+  ins.forEach(ing=>{ for(let i=0;i<Math.min(3,max);i++){ particles.push({x:40*devicePixelRatio, y:Math.random()*ch*0.8+ch*0.1, tx:cx, ty:cy, t:0, dur:0.45+Math.random()*0.2, color:getColor(ing), type:'in'}); }});
+  for(let i=0;i<Math.min(4,max);i++){ particles.push({x:cx, y:cy, tx:cw-40*devicePixelRatio, ty:Math.random()*ch*0.8+ch*0.1, t:0, dur:0.65, color:r.color, type:'out'}); }
+  coreFlash=1;
+}
+
+function resizeCanvas(){
+  const rect=canvas.getBoundingClientRect();
+  cw=canvas.width=rect.width*devicePixelRatio; ch=canvas.height=rect.height*devicePixelRatio;
+  cx=cw/2; cy=ch/2;
+}
+window.addEventListener('resize', resizeCanvas);
+
+function drawCore(){
+  ctx.clearRect(0,0,cw,ch);
+  ctx.save(); ctx.lineWidth=1*devicePixelRatio; const cols=12,rows=8,gw=cw/cols,gh=ch/rows; ctx.strokeStyle='rgba(0,229,255,0.07)';
+  for(let i=1;i<cols;i++){ctx.beginPath();ctx.moveTo(i*gw,0);ctx.lineTo(i*gw,ch);ctx.stroke();}
+  for(let i=1;i<rows;i++){ctx.beginPath();ctx.moveTo(0,i*gh);ctx.lineTo(cw,i*gh);ctx.stroke();}
+  ctx.restore();
+  const pulse=28+Math.sin(Date.now()*0.003)*4;
+  const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,pulse*3.2*devicePixelRatio);
+  grad.addColorStop(0,`rgba(0,229,255,${0.28+coreFlash*0.35})`); grad.addColorStop(0.4,`rgba(255,46,166,${0.18+coreFlash*0.25})`); grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(cx,cy,pulse*3.2*devicePixelRatio,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=22*devicePixelRatio; ctx.shadowColor='#00e5ff'; ctx.fillStyle='#00e5ff'; ctx.beginPath(); ctx.arc(cx,cy,pulse*devicePixelRatio,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=28*devicePixelRatio; ctx.shadowColor='#ff2ea6'; ctx.fillStyle='rgba(255,46,166,0.85)'; ctx.beginPath(); ctx.arc(cx,cy,(pulse-9)*devicePixelRatio,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+  particles=particles.filter(p=>{
+    p.t+=0.016*state.speed; const prog=Math.min(1,p.t/p.dur); const ease=prog<0.5?2*prog*prog:1-Math.pow(-2*prog+2,2)/2;
+    const x=p.x+(p.tx-p.x)*ease, y=p.y+(p.ty-p.y)*ease;
+    ctx.globalAlpha=1-prog; ctx.shadowBlur=14*devicePixelRatio; ctx.shadowColor=p.color; ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(x,y,4.2*devicePixelRatio,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; ctx.globalAlpha=1;
+    return prog<1;
+  });
+  if(coreFlash>0) coreFlash=Math.max(0,coreFlash-0.035);
+  requestAnimationFrame(drawCore);
+}
+
+let loops=[];
+function restartLoops(){
+  loops.forEach(clearInterval); loops=[];
+  loops.push(setInterval(processMiners, 1000/state.speed));
+  loops.push(setInterval(()=>runAutocombine(), 500/state.speed));
+  loops.push(setInterval(()=>{ if(state.autoSell) sellAll(false); }, 2000/state.speed));
+  loops.push(setInterval(saveGame, 5000));
+  loops.push(setInterval(()=>updatePPS(), 1000));
+}
+
+document.getElementById('autoCombine').onchange=e=>state.autoCombine=e.target.checked;
+document.getElementById('autoSell').onchange=e=>state.autoSell=e.target.checked;
+document.getElementById('buyEnergy').onclick=()=>{ if(state.credits>=50){ state.credits-=50; state.energy+=100; addLog('Bought 100⚡'); beep(520,0.07); refreshUI(); }};
+document.getElementById('sellAll').onclick=()=>sellAll();
+document.getElementById('pauseBtn').onclick=()=>{ state.paused=!state.paused; document.getElementById('pauseBtn').textContent=state.paused?'▶':'⏸'; };
+document.getElementById('resetBtn').onclick=()=>{ if(confirm('Reset NanoFactory?')){ localStorage.removeItem('nanofactoryAuto'); location.reload(); }};
+document.getElementById('speedBtn').onclick=()=>{ const s=[1,2,5]; state.speed=s[(s.indexOf(state.speed)+1)%3]; document.getElementById('speedBtn').textContent=state.speed+'x'; restartLoops(); };
+
+window.onload=()=>{
+  loadGame(); buildAtomMines(); buildMiners(); buildRecipes(); resizeCanvas(); drawCore(); refreshUI(); restartLoops();
+  if(!localStorage.getItem('nanofactoryAuto')){ document.getElementById('tutorial').classList.remove('hidden'); }
+  else document.getElementById('tutorial').classList.add('hidden');
+  document.getElementById('startBtn').onclick=()=>{ document.getElementById('tutorial').classList.add('hidden'); beep(440,0.1); };
+  addLog('Factory online. Mine atoms to begin.');
+  updatePPS();
+};
+</script>
+</body>
+</html>

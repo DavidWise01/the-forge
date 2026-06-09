@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plasma Holographic — Optimized Single Ring</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#020409; font-family:'Inter', system-ui; overflow:hidden; }
+  * { font-variant-ligatures: none; }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  canvas { display:block; outline:none; }
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(0,183,255,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,183,255,0.07) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .glass {
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+  .scanlines::after {
+    content:''; position:absolute; inset:0;
+    background: repeating-linear-gradient(transparent, transparent 2px, rgba(255,255,255,0.02) 3px);
+    pointer-events:none;
+  }
+</style>
+</head>
+<body class="bg-[#020409] text-white select-none">
+<div class="relative w-screen h-screen overflow-hidden">
+  <canvas id="c" class="absolute inset-0"></canvas>
+  
+  <!-- blueprint background -->
+  <div class="absolute inset-0 grid-bg opacity-[0.15] pointer-events-none"></div>
+  <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at center, transparent 30%, #020409 85%);"></div>
+  <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at 50% 45%, rgba(168,85,247,0.08) 0%, transparent 40%), radial-gradient(ellipse at 50% 55%, rgba(255,154,0,0.08) 0%, transparent 40%);"></div>
+
+  <!-- header -->
+  <header class="absolute top-0 left-0 right-0 z-20 p-6 md:p-10 pointer-events-none">
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-[18px] md:text-[22px] tracking-[0.18em] font-light uppercase mono">Plasma Holographic <span class="text-white/40">—</span> <span class="text-amber-400">Optimized Single Ring</span></h1>
+        <p class="mono text-[10px] tracking-[0.2em] text-white/35 mt-1.5">MK-II • ENG-BLUEPRINT • REV 4.1</p>
+      </div>
+      <div class="hidden md:flex items-center gap-2 mono text-[10px] text-white/40">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        CONFINEMENT ACTIVE
+      </div>
+    </div>
+  </header>
+
+  <!-- center label -->
+  <div class="absolute bottom-[92px] md:bottom-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+    <div class="glass bg-black/60 border border-amber-500/25 rounded-full px-5 py-2.5 shadow-[0_0_40px_rgba(255,154,0,0.15)]">
+      <p class="mono text-[11px] md:text-[13px] tracking-[0.18em] text-amber-200/90 whitespace-nowrap">990,990 PAGES STORED IN SINGLE-RING PLASMA</p>
+    </div>
+  </div>
+
+  <!-- metrics -->
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 md:left-10 md:translate-x-0 z-20 flex gap-2.5 md:gap-3">
+    <div class="glass bg-[#050b14]/75 border border-white/10 rounded-xl px-3.5 py-2.5 min-w-[100px] md:min-w-[124px]">
+      <p class="mono text-[9px] tracking-widest text-white/40 mb-1">POWER</p>
+      <p class="mono text-[15px] leading-none text-white">1.2<span class="text-white/60 text-[12px]">kW</span></p>
+      <p class="mono text-[10px] text-red-400/60 line-through mt-0.5">4.5kW</p>
+    </div>
+    <div class="glass bg-[#050b14]/75 border border-white/10 rounded-xl px-3.5 py-2.5 min-w-[100px] md:min-w-[124px]">
+      <p class="mono text-[9px] tracking-widest text-white/40 mb-1">CONFINEMENT</p>
+      <p class="mono text-[15px] leading-none text-emerald-300">99.97<span class="text-[12px]">%</span></p>
+      <p class="mono text-[10px] text-white/40 mt-0.5">±0.001</p>
+    </div>
+    <div class="glass bg-[#050b14]/75 border border-white/10 rounded-xl px-3.5 py-2.5 min-w-[80px] md:min-w-[96px]">
+      <p class="mono text-[9px] tracking-widest text-white/40 mb-1">RINGS</p>
+      <p class="mono text-[15px] leading-none text-cyan-300">1</p>
+      <p class="mono text-[10px] text-white/40 mt-0.5">optimized</p>
+    </div>
+  </div>
+
+  <!-- optimization panel -->
+  <aside class="absolute z-20 bottom-[160px] md:bottom-auto left-4 right-4 md:left-auto md:right-8 md:top-[120px] md:w-[330px] pointer-events-none">
+    <div class="glass bg-[#030a13]/85 border border-cyan-900/40 rounded-[20px] p-5 md:p-6 shadow-2xl scanlines relative overflow-hidden pointer-events-auto">
+      <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-cyan-500/10 blur-3xl"></div>
+      <h2 class="mono text-[11px] tracking-[0.28em] text-cyan-300/90 uppercase mb-5 flex items-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-opacity="0.6"/></svg>
+        Optimization
+      </h2>
+      
+      <div class="space-y-5">
+        <!-- before -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-[18px] h-[18px] rounded-full border border-red-500/30 flex items-center justify-center">
+              <div class="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+            </div>
+            <span class="mono text-[10px] tracking-[0.18em] text-white/45">BEFORE</span>
+          </div>
+          <div class="pl-[26px]">
+            <p class="text-[13px] leading-snug text-white/70">3 rings, complex topology, power hungry</p>
+            <div class="flex gap-3 mt-2">
+              <span class="mono text-[10px] px-2 py-1 rounded bg-red-950/40 text-red-300/70 border border-red-900/40">3× RING</span>
+              <span class="mono text-[10px] px-2 py-1 rounded bg-red-950/40 text-red-300/70 border border-red-900/40">4.5 kW</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-px w-full" style="background: linear-gradient(90deg, transparent, rgba(0,183,255,0.2), transparent);"></div>
+
+        <!-- after -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-[18px] h-[18px] rounded-full border border-emerald-500/40 flex items-center justify-center">
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]"></div>
+            </div>
+            <span class="mono text-[10px] tracking-[0.18em] text-white/60">AFTER</span>
+          </div>
+          <div class="pl-[26px]">
+            <p class="text-[14px] leading-snug text-white">1 ring, minimal, <span class="text-emerald-300">73% less power</span>, perfect suspension</p>
+            <div class="flex gap-3 mt-2.5">
+              <span class="mono text-[10px] px-2 py-1 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-800/40">1× RING</span>
+              <span class="mono text-[10px] px-2 py-1 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-800/40">1.2 kW</span>
+              <span class="mono text-[10px] px-2 py-1 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-800/40">-73%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-px w-full" style="background: linear-gradient(90deg, transparent, rgba(0,183,255,0.15), transparent);"></div>
+
+        <!-- stability -->
+        <div>
+          <p class="mono text-[10px] tracking-[0.18em] text-cyan-300/70 mb-2">STABILITY</p>
+          <p class="text-[12.5px] leading-relaxed text-white/70">Achieved via dynamic field shaping & real-time adaptive feedback loop at 12kHz</p>
+          <div class="mt-3 flex items-center gap-2">
+            <div class="h-[3px] flex-1 rounded-full bg-white/5 overflow-hidden">
+              <div class="h-full w-[98%] bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)]"></div>
+            </div>
+            <span class="mono text-[10px] text-cyan-300/80">99.97%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- blueprint corner marks -->
+      <div class="absolute top-3 left-3 w-4 h-4 border-l border-t border-cyan-400/20"></div>
+      <div class="absolute top-3 right-3 w-4 h-4 border-r border-t border-cyan-400/20"></div>
+      <div class="absolute bottom-3 left-3 w-4 h-4 border-l border-b border-cyan-400/20"></div>
+      <div class="absolute bottom-3 right-3 w-4 h-4 border-r border-b border-cyan-400/20"></div>
+    </div>
+  </aside>
+
+  <!-- subtle vignette -->
+  <div class="absolute inset-0 pointer-events-none z-10" style="box-shadow: inset 0 0 200px rgba(0,0,0,0.9);"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const canvas = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x020409, 0.018);
+
+const camera = new THREE.PerspectiveCamera(36, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0, 3.6, 6.8);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 4.5;
+controls.maxDistance = 10;
+controls.maxPolarAngle = Math.PI * 0.72;
+controls.minPolarAngle = Math.PI * 0.25;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.35;
+controls.target.set(0, 0.1, 0);
+
+// post
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.4, 0.15);
+bloom.threshold = 0.2;
+bloom.strength = 1.1;
+bloom.radius = 0.5;
+composer.addPass(bloom);
+
+// lights
+scene.add(new THREE.AmbientLight(0x0a1420, 0.6));
+const keyLight = new THREE.PointLight(0xffaa55, 2.5, 20);
+keyLight.position.set(0, 0, 0);
+scene.add(keyLight);
+const rimLight = new THREE.PointLight(0x7c3aed, 1.8, 15);
+rimLight.position.set(0, 2, -3);
+scene.add(rimLight);
+const fill = new THREE.DirectionalLight(0x00b7ff, 0.3);
+fill.position.set(-5, 5, 5);
+scene.add(fill);
+
+// SINGLE RING
+const ringGroup = new THREE.Group();
+scene.add(ringGroup);
+
+const ringMat = new THREE.MeshStandardMaterial({
+  color: 0x1a0a00,
+  metalness: 0.95,
+  roughness: 0.18,
+  emissive: 0xff9a00,
+  emissiveIntensity: 1.4
+});
+
+const ring = new THREE.Mesh(new THREE.TorusGeometry(2.75, 0.16, 64, 256), ringMat);
+ring.rotation.x = Math.PI / 2;
+ringGroup.add(ring);
+
+// ring core glow
+const ringCore = new THREE.Mesh(
+  new THREE.TorusGeometry(2.75, 0.08, 32, 200),
+  new THREE.MeshBasicMaterial({ color: 0xffc86a, transparent: true, opacity: 0.9 })
+);
+ringCore.rotation.x = Math.PI / 2;
+ringGroup.add(ringCore);
+
+// outer halo
+const halo = new THREE.Mesh(
+  new THREE.TorusGeometry(2.78, 0.34, 48, 200),
+  new THREE.MeshBasicMaterial({ color: 0xff9a00, transparent: true, opacity: 0.06, side: THREE.BackSide, blending: THREE.AdditiveBlending })
+);
+halo.rotation.x = Math.PI / 2;
+ringGroup.add(halo);
+
+// ring details (superconducting coils)
+const detailMat = new THREE.MeshStandardMaterial({ color: 0x2a1500, metalness: 0.8, roughness: 0.4, emissive: 0xff7a00, emissiveIntensity: 0.25 });
+for (let i = 0; i < 24; i++) {
+  const a = (i / 24) * Math.PI * 2;
+  const d = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.26), detailMat);
+  d.position.set(Math.cos(a) * 2.75, 0, Math.sin(a) * 2.75);
+  d.rotation.y = -a;
+  d.rotation.x = Math.PI / 2;
+  ringGroup.add(d);
+}
+
+// MAGNETIC FIELD LINES (single ring optimized)
+const fieldGroup = new THREE.Group();
+scene.add(fieldGroup);
+const fieldMat = new THREE.MeshBasicMaterial({ color: 0x00b7ff, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending });
+
+for (let i = 0; i < 14; i++) {
+  const angle = (i / 14) * Math.PI * 2;
+  const ca = Math.cos(angle), sa = Math.sin(angle);
+  const R = 2.75;
+  const pts = [];
+  const up = 1.9, mid = 1.2;
+  
+  pts.push(new THREE.Vector3(R*ca, 0, R*sa));
+  pts.push(new THREE.Vector3(R*0.78*ca, mid*0.45, R*0.78*sa));
+  pts.push(new THREE.Vector3(R*0.5*ca, mid, R*0.5*sa));
+  pts.push(new THREE.Vector3(R*0.22*ca, up*0.85, R*0.22*sa));
+  pts.push(new THREE.Vector3(0, up, 0));
+  pts.push(new THREE.Vector3(-R*0.22*ca, up*0.85, -R*0.22*sa));
+  pts.push(new THREE.Vector3(-R*0.5*ca, mid, -R*0.5*sa));
+  pts.push(new THREE.Vector3(-R*0.78*ca, mid*0.45, -R*0.78*sa));
+  pts.push(new THREE.Vector3(-R*ca, 0, -R*sa));
+  pts.push(new THREE.Vector3(-R*0.78*ca, -mid*0.45, -R*0.78*sa));
+  pts.push(new THREE.Vector3(-R*0.5*ca, -mid, -R*0.5*sa));
+  pts.push(new THREE.Vector3(-R*0.22*ca, -up*0.85, -R*0.22*sa));
+  pts.push(new THREE.Vector3(0, -up, 0));
+  pts.push(new THREE.Vector3(R*0.22*ca, -up*0.85, R*0.22*sa));
+  pts.push(new THREE.Vector3(R*0.5*ca, -mid, R*0.5*sa));
+  pts.push(new THREE.Vector3(R*0.78*ca, -mid*0.45, R*0.78*sa));
+  pts.push(new THREE.Vector3(R*ca, 0, R*sa));
+  
+  const curve = new THREE.CatmullRomCurve3(pts, true);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 200, 0.006, 6, true), fieldMat.clone());
+  tube.material.opacity = 0.12 + Math.random() * 0.05;
+  fieldGroup.add(tube);
+}
+
+// PLASMA CORE (perfectly stable)
+const plasmaGroup = new THREE.Group();
+scene.add(plasmaGroup);
+
+const plasmaMat = new THREE.MeshStandardMaterial({
+  color: 0x6d28d9,
+  emissive: 0xa855f7,
+  emissiveIntensity: 2.0,
+  roughness: 0.12,
+  metalness: 0.05,
+  transparent: true,
+  opacity: 0.94
+});
+const plasmaSphere = new THREE.Mesh(new THREE.SphereGeometry(0.44, 72, 72), plasmaMat);
+plasmaGroup.add(plasmaSphere);
+
+// holographic data cube inside
+const holoMat = new THREE.MeshBasicMaterial({ color: 0xd8b4fe, wireframe: true, transparent: true, opacity: 0.22 });
+const holoCube = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.52, 0.52), holoMat);
+plasmaGroup.add(holoCube);
+
+const innerIco = new THREE.Mesh(
+  new THREE.IcosahedronGeometry(0.29, 2),
+  new THREE.MeshBasicMaterial({ color: 0xc4b5fd, wireframe: true, transparent: true, opacity: 0.28 })
+);
+plasmaGroup.add(innerIco);
+
+// data patterns (rotating planes)
+const dataGroup = new THREE.Group();
+for (let i = 0; i < 3; i++) {
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.35, 0.35, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xe9d5ff, wireframe: true, transparent: true, opacity: 0.12, side: THREE.DoubleSide })
+  );
+  plane.rotation.x = Math.PI * 0.5 * i;
+  plane.rotation.y = (Math.PI / 3) * i;
+  dataGroup.add(plane);
+}
+plasmaGroup.add(dataGroup);
+
+// plasma glow layers
+const glow1 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.62, 48, 48),
+  new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.12, side: THREE.BackSide, blending: THREE.AdditiveBlending })
+);
+plasmaGroup.add(glow1);
+
+const glow2 = new THREE.Mesh(
+  new THREE.SphereGeometry(0.85, 32, 32),
+  new THREE.MeshBasicMaterial({ color: 0x8b5cf6, transparent: true, opacity: 0.06, side: THREE.BackSide, blending: THREE.AdditiveBlending })
+);
+plasmaGroup.add(glow2);
+
+// particles inside plasma
+const particleCount = 180;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(particleCount * 3);
+for (let i = 0; i < particleCount; i++) {
+  const r = 0.38 * Math.cbrt(Math.random());
+  const th = Math.random() * Math.PI * 2;
+  const ph = Math.acos(2 * Math.random() - 1);
+  pPos[i*3] = r * Math.sin(ph) * Math.cos(th);
+  pPos[i*3+1] = r * Math.sin(ph) * Math.sin(th);
+  pPos[i*3+2] = r * Math.cos(ph);
+}
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xf5f3ff, size: 0.012, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending }));
+plasmaGroup.add(particles);
+
+// LASER WRITE BEAMS
+const laserGroup = new THREE.Group();
+scene.add(laserGroup);
+
+function makeLaser(dir) {
+  const g = new THREE.Group();
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.018, 0.018, 3.1, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff3b6b, transparent: true, opacity: 0, blending: THREE.AdditiveBlending })
+  );
+  beam.rotation.z = Math.PI / 2;
+  g.add(beam);
+  
+  const tip = new THREE.Mesh(
+    new THREE.ConeGeometry(0.045, 0.14, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff5a8a, transparent: true, opacity: 0 })
+  );
+  tip.rotation.z = -Math.PI / 2 * dir;
+  tip.position.x = dir * 1.55;
+  g.add(tip);
+  
+  g.position.x = dir * 3.15;
+  g.userData = { beam, tip, dir };
+  return g;
+}
+
+const laserL = makeLaser(-1);
+const laserR = makeLaser(1);
+laserGroup.add(laserL, laserR);
+
+// top/bottom lasers for cross pattern
+function makeLaserV(dir) {
+  const g = new THREE.Group();
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.014, 0.014, 2.6, 16),
+    new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending })
+  );
+  g.add(beam);
+  g.position.y = dir * 2.7;
+  g.userData = { beam, dir };
+  return g;
+}
+const laserT = makeLaserV(1);
+const laserB = makeLaserV(-1);
+laserGroup.add(laserT, laserB);
+
+// floor grid
+const grid = new THREE.GridHelper(12, 24, 0x00b7ff, 0x08334a);
+grid.position.y = -2.4;
+grid.material.opacity = 0.12;
+grid.material.transparent = true;
+scene.add(grid);
+
+// animation
+const clock = new THREE.Clock();
+let laserTimer = 0;
+
+function animate() {
+  const t = clock.getElapsedTime();
+  
+  controls.update();
+  
+  // ring pulse
+  const pulse = 1.3 + Math.sin(t * 1.6) * 0.18;
+  ringMat.emissiveIntensity = pulse;
+  ringCore.material.opacity = 0.75 + Math.sin(t * 1.6) * 0.15;
+  halo.material.opacity = 0.055 + Math.sin(t * 1.2) * 0.018;
+  ring.rotation.z = t * 0.08;
+  
+  // field lines breathe
+  fieldGroup.children.forEach((line, i) => {
+    line.material.opacity = 0.11 + 0.06 * Math.sin(t * 0.7 + i * 0.4);
+    line.rotation.y = t * 0.02;
+  });
+  
+  // PLASMA PERFECT STABILITY
+  plasmaSphere.scale.setScalar(1 + Math.sin(t * 2.2) * 0.012);
+  plasmaSphere.material.emissiveIntensity = 1.95 + Math.sin(t * 3.1) * 0.1;
+  
+  holoCube.rotation.y -= 0.012;
+  holoCube.rotation.x = Math.sin(t * 0.4) * 0.1;
+  
+  innerIco.rotation.y += 0.009;
+  innerIco.rotation.z += 0.005;
+  
+  dataGroup.rotation.y = t * 0.3;
+  dataGroup.children.forEach((p, i) => p.rotation.z = t * (0.2 + i * 0.05));
+  
+  glow1.scale.setScalar(1 + Math.sin(t * 1.4) * 0.04);
+  glow2.scale.setScalar(1 + Math.sin(t * 1.1 + 1) * 0.06);
+  
+  particles.rotation.y = t * 0.15;
+  const pos = particles.geometry.attributes.position.array;
+  for (let i = 0; i < particleCount; i++) {
+    pos[i*3+1] += Math.sin(t * 2 + i * 0.1) * 0.0002;
+  }
+  particles.geometry.attributes.position.needsUpdate = true;
+  
+  // lasers fire sequence
+  laserTimer += 0.016;
+  const cycle = laserTimer % 4.0;
+  const fire = cycle < 0.28;
+  const fireSide = Math.floor(laserTimer / 2) % 2;
+  
+  [laserL, laserR].forEach((l, i) => {
+    const active = fire && i === fireSide;
+    l.userData.beam.material.opacity = active ? 0.85 : Math.max(0, l.userData.beam.material.opacity - 0.06);
+    l.userData.tip.material.opacity = active ? 1 : Math.max(0, l.userData.tip.material.opacity - 0.08);
+    if (active) {
+      keyLight.intensity = 3.2;
+      plasmaSphere.material.emissiveIntensity = 2.4;
+    }
+  });
+  
+  [laserT, laserB].forEach((l, i) => {
+    const active = fire && i !== fireSide;
+    l.userData.beam.material.opacity = active ? 0.6 : Math.max(0, l.userData.beam.material.opacity - 0.05);
+  });
+  
+  if (!fire) keyLight.intensity = 2.5 + Math.sin(t * 2) * 0.2;
+  
+  // subtle float (but stable)
+  plasmaGroup.position.y = Math.sin(t * 0.6) * 0.015;
+  
+  composer.render();
+  requestAnimationFrame(animate);
+}
+animate();
+
+// resize
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+
+// interaction - toggle auto rotate
+let auto = true;
+renderer.domElement.addEventListener('click', () => {
+  auto = !auto;
+  controls.autoRotate = auto;
+});
+</script>
+</body>
+</html>

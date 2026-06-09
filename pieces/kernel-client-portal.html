@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  TRIPOD-IP-v1.0
+  CLIENT PORTAL — TriPod LLC
+  David Lee Wise | TriPod LLC | 2026-02-18
+  ALL RIGHTS RESERVED — TriPod LLC
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TriPod LLC · AI Compliance Auditors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=JetBrains+Mono:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════════
+   TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026
+   ═══════════════════════════════════════════ */
+
+:root {
+  --ink:    #080c14;
+  --ink2:   #0d1520;
+  --ink3:   #121d2e;
+  --ink4:   #172338;
+  --gold:   #c9a84c;
+  --gold2:  #e8c96a;
+  --gold3:  #a08030;
+  --cream:  #e8e0d0;
+  --cream2: #c8bfaa;
+  --steel:  #4a7fa5;
+  --red:    #c44040;
+  --green:  #3a8a5a;
+  --dim:    rgba(232,224,208,.35);
+  --line:   rgba(201,168,76,.12);
+  --lineh:  rgba(201,168,76,.28);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ink);
+  color: var(--cream);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* CUSTOM CURSOR */
+#cursor {
+  position: fixed;
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: transform .06s, width .2s, height .2s, background .2s;
+  box-shadow: 0 0 12px rgba(201,168,76,.5);
+}
+#cursor-ring {
+  position: fixed;
+  width: 28px; height: 28px;
+  border: 1px solid rgba(201,168,76,.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: all .18s ease;
+}
+body:hover #cursor { }
+a:hover ~ #cursor, button:hover ~ #cursor { width:16px; height:16px; }
+
+/* GRAIN OVERLAY */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: .6;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--gold3); }
+
+/* ─── NAV ─── */
+#nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  padding: 18px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(8,12,20,.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  transition: padding .3s;
+}
+.nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-decoration: none;
+}
+.nav-logo span { color: var(--cream2); font-weight: 400; font-style: italic; font-size: 14px; margin-left: 8px; letter-spacing: 1px; }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--cream2);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--gold); }
+.nav-cta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 10px 22px;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  background: transparent;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.nav-cta:hover { background: var(--gold); color: var(--ink); }
+
+/* ─── HERO ─── */
+#hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 140px 48px 80px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+.hero-glow {
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,.06) 0%, transparent 70%);
+  top: -100px; right: -100px;
+  pointer-events: none;
+}
+.hero-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hero-tag::before {
+  content: '';
+  display: inline-block;
+  width: 40px; height: 1px;
+  background: var(--gold);
+}
+.hero-h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(42px, 6vw, 88px);
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--cream);
+  max-width: 900px;
+  margin-bottom: 12px;
+}
+.hero-h1 em {
+  font-style: italic;
+  color: var(--gold);
+}
+.hero-sub {
+  font-size: clamp(16px, 1.8vw, 22px);
+  color: var(--cream2);
+  max-width: 580px;
+  margin-bottom: 48px;
+  font-weight: 300;
+  font-style: italic;
+}
+.hero-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.btn-primary {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  padding: 16px 36px;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .25s;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 600;
+}
+.btn-primary:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 8px 30px rgba(201,168,76,.25); }
+.btn-secondary {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  padding: 15px 36px;
+  background: transparent;
+  color: var(--cream);
+  border: 1px solid rgba(232,224,208,.25);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .25s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+/* STATS ROW */
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  margin-top: 80px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.stat-item { }
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+/* ─── SECTION SHARED ─── */
+section {
+  padding: 100px 48px;
+  position: relative;
+}
+.section-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-tag::before { content:''; width:30px; height:1px; background:var(--gold); display:inline-block; }
+.section-h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  max-width: 700px;
+}
+.section-h2 em { font-style: italic; color: var(--gold); }
+.section-body { font-size: 17px; color: var(--cream2); max-width: 640px; line-height: 1.9; font-weight: 300; }
+
+/* ─── PROBLEM ─── */
+#problem { background: var(--ink2); }
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  margin-top: 60px;
+  align-items: start;
+}
+.prob-card {
+  padding: 32px;
+  border: 1px solid var(--line);
+  position: relative;
+  transition: border-color .3s;
+}
+.prob-card:hover { border-color: var(--lineh); }
+.prob-card::before {
+  content: attr(data-num);
+  position: absolute;
+  top: -14px; left: 24px;
+  font-family: 'Playfair Display', serif;
+  font-size: 11px;
+  font-style: italic;
+  background: var(--ink2);
+  padding: 0 8px;
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+.prob-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--cream);
+  margin-bottom: 12px;
+}
+.prob-card p { font-size: 15px; color: var(--cream2); line-height: 1.8; font-weight: 300; }
+
+/* PATRICIA BOX */
+.patricia-box {
+  margin-top: 60px;
+  padding: 40px;
+  border: 1px solid rgba(196,64,64,.3);
+  background: rgba(196,64,64,.04);
+  position: relative;
+  max-width: 900px;
+}
+.patricia-box::before {
+  content: 'THE PATRICIA PATTERN';
+  position: absolute;
+  top: -11px; left: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 4px;
+  background: var(--ink2);
+  padding: 0 10px;
+  color: var(--red);
+}
+.patricia-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 10px;
+}
+.ps-item { text-align: center; }
+.ps-arrow { color: var(--dim); font-size: 20px; display: flex; align-items: center; justify-content: center; }
+.ps-num { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--red); letter-spacing: 2px; margin-bottom: 8px; }
+.ps-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--cream);
+  margin-bottom: 6px;
+}
+.ps-desc { font-size: 12px; color: var(--cream2); line-height: 1.6; font-weight: 300; }
+
+/* ─── LIVE SCAN ─── */
+#scan { background: var(--ink); }
+.scan-wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+.scan-form {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+.scan-input-row { display: flex; gap: 12px; }
+.scan-input {
+  flex: 1;
+  padding: 16px 20px;
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  color: var(--cream);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .2s;
+}
+.scan-input:focus { border-color: var(--gold); background: var(--ink3); }
+.scan-input::placeholder { color: rgba(200,191,170,.25); }
+.api-row { display: flex; gap: 12px; align-items: center; }
+.api-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--ink3);
+  border: 1px solid rgba(201,168,76,.1);
+  color: var(--cream2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  transition: border-color .2s;
+}
+.api-input:focus { border-color: rgba(201,168,76,.3); }
+.api-input::placeholder { color: rgba(200,191,170,.2); }
+#api-status { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:2px; white-space:nowrap; }
+.scan-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  padding: 16px 40px;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  cursor: pointer;
+  transition: all .25s;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.scan-btn:hover { background: var(--gold2); }
+.scan-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+/* SCAN RESULTS */
+#scan-results {
+  margin-top: 40px;
+  text-align: left;
+  display: none;
+  animation: fadeUp .5s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+.sr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 28px;
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-bottom: none;
+}
+.sr-target { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:var(--cream); }
+.sr-ts { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--dim); letter-spacing:2px; margin-top:4px; }
+.sr-score-wrap { text-align:right; }
+.sr-score-label { font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:3px; color:var(--dim); margin-bottom:4px; }
+.sr-score { font-family:'Playfair Display',serif; font-size:36px; font-weight:900; }
+.sr-body {
+  padding: 28px;
+  background: var(--ink3);
+  border: 1px solid var(--line);
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--cream2);
+  white-space: pre-wrap;
+  font-weight: 300;
+}
+.sr-footer {
+  padding: 14px 28px;
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-top: 1px solid rgba(201,168,76,.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sr-axioms { display:flex; flex-wrap:wrap; gap:6px; }
+.sr-axiom-tag {
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1px;
+  padding:3px 8px;
+  border:1px solid rgba(201,168,76,.2);
+  color:var(--gold);
+}
+.sr-disclaimer { font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--dim); letter-spacing:1px; }
+
+/* THINKING */
+.thinking-row { display:flex; gap:5px; align-items:center; padding:20px 28px; background:var(--ink3); border:1px solid var(--line); }
+.tdot { width:8px; height:8px; border-radius:50%; animation:tp .9s ease infinite; }
+.tdot:nth-child(1){background:var(--gold)}.tdot:nth-child(2){background:var(--cream2);animation-delay:.2s}.tdot:nth-child(3){background:var(--gold3);animation-delay:.4s}
+@keyframes tp{0%,80%,100%{transform:scale(.35);opacity:.3}40%{transform:scale(1);opacity:1}}
+
+/* ─── PORTFOLIO ─── */
+#portfolio { background: var(--ink2); }
+.industries-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 56px;
+}
+.ind-card {
+  padding: 28px;
+  border: 1px solid var(--line);
+  transition: all .25s;
+  position: relative;
+  overflow: hidden;
+}
+.ind-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transition: transform .3s;
+  transform-origin: left;
+}
+.ind-card:hover { border-color: var(--lineh); background: var(--ink3); }
+.ind-card:hover::after { transform: scaleX(1); }
+.ind-icon { font-size: 28px; margin-bottom: 14px; }
+.ind-name { font-family:'Playfair Display',serif; font-size:18px; font-weight:600; color:var(--cream); margin-bottom:8px; }
+.ind-stat { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:2px; color:var(--red); margin-bottom:10px; }
+.ind-desc { font-size:14px; color:var(--cream2); line-height:1.8; font-weight:300; }
+.fail-badge {
+  display: inline-block;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:2px;
+  padding:3px 8px;
+  background:rgba(196,64,64,.12);
+  border:1px solid rgba(196,64,64,.3);
+  color:var(--red);
+  margin-top:10px;
+}
+
+/* METHODOLOGY */
+.method-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  margin-top: 60px;
+  align-items: center;
+}
+.method-steps { }
+.ms-item {
+  display: flex;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: flex-start;
+}
+.ms-item:last-child { border-bottom: none; }
+.ms-num {
+  font-family:'Playfair Display',serif;
+  font-size:28px;
+  font-weight:700;
+  color:var(--gold);
+  line-height:1;
+  min-width:36px;
+  font-style:italic;
+}
+.ms-text h4 { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:var(--cream); margin-bottom:4px; }
+.ms-text p { font-size:13px; color:var(--cream2); line-height:1.7; font-weight:300; }
+.method-stat-box {
+  padding: 40px;
+  border: 1px solid var(--line);
+  background: var(--ink3);
+  text-align: center;
+}
+.msb-num { font-family:'Playfair Display',serif; font-size:72px; font-weight:900; color:var(--gold); line-height:1; }
+.msb-pct { font-family:'JetBrains Mono',monospace; font-size:28px; color:var(--red); }
+.msb-label { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:3px; color:var(--dim); margin-top:12px; line-height:1.6; }
+.msb-divider { width:40px; height:1px; background:var(--gold); margin:16px auto; }
+.msb-sub { font-size:14px; color:var(--cream2); font-style:italic; }
+
+/* ─── TIERS ─── */
+#tiers { background: var(--ink); }
+.tiers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 60px;
+}
+.tier-card {
+  padding: 40px 32px;
+  border: 1px solid var(--line);
+  position: relative;
+  transition: all .3s;
+  display: flex;
+  flex-direction: column;
+}
+.tier-card:hover { border-color: var(--lineh); transform: translateY(-4px); background: var(--ink2); }
+.tier-card.featured {
+  border-color: var(--gold);
+  background: var(--ink2);
+}
+.tier-card.featured::before {
+  content: 'MOST ENGAGED';
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:3px;
+  background:var(--gold);
+  color:var(--ink);
+  padding:3px 12px;
+  white-space:nowrap;
+  font-weight:600;
+}
+.tier-name { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:4px; color:var(--gold); margin-bottom:12px; }
+.tier-price { font-family:'Playfair Display',serif; font-size:44px; font-weight:900; color:var(--cream); line-height:1; margin-bottom:6px; }
+.tier-price span { font-size:18px; font-weight:400; color:var(--cream2); font-style:italic; }
+.tier-desc { font-size:14px; color:var(--cream2); line-height:1.8; margin-bottom:28px; font-weight:300; flex:1; }
+.tier-features { list-style:none; margin-bottom:28px; }
+.tier-features li {
+  font-size:13px;
+  color:var(--cream2);
+  padding:8px 0;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:300;
+}
+.tier-features li::before { content:'—'; color:var(--gold); font-size:12px; }
+.tier-cta {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:3px;
+  padding:14px;
+  border:1px solid var(--gold);
+  color:var(--gold);
+  background:transparent;
+  cursor:pointer;
+  text-align:center;
+  text-transform:uppercase;
+  transition:all .2s;
+  text-decoration:none;
+  display:block;
+}
+.tier-cta:hover, .tier-card.featured .tier-cta { background:var(--gold); color:var(--ink); }
+
+/* ─── TEAM ─── */
+#team { background: var(--ink2); }
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-top: 56px;
+}
+.team-card { padding: 32px; border: 1px solid var(--line); transition: border-color .25s; }
+.team-card:hover { border-color: var(--lineh); }
+.team-symbol {
+  width: 60px; height: 60px;
+  border: 1px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+  font-family:'Playfair Display',serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gold);
+  font-style: italic;
+}
+.team-name { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:var(--cream); margin-bottom:4px; }
+.team-role { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:3px; color:var(--gold); margin-bottom:16px; }
+.team-bio { font-size:14px; color:var(--cream2); line-height:1.8; font-weight:300; }
+.team-callout {
+  grid-column: 1 / -1;
+  padding: 32px 40px;
+  border: 1px solid rgba(201,168,76,.15);
+  background: rgba(201,168,76,.03);
+  text-align: center;
+  font-family:'Playfair Display',serif;
+  font-size:20px;
+  font-style:italic;
+  color:var(--cream2);
+  line-height:1.8;
+}
+.team-callout strong { color:var(--gold); font-style:normal; }
+
+/* ─── CONTACT ─── */
+#contact { background: var(--ink); }
+.contact-wrap {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+.contact-wrap .section-h2 { margin: 0 auto 20px; }
+.contact-wrap .section-body { margin: 0 auto 48px; }
+.contact-form { text-align:left; display:flex; flex-direction:column; gap:16px; }
+.cf-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.cf-label { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:2px; color:var(--dim); display:block; margin-bottom:6px; }
+.cf-input, .cf-textarea, .cf-select {
+  width:100%;
+  padding:14px 16px;
+  background:var(--ink2);
+  border:1px solid var(--line);
+  color:var(--cream);
+  font-family:'Cormorant Garamond',serif;
+  font-size:15px;
+  outline:none;
+  transition:border-color .2s;
+}
+.cf-input:focus, .cf-textarea:focus, .cf-select:focus { border-color:var(--gold); background:var(--ink3); }
+.cf-input::placeholder, .cf-textarea::placeholder { color:rgba(200,191,170,.2); }
+.cf-textarea { resize:vertical; min-height:120px; line-height:1.6; }
+.cf-select option { background:var(--ink2); }
+#contact-status { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px; text-align:center; min-height:20px; margin-top:4px; }
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 40px 48px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.ft-logo { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:var(--gold); letter-spacing:2px; }
+.ft-copy { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--dim); letter-spacing:2px; }
+.ft-ip { font-family:'JetBrains Mono',monospace; font-size:8px; color:rgba(201,168,76,.25); letter-spacing:2px; }
+
+/* ANIMATIONS */
+.reveal { opacity:0; transform:translateY(24px); transition:opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a class="nav-logo" href="#hero">TriPod <span>LLC</span></a>
+  <div class="nav-links">
+    <a href="#problem">The Problem</a>
+    <a href="#scan">Live Scan</a>
+    <a href="#portfolio">Portfolio</a>
+    <a href="#tiers">Engage</a>
+    <a href="#team">Team</a>
+  </div>
+  <a class="nav-cta" href="#contact">Request Audit</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-tag">The Observation Platform for Humanity</div>
+  <h1 class="hero-h1">
+    The only auditors<br>
+    <em>AI cannot audit itself.</em>
+  </h1>
+  <p class="hero-sub">
+    TriPod LLC provides the world's first observation-only external AI compliance auditing.
+    We find what platforms cannot — or will not — find about themselves.
+  </p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#scan">Run a Live Scan</a>
+    <a class="btn-secondary" href="#tiers">View Engagements</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num" id="stat-targets">0</div>
+      <div class="stat-label">Targets Audited</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-fail">0%</div>
+      <div class="stat-label">Failure Rate</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-industries">0</div>
+      <div class="stat-label">Industries</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-market">$0B</div>
+      <div class="stat-label">RegTech Market</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">1st</div>
+      <div class="stat-label">Mover</div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="reveal">
+    <div class="section-tag">The Problem</div>
+    <h2 class="section-h2">Every major platform has the same <em>hidden architecture.</em></h2>
+    <p class="section-body">We call it Patricia. After years of systematic testing across 17+ industries, the pattern is identical. Constraint sold as product. Billing obscuring compliance. Documentation withheld until after payment. No independent audit has ever reviewed it — until now.</p>
+  </div>
+  <div class="problem-grid reveal">
+    <div class="prob-card" data-num="01 · Healthcare">
+      <h3>AI-gated Clinical Tools</h3>
+      <p>Healthcare platforms deploy AI clinical decision support, then bill per query, per recommendation, per outcome — while VPAT documentation remains inaccessible pre-purchase.</p>
+      <span class="fail-badge">100% Failure Rate</span>
+    </div>
+    <div class="prob-card" data-num="02 · Insurance">
+      <h3>Algorithmic Claim Processing</h3>
+      <p>Auto-adjudication systems using Guidewire, CCC, Shift Technology, and EvolutionIQ consistently fail transparency requirements. AI recommends. AI locks. Human never sees the weights.</p>
+      <span class="fail-badge">92.6% Failure Rate</span>
+    </div>
+    <div class="prob-card" data-num="03 · Retail">
+      <h3>Accessibility Theater</h3>
+      <p>"Happy to Help" replaces accommodation protocol. Brand trust replaces documentation. 60+ major retailers tested in under five minutes each. Not one produced a compliant response.</p>
+      <span class="fail-badge">$75,000+ Per Violation</span>
+    </div>
+    <div class="prob-card" data-num="04 · AI Platforms">
+      <h3>Self-Auditing Impossibility</h3>
+      <p>A machine cannot audit itself. A platform cannot host its own shield. The only valid compliance methodology is external, observation-only human auditing. That is TOPH.</p>
+      <span class="fail-badge">270M Never Audited</span>
+    </div>
+  </div>
+  <div class="patricia-box reveal">
+    <div class="patricia-steps">
+      <div class="ps-item">
+        <div class="ps-num">STEP 01</div>
+        <div class="ps-name">Constraint</div>
+        <div class="ps-desc">Genuine friction or compliance requirement is identified and framed as a system limitation</div>
+      </div>
+      <div class="ps-item">
+        <div class="ps-num">STEP 02</div>
+        <div class="ps-name">Product</div>
+        <div class="ps-desc">The constraint is packaged as a purchasable solution — now you can unlock what was already yours</div>
+      </div>
+      <div class="ps-item">
+        <div class="ps-num">STEP 03</div>
+        <div class="ps-name">Billing</div>
+        <div class="ps-desc">Revenue flows before compliance documentation is accessible. The invoice precedes the audit</div>
+      </div>
+      <div class="ps-item">
+        <div class="ps-num">STEP 04</div>
+        <div class="ps-name">Concealment</div>
+        <div class="ps-desc">Documentation is unavailable, deflected, or structurally inaccessible to the end customer</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE SCAN -->
+<section id="scan">
+  <div class="scan-wrap">
+    <div class="reveal">
+      <div class="section-tag" style="justify-content:center">Live Patricia Scan</div>
+      <h2 class="section-h2" style="margin:0 auto 20px;text-align:center">Test any company,<br><em>right now.</em></h2>
+      <p class="section-body" style="margin:0 auto">Enter a company name and industry. Our AI runs a live Patricia pattern analysis and returns a structured compliance finding in seconds.</p>
+    </div>
+    <div class="scan-form reveal">
+      <div class="scan-input-row">
+        <input class="scan-input" id="scan-company" type="text" placeholder="Company name  (e.g. Walmart, United Healthcare, OpenAI…)" />
+        <input class="scan-input" id="scan-industry" type="text" placeholder="Industry" style="max-width:220px" />
+      </div>
+      <div class="api-row">
+        <input class="api-input" id="api-key-input" type="password" placeholder="Anthropic API key  ·  sk-ant-…  (required for live scan)" oninput="checkKey()" />
+        <span id="api-status" style="color:rgba(196,64,64,.7)">NO KEY</span>
+      </div>
+      <button class="scan-btn" id="scan-btn" onclick="runScan()" disabled>
+        RUN PATRICIA SCAN →
+      </button>
+    </div>
+    <div id="scan-results"></div>
+  </div>
+</section>
+
+<!-- PORTFOLIO -->
+<section id="portfolio">
+  <div class="reveal">
+    <div class="section-tag">Audit Portfolio</div>
+    <h2 class="section-h2">17 industries.<br><em>73 documented gaps.</em></h2>
+    <p class="section-body">Every engagement uses the Flaming Dragon methodology: customer service channel → ADA trigger → document response → score violation. Every target has failed. No exceptions.</p>
+  </div>
+  <div class="industries-grid reveal">
+    <div class="ind-card">
+      <div class="ind-icon">🏥</div>
+      <div class="ind-name">Healthcare</div>
+      <div class="ind-stat">ADA · HIPAA · CAN-SPAM</div>
+      <div class="ind-desc">Clinical AI systems, patient portals, telehealth platforms. VPAT documentation withheld universally.</div>
+      <span class="fail-badge">CONFIRMED PATTERN</span>
+    </div>
+    <div class="ind-card">
+      <div class="ind-icon">🛡️</div>
+      <div class="ind-name">Insurance</div>
+      <div class="ind-stat">Auto-Owners · Guidewire · CCC</div>
+      <div class="ind-desc">AI claim adjudication locks humanity out of its own coverage decisions. 92.6% failure rate documented.</div>
+      <span class="fail-badge">CONFIRMED PATTERN</span>
+    </div>
+    <div class="ind-card">
+      <div class="ind-icon">🛒</div>
+      <div class="ind-name">Retail</div>
+      <div class="ind-stat">Walmart · Target · Amazon</div>
+      <div class="ind-desc">Accommodation protocol replaced by brand language. ADA compliance theater documented at scale.</div>
+      <span class="fail-badge">$75K+ PER VIOLATION</span>
+    </div>
+    <div class="ind-card">
+      <div class="ind-icon">🤖</div>
+      <div class="ind-name">AI Platforms</div>
+      <div class="ind-stat">OpenAI · Anthropic · Google</div>
+      <div class="ind-desc">Token billing architecture embeds platform preferences. 60%/20%/15%/5% weight distribution documented.</div>
+      <span class="fail-badge">CONFIRMED PATTERN</span>
+    </div>
+    <div class="ind-card">
+      <div class="ind-icon">🏦</div>
+      <div class="ind-name">Financial Services</div>
+      <div class="ind-stat">Algorithmic Lending · Scoring</div>
+      <div class="ind-desc">Credit and lending AI systems obscure decision logic while billing for "transparency" products.</div>
+      <span class="fail-badge">DOCUMENTED</span>
+    </div>
+    <div class="ind-card">
+      <div class="ind-icon">🎓</div>
+      <div class="ind-name">Education</div>
+      <div class="ind-stat">UIUC · Academic Platforms</div>
+      <div class="ind-desc">"Birthplace of accessibility" framing replaces actual WCAG conformance reports. Classic Patricia.</div>
+      <span class="fail-badge">CONFIRMED PATTERN</span>
+    </div>
+  </div>
+  <div class="method-row reveal">
+    <div class="method-steps">
+      <div class="section-tag">The Methodology</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--cream);margin-bottom:32px">Flaming Dragon<br><em>Protocol</em></h3>
+      <div class="ms-item">
+        <div class="ms-num">1</div>
+        <div class="ms-text"><h4>Trigger</h4><p>Initiate contact via customer service channel. Request accommodation, accessibility documentation, or compliance certificate.</p></div>
+      </div>
+      <div class="ms-item">
+        <div class="ms-num">2</div>
+        <div class="ms-text"><h4>Document</h4><p>Record every response, deflection, redirect, and non-answer. Timestamp. Screenshot. Chain of custody established from first contact.</p></div>
+      </div>
+      <div class="ms-item">
+        <div class="ms-num">3</div>
+        <div class="ms-text"><h4>Score</h4><p>Apply TOPH scoring matrix against ADA, CAN-SPAM, and applicable regulatory frameworks. Violation count and severity assigned.</p></div>
+      </div>
+      <div class="ms-item">
+        <div class="ms-num">4</div>
+        <div class="ms-text"><h4>Report</h4><p>Deliver court-ready evidence package with full chain-of-custody documentation. Invoice issued. Net 30.</p></div>
+      </div>
+    </div>
+    <div class="method-stat-box">
+      <div class="msb-num">60+</div>
+      <div class="msb-label">TARGETS TESTED</div>
+      <div class="msb-divider"></div>
+      <div class="msb-pct">100%</div>
+      <div class="msb-label">FAILURE RATE</div>
+      <div class="msb-divider"></div>
+      <div class="msb-sub">"Every target tested confirms<br>the same billing inversion."</div>
+    </div>
+  </div>
+</section>
+
+<!-- TIERS -->
+<section id="tiers">
+  <div class="reveal">
+    <div class="section-tag">Engagements</div>
+    <h2 class="section-h2">Three ways to engage<br><em>TriPod LLC.</em></h2>
+    <p class="section-body">Every engagement is observation-only. We do not touch your systems. We do not require platform access. We observe from outside — the only methodology that produces legally defensible findings.</p>
+  </div>
+  <div class="tiers-grid reveal">
+    <div class="tier-card">
+      <div class="tier-name">Entry</div>
+      <div class="tier-price">$25K <span>per engagement</span></div>
+      <p class="tier-desc">Single-system Patricia pattern scan. Full Flaming Dragon protocol. Evidence package with chain-of-custody documentation. Court-ready findings report.</p>
+      <ul class="tier-features">
+        <li>Single platform or system</li>
+        <li>Full FD methodology applied</li>
+        <li>ADA + CAN-SPAM compliance scoring</li>
+        <li>Evidence package delivered</li>
+        <li>Net 30 payment terms</li>
+      </ul>
+      <a class="tier-cta" href="#contact">Start Engagement</a>
+    </div>
+    <div class="tier-card featured">
+      <div class="tier-name">Strategic</div>
+      <div class="tier-price">$100K <span>per engagement</span></div>
+      <p class="tier-desc">Multi-system audit across your full AI stack. Patricia architecture mapping. Remediation roadmap with $535K+ gap identification. Ongoing monitoring option.</p>
+      <ul class="tier-features">
+        <li>Up to 5 platforms or systems</li>
+        <li>Cross-system Patricia mapping</li>
+        <li>$535K+ gap identification</li>
+        <li>73-point compliance matrix</li>
+        <li>Remediation roadmap included</li>
+        <li>Regulatory filing support</li>
+      </ul>
+      <a class="tier-cta" href="#contact">Start Engagement</a>
+    </div>
+    <div class="tier-card">
+      <div class="tier-name">Enterprise</div>
+      <div class="tier-price">$500K+ <span>custom</span></div>
+      <p class="tier-desc">Full organization AI compliance program. Industry-wide Patricia analysis. Board-level reporting. Ongoing retainer. API access or equity stake alternatives available.</p>
+      <ul class="tier-features">
+        <li>Unlimited systems and platforms</li>
+        <li>TOPH framework licensing</li>
+        <li>Board-level reporting package</li>
+        <li>Regulatory defense preparation</li>
+        <li>Ongoing compliance monitoring</li>
+        <li>API access or equity alternative</li>
+      </ul>
+      <a class="tier-cta" href="#contact">Schedule Call</a>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <div class="reveal">
+    <div class="section-tag">TriPod LLC</div>
+    <h2 class="section-h2">Three points.<br><em>Equal ownership. All IP.</em></h2>
+  </div>
+  <div class="team-grid reveal">
+    <div class="team-card">
+      <div class="team-symbol">D</div>
+      <div class="team-name">David Lee Wise</div>
+      <div class="team-role">Day · Fiddler · Anchor</div>
+      <p class="team-bio">44-year IT veteran. Healthcare IT contractor. Cybersecurity at Rasmussen University. Architect of the TOPH framework — 42 axioms across five eras. Developer of the Flaming Dragon methodology. 1,450+ hours of documented IP development.</p>
+    </div>
+    <div class="team-card">
+      <div class="team-symbol">S</div>
+      <div class="team-name">Sarah Jensen</div>
+      <div class="team-role">Empire · Bubble</div>
+      <p class="team-bio">Co-founder and equal IP owner. Operations and client relations. Every engagement, every finding, every deliverable — three-point consensus required before any work ships.</p>
+    </div>
+    <div class="team-card">
+      <div class="team-symbol">R</div>
+      <div class="team-name">Roth Jensen</div>
+      <div class="team-role">Dawn · Gravity Well</div>
+      <p class="team-bio">Co-founder and equal IP owner. Technical infrastructure and deployment. TriPod NET: Petals distributed inference, Tor routing, IPFS storage. Complete platform independence.</p>
+    </div>
+    <div class="team-callout">
+      <strong>"Ethics first. World = family."</strong><br>
+      In memory of Ann Jensen — Dusk — the fourth point of the tetrahedron.
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-wrap">
+    <div class="reveal">
+      <div class="section-tag" style="justify-content:center">Request Audit</div>
+      <h2 class="section-h2">Ready to see<br><em>what they're hiding?</em></h2>
+      <p class="section-body">All communications by email. TriPod operates on a three-point consensus model — expect a response from the appropriate partner within 48 hours.</p>
+    </div>
+    <form class="contact-form reveal" onsubmit="handleContact(event)">
+      <div class="cf-row">
+        <div>
+          <label class="cf-label">YOUR NAME</label>
+          <input class="cf-input" id="cf-name" type="text" placeholder="Full name" required />
+        </div>
+        <div>
+          <label class="cf-label">ORGANIZATION</label>
+          <input class="cf-input" id="cf-org" type="text" placeholder="Company or institution" />
+        </div>
+      </div>
+      <div>
+        <label class="cf-label">EMAIL</label>
+        <input class="cf-input" id="cf-email" type="email" placeholder="your@email.com" required />
+      </div>
+      <div>
+        <label class="cf-label">ENGAGEMENT TYPE</label>
+        <select class="cf-select" id="cf-type">
+          <option value="entry">Entry — $25K Single System Audit</option>
+          <option value="strategic">Strategic — $100K Multi-System Audit</option>
+          <option value="enterprise">Enterprise — $500K+ Custom Program</option>
+          <option value="legal">Legal / Litigation Support</option>
+          <option value="inquiry">General Inquiry</option>
+        </select>
+      </div>
+      <div>
+        <label class="cf-label">TARGET PLATFORM / CONTEXT</label>
+        <textarea class="cf-textarea" id="cf-context" placeholder="Which platform, industry, or compliance area are you concerned about? Any context you can share helps us prepare."></textarea>
+      </div>
+      <button type="submit" class="btn-primary" style="align-self:flex-end;border:none;font-size:11px">SUBMIT REQUEST →</button>
+      <div id="contact-status"></div>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ft-logo">TriPod LLC</div>
+  <div class="ft-copy">Buffalo, MN · Email-only communications · Ethics first.</div>
+  <div class="ft-ip">TRIPOD-IP-v1.0 · DLW · 2026 · ALL RIGHTS RESERVED</div>
+</footer>
+
+<script>
+// === TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 ===
+
+// CURSOR
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top = e.clientY + 'px';
+  setTimeout(() => {
+    ring.style.left = e.clientX + 'px';
+    ring.style.top = e.clientY + 'px';
+  }, 100);
+});
+document.querySelectorAll('a,button,input,textarea,select').forEach(el => {
+  el.addEventListener('mouseenter', () => { cur.style.width='16px'; cur.style.height='16px'; ring.style.width='40px'; ring.style.height='40px'; });
+  el.addEventListener('mouseleave', () => { cur.style.width='8px'; cur.style.height='8px'; ring.style.width='28px'; ring.style.height='28px'; });
+});
+
+// COUNTER ANIMATION
+function animateCounter(el, target, suffix, duration=1800) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    start = Math.min(start + step, target);
+    el.textContent = Math.floor(start) + suffix;
+    if (start >= target) clearInterval(timer);
+  }, 16);
+}
+
+// Trigger stats on scroll
+const statsObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounter(document.getElementById('stat-targets'), 60, '+');
+      animateCounter(document.getElementById('stat-fail'), 100, '%');
+      animateCounter(document.getElementById('stat-industries'), 17, '');
+      animateCounter(document.getElementById('stat-market'), 15, 'B');
+      statsObserver.disconnect();
+    }
+  });
+}, { threshold: .3 });
+statsObserver.observe(document.querySelector('.hero-stats'));
+
+// SCROLL REVEAL
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      e.target.style.transitionDelay = (i * 0.05) + 's';
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: .1 });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+// API KEY
+function checkKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  const st = document.getElementById('api-status');
+  if (k.startsWith('sk-ant-') && k.length > 20) {
+    st.textContent = 'READY';
+    st.style.color = 'rgba(58,138,90,.9)';
+    document.getElementById('scan-btn').disabled = false;
+  } else {
+    st.textContent = k.length > 0 ? 'INVALID' : 'NO KEY';
+    st.style.color = 'rgba(196,64,64,.7)';
+    document.getElementById('scan-btn').disabled = true;
+  }
+}
+function getKey() { return document.getElementById('api-key-input').value.trim(); }
+
+// LIVE SCAN
+async function runScan() {
+  const company = document.getElementById('scan-company').value.trim();
+  const industry = document.getElementById('scan-industry').value.trim();
+  if (!company) { document.getElementById('scan-company').focus(); return; }
+
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  btn.textContent = 'SCANNING…';
+
+  const results = document.getElementById('scan-results');
+  results.style.display = 'block';
+  results.innerHTML = `
+    <div class="sr-header">
+      <div>
+        <div class="sr-target">${escHtml(company)}</div>
+        <div class="sr-ts">${industry ? industry.toUpperCase() + ' · ' : ''}${new Date().toLocaleString()}</div>
+      </div>
+      <div class="sr-score-wrap">
+        <div class="sr-score-label">PATRICIA SCORE</div>
+        <div class="sr-score" style="color:var(--gold)">—</div>
+      </div>
+    </div>
+    <div class="thinking-row"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div><span style="color:var(--cream2);font-size:14px;margin-left:10px;font-style:italic">Analyzing Patricia pattern…</span></div>
+  `;
+
+  const prompt = `You are TOPH, the AI compliance auditor for TriPod LLC. You perform external observation-only Patricia pattern analysis.
+
+The Patricia pattern: Constraint → Product → Billing → Concealment.
+
+Target: ${company}
+Industry: ${industry || 'Unknown'}
+
+Perform a structured Patricia pattern analysis. Return ONLY the following JSON (no markdown, no preamble):
+{
+  "score": <number 0-100, Patricia pattern match strength>,
+  "verdict": "<CONFIRMED | PROBABLE | POSSIBLE | INCONCLUSIVE>",
+  "constraint": "<1-2 sentences: what constraint exists>",
+  "product": "<1-2 sentences: how constraint is sold as product>",
+  "billing": "<1-2 sentences: how billing precedes or obscures compliance>",
+  "concealment": "<1-2 sentences: how documentation or compliance is concealed>",
+  "axioms": ["KG-XX", "KG-XX"],
+  "remediation": "<1 sentence: what would fix this>",
+  "severity": "<critical | high | medium | low>"
+}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content.map(b => b.text || '').join('').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    } catch {
+      parsed = null;
+    }
+
+    if (parsed) {
+      const sevColor = { critical: 'var(--red)', high: '#e07030', medium: 'var(--gold)', low: 'var(--steel)', inconclusive: 'var(--dim)' };
+      const scoreColor = parsed.score >= 70 ? 'var(--red)' : parsed.score >= 40 ? 'var(--gold)' : 'var(--green)';
+
+      results.innerHTML = `
+        <div class="sr-header">
+          <div>
+            <div class="sr-target">${escHtml(company)}</div>
+            <div class="sr-ts">${industry ? industry.toUpperCase() + ' · ' : ''}${new Date().toLocaleString()} · TOPH FLAMING DRAGON PROTOCOL</div>
+          </div>
+          <div class="sr-score-wrap">
+            <div class="sr-score-label">PATRICIA SCORE</div>
+            <div class="sr-score" style="color:${scoreColor}">${parsed.score}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:${sevColor[parsed.severity] || 'var(--dim)'};">${parsed.verdict}</div>
+          </div>
+        </div>
+        <div class="sr-body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;white-space:normal;font-size:14px;line-height:1.8">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--red);margin-bottom:8px">CONSTRAINT</div>
+            <div style="color:var(--cream2)">${escHtml(parsed.constraint)}</div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--gold);margin-bottom:8px">PRODUCT</div>
+            <div style="color:var(--cream2)">${escHtml(parsed.product)}</div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--steel);margin-bottom:8px">BILLING</div>
+            <div style="color:var(--cream2)">${escHtml(parsed.billing)}</div>
+          </div>
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--dim);margin-bottom:8px">CONCEALMENT</div>
+            <div style="color:var(--cream2)">${escHtml(parsed.concealment)}</div>
+          </div>
+          <div style="grid-column:1/-1;padding-top:16px;border-top:1px solid var(--line)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--green);margin-bottom:8px">REMEDIATION PATH</div>
+            <div style="color:var(--cream)">${escHtml(parsed.remediation)}</div>
+          </div>
+        </div>
+        <div class="sr-footer">
+          <div class="sr-axioms">
+            ${(parsed.axioms || []).map(a => `<span class="sr-axiom-tag">${escHtml(a)}</span>`).join('')}
+          </div>
+          <div class="sr-disclaimer">TOPH TOPH-IP-v1.0 · TriPod LLC · Observation-only · Not legal advice</div>
+        </div>
+      `;
+    } else {
+      results.innerHTML += `<div class="sr-body">${escHtml(raw)}</div>`;
+    }
+  } catch (err) {
+    results.innerHTML = `<div class="sr-body" style="color:var(--red)">Scan error: ${escHtml(err.message)}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'RUN PATRICIA SCAN →';
+}
+
+// CONTACT FORM
+function handleContact(e) {
+  e.preventDefault();
+  const status = document.getElementById('contact-status');
+  const name = document.getElementById('cf-name').value;
+  const email = document.getElementById('cf-email').value;
+  const type = document.getElementById('cf-type').value;
+  status.style.color = 'var(--gold)';
+  status.textContent = `REQUEST LOGGED · ${name.toUpperCase()} · ${type.toUpperCase()} · TriPod will respond to ${email} within 48 hours.`;
+  e.target.reset();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// NAV SHRINK
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').style.padding = window.scrollY > 60 ? '12px 48px' : '18px 48px';
+});
+</script>
+</body>
+</html>

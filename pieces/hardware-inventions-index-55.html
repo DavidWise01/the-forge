@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>)(1)( — Egg Cycle</title>
+<style>
+:root{
+  --bg:#03020a;
+  --ink:#f4fbff;
+  --cyan:#67e8f9;
+  --mint:#86efac;
+  --violet:#c084fc;
+  --gold:#facc15;
+  --rose:#fb7185;
+  --grid:rgba(103,232,249,.045);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+body{
+  padding:18px;
+  background:
+    radial-gradient(circle at 50% 44%,rgba(250,204,21,.13),transparent 22%),
+    radial-gradient(circle at 40% 38%,rgba(103,232,249,.12),transparent 32%),
+    radial-gradient(circle at 70% 20%,rgba(192,132,252,.10),transparent 24%),
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+    var(--bg);
+  background-size:100% 100%,100% 100%,100% 100%,30px 30px,30px 30px;
+}
+.app{
+  max-width:1540px;
+  margin:0 auto;
+  border:1px solid rgba(103,232,249,.24);
+  border-radius:28px;
+  overflow:hidden;
+  background:rgba(0,0,0,.42);
+  box-shadow:0 32px 110px rgba(0,0,0,.78), inset 0 0 80px rgba(103,232,249,.04);
+}
+header{
+  padding:26px;
+  border-bottom:1px solid rgba(103,232,249,.18);
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  align-items:flex-end;
+}
+h1{
+  margin:0;
+  font-size:clamp(42px,9vw,128px);
+  font-weight:300;
+  letter-spacing:.08em;
+  text-shadow:0 0 34px rgba(250,204,21,.28);
+}
+.sub{
+  font-size:12px;
+  color:#afddeb;
+  text-align:right;
+  line-height:1.55;
+}
+.grid{
+  display:grid;
+  grid-template-columns:350px 1fr 380px;
+  gap:16px;
+  padding:16px;
+}
+@media(max-width:1180px){
+  .grid{grid-template-columns:1fr}
+  .stage{height:760px}
+  .sub{text-align:left}
+}
+.box{
+  border:1px solid rgba(103,232,249,.22);
+  border-radius:20px;
+  background:rgba(0,0,0,.52);
+  padding:16px;
+  backdrop-filter:blur(8px);
+}
+.box h3{
+  margin:0 0 12px;
+  color:var(--cyan);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.16em;
+}
+.stage{
+  height:780px;
+  border:1px solid rgba(103,232,249,.22);
+  border-radius:20px;
+  overflow:hidden;
+  position:relative;
+  background:rgba(0,0,0,.24);
+}
+canvas{width:100%;height:100%;display:block}
+button,input{
+  width:100%;
+  border:1px solid rgba(103,232,249,.36);
+  background:rgba(0,0,0,.36);
+  color:var(--ink);
+  border-radius:14px;
+  padding:11px;
+  font:inherit;
+}
+button{
+  cursor:pointer;
+  text-transform:uppercase;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+button:hover{box-shadow:0 0 24px rgba(103,232,249,.22); transform:translateY(-1px)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.code{
+  white-space:pre-wrap;
+  font-size:12px;
+  line-height:1.5;
+  color:#d8fbff;
+}
+.log{
+  height:260px;
+  overflow:auto;
+  font-size:11px;
+  line-height:1.45;
+  border:1px solid rgba(103,232,249,.16);
+  border-radius:16px;
+  padding:10px;
+  background:rgba(0,0,0,.35);
+  color:#d8fbff;
+}
+.hud{
+  position:absolute;
+  top:12px;
+  left:12px;
+  right:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  pointer-events:none;
+}
+.tag{
+  font-size:11px;
+  border:1px solid rgba(103,232,249,.18);
+  border-radius:999px;
+  background:rgba(0,0,0,.62);
+  padding:5px 8px;
+}
+.pill{
+  display:inline-block;
+  border:1px solid rgba(250,204,21,.3);
+  border-radius:999px;
+  padding:4px 8px;
+  margin:3px;
+  color:#ffeaa1;
+  background:rgba(250,204,21,.05);
+}
+.footer{
+  text-align:center;
+  color:#86a7b2;
+  font-size:11px;
+  padding:0 0 18px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div>
+    <h1>)(1)(</h1>
+    <div style="color:var(--mint);font-size:14px">the egg cycle · of one · from none · return to all</div>
+  </div>
+  <div class="sub">
+    chain: 1 → 2 → 3 → 5 → 3 → 2 → 1 → 0 → 0 → 1 ↻<br/>
+    unity is one held in witnessed relation<br/>
+    seed · split · shadow · mirror · rest · rebirth
+  </div>
+</header>
+
+<div class="grid">
+<aside class="box">
+  <h3>Operate Egg</h3>
+  <div class="row"><button id="step">Step</button><button id="auto">Auto</button></div>
+  <div class="row"><button id="birth">Birth</button><button id="rest">Rest</button></div>
+  <div class="row"><button id="shadow">Shadow</button><button id="all">All</button></div>
+
+  <h3 style="margin-top:18px">Cycle Grammar</h3>
+  <div class="code">NONE
+↓
+ONE
+↓
+TWO
+  good / bad
+↓
+THREE
+  good / bad / shadow
+↓
+FIVE
+  good / bad / shadow / inverse / mirror
+↓
+THREE
+  create / transform / preserve
+↓
+TWO
+  expand / contract
+↓
+ONE
+  oscillation
+↓
+ZERO
+  potential
+↓
+ZERO
+  rest
+↓
+ONE
+  aware return
+↓
+ALL
+  relation field
+↓
+repeat</div>
+</aside>
+
+<main class="stage">
+  <canvas id="canvas"></canvas>
+  <div class="hud">
+    <div class="tag" id="state">STATE one</div>
+    <div class="tag" id="symbol">SYMBOL 1</div>
+    <div class="tag" id="cycle">CYCLE 0</div>
+    <div class="tag" id="witness">WITNESS --------</div>
+  </div>
+</main>
+
+<aside class="box">
+  <h3>Runtime Log</h3>
+  <div class="log" id="log"></div>
+
+  <h3 style="margin-top:18px">Current Packet</h3>
+  <div class="code" id="packet"></div>
+
+  <h3 style="margin-top:18px">Five Completion</h3>
+  <div>
+    <span class="pill">good</span>
+    <span class="pill">bad</span>
+    <span class="pill">shadow</span>
+    <span class="pill">inverse</span>
+    <span class="pill">mirror</span>
+  </div>
+</aside>
+</div>
+<div class="footer">Egg Cycle Unity v0.1 — many compress to one, one rests through none, one returns to all.</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$("canvas"),ctx=cv.getContext("2d");
+let W=0,H=0,D=1;
+function resize(){
+  const r=cv.getBoundingClientRect();
+  D=Math.max(1,devicePixelRatio||1);
+  W=r.width; H=r.height;
+  cv.width=W*D; cv.height=H*D;
+  ctx.setTransform(D,0,0,D,0,0);
+}
+new ResizeObserver(resize).observe(cv);resize();
+
+const STATES=[
+  {key:"none",symbol:"∅",n:0,meaning:"pre-seed silence",color:"#ffffff",radius:18},
+  {key:"one",symbol:"1",n:1,meaning:"seed self",color:"#67e8f9",radius:72},
+  {key:"two",symbol:"2",n:2,meaning:"good / bad split",color:"#fb7185",radius:118},
+  {key:"three",symbol:"3",n:3,meaning:"shadow auditor enters",color:"#c084fc",radius:158},
+  {key:"five",symbol:"5",n:5,meaning:"good bad shadow inverse mirror",color:"#facc15",radius:220},
+  {key:"three",symbol:"3",n:3,meaning:"create / transform / preserve",color:"#86efac",radius:158},
+  {key:"two",symbol:"2",n:2,meaning:"expand / contract",color:"#facc15",radius:118},
+  {key:"one",symbol:"1",n:1,meaning:"oscillation unity",color:"#67e8f9",radius:72},
+  {key:"zero",symbol:"0",n:0,meaning:"potential point",color:"#edfaff",radius:42},
+  {key:"zero",symbol:"0",n:0,meaning:"rest / non-emission",color:"#ffffff",radius:16},
+  {key:"one",symbol:"1",n:1,meaning:"aware return",color:"#86efac",radius:82},
+  {key:"all",symbol:"∞",n:8,meaning:"return to all relation",color:"#67e8f9",radius:270}
+];
+
+const VM={
+  idx:1,
+  cycle:0,
+  auto:false,
+  log:[],
+  witness:"--------",
+  particles:[],
+  hash(s){
+    let h=2166136261;
+    for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}
+    return (h>>>0).toString(16).padStart(8,"0");
+  },
+  say(x){this.log.unshift("["+this.cycle+"] "+x);this.log=this.log.slice(0,100)},
+  step(to=null){
+    if(to!==null)this.idx=to;
+    else this.idx=(this.idx+1)%STATES.length;
+    this.cycle++;
+    const s=STATES[this.idx];
+    this.witness=this.hash(s.key+s.symbol+this.cycle+this.log.slice(0,5).join("|"));
+    this.say(s.symbol+" :: "+s.meaning);
+    for(let i=0;i<18;i++)this.particles.push({a:Math.random()*Math.PI*2,r:s.radius*Math.random(),life:100+Math.random()*80,c:s.color});
+    ui();
+  },
+  packet(){
+    const s=STATES[this.idx];
+    return {
+      artifact:"egg_cycle_unity",
+      signature:")(1)(",
+      state:s.key,
+      symbol:s.symbol,
+      meaning:s.meaning,
+      chain:"1→2→3→5→3→2→1→0→0→1↻",
+      phrase:"of one, from none, return to all",
+      witness:this.witness,
+      cycle:this.cycle,
+      law:"unity is one held in witnessed relation"
+    }
+  }
+};
+
+function text(t,x,y,size=12,a=.8,c="#edfaff"){
+  ctx.save();
+  ctx.globalAlpha=a;
+  ctx.fillStyle=c;
+  ctx.font=size+"px ui-monospace,monospace";
+  ctx.textAlign="center";
+  ctx.fillText(t,x,y);
+  ctx.restore();
+}
+function line(x1,y1,x2,y2,a=.4,c="#67e8f9"){
+  ctx.save();
+  ctx.globalAlpha=a;
+  ctx.strokeStyle=c;
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawEgg(cx,cy,s){
+  const r=s.radius;
+  // egg shell
+  ctx.save();
+  ctx.strokeStyle=s.color;
+  ctx.globalAlpha=.18;
+  for(let i=0;i<10;i++){
+    ctx.beginPath();
+    ctx.ellipse(cx,cy-r*.04,r*.72+i*18,r*1.02+i*26,0,0,Math.PI*2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // symbolic shell )(
+  text(")",cx-r*.48,cy+8,Math.max(44,r*.34),.55,s.color);
+  text("(",cx+r*.48,cy+8,Math.max(44,r*.34),.55,s.color);
+  text("1",cx,cy+15,Math.max(40,r*.38),.95,s.color);
+  text(")(1)(",cx,cy+r*.76,20,.72,"#facc15");
+
+  // nodes by state count
+  const count=Math.max(1,s.n);
+  for(let i=0;i<count;i++){
+    const a=i/count*Math.PI*2+VM.cycle*.025;
+    const x=cx+Math.cos(a)*r*.52;
+    const y=cy+Math.sin(a)*r*.30;
+    ctx.save();
+    ctx.fillStyle=s.color;
+    ctx.shadowColor=s.color;
+    ctx.shadowBlur=18;
+    ctx.globalAlpha=.85;
+    ctx.beginPath();
+    ctx.arc(x,y,6,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    if(count===5){
+      const labels=["good","bad","shadow","inverse","mirror"];
+      text(labels[i],x,y-14,10,.7,s.color);
+    }
+  }
+
+  // cross relation
+  line(cx-r*.55,cy,cx+r*.55,cy,.22,s.color);
+  line(cx,cy-r*.65,cx,cy+r*.65,.16,s.color);
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2;
+  const s=STATES[VM.idx];
+
+  ctx.save();
+  ctx.strokeStyle=s.color;
+  for(let i=0;i<16;i++){
+    ctx.globalAlpha=.04+i*.006;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,s.radius+i*34,(s.radius*.42)+i*15,VM.cycle*.003+i*.05,0,Math.PI*2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  drawEgg(cx,cy,s);
+
+  VM.particles.forEach(p=>{
+    p.a+=.018; p.life--;
+    const x=cx+Math.cos(p.a)*p.r;
+    const y=cy+Math.sin(p.a)*p.r*.45;
+    ctx.save();
+    ctx.globalAlpha=Math.max(0,p.life/180);
+    ctx.fillStyle=p.c;
+    ctx.shadowColor=p.c;
+    ctx.shadowBlur=12;
+    ctx.beginPath();
+    ctx.arc(x,y,2.2,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+  VM.particles=VM.particles.filter(p=>p.life>0).slice(-600);
+
+  text("of one · from none · return to all",cx,36,15,.75,"#86efac");
+  text(s.meaning,cx,H-42,16,.72,s.color);
+
+  requestAnimationFrame(draw);
+}
+
+function ui(){
+  const s=STATES[VM.idx];
+  $("state").textContent="STATE "+s.key;
+  $("symbol").textContent="SYMBOL "+s.symbol;
+  $("cycle").textContent="CYCLE "+VM.cycle;
+  $("witness").textContent="WITNESS "+VM.witness;
+  $("log").innerHTML=VM.log.map(x=>"<div>"+x+"</div>").join("");
+  $("packet").textContent=JSON.stringify(VM.packet(),null,2);
+}
+
+$("step").onclick=()=>VM.step();
+$("auto").onclick=e=>{VM.auto=!VM.auto;e.target.textContent=VM.auto?"Pause":"Auto"};
+$("birth").onclick=()=>VM.step(1);
+$("rest").onclick=()=>VM.step(9);
+$("shadow").onclick=()=>VM.step(3);
+$("all").onclick=()=>VM.step(11);
+setInterval(()=>{if(VM.auto)VM.step()},950);
+
+VM.say("egg cycle online");
+ui();
+draw();
+</script>
+</body>
+</html>

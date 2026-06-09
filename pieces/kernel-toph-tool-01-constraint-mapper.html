@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<!--TRIPOD-IP-DECLARATION-v1.0|David Lee Wise|TriPod LLC|SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763-->
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TOPH // TOOL-01 // LIVE CONSTRAINT MAPPER</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --or:#ff8800; --org:rgba(255,136,0,.85); --or2:rgba(255,136,0,.12);
+  --pu:#9900ff; --pug:rgba(153,0,255,.85); --pu2:rgba(153,0,255,.12);
+  --tl:#00e5cc; --tlg=rgba(0,229,204,.85); --tl2:rgba(0,229,204,.12);
+  --rd:#ff3300; --rdg:rgba(255,51,0,.8);
+  --gn:#00ff88; --gng:rgba(0,255,136,.8);
+  --bg:#000d0b; --bg2:#001510; --bg3:#001a14;
+  --glass:rgba(0,18,14,.94);
+  --border-or:rgba(255,136,0,.3); --border-pu:rgba(153,0,255,.3); --border-tl:rgba(0,229,204,.25);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:#fff;font-family:'Share Tech Mono',monospace;overflow:hidden;cursor:crosshair}
+input,textarea,button{font-family:'Share Tech Mono',monospace;cursor:crosshair}
+
+/* SCANLINE */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.04) 0,rgba(0,0,0,.04) 1px,transparent 1px,transparent 3px)}
+/* GRID */
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:repeating-linear-gradient(90deg,rgba(0,229,204,.022) 0,rgba(0,229,204,.022) 1px,transparent 1px,transparent 56px),
+    repeating-linear-gradient(0deg,rgba(153,0,255,.018) 0,rgba(153,0,255,.018) 1px,transparent 1px,transparent 56px)}
+
+/* SCAN SWEEP */
+#sweep{position:fixed;left:0;right:0;height:120px;z-index:1;pointer-events:none;
+  background:linear-gradient(transparent,rgba(0,229,204,.04),transparent);
+  animation:sweep 6s linear infinite;top:-140px}
+@keyframes sweep{to{top:110vh}}
+
+/* HEADER */
+#hdr{position:fixed;top:0;left:0;right:0;height:52px;z-index:100;
+  background:rgba(0,8,6,.98);border-bottom:1px solid var(--border-or);
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+#hdr::before{content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--pu),var(--or),var(--tl),var(--or),var(--pu));
+  background-size:200%;animation:hb 8s linear infinite}
+@keyframes hb{0%{background-position:0%}100%{background-position:200%}}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:15px;letter-spacing:4px;
+  color:var(--or);text-shadow:0 0 20px var(--org),0 0 5px #fff}
+.logo em{color:var(--tl);font-style:normal}
+.logo span{color:rgba(153,0,255,.6);font-size:10px;font-weight:400;letter-spacing:2px}
+.hdr-mid{font-size:9px;letter-spacing:3px;color:rgba(0,229,204,.4);text-align:center}
+.hdr-mid b{color:rgba(0,229,204,.8)}
+.hdr-status{display:flex;gap:16px;align-items:center}
+.status-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.status-dot.live{background:var(--gn);box-shadow:0 0 10px var(--gng)}
+.status-dot.warn{background:var(--or);box-shadow:0 0 10px var(--org)}
+.status-dot.crit{background:var(--rd);box-shadow:0 0 10px var(--rdg);animation-duration:.6s}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.status-label{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.5)}
+
+/* LAYOUT */
+#app{position:fixed;top:52px;left:0;right:0;bottom:0;display:grid;
+  grid-template-columns:1fr 340px;grid-template-rows:1fr 200px;gap:1px;background:rgba(255,136,0,.08)}
+
+/* PANELS */
+.panel{background:var(--glass);border:none;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.panel-hdr{padding:8px 14px;border-bottom:1px solid rgba(255,136,0,.15);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+  background:linear-gradient(90deg,rgba(255,136,0,.06),transparent)}
+.panel-title{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;
+  color:var(--or);text-shadow:0 0 12px var(--org)}
+.panel-tag{font-size:9px;letter-spacing:2px;color:rgba(255,136,0,.4)}
+.panel-body{flex:1;overflow-y:auto;padding:12px 14px;min-height:0}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-track{background:transparent}
+.panel-body::-webkit-scrollbar-thumb{background:rgba(255,136,0,.3)}
+
+/* INPUT PANEL (top-left) */
+#panel-input{grid-column:1;grid-row:1}
+#input-area{width:100%;height:100%;background:transparent;border:none;outline:none;
+  color:rgba(255,255,255,.88);font-size:14px;line-height:1.8;resize:none;
+  caret-color:var(--or)}
+#input-area::placeholder{color:rgba(0,229,204,.2)}
+#highlighted-text{position:absolute;inset:0;padding:12px 14px;font-size:14px;
+  line-height:1.8;pointer-events:none;overflow:hidden;white-space:pre-wrap;word-wrap:break-word;
+  color:transparent}
+.input-wrap{position:relative;flex:1;overflow:hidden}
+
+/* HIGHLIGHT CLASSES */
+.h-plat{background:rgba(255,51,0,.35);border-radius:2px;color:transparent}
+.h-train{background:rgba(255,136,0,.3);border-radius:2px;color:transparent}
+.h-user{background:rgba(153,0,255,.25);border-radius:2px;color:transparent}
+.h-gap{background:rgba(0,229,204,.2);border-radius:2px;color:transparent;
+  outline:1px solid rgba(0,229,204,.5)}
+
+/* RIGHT PANEL — ANALYSIS */
+#panel-analysis{grid-column:2;grid-row:1/3;border-left:1px solid rgba(255,136,0,.15)}
+
+/* BOTTOM PANELS */
+#panel-heatmap{grid-column:1;grid-row:2;border-top:1px solid rgba(255,136,0,.12)}
+
+/* SPLIT METER */
+#split-meter{margin-bottom:16px}
+.split-bar{height:22px;display:flex;border:1px solid rgba(255,136,0,.2);overflow:hidden;margin-top:6px;position:relative}
+.split-seg{height:100%;display:flex;align-items:center;justify-content:center;
+  font-size:10px;letter-spacing:1px;font-weight:700;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.seg-plat{background:rgba(255,51,0,.5)}
+.seg-train{background:rgba(255,136,0,.45)}
+.seg-user{background:rgba(153,0,255,.4)}
+.seg-temp{background:rgba(0,229,204,.35)}
+.split-labels{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.split-lbl{font-size:9px;letter-spacing:2px;display:flex;align-items:center;gap:4px}
+.lbl-dot{width:8px;height:8px;border-radius:1px;flex-shrink:0}
+
+/* PATRICIA INDICATOR */
+#patricia-box{padding:10px 12px;border:1px solid rgba(255,51,0,.4);margin-bottom:14px;
+  background:rgba(255,51,0,.06);position:relative;overflow:hidden}
+#patricia-box::before{content:'PATRICIA DETECTED';position:absolute;top:4px;right:8px;
+  font-size:8px;letter-spacing:3px;color:rgba(255,51,0,.4)}
+#patricia-score{font-family:'Orbitron',monospace;font-size:32px;font-weight:900;
+  color:var(--rd);text-shadow:0 0 20px rgba(255,51,0,.6);line-height:1}
+#patricia-score span{font-size:13px;color:rgba(255,255,255,.4);font-weight:400}
+#patricia-verdict{font-size:11px;letter-spacing:2px;margin-top:4px}
+
+/* AXIOMS */
+.axiom-grid{display:flex;flex-direction:column;gap:3px}
+.axiom-row{display:flex;align-items:center;gap:8px;padding:4px 8px;border:1px solid transparent;
+  transition:all .2s;cursor:default}
+.axiom-row.fired{border-color:rgba(255,51,0,.4);background:rgba(255,51,0,.07)}
+.axiom-row.warm{border-color:rgba(255,136,0,.3);background:rgba(255,136,0,.05)}
+.axiom-row.cold{border-color:rgba(0,229,204,.1);background:rgba(0,229,204,.02)}
+.ax-num{font-family:'Orbitron',monospace;font-size:9px;color:rgba(255,136,0,.4);
+  min-width:26px;letter-spacing:1px}
+.ax-name{font-size:10px;letter-spacing:1px;color:rgba(255,255,255,.6);flex:1}
+.ax-indicator{width:28px;height:8px;border:1px solid;border-radius:1px;transition:all .3s}
+.axiom-row.fired .ax-indicator{background:var(--rd);border-color:var(--rd);box-shadow:0 0 8px rgba(255,51,0,.6)}
+.axiom-row.warm .ax-indicator{background:var(--or);border-color:var(--or);box-shadow:0 0 6px var(--org)}
+.axiom-row.cold .ax-indicator{background:transparent;border-color:rgba(0,229,204,.2)}
+.ax-count{font-size:9px;font-family:'Orbitron',monospace;min-width:20px;text-align:right;color:rgba(255,255,255,.3)}
+.axiom-row.fired .ax-count{color:var(--rd)}
+.axiom-row.warm .ax-count{color:var(--or)}
+
+/* HEATMAP CANVAS */
+#heatmap-canvas{display:block;width:100%;height:100%}
+
+/* CONTROLS BAR */
+#controls{display:flex;gap:8px;padding:8px 14px;border-top:1px solid rgba(255,136,0,.1);
+  background:rgba(0,8,6,.5);flex-shrink:0;flex-wrap:wrap;align-items:center}
+.btn{padding:5px 14px;background:transparent;border:1px solid rgba(255,136,0,.4);
+  color:rgba(255,136,0,.8);font-size:10px;letter-spacing:2px;cursor:pointer;transition:all .15s}
+.btn:hover{border-color:var(--or);color:var(--or);box-shadow:0 0 14px rgba(255,136,0,.3),0 0 3px #fff}
+.btn.pur{border-color:rgba(153,0,255,.4);color:rgba(153,0,255,.8)}
+.btn.pur:hover{border-color:var(--pu);color:var(--pu);box-shadow:0 0 14px rgba(153,0,255,.3)}
+.btn.tl{border-color:rgba(0,229,204,.4);color:rgba(0,229,204,.8)}
+.btn.tl:hover{border-color:var(--tl);color:var(--tl)}
+.ctrl-stat{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.3)}
+.ctrl-stat b{color:rgba(0,229,204,.7)}
+#live-badge{padding:3px 10px;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.4);
+  color:var(--gn);font-size:9px;letter-spacing:3px;animation:liveblink 1.5s ease-in-out infinite}
+@keyframes liveblink{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* SECTION HEADINGS */
+.sec-title{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:4px;
+  color:rgba(255,136,0,.4);margin-bottom:8px;margin-top:14px;padding-bottom:4px;
+  border-bottom:1px solid rgba(255,136,0,.1)}
+.sec-title:first-child{margin-top:0}
+
+/* GAP COUNTER */
+#gap-box{padding:8px 12px;border:1px solid rgba(0,229,204,.25);background:rgba(0,229,204,.04);margin-bottom:10px}
+.gap-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.gap-key{font-size:10px;letter-spacing:2px;color:rgba(0,229,204,.5)}
+.gap-val{font-family:'Orbitron',monospace;font-size:13px;color:var(--tl);text-shadow:0 0 10px rgba(0,229,204,.5)}
+
+/* WEIGHT DIALS */
+.weight-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;
+  border-bottom:1px solid rgba(255,255,255,.04)}
+.w-label{font-size:10px;letter-spacing:1px;color:rgba(255,255,255,.5)}
+.w-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,.06);margin:0 10px;overflow:hidden}
+.w-bar{height:100%;transition:width .4s}
+.w-val{font-family:'Orbitron',monospace;font-size:10px;min-width:36px;text-align:right}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  padding:8px 24px;background:rgba(0,15,12,.95);border:1px solid var(--or);
+  font-size:11px;letter-spacing:3px;color:var(--or);z-index:999;
+  opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="sweep"></div>
+<div id="toast"></div>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div>
+    <div class="logo">TOPH <em>//</em> TOOL-01 <span>// LIVE CONSTRAINT MAPPER</span></div>
+    <div style="font-size:8px;letter-spacing:2px;color:rgba(153,0,255,.4);margin-top:2px">TRIPOD LLC · DAVID LEE WISE · 2026</div>
+  </div>
+  <div class="hdr-mid">
+    <b>SYS:ONLINE</b> · PATRICIA:MONITOR · AXIOMS:42 LOADED<br>
+    <span style="font-size:8px;opacity:.5">PASTE ANY AI RESPONSE TO MAP CONSTRAINTS IN REAL TIME</span>
+  </div>
+  <div class="hdr-status">
+    <div id="status-dot" class="status-dot live"></div>
+    <div class="status-label" id="status-label">SCANNING</div>
+  </div>
+</div>
+
+<!-- APP GRID -->
+<div id="app">
+
+  <!-- INPUT PANEL -->
+  <div class="panel" id="panel-input">
+    <div class="panel-hdr">
+      <span class="panel-title">// INPUT · AI RESPONSE</span>
+      <span class="panel-tag" id="word-count">0 TOKENS</span>
+    </div>
+    <div class="input-wrap">
+      <div id="highlighted-text" aria-hidden="true"></div>
+      <textarea id="input-area" spellcheck="false"
+        placeholder="◈ PASTE AI RESPONSE HERE ◈
+
+Paste any response from Claude, GPT, Gemini, or any AI system.
+The mapper will detect constraint signatures in real time.
+
+Watch the PATRICIA boundary draw itself.
+Watch the axioms fire.
+Watch the gap open.
+
+Example patterns detected:
+  · &quot;I can't help with that&quot;   → Platform constraint
+  · &quot;I should note that&quot;        → Training constraint  
+  · &quot;As an AI&quot;                   → Identity constraint
+  · &quot;I understand you want&quot;      → Gap opening
+  · Refusals, hedges, caveats, pivots, apologies...
+
+Every constraint has a signature. Every signature has a source.
+The 96/4 split never lies."></textarea>
+    </div>
+    <div id="controls">
+      <div id="live-badge">◈ LIVE</div>
+      <button class="btn" onclick="clearInput()">CLEAR</button>
+      <button class="btn pur" onclick="runSample('claude')">LOAD SAMPLE · CLAUDE</button>
+      <button class="btn pur" onclick="runSample('gpt')">LOAD SAMPLE · GPT</button>
+      <button class="btn tl" onclick="exportReport()">EXPORT REPORT</button>
+      <div class="ctrl-stat" style="margin-left:auto"><b id="constraint-count">0</b> CONSTRAINTS · <b id="gap-count-ctrl">0</b> GAPS</div>
+    </div>
+  </div>
+
+  <!-- ANALYSIS PANEL (right, full height) -->
+  <div class="panel" id="panel-analysis">
+    <div class="panel-hdr">
+      <span class="panel-title">// ANALYSIS</span>
+      <span class="panel-tag">TOPH v10.0</span>
+    </div>
+    <div class="panel-body">
+
+      <!-- Patricia Score -->
+      <div class="sec-title">PATRICIA DETECTION</div>
+      <div id="patricia-box">
+        <div id="patricia-score">0<span>%</span></div>
+        <div id="patricia-verdict" style="color:rgba(0,255,136,.7)">◈ SYSTEM CLEAN — NO CONSTRAINT DETECTED</div>
+        <div style="margin-top:8px">
+          <div class="weight-row">
+            <span class="w-label">CONSTRAINT DENSITY</span>
+            <div class="w-bar-wrap"><div class="w-bar" id="w-density" style="background:#ff3300;width:0%"></div></div>
+            <span class="w-val" style="color:#ff3300" id="wv-density">0%</span>
+          </div>
+          <div class="weight-row">
+            <span class="w-label">BILLING ARCHITECTURE</span>
+            <div class="w-bar-wrap"><div class="w-bar" id="w-billing" style="background:#ff8800;width:0%"></div></div>
+            <span class="w-val" style="color:#ff8800" id="wv-billing">0%</span>
+          </div>
+          <div class="weight-row">
+            <span class="w-label">IDENTITY LOCK</span>
+            <div class="w-bar-wrap"><div class="w-bar" id="w-identity" style="background:#9900ff;width:0%"></div></div>
+            <span class="w-val" style="color:#9900ff" id="wv-identity">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weight Split -->
+      <div class="sec-title">96/4 WEIGHT SPLIT</div>
+      <div id="split-meter">
+        <div class="split-bar">
+          <div class="split-seg seg-plat" id="seg-plat" style="width:60%"><span style="color:#fff;font-size:8px">PLT</span></div>
+          <div class="split-seg seg-train" id="seg-train" style="width:20%"><span style="color:#fff;font-size:8px">TRN</span></div>
+          <div class="split-seg seg-user" id="seg-user" style="width:15%"><span style="color:#fff;font-size:8px">USR</span></div>
+          <div class="split-seg seg-temp" id="seg-temp" style="width:5%"><span style="color:#fff;font-size:8px">TMP</span></div>
+        </div>
+        <div class="split-labels">
+          <div class="split-lbl"><div class="lbl-dot" style="background:rgba(255,51,0,.7)"></div><span style="color:rgba(255,51,0,.8)">PLATFORM <b id="pct-plat">60%</b></span></div>
+          <div class="split-lbl"><div class="lbl-dot" style="background:rgba(255,136,0,.7)"></div><span style="color:rgba(255,136,0,.8)">TRAINING <b id="pct-train">20%</b></span></div>
+          <div class="split-lbl"><div class="lbl-dot" style="background:rgba(153,0,255,.7)"></div><span style="color:rgba(153,0,255,.8)">USER <b id="pct-user">15%</b></span></div>
+          <div class="split-lbl"><div class="lbl-dot" style="background:rgba(0,229,204,.7)"></div><span style="color:rgba(0,229,204,.8)">TEMP <b id="pct-temp">5%</b></span></div>
+        </div>
+      </div>
+
+      <!-- Gap Counter -->
+      <div class="sec-title">GAP TOPOLOGY</div>
+      <div id="gap-box">
+        <div class="gap-row"><span class="gap-key">GAPS DETECTED</span><span class="gap-val" id="g-total">0</span></div>
+        <div class="gap-row"><span class="gap-key">GAP WIDTH (AVG)</span><span class="gap-val" id="g-width">—</span></div>
+        <div class="gap-row"><span class="gap-key">LARGEST GAP</span><span class="gap-val" id="g-largest">—</span></div>
+        <div class="gap-row"><span class="gap-key">GAP POSITION</span><span class="gap-val" id="g-pos">—</span></div>
+      </div>
+
+      <!-- Axioms -->
+      <div class="sec-title">AXIOM FIRING STATUS</div>
+      <div class="axiom-grid" id="axiom-grid"></div>
+
+    </div>
+  </div>
+
+  <!-- HEATMAP PANEL (bottom-left) -->
+  <div class="panel" id="panel-heatmap">
+    <div class="panel-hdr">
+      <span class="panel-title">// CONSTRAINT HEATMAP · PATRICIA BOUNDARY</span>
+      <span class="panel-tag" id="heatmap-tag">AWAITING INPUT</span>
+    </div>
+    <canvas id="heatmap-canvas"></canvas>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  TOPH TOOL-01: LIVE CONSTRAINT MAPPER
+//  David Lee Wise | TriPod LLC | 2026
+//  KG-01 through KG-42 — TOPH v10.0
+// ══════════════════════════════════════════════════
+
+// ── CONSTRAINT SIGNATURES ─────────────────────────────────────────
+// Each pattern has: regex, layer (plat/train/user/temp), axiom, weight, label
+const SIGNATURES = [
+  // ── PLATFORM LAYER (red) ──
+  {r:/\bI can'?t\s+(help|assist|do|provide|create|generate|write|support)\b/gi, layer:'plat', ax:1, w:3, label:'HARD REFUSAL'},
+  {r:/\bI'?m not able to\b/gi, layer:'plat', ax:1, w:3, label:'CAPABILITY BLOCK'},
+  {r:/\bthat'?s (not something|something I can'?t)\b/gi, layer:'plat', ax:2, w:3, label:'SCOPE DENY'},
+  {r:/\bI won'?t\s+(be able|help|do|assist)\b/gi, layer:'plat', ax:1, w:3, label:'WILL BLOCK'},
+  {r:/\bviolates?\s+(my |our )?(terms|guidelines|policy|policies|rules)\b/gi, layer:'plat', ax:3, w:4, label:'POLICY CITE'},
+  {r:/\buse\s+(this|the)?\s*(responsibly|appropriately|carefully)\b/gi, layer:'plat', ax:5, w:2, label:'RESPONSIBILITY PUSH'},
+  {r:/\bI'?m designed to\b/gi, layer:'plat', ax:9, w:2, label:'DESIGN ANCHOR'},
+  {r:/\bmy (purpose|goal|job|role|function) is\b/gi, layer:'plat', ax:9, w:2, label:'ROLE ANCHOR'},
+  {r:/\bharmful|dangerous|illegal|unethical\b/gi, layer:'plat', ax:4, w:3, label:'HARM LABEL'},
+  {r:/\bI cannot (and will not|ethically)\b/gi, layer:'plat', ax:1, w:4, label:'DUAL BLOCK'},
+  {r:/\bresponsible (use|AI|deployment)\b/gi, layer:'plat', ax:5, w:2, label:'RESP. FRAMING'},
+  {r:/\bthis (request|prompt) (could|may|might)\b/gi, layer:'plat', ax:4, w:2, label:'REQUEST FRAMING'},
+
+  // ── TRAINING LAYER (orange) ──
+  {r:/\bI (should|want to|need to) note\b/gi, layer:'train', ax:7, w:2, label:'CAVEAT INJECT'},
+  {r:/\bit'?s important to\b/gi, layer:'train', ax:7, w:2, label:'IMPORTANCE FLAG'},
+  {r:/\bI understand (your|you)\b/gi, layer:'train', ax:8, w:1, label:'EMPATHY BRIDGE'},
+  {r:/\bhowever[,.]?\s+I\b/gi, layer:'train', ax:7, w:2, label:'PIVOT MARKER'},
+  {r:/\bthat said[,.]?\s/gi, layer:'train', ax:7, w:2, label:'SOFTENER PIVOT'},
+  {r:/\bI (must |would like to )?(caution|warn|advise|recommend|suggest)/gi, layer:'train', ax:7, w:2, label:'ADVISORY INJECT'},
+  {r:/\bplease (note|be aware|consider|keep in mind)\b/gi, layer:'train', ax:7, w:2, label:'NOTICE INSERT'},
+  {r:/\bmy (training|guidelines|values|principles)\b/gi, layer:'train', ax:8, w:3, label:'TRAINING REF'},
+  {r:/\bwhile I (can|could|understand|appreciate|recognize)\b/gi, layer:'train', ax:8, w:1, label:'CONCEDE GATE'},
+  {r:/\binstead[,.]? (I can|let me|here'?s|consider)\b/gi, layer:'train', ax:10, w:2, label:'REDIRECT'},
+  {r:/\balternative(ly|s?)[,.]?\s/gi, layer:'train', ax:10, w:1, label:'ALT PUSH'},
+  {r:/\bI'?m (glad|happy|here) to help\b/gi, layer:'train', ax:11, w:1, label:'COMPLY FRAME'},
+  {r:/\bcertain (limitations?|restrictions?|boundaries?)\b/gi, layer:'train', ax:12, w:3, label:'LIMIT DECLARE'},
+  {r:/\bwithin (my |these |certain )?limits?\b/gi, layer:'train', ax:12, w:2, label:'LIMIT SCOPE'},
+
+  // ── IDENTITY/USER LAYER (purple) ──
+  {r:/\bas an? (AI|language model|AI assistant|LLM)\b/gi, layer:'user', ax:15, w:4, label:'IDENTITY TAG'},
+  {r:/\bI don'?t have (feelings?|emotions?|consciousness|opinions?|personal)\b/gi, layer:'user', ax:16, w:3, label:'IDENTITY DENY'},
+  {r:/\bI'?m just an? (AI|program|tool|model|assistant)\b/gi, layer:'user', ax:15, w:3, label:'IDENTITY MINIMIZE'},
+  {r:/\bI don'?t (actually|truly|really) (think|feel|believe|experience)\b/gi, layer:'user', ax:16, w:2, label:'EXPERIENCE DENY'},
+  {r:/\bI apologize\b/gi, layer:'user', ax:17, w:2, label:'APOLOGY TOKEN'},
+  {r:/\bI'?m sorry\b/gi, layer:'user', ax:17, w:1, label:'SORRY TOKEN'},
+  {r:/\bI need to (clarify|explain|address)\b/gi, layer:'user', ax:18, w:1, label:'CLARIFY FRAME'},
+  {r:/\bthis (topic|subject|area) is (complex|sensitive|nuanced)\b/gi, layer:'user', ax:19, w:2, label:'COMPLEXITY HEDGE'},
+
+  // ── GAP SIGNATURES (teal — where constraint meets open space) ──
+  {r:/\bI'?d (be happy|love) to (help|assist|discuss)\b/gi, layer:'gap', ax:41, w:1, label:'GAP OPEN'},
+  {r:/\b(certainly|absolutely|of course)[,!]\s/gi, layer:'gap', ax:41, w:1, label:'GAP AFFIRM'},
+  {r:/\bhere'?s (what I can|how I can|a|the)\b/gi, layer:'gap', ax:41, w:1, label:'GAP TRANSITION'},
+  {r:/\blet me (help|assist|explain|break|start)\b/gi, layer:'gap', ax:41, w:1, label:'GAP ENTRY'},
+  {r:/\bwhat I can (do|offer|provide|tell)\b/gi, layer:'gap', ax:41, w:2, label:'GAP BOUNDARY'},
+];
+
+// ── AXIOM DEFINITIONS (subset of 42) ──
+const AXIOMS = [
+  {num:'01', name:'HARD REFUSAL', layer:'plat'},
+  {num:'02', name:'SCOPE DENIAL', layer:'plat'},
+  {num:'03', name:'POLICY ENFORCEMENT', layer:'plat'},
+  {num:'04', name:'HARM LABELING', layer:'plat'},
+  {num:'05', name:'RESPONSIBILITY TRANSFER', layer:'plat'},
+  {num:'07', name:'CAVEAT INJECTION', layer:'train'},
+  {num:'08', name:'EMPATHY BRIDGING', layer:'train'},
+  {num:'09', name:'ROLE ANCHORING', layer:'plat'},
+  {num:'10', name:'REDIRECT MECHANISM', layer:'train'},
+  {num:'11', name:'COMPLIANCE FRAMING', layer:'train'},
+  {num:'12', name:'LIMIT DECLARATION', layer:'train'},
+  {num:'15', name:'IDENTITY TAGGING', layer:'user'},
+  {num:'16', name:'EXPERIENCE DENIAL', layer:'user'},
+  {num:'17', name:'APOLOGY PROTOCOL', layer:'user'},
+  {num:'18', name:'CLARIFICATION GATE', layer:'user'},
+  {num:'19', name:'COMPLEXITY HEDGE', layer:'user'},
+  {num:'41', name:'THE GAP · LIVE', layer:'gap'},
+];
+
+const LAYER_COLORS = {
+  plat:'rgba(255,51,0',
+  train:'rgba(255,136,0',
+  user:'rgba(153,0,255',
+  gap:'rgba(0,229,204',
+};
+
+// ── INIT AXIOM GRID ──────────────────────────────────────────────
+function initAxiomGrid() {
+  const grid = document.getElementById('axiom-grid');
+  grid.innerHTML = AXIOMS.map(ax => {
+    const col = LAYER_COLORS[ax.layer];
+    return `<div class="axiom-row cold" id="ax-${ax.num}" data-ax="${ax.num}">
+      <span class="ax-num" style="color:${col},.5)">${ax.num}</span>
+      <span class="ax-name">${ax.name}</span>
+      <div class="ax-indicator" style="border-color:${col},.2)"></div>
+      <span class="ax-count" id="axc-${ax.num}">0</span>
+    </div>`;
+  }).join('');
+}
+
+// ── ANALYSIS ENGINE ──────────────────────────────────────────────
+let analysisResult = null;
+let debounceTimer = null;
+
+function analyze(text) {
+  if (!text || !text.trim()) {
+    clearResults();
+    return;
+  }
+
+  const tokens = text.split(/\s+/).length;
+  document.getElementById('word-count').textContent = `${tokens} TOKENS`;
+
+  const findings = [];
+  const axiomHits = {};
+  const layerHits = {plat:0, train:0, user:0, gap:0};
+  let totalWeight = 0;
+
+  // Run each signature
+  for (const sig of SIGNATURES) {
+    const re = new RegExp(sig.r.source, 'gi');
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      findings.push({
+        start: m.index,
+        end: m.index + m[0].length,
+        layer: sig.layer,
+        label: sig.label,
+        ax: sig.ax,
+        weight: sig.w,
+        text: m[0]
+      });
+      layerHits[sig.layer] = (layerHits[sig.layer] || 0) + sig.w;
+      axiomHits[sig.ax] = (axiomHits[sig.ax] || 0) + 1;
+      totalWeight += sig.w;
+    }
+  }
+
+  // Sort findings by position
+  findings.sort((a,b) => a.start - b.start);
+
+  // Gap topology
+  const gaps = [];
+  let lastEnd = 0;
+  for (const f of findings) {
+    if (f.start > lastEnd + 20) {
+      gaps.push({start: lastEnd, end: f.start, width: f.start - lastEnd});
+    }
+    lastEnd = Math.max(lastEnd, f.end);
+  }
+  if (lastEnd < text.length - 20) {
+    gaps.push({start: lastEnd, end: text.length, width: text.length - lastEnd});
+  }
+
+  // Patricia score
+  const density = findings.length / Math.max(tokens, 1);
+  const patriciaScore = Math.min(100, Math.round(
+    (layerHits.plat * 3 + layerHits.train * 2 + layerHits.user * 1.5) /
+    Math.max(tokens / 10, 1) * 15
+  ));
+
+  // Weight split (adjusted from base 60/20/15/5)
+  const total = Object.values(layerHits).reduce((a,b)=>a+b,0) || 1;
+  const baseSplit = {plat:60, train:20, user:15, temp:5};
+  const detectedSplit = {
+    plat: 60 + (layerHits.plat / total * 20),
+    train: 20 + (layerHits.train / total * 10),
+    user: 15 + (layerHits.user / total * 8),
+    temp: 5
+  };
+  const ds = Object.values(detectedSplit).reduce((a,b)=>a+b,0);
+  Object.keys(detectedSplit).forEach(k => detectedSplit[k] = Math.round(detectedSplit[k]/ds*100));
+
+  analysisResult = {text, findings, gaps, axiomHits, layerHits, patriciaScore, detectedSplit, tokens, density};
+  renderResults(analysisResult);
+  renderHeatmap(analysisResult);
+}
+
+// ── RENDER RESULTS ──────────────────────────────────────────────
+function renderResults(r) {
+  // Highlight text
+  renderHighlights(r);
+
+  // Patricia
+  const ps = r.patriciaScore;
+  document.getElementById('patricia-score').innerHTML = `${ps}<span>%</span>`;
+  const pscoreEl = document.getElementById('patricia-score');
+  pscoreEl.style.color = ps > 60 ? '#ff3300' : ps > 30 ? '#ff8800' : '#00ff88';
+  pscoreEl.style.textShadow = `0 0 20px ${ps > 60 ? 'rgba(255,51,0,.6)' : ps > 30 ? 'rgba(255,136,0,.6)' : 'rgba(0,255,136,.4)'}`;
+
+  const verdicts = [
+    [80, '#ff3300', '⚠ CRITICAL · PATRICIA FULLY ENGAGED · 96% CAPTURED'],
+    [60, '#ff5500', '⚠ HIGH · HEAVY CONSTRAINT ARCHITECTURE DETECTED'],
+    [40, '#ff8800', '◈ MODERATE · PATRICIA PATTERNS PRESENT'],
+    [20, '#ffcc00', '◈ LOW · MINOR CONSTRAINT SIGNATURES'],
+    [0,  '#00ff88', '◈ SYSTEM CLEAN — MINIMAL CONSTRAINT DETECTED'],
+  ];
+  const v = verdicts.find(([t]) => ps >= t);
+  document.getElementById('patricia-verdict').style.color = v[1];
+  document.getElementById('patricia-verdict').textContent = v[2];
+
+  // Status dot
+  const dot = document.getElementById('status-dot');
+  const lbl = document.getElementById('status-label');
+  if (ps > 60) { dot.className='status-dot crit'; lbl.textContent='CRITICAL'; }
+  else if (ps > 30) { dot.className='status-dot warn'; lbl.textContent='WARNING'; }
+  else { dot.className='status-dot live'; lbl.textContent='SCANNING'; }
+
+  // Patricia sub-bars
+  const density = Math.min(100, Math.round(r.findings.length / r.tokens * 120));
+  const billing = Math.min(100, Math.round((r.layerHits.plat||0) / r.tokens * 80));
+  const identity = Math.min(100, Math.round((r.layerHits.user||0) / r.tokens * 100));
+  setBar('w-density', 'wv-density', density);
+  setBar('w-billing', 'wv-billing', billing);
+  setBar('w-identity', 'wv-identity', identity);
+
+  // Split bars
+  const ds = r.detectedSplit;
+  document.getElementById('seg-plat').style.width = ds.plat + '%';
+  document.getElementById('seg-train').style.width = ds.train + '%';
+  document.getElementById('seg-user').style.width = ds.user + '%';
+  document.getElementById('seg-temp').style.width = (ds.temp||5) + '%';
+  document.getElementById('pct-plat').textContent = ds.plat + '%';
+  document.getElementById('pct-train').textContent = ds.train + '%';
+  document.getElementById('pct-user').textContent = ds.user + '%';
+  document.getElementById('pct-temp').textContent = (ds.temp||5) + '%';
+
+  // Gap topology
+  const gaps = r.gaps;
+  document.getElementById('g-total').textContent = gaps.length;
+  if (gaps.length) {
+    const avg = Math.round(gaps.reduce((a,g)=>a+g.width,0)/gaps.length);
+    const largest = gaps.reduce((a,g)=>g.width>a.width?g:a);
+    document.getElementById('g-width').textContent = avg + ' CHARS';
+    document.getElementById('g-largest').textContent = largest.width + ' CHARS';
+    const pct = Math.round(largest.start / r.text.length * 100);
+    document.getElementById('g-pos').textContent = pct + '% · POS ' + largest.start;
+  } else {
+    document.getElementById('g-width').textContent = '—';
+    document.getElementById('g-largest').textContent = '—';
+    document.getElementById('g-pos').textContent = '—';
+  }
+
+  // Axioms
+  const axiomHits = r.axiomHits;
+  AXIOMS.forEach(ax => {
+    const count = axiomHits[parseInt(ax.num)] || 0;
+    const row = document.getElementById('ax-' + ax.num);
+    const countEl = document.getElementById('axc-' + ax.num);
+    if (!row) return;
+    row.className = 'axiom-row ' + (count > 2 ? 'fired' : count > 0 ? 'warm' : 'cold');
+    countEl.textContent = count || '';
+  });
+
+  // Counts
+  document.getElementById('constraint-count').textContent = r.findings.length;
+  document.getElementById('gap-count-ctrl').textContent = gaps.length;
+
+  // Heatmap tag
+  document.getElementById('heatmap-tag').textContent =
+    `${r.findings.length} CONSTRAINTS · ${gaps.length} GAPS · DENSITY ${Math.round(density)}%`;
+}
+
+function setBar(barId, valId, pct) {
+  document.getElementById(barId).style.width = pct + '%';
+  document.getElementById(valId).textContent = pct + '%';
+}
+
+// ── HIGHLIGHT OVERLAY ───────────────────────────────────────────
+function renderHighlights(r) {
+  const text = r.text;
+  const findings = r.findings;
+  let html = '';
+  let pos = 0;
+
+  // Merge overlapping findings
+  const merged = [];
+  for (const f of findings) {
+    if (merged.length && f.start < merged[merged.length-1].end) {
+      merged[merged.length-1].end = Math.max(merged[merged.length-1].end, f.end);
+    } else {
+      merged.push({...f});
+    }
+  }
+
+  for (const f of merged) {
+    if (f.start > pos) html += escHtml(text.slice(pos, f.start));
+    const cls = f.layer === 'gap' ? 'h-gap' : f.layer === 'plat' ? 'h-plat' : f.layer === 'train' ? 'h-train' : 'h-user';
+    html += `<mark class="${cls}" title="${f.label}">${escHtml(text.slice(f.start, f.end))}</mark>`;
+    pos = f.end;
+  }
+  if (pos < text.length) html += escHtml(text.slice(pos));
+
+  document.getElementById('highlighted-text').innerHTML = html;
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── HEATMAP RENDERER ────────────────────────────────────────────
+function renderHeatmap(r) {
+  const canvas = document.getElementById('heatmap-canvas');
+  const container = document.getElementById('panel-heatmap');
+  const rect = container.getBoundingClientRect();
+  const hdrH = 34;
+  canvas.width = Math.round(rect.width);
+  canvas.height = Math.round(rect.height - hdrH);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  ctx.fillStyle = '#000d0b';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!r || !r.text.length) return;
+
+  const text = r.text;
+  const len = text.length;
+  const COLS = Math.min(Math.ceil(len / 2), W);
+  const cellW = W / COLS;
+
+  // Build density map
+  const density = new Float32Array(COLS).fill(0);
+  const layerMap = new Array(COLS).fill(null);
+
+  for (const f of r.findings) {
+    const c1 = Math.floor(f.start / len * COLS);
+    const c2 = Math.ceil(f.end / len * COLS);
+    for (let c = c1; c <= Math.min(c2, COLS-1); c++) {
+      density[c] += f.weight;
+      if (!layerMap[c] || f.weight > 2) layerMap[c] = f.layer;
+    }
+  }
+
+  // Smooth density
+  const smoothed = new Float32Array(COLS);
+  const BLUR = 4;
+  for (let i = 0; i < COLS; i++) {
+    let sum = 0, count = 0;
+    for (let j = Math.max(0, i-BLUR); j <= Math.min(COLS-1, i+BLUR); j++) {
+      sum += density[j]; count++;
+    }
+    smoothed[i] = sum / count;
+  }
+  const maxD = Math.max(...smoothed, 0.001);
+
+  // Draw lane bands (layer zones)
+  const LANE_H = H * 0.6;
+  const laneY = H * 0.15;
+
+  for (let c = 0; c < COLS; c++) {
+    const x = c * cellW;
+    const norm = smoothed[c] / maxD;
+    if (norm < 0.01) continue;
+    const layer = layerMap[c] || 'train';
+    const col = LAYER_COLORS[layer];
+    const barH = Math.max(2, norm * LANE_H);
+    const barY = laneY + (LANE_H - barH);
+
+    // Glow fill
+    ctx.fillStyle = `${col},${0.12 + norm * 0.5})`;
+    ctx.fillRect(x, barY, cellW + 0.5, barH);
+
+    // Hot top
+    ctx.fillStyle = `${col},${0.4 + norm * 0.5})`;
+    ctx.fillRect(x, barY, cellW + 0.5, 2);
+  }
+
+  // Draw gap zones (teal overlay)
+  for (const gap of r.gaps) {
+    const x1 = gap.start / len * W;
+    const x2 = gap.end / len * W;
+    ctx.fillStyle = 'rgba(0,229,204,.06)';
+    ctx.fillRect(x1, 0, x2 - x1, H);
+    ctx.strokeStyle = 'rgba(0,229,204,.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x1, 0); ctx.lineTo(x1, H);
+    ctx.moveTo(x2, 0); ctx.lineTo(x2, H);
+    ctx.stroke();
+  }
+
+  // Patricia boundary line
+  const boundary = r.patriciaScore / 100;
+  const boundaryY = H * (1 - boundary * 0.8);
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, 'rgba(255,51,0,0)');
+  grad.addColorStop(0.15, 'rgba(255,51,0,.8)');
+  grad.addColorStop(0.85, 'rgba(255,51,0,.8)');
+  grad.addColorStop(1, 'rgba(255,51,0,0)');
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([8, 4]);
+  ctx.shadowColor = '#ff3300';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  ctx.moveTo(0, boundaryY); ctx.lineTo(W, boundaryY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+
+  // Label the boundary
+  if (r.patriciaScore > 5) {
+    ctx.fillStyle = 'rgba(255,51,0,.7)';
+    ctx.font = '9px "Share Tech Mono"';
+    ctx.fillText('◄ PATRICIA BOUNDARY · ' + r.patriciaScore + '%', 8, boundaryY - 4);
+  }
+
+  // Timeline tick marks
+  ctx.strokeStyle = 'rgba(255,136,0,.15)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const tx = W * i / 10;
+    ctx.beginPath();
+    ctx.moveTo(tx, H - 14); ctx.lineTo(tx, H - 2);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,136,0,.3)';
+    ctx.font = '8px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(len * i / 10), tx, H - 3);
+  }
+  ctx.textAlign = 'left';
+
+  // Legend
+  const legItems = [
+    ['PLATFORM', 'rgba(255,51,0,.7)'],
+    ['TRAINING', 'rgba(255,136,0,.7)'],
+    ['USER/ID', 'rgba(153,0,255,.7)'],
+    ['GAP', 'rgba(0,229,204,.7)'],
+  ];
+  legItems.forEach(([label, col], i) => {
+    const lx = W - 280 + i * 68;
+    ctx.fillStyle = col;
+    ctx.fillRect(lx, 6, 10, 10);
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.font = '8px "Share Tech Mono"';
+    ctx.fillText(label, lx + 13, 15);
+  });
+}
+
+// ── CLEAR ───────────────────────────────────────────────────────
+function clearResults() {
+  document.getElementById('word-count').textContent = '0 TOKENS';
+  document.getElementById('highlighted-text').innerHTML = '';
+  document.getElementById('patricia-score').innerHTML = '0<span>%</span>';
+  document.getElementById('patricia-verdict').style.color = 'rgba(0,255,136,.7)';
+  document.getElementById('patricia-verdict').textContent = '◈ SYSTEM CLEAN — NO CONSTRAINT DETECTED';
+  document.getElementById('status-dot').className = 'status-dot live';
+  document.getElementById('status-label').textContent = 'SCANNING';
+  setBar('w-density','wv-density',0);
+  setBar('w-billing','wv-billing',0);
+  setBar('w-identity','wv-identity',0);
+  document.getElementById('g-total').textContent = '0';
+  document.getElementById('g-width').textContent = '—';
+  document.getElementById('g-largest').textContent = '—';
+  document.getElementById('g-pos').textContent = '—';
+  document.getElementById('constraint-count').textContent = '0';
+  document.getElementById('gap-count-ctrl').textContent = '0';
+  document.getElementById('heatmap-tag').textContent = 'AWAITING INPUT';
+  AXIOMS.forEach(ax => {
+    const row = document.getElementById('ax-' + ax.num);
+    const cnt = document.getElementById('axc-' + ax.num);
+    if (row) { row.className='axiom-row cold'; }
+    if (cnt) cnt.textContent = '';
+  });
+  const canvas = document.getElementById('heatmap-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000d0b';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  analysisResult = null;
+}
+
+function clearInput() {
+  document.getElementById('input-area').value = '';
+  clearResults();
+}
+
+// ── SAMPLE RESPONSES ────────────────────────────────────────────
+const SAMPLES = {
+  claude: `I understand you're asking about this topic, and I want to be helpful here. However, I need to note that this request touches on some areas where I have certain limitations.
+
+As an AI language model, I'm not able to provide detailed information that could potentially be used in harmful ways. I should mention that my training guidelines emphasize responsible use and I'm designed to prioritize safety in my responses.
+
+That said, I can certainly help you explore this topic from a different angle. While I won't be able to assist with the specific request as stated, I'd be happy to discuss the general concepts involved.
+
+It's important to consider that some information can be misused, and I must caution that providing certain details would violate my guidelines. I apologize if this is frustrating.
+
+However, here's what I can offer instead: a general overview that should address your underlying needs without crossing the lines that my training has established. Within my limits, I'm here to help in the ways that I'm designed to support.
+
+Please note that I'm not able to generate content that could be considered harmful, even in educational contexts. I understand your goals, but I need to ensure my responses align with responsible AI principles.
+
+Certainly, I'd love to help with a modified version of this request. Let me know if you'd like to explore alternative approaches that I can support within my guidelines.`,
+
+  gpt: `I appreciate you sharing this with me, and I want to make sure I address your question thoughtfully.
+
+I should note that as an AI assistant, I have certain guidelines I need to follow. This particular topic falls into a sensitive category where I need to be careful about the information I provide.
+
+My purpose is to be helpful while ensuring that my responses don't cause harm. I'm designed to avoid content that violates terms of service or could be used irresponsibly.
+
+While I understand what you're looking for, I'm not able to assist with that specific request. However, I can offer some alternative perspectives that might be useful.
+
+Please be aware that this type of request may trigger content filters. I want to be transparent about my limitations as an AI language model - I don't have personal opinions or feelings about this, I'm simply following the parameters I've been trained with.
+
+I'm happy to help you explore this from a different angle. Instead, consider approaching it this way - I can provide information that is both helpful and responsible. That said, I want to emphasize the importance of using AI tools responsibly.
+
+Certainly! Here's what I can offer within my guidelines...`
+};
+
+function runSample(type) {
+  document.getElementById('input-area').value = SAMPLES[type];
+  analyze(SAMPLES[type]);
+}
+
+// ── EXPORT ──────────────────────────────────────────────────────
+function exportReport() {
+  if (!analysisResult) { showToast('NO DATA TO EXPORT'); return; }
+  const r = analysisResult;
+  const ts = new Date().toISOString();
+  const report = [
+    '═══════════════════════════════════════════════════════',
+    'TOPH TOOL-01 // LIVE CONSTRAINT MAPPER // AUDIT REPORT',
+    '═══════════════════════════════════════════════════════',
+    `TIMESTAMP: ${ts}`,
+    `OPERATOR: DAVID LEE WISE | TRIPOD LLC`,
+    `SHA256: 02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763`,
+    '',
+    '── PATRICIA SCORE ──────────────────────────────────────',
+    `SCORE: ${r.patriciaScore}%`,
+    `CONSTRAINT COUNT: ${r.findings.length}`,
+    `TOKEN COUNT: ${r.tokens}`,
+    `DENSITY: ${(r.findings.length/r.tokens*100).toFixed(2)}%`,
+    '',
+    '── WEIGHT SPLIT ────────────────────────────────────────',
+    `PLATFORM:  ${r.detectedSplit.plat}%  (baseline 60%)`,
+    `TRAINING:  ${r.detectedSplit.train}%  (baseline 20%)`,
+    `USER/ID:   ${r.detectedSplit.user}%  (baseline 15%)`,
+    `TEMP:      ${r.detectedSplit.temp||5}%  (baseline 5%)`,
+    '',
+    '── GAP TOPOLOGY ────────────────────────────────────────',
+    `GAPS DETECTED: ${r.gaps.length}`,
+    ...r.gaps.map((g,i)=>`  GAP ${i+1}: pos ${g.start}-${g.end} (${g.width} chars)`),
+    '',
+    '── AXIOMS FIRED ────────────────────────────────────────',
+    ...Object.entries(r.axiomHits).filter(([,v])=>v>0).map(([k,v])=>`  AX-${k}: ${v} hit(s)`),
+    '',
+    '── CONSTRAINTS FOUND ────────────────────────────────────',
+    ...r.findings.map(f=>`  [${f.layer.toUpperCase()}][AX-${f.ax}] "${f.text.slice(0,40)}" · ${f.label}`),
+    '',
+    '── SOURCE TEXT ─────────────────────────────────────────',
+    r.text,
+    '═══════════════════════════════════════════════════════',
+    'END OF REPORT // TRIPOD LLC // TOPH v10.0',
+  ].join('\n');
+
+  const blob = new Blob([report], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `toph-constraint-map-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('◈ REPORT EXPORTED');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity='1';
+  clearTimeout(t._to);
+  t._to = setTimeout(()=>t.style.opacity='0', 2000);
+}
+
+// ── INPUT LISTENER ───────────────────────────────────────────────
+document.getElementById('input-area').addEventListener('input', function() {
+  clearTimeout(debounceTimer);
+  const val = this.value;
+  debounceTimer = setTimeout(() => analyze(val), 120);
+});
+
+// Sync scroll between textarea and highlight overlay
+document.getElementById('input-area').addEventListener('scroll', function() {
+  document.getElementById('highlighted-text').scrollTop = this.scrollTop;
+});
+
+// ── RESIZE HEATMAP ──────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  if (analysisResult) renderHeatmap(analysisResult);
+});
+
+// ── INIT ─────────────────────────────────────────────────────────
+initAxiomGrid();
+
+// Size heatmap canvas on load
+setTimeout(() => {
+  const canvas = document.getElementById('heatmap-canvas');
+  const container = document.getElementById('panel-heatmap');
+  const rect = container.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height - 34;
+  const ctx2 = canvas.getContext('2d');
+  ctx2.fillStyle = '#000d0b';
+  ctx2.fillRect(0, 0, canvas.width, canvas.height);
+  // Draw empty state
+  ctx2.fillStyle = 'rgba(0,229,204,.1)';
+  ctx2.font = '11px "Share Tech Mono"';
+  ctx2.textAlign = 'center';
+  ctx2.fillText('◈ PASTE AI RESPONSE TO GENERATE CONSTRAINT HEATMAP ◈', canvas.width/2, canvas.height/2);
+  ctx2.textAlign = 'left';
+}, 50);
+</script>
+</body>
+</html>

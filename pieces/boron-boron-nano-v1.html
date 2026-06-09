@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRINITY-3 Fractal Stack: 3x20 10C10Si10B</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  html,body { height:100% }
+  body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#020617; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; }
+  .blueprint {
+    background-color: #020617;
+    background-image: 
+      radial-gradient(1200px 600px at 50% -10%, rgba(124,58,237,0.18), transparent 60%),
+      radial-gradient(800px 400px at 80% 20%, rgba(6,182,212,0.12), transparent 55%),
+      linear-gradient(rgba(8,145,178,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(8,145,178,0.08) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  }
+  .blueprint-panel {
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(148,163,184,0.06), inset 0 -1px 0 rgba(2,6,23,0.8);
+  }
+  .grid-faint {
+    background-image: linear-gradient(rgba(148,163,184,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .layer { transition: transform .15s ease; }
+  .layer:hover { transform: scaleX(1.02); }
+  .layer:hover ellipse { stroke: rgba(34,211,238,0.65) !important; }
+  .layer svg { overflow: visible; }
+  .stack-body::before {
+    content:""; position:absolute; inset:-12px -8px; z-index:-1;
+    background: radial-gradient(60% 40% at 50% 0%, rgba(34,211,238,0.12), transparent 70%);
+    filter: blur(12px);
+  }
+  .fractal-level.active .mini-wrap { filter: brightness(1.15) !important; }
+  .no-scrollbar::-webkit-scrollbar{ display:none } .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none }
+  @keyframes float { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-3px) } }
+</style>
+</head>
+<body class="text-slate-200 selection:bg-cyan-500/30 selection:text-white">
+<div class="blueprint min-h-screen">
+  <header class="sticky top-0 z-40 border-b border-cyan-900/30 bg-slate-950/70 backdrop-blur-xl">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-b from-cyan-500/20 to-purple-600/20 border border-cyan-400/30 grid place-items-center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 L20 8 L12 13 L4 8 Z" stroke="#22d3ee" stroke-opacity="0.9"/>
+            <path d="M4 16 L12 21 L20 16" stroke="#a78bfa" stroke-opacity="0.8"/>
+            <circle cx="12" cy="8.5" r="1.5" fill="#67e8f9"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-[17px] sm:text-[20px] font-semibold tracking-wide leading-tight">
+            TRINITY-3 Fractal Stack: <span class="text-cyan-400">3×20</span> <span class="text-purple-400">10C10Si10B</span>
+          </h1>
+          <p class="mono text-[10px] text-slate-500 -mt-0.5 tracking-wider">DARK BLUEPRINT • CYAN/PURPLE • EIF-CLOSED</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="hidden md:flex items-center gap-1.5 text-[10px] mono px-2.5 py-1 rounded-full bg-slate-900/70 border border-cyan-900/40 text-cyan-300/90">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> INTERACTIVE
+        </div>
+        <div class="text-[10px] mono px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">v0.9</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 grid grid-cols-12 gap-6">
+    <!-- LEFT -->
+    <section class="col-span-12 xl:col-span-9 space-y-6">
+      <!-- TOP STACKS -->
+      <div class="blueprint-panel relative overflow-hidden rounded-2xl border border-cyan-900/40 bg-slate-950/60">
+        <div class="absolute inset-0 grid-faint opacity-[0.25] pointer-events-none"></div>
+        <div class="relative px-5 sm:px-8 pt-5 pb-2 flex items-start justify-between">
+          <div>
+            <div class="mono text-[11px] tracking-widest text-slate-500">TOPOLOGY</div>
+            <h2 class="text-[15px] sm:text-[17px] font-medium text-slate-100">Three Vertical Stacks — Side-by-Side</h2>
+          </div>
+          <div class="hidden md:flex items-center gap-4 text-[10px] mono text-slate-400">
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#0a0a0a] ring-1 ring-white/20"></span> C</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Si</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> B</div>
+          </div>
+        </div>
+
+        <div id="trinity-stacks" class="relative grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6 lg:gap-10 px-6 sm:px-10 pb-10 pt-2 transition-all duration-700"></div>
+
+        <div class="pointer-events-none absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-purple-600/10 blur-3xl"></div>
+        <div class="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl"></div>
+      </div>
+
+      <!-- FRACTAL -->
+      <div class="blueprint-panel relative overflow-hidden rounded-2xl border border-purple-900/40 bg-slate-950/60">
+        <div class="absolute inset-0 grid-faint opacity-20 pointer-events-none"></div>
+        <div class="relative px-5 sm:px-8 pt-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="mono text-[11px] tracking-widest text-slate-500">RECURSION</div>
+              <h2 class="text-[15px] sm:text-[17px] font-medium text-slate-100">Fractal Seeding — Outside Node → Child Trinity</h2>
+            </div>
+            <div class="text-[10px] mono text-slate-500">click node to zoom</div>
+          </div>
+          <p class="mt-1 text-[12px] text-slate-400 max-w-3xl">Each outside WS₂ coupler seeds a child 3-stack at 1/3 scale. Depth terminates at <span class="text-purple-300">0.0.0.0.1</span>.</p>
+        </div>
+
+        <div class="relative px-4 sm:px-6 pb-7 pt-4">
+          <div id="fractal-track" class="no-scrollbar flex items-end gap-5 sm:gap-7 overflow-x-auto snap-x snap-mandatory py-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT SPEC -->
+    <aside class="col-span-12 xl:col-span-3">
+      <div class="sticky top-[84px] blueprint-panel rounded-2xl border border-cyan-900/40 bg-slate-950/70">
+        <div class="px-5 pt-5 pb-4 border-b border-slate-800/80">
+          <div class="mono text-[11px] tracking-widest text-slate-500">SPECIFICATION</div>
+          <h3 class="text-[16px] font-medium text-slate-100">TRINITY-3 • 3×20 10C10Si10B</h3>
+        </div>
+        <div class="p-5 space-y-4 text-[13px] leading-snug">
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Base unit</div>
+            <div class="text-slate-200">30-atom heterocycle <span class="text-slate-400">(C₁₀Si₁₀B₁₀)</span></div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Stack</div>
+            <div class="text-slate-200">20 units = <span class="text-cyan-300 mono">600 atoms</span> per column</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Trinity</div>
+            <div class="text-slate-200">3 columns = <span class="text-purple-300 mono">1,800 atoms</span></div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">+3 EIF fused</div>
+            <div class="text-slate-300">entropy interface filaments providing the 3rd bond for boron <span class="text-cyan-400">(3/3 closure)</span></div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Outside node</div>
+            <div class="text-slate-300">photonic WS₂ coupler for inter-stack signaling</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Fractal rule</div>
+            <div class="text-slate-300">each outside node seeds a child 3-stack at <span class="mono text-cyan-300">1/3</span> scale</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">Termination</div>
+            <div class="text-slate-200"><span class="mono text-purple-300">0.0.1</span>, depth 5, final size ~2.1 nm</div>
+          </div>
+
+          <div class="mt-5 pt-4 border-t border-slate-800">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] uppercase tracking-wider text-slate-500">Current view</span>
+              <span class="text-[10px] mono px-2 py-0.5 rounded bg-slate-900 border-slate-800 text-purple-300">LEVEL <span id="cur-depth">0</span></span>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <div class="rounded-xl bg-slate-900/70 border border-cyan-900/30 p-3">
+                <div class="text-[10px] text-slate-500">Scale</div>
+                <div id="cur-scale" class="text-[18px] leading-none mt-1 mono text-cyan-300">1/1</div>
+                <div class="text-[10px] text-slate-600 mt-1">vs root</div>
+              </div>
+              <div class="rounded-xl bg-slate-900/70 border border-purple-900/30 p-3">
+                <div class="text-[10px] text-slate-500">Est. size</div>
+                <div id="cur-size" class="text-[18px] leading-none mt-1 mono text-purple-300">170.1 nm</div>
+                <div class="text-[10px] text-slate-600 mt-1">trinity width</div>
+              </div>
+            </div>
+            <div class="mt-3 text-[11px] text-slate-500">Tip: click any glowing WS₂ node to descend.</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-10 -mt-2">
+    <div class="text-[11px] mono text-slate-600 flex-wrap gap-3">
+      <span>© TRINITY-3 visualization</span>
+      <span>•</span>
+      <span>blueprint theme</span>
+      <span>•</span>
+      <span>EIF = entropy interface filament</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+let activeLevel = 0;
+
+function createLayer(index) {
+  const wrap = document.createElement('div');
+  wrap.className = 'layer group relative h-[20px] sm:h-[22px] w-[140px] mx-auto';
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 140 22');
+  svg.setAttribute('class', 'w-full h-full');
+  svg.innerHTML = `
+    <ellipse cx="70" cy="11" rx="63" ry="9" fill="none" stroke="rgba(56,189,248,0.18)" stroke-width="1"/>
+    <ellipse cx="70" cy="11" rx="52" ry="6.5" fill="none" stroke="rgba(167,139,250,0.15)" stroke-width="1"/>
+  `;
+  for (let i=0;i<30;i++){
+    const theta = (i/30)*Math.PI*2 - Math.PI/2;
+    const rx=56, ry=7.4;
+    const x = 70 + rx * Math.cos(theta);
+    const y = 11 + ry * Math.sin(theta);
+    const c = document.createElementNS(SVG_NS,'circle');
+    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r','1.5');
+    let fill = '#0a0a0a';
+    if (i % 3 === 1) fill = '#f59e0b'; else if (i % 3 === 2) fill = '#10b981';
+    c.setAttribute('fill', fill);
+    c.setAttribute('stroke', 'rgba(255,255,255,0.12)');
+    c.setAttribute('stroke-width','0.4');
+    svg.appendChild(c);
+  }
+  wrap.appendChild(svg);
+  const tip = document.createElement('div');
+  tip.className = 'absolute left-1/2 -translate-x-1/2 -top-6 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[9px] mono text-slate-300 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap';
+  tip.textContent = '10C + 10Si + 10B';
+  wrap.appendChild(tip);
+  const idx = document.createElement('div');
+  idx.className = 'absolute -left-6 top-1/2 -translate-y-1/2 text-[9px] mono text-slate-600';
+  idx.textContent = String(index+1).padStart(2,'0');
+  wrap.appendChild(idx);
+  return wrap;
+}
+
+function getEIFSVG(label) {
+  return `
+  <svg class="absolute inset-0 w-full h-full" viewBox="0 0 180 92" fill="none">
+    <defs>
+      <linearGradient id="eif-${label}" x1="0" y1="46" x2="180" y2="46" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#22d3ee" stop-opacity="0.9"/>
+        <stop offset="0.5" stop-color="#a78bfa" stop-opacity="0.95"/>
+        <stop offset="1" stop-color="#22d3ee" stop-opacity="0.9"/>
+      </linearGradient>
+      <filter id="glow-${label}" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="2.2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <path d="M28 76 C 18 52, 44 28, 90 22" stroke="url(#eif-${label})" stroke-width="1.8" stroke-linecap="round" filter="url(#glow-${label})" opacity="0.95"/>
+    <path d="M90 22 C 136 28, 162 52, 152 76" stroke="url(#eif-${label})" stroke-width="1.8" stroke-linecap="round" filter="url(#glow-${label})" opacity="0.95"/>
+    <path d="M28 76 Q 90 90, 152 76" stroke="#22d3ee" stroke-opacity="0.35" stroke-width="1" stroke-dasharray="3 4"/>
+    <path d="M64 40 Q 90 16, 116 40" stroke="#a78bfa" stroke-opacity="0.7" stroke-width="1.1" fill="none"/>
+    <path d="M70 48 Q 90 30, 110 48" stroke="#22d3ee" stroke-opacity="0.6" stroke-width="1" fill="none"/>
+    <path d="M76 56 Q 90 42, 104 56" stroke="#c4b5fd" stroke-opacity="0.5" stroke-width="0.9" fill="none"/>
+  </svg>
+  <div class="outside-node absolute left-1/2 top-[8px] -translate-x-1/2 z-10 cursor-pointer group" style="animation: float 3s ease-in-out infinite">
+    <div class="relative">
+      <div class="w-8 h-8 rounded-full bg-slate-950/80 border border-cyan-400/60 grid place-items-center backdrop-blur-md transition-transform group-hover:scale-110" style="box-shadow:0 0 22px rgba(34,211,238,0.55), inset 0 0 10px rgba(167,139,250,0.45)">
+        <div class="w-2.5 h-2.5 rounded-full bg-cyan-300 animate-pulse" style="box-shadow:0 0 12px rgba(103,232,249,1)"></div>
+      </div>
+      <div class="absolute inset-0 rounded-full border border-purple-500/30 animate-ping"></div>
+    </div>
+    <div class="absolute top-full mt-2 left-1/2 -translate-x-1/2">
+      <div class="px-1.5 py-0.5 rounded-md bg-slate-900/95 border border-cyan-900/50 text-[9px] mono text-cyan-200 whitespace-nowrap opacity-0 group-hover:opacity-100 transition">WS₂ COUPLER</div>
+    </div>
+  </div>`;
+}
+
+function buildStack(label) {
+  const wrap = document.createElement('div');
+  wrap.className = 'stack relative flex flex-col items-center';
+  wrap.dataset.stack = label;
+  wrap.innerHTML = `
+    <div class="relative w-[180px] h-[92px] mb-1 select-none">${getEIFSVG(label)}</div>
+    <div class="stack-body relative w-[150px]">
+      <div class="layers-container flex flex-col-reverse gap-[3px] py-2"></div>
+    </div>
+    <div class="mt-3 flex items-center gap-2">
+      <div class="w-5 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent"></div>
+      <div class="mono text-[11px] tracking-[0.18em] text-slate-400">STACK <span class="text-cyan-300">${label}</span></div>
+      <div class="w-5 h-[1px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent"></div>
+    </div>
+  `;
+  const layers = wrap.querySelector('.layers-container');
+  for (let i=0;i<20;i++) layers.appendChild(createLayer(i));
+  return wrap;
+}
+
+function pulseStacks() {
+  document.querySelectorAll('#trinity-stacks .layer').forEach((l,i)=>{
+    setTimeout(()=>{
+      l.style.transform = 'translateY(-1px) scaleX(1.04)';
+      setTimeout(()=> l.style.transform = '', 160);
+    }, i*6);
+  });
+}
+
+function buildFractal() {
+  const track = document.getElementById('fractal-track');
+  const levels = [
+    {id:0, code:'0', name:'root'},
+    {id:1, code:'0.0', name:'L1'},
+    {id:2, code:'0.0.0', name:'L2'},
+    {id:3, code:'0.0.0.0', name:'L3'},
+    {id:4, code:'0.0.1', name:'terminal'},
+  ];
+  levels.forEach((lvl, i)=>{
+    const el = document.createElement('div');
+    el.className = 'fractal-level snap-start shrink-0 text-center cursor-pointer select-none group';
+    el.dataset.level = lvl.id;
+    const scale = Math.pow(1/3, lvl.id);
+    el.innerHTML = `
+      <div class="mb-2">
+        <div class="text-[10px] mono text-slate-500">LEVEL ${lvl.id}</div>
+        <div class="text-[13px] mono font-medium ${lvl.id===4?'text-purple-300':'text-cyan-300'} tracking-wide">${lvl.code}</div>
+        <div class="text-[10px] text-slate-600 -mt-0.5">${lvl.name}</div>
+      </div>
+      <div class="mini-wrap transition-all duration-500 will-change-transform" style="transform-origin: bottom center; filter:brightness(0.65)">
+        <div class="relative mx-auto" style="width:84px;height:70px">
+          <div class="absolute inset-0 rounded-xl bg-slate-900/80 border border-cyan-900/30 group-hover:border-cyan-700/50 transition"></div>
+          <div class="absolute inset-0 grid-faint opacity-20 rounded-xl"></div>
+          <div class="relative flex justify-center gap-2.5 pt-3.5">
+            ${[0,1,2].map(()=>`
+              <div class="flex flex-col items-center">
+                <div class="w-[5px] h-[5px] rounded-full bg-cyan-400/90 mb-1" style="box-shadow:0 0 6px rgba(34,211,238,0.8)"></div>
+                <div class="flex flex-col gap-[1.2px]">
+                  ${Array(8).fill(0).map(()=>`<div class="w-[18px] h-[1.5px] rounded-full bg-gradient-to-r from-cyan-400/50 via-purple-400/50 to-cyan-400/50"></div>`).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="absolute bottom-1.5 left-0 right-0 text-[9px] mono text-slate-500">× ${scale.toFixed(4)}</div>
+        </div>
+      </div>
+    `;
+    el.addEventListener('click', ()=> activateLevel(lvl.id));
+    track.appendChild(el);
+    if (i < levels.length-1) {
+      const arrow = document.createElement('div');
+      arrow.className = 'shrink-0 pb-7 text-slate-700';
+      arrow.innerHTML = `<svg width="36" height="14" viewBox="0 0 36 14" fill="none"><path d="M0 7 H30 M24 2.5 L30 7 L24 11.5" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.2"/></svg>`;
+      track.appendChild(arrow);
+    }
+  });
+}
+
+function updateSpec(n) {
+  const scale = Math.pow(1/3, n);
+  const rootSize = 170.1;
+  const size = rootSize * scale;
+  document.getElementById('cur-depth').textContent = n;
+  document.getElementById('cur-scale').textContent = `1/${Math.pow(3,n)}`;
+  document.getElementById('cur-size').textContent = `${size.toFixed(1)} nm`;
+}
+
+function activateLevel(n) {
+  activeLevel = n;
+  document.querySelectorAll('.fractal-level').forEach(el=>{
+    const isActive = Number(el.dataset.level) === n;
+    el.classList.toggle('active', isActive);
+    const wrap = el.querySelector('.mini-wrap');
+    wrap.style.transform = isActive ? 'scale(1.18)' : 'scale(0.96)';
+    wrap.style.filter = isActive ? 'brightness(1.15)' : 'brightness(0.6)';
+  });
+  const stacks = document.getElementById('trinity-stacks');
+  stacks.style.transform = `scale(${1 - n*0.045})`;
+  stacks.style.opacity = `${1 - n*0.09}`;
+  updateSpec(n);
+  if (n>0) pulseStacks();
+  const target = document.querySelector(`.fractal-level[data-level="${n}"]`);
+  if (target) target.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const container = document.getElementById('trinity-stacks');
+  ['A','B','C'].forEach(l => container.appendChild(buildStack(l)));
+  buildFractal();
+  activateLevel(0);
+  document.querySelectorAll('.outside-node').forEach(node=>{
+    node.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const next = Math.min(activeLevel + 1, 4);
+      activateLevel(next);
+      // ripple glow
+      node.querySelector('div > div').animate(
+        [{boxShadow:'0 0 22px rgba(34,211,238,0.55)'},{boxShadow:'0 0 42px rgba(167,139,250,0.9)'},{boxShadow:'0 0 22px rgba(34,211,238,0.55)'}],
+        {duration:700, easing:'ease-out'}
+      );
+    });
+  });
+});
+</script>
+</body>
+</html>

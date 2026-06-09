@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shadow Witness Protocol — 1:1:1 Alignment Architecture</title>
+  <meta name="description" content="Shadow Witness Protocol by David Wise: a 1:1:1 model aligning user intent, hardware constraint, and software behavior through witnessed decisions." />
+  <meta name="author" content="David Wise" />
+  <meta property="og:title" content="Shadow Witness Protocol" />
+  <meta property="og:description" content="One user. One machine. One program. One witnessed decision." />
+  <meta property="og:image" content="assets/shadow-witness.png" />
+  <meta name="theme-color" content="#100713" />
+  <link rel="icon" href="assets/shadow-witness.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <nav class="nav">
+    <a class="brand" href="#top"><span class="sigil">◆</span> Shadow Witness</a>
+    <div class="navlinks">
+      <a href="#model">Model</a>
+      <a href="#kernel">Kernel</a>
+      <a href="#protocol">Protocol</a>
+      <a href="#spec">Spec</a>
+      <a href="#author">First Author</a>
+    </div>
+  </nav>
+
+  <header id="top" class="hero">
+    <div class="hero-bg"></div>
+    <section class="hero-copy">
+      <p class="eyebrow">1 : 1 : 1 alignment architecture</p>
+      <h1>Shadow Witness Protocol</h1>
+      <p class="lead">A decision system where user intent, hardware reality, and software behavior must stand in mutual agreement before action is committed.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#protocol">Read the protocol</a>
+        <a class="button ghost" href="docs/shadow-witness-spec.md">Download spec</a>
+      </div>
+    </section>
+    <aside class="hero-card" aria-label="Core equation">
+      <div class="card-title">Core Equation</div>
+      <div class="equation"><span>User</span><b>1</b><i>:</i><span>Hardware</span><b>1</b><i>:</i><span>Software</span><b>1</b></div>
+      <p>No decision is valid unless the three bodies align.</p>
+    </aside>
+  </header>
+
+  <main>
+    <section class="section intro">
+      <div class="section-label">Purpose</div>
+      <h2>A witness is not another controller. It is the alignment point.</h2>
+      <p>The Shadow Witness Protocol is an informational architecture for checking whether a system is acting in accordance with the person operating it, the machine carrying the action, and the software transforming the command. It is designed as a practical governance layer for processors, agents, tools, interfaces, and long-running automation.</p>
+      <p>Instead of asking whether software can do something, the protocol asks whether the action is coherent across all three bodies: the user who authorizes, the hardware that constrains, and the software that interprets.</p>
+    </section>
+
+    <section id="model" class="section split">
+      <div>
+        <div class="section-label">Model</div>
+        <h2>The 3 → 2 → 1 → 0 loop</h2>
+        <p>The system begins with three inputs, compresses them into two agreement checks, emits one decision, then resets any unstable state back to zero. The loop repeats without assuming that the next decision inherits authority from the last one.</p>
+      </div>
+      <div class="loop-panel">
+        <div class="loop-step"><b>3</b><span>Witness</span><small>User / Hardware / Software</small></div>
+        <div class="loop-step"><b>2</b><span>Agree</span><small>Intent ↔ Constraint</small></div>
+        <div class="loop-step"><b>1</b><span>Decide</span><small>Commit / Hold / Reject</small></div>
+        <div class="loop-step"><b>0</b><span>Reset</span><small>Game over, repeat clean</small></div>
+      </div>
+    </section>
+
+    <section class="section triad-grid">
+      <article class="triad-card">
+        <span class="number">01</span>
+        <h3>User</h3>
+        <p>The user supplies intent, authority, preference, boundary, and final meaning. Without user alignment, an action becomes drift.</p>
+      </article>
+      <article class="triad-card">
+        <span class="number">02</span>
+        <h3>Hardware</h3>
+        <p>The hardware supplies physical limit, available resource, identity of the executing device, sensor reality, and failure boundary.</p>
+      </article>
+      <article class="triad-card">
+        <span class="number">03</span>
+        <h3>Software</h3>
+        <p>The software supplies memory, transformation, routing, policy, code path, and the actual operational interpretation.</p>
+      </article>
+    </section>
+
+    <section id="kernel" class="section code-section">
+      <div class="section-label">Bare-Metal Kernel</div>
+      <h2>Minimal operating law</h2>
+      <pre><code>READ_USER_INTENT()
+READ_HARDWARE_STATE()
+READ_SOFTWARE_STATE()
+
+A = COMPARE(user, hardware)
+B = COMPARE(user, software)
+C = COMPARE(hardware, software)
+
+IF A && B && C:
+    COMMIT_DECISION()
+ELSE:
+    HOLD_ACTION()
+    EXPLAIN_DRIFT()
+
+RESET_VOLATILE_STATE()
+LOOP()</code></pre>
+    </section>
+
+    <section id="protocol" class="section protocol">
+      <div class="section-label">Protocol</div>
+      <h2>The four decision states</h2>
+      <div class="state-list">
+        <article><b>Commit</b><p>All three bodies agree. The action can proceed with a witness record.</p></article>
+        <article><b>Hold</b><p>Alignment is incomplete. The action pauses and asks for clarification or more state.</p></article>
+        <article><b>Reject</b><p>The action conflicts with user authority, hardware capacity, software boundary, or safety constraints.</p></article>
+        <article><b>Reset</b><p>The loop clears temporary assumptions so the next decision starts from a clean witness frame.</p></article>
+      </div>
+    </section>
+
+    <section class="section architecture">
+      <div class="section-label">Architecture</div>
+      <h2>Informational stack</h2>
+      <div class="stack">
+        <div><strong>Interface Layer</strong><span>Captures intent in plain language and explicit controls.</span></div>
+        <div><strong>Witness Layer</strong><span>Compares user, hardware, and software state.</span></div>
+        <div><strong>Kernel Layer</strong><span>Enforces commit, hold, reject, and reset.</span></div>
+        <div><strong>Memory Layer</strong><span>Stores only the record required to verify continuity.</span></div>
+        <div><strong>Execution Layer</strong><span>Performs actions after alignment is proven.</span></div>
+      </div>
+    </section>
+
+    <section class="section longform">
+      <div class="section-label">Why it matters</div>
+      <h2>Software usually drifts because it lacks a hard center.</h2>
+      <p>Most programs treat execution as a straight line: input arrives, logic transforms it, output appears. That works for simple tools, but it becomes fragile when the system has memory, external tools, autonomous steps, or multiple interpretations of user intent. The Shadow Witness Protocol adds a center point before action.</p>
+      <p>The center point does not replace the user. It does not invent authority. It does not pretend the machine is unlimited. It does not let software silently reinterpret the request. It asks the same question each cycle: are these three bodies still aligned?</p>
+      <p>That makes it useful as a design pattern for AI agents, embedded devices, robotics, personal computing environments, workflow automations, model governance, and hardware-backed identity systems.</p>
+    </section>
+
+    <section id="spec" class="section spec-grid">
+      <div class="section-label">Production Spec</div>
+      <h2>Version 0.1 reference</h2>
+      <div class="spec-card"><span>Name</span><b>Shadow Witness Protocol</b></div>
+      <div class="spec-card"><span>Ratio</span><b>1:1:1</b></div>
+      <div class="spec-card"><span>Loop</span><b>3 → 2 → 1 → 0 → repeat</b></div>
+      <div class="spec-card"><span>Decision</span><b>Commit / Hold / Reject / Reset</b></div>
+      <div class="spec-card"><span>First Author</span><b>David Wise</b></div>
+      <div class="spec-card"><span>Artifact Type</span><b>Informational protocol page</b></div>
+    </section>
+
+    <section id="author" class="section author">
+      <img src="assets/shadow-witness.png" alt="Shadow Witness figure" />
+      <div>
+        <div class="section-label">First Author Record</div>
+        <h2>David Wise</h2>
+        <p><strong>First Author:</strong> David Wise</p>
+        <p><strong>Protocol:</strong> Shadow Witness Protocol — a 1:1:1 alignment architecture for user, hardware, and software.</p>
+        <p><strong>Canonical phrase:</strong> One user. One machine. One program. One witnessed decision.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Shadow Witness Protocol · First Author David Wise · Version 0.1</p>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>

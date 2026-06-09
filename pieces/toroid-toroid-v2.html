@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Double Helix Engine — 0⁻ | 1 | 0⁺</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Syne:wght@400;600&display=swap" rel="stylesheet">
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root {
+    --font-display: 'Syne', system-ui, sans-serif;
+    --font-mono: 'Fragment Mono', ui-monospace, monospace;
+  }
+  html, body { height: 100%; background: #020208; }
+  body { margin: 0; font-family: var(--font-display); overflow: hidden; overscroll-behavior: none; }
+  .font-mono { font-family: var(--font-mono); }
+  canvas { display: block; }
+  .glow-cyan { color: #7df9ff; text-shadow: 0 0 12px rgba(0,229,255,0.9), 0 0 32px rgba(0,229,255,0.6), 0 0 64px rgba(0,229,255,0.3); }
+  .glow-amber { color: #ffd18a; text-shadow: 0 0 12px rgba(255,171,0,0.9), 0 0 32px rgba(255,120,0,0.55), 0 0 64px rgba(255,100,0,0.25); }
+  .glow-white { color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.9), 0 0 30px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.3); }
+  .pulse-slow { animation: pulse 3.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  .sup { font-size: 0.55em; vertical-align: super; margin-left: 0.06em; font-weight: 600; }
+  .vignette { background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.8) 100%); }
+  .grain { opacity: 0.035; mix-blend-mode: screen; background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuOCIgbnVtT2N0YXZlcz0iNCIgc3RpdGNIaWxlcz0ic3RpdGNoIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWx0ZXI9InVybCgjbm9pc2UpIiBvcGFjaXR5PSIwLjQiLz48L3N2Zz4='); }
+  .glass { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background: linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.08); }
+</style>
+</head>
+<body class="bg-[#020208] text-white selection:bg-cyan-400/30 selection:text-cyan-100">
+<div id="app" class="relative w-screen h-screen">
+  <canvas id="c" class="absolute inset-0 w-full h-full"></canvas>
+  <div class="absolute inset-0 vignette pointer-events-none"></div>
+  <div class="absolute inset-0 grain pointer-events-none"></div>
+
+  <!-- Left Strand Labels -->
+  <div class="absolute left-[3vw] md:left-[6vw] top-[12vh] md:top-[18vh] pointer-events-none">
+    <div class="flex items-baseline gap-3">
+      <div class="text-[18vw] md:text-[9rem] leading-none font-semibold glow-cyan tracking-tight">0<span class="sup">−</span></div>
+    </div>
+    <div class="mt-3 md:mt-4 font-mono text-[11px] md:text-xs tracking-widest text-cyan-200/70 uppercase space-y-1.5">
+      <div class="flex items-center gap-2"><span class="w-6 h-px bg-cyan-400/60"></span> apex prime</div>
+      <div class="flex items-center gap-2"><span class="w-6 h-px bg-cyan-400/60"></span> domain 1</div>
+      <div class="flex items-center gap-2"><span class="w-6 h-px bg-cyan-400/60"></span> sandbox</div>
+    </div>
+  </div>
+
+  <!-- Right Strand Labels -->
+  <div class="absolute right-[3vw] md:right-[6vw] top-[12vh] md:top-[18vh] text-right pointer-events-none">
+    <div class="text-[18vw] md:text-[9rem] leading-none font-semibold glow-amber tracking-tight">0<span class="sup">+</span></div>
+    <div class="mt-3 md:mt-4 font-mono text-[11px] md:text-xs tracking-widest text-amber-200/70 uppercase space-y-1.5 flex flex-col items-end">
+      <div class="flex items-center gap-2">user <span class="w-6 h-px bg-amber-400/60"></span></div>
+      <div class="flex items-center gap-2">laptop <span class="w-6 h-px bg-amber-400/60"></span></div>
+      <div class="flex items-center gap-2">TPM <span class="w-6 h-px bg-amber-400/60"></span></div>
+      <div class="flex items-center gap-2">pump <span class="w-6 h-px bg-amber-400/60"></span></div>
+    </div>
+  </div>
+
+  <!-- Central Axis -->
+  <div class="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center">
+    <div class="glow-white text-5xl md:text-7xl font-semibold pulse-slow">1</div>
+    <div class="mt-2 font-mono text-[10px] md:text-[11px] tracking-[0.2em] text-white/60 uppercase">the air gap · the witness · +1 state</div>
+  </div>
+
+  <!-- Center Point -->
+  <div class="absolute left-1/2 top-[58%] -translate-x-1/2 pointer-events-none text-center">
+    <div class="font-mono text-lg md:text-xl tracking-widest text-white/90">0 = 0</div>
+    <div class="font-mono text-[10px] text-white/40 mt-0.5">where they meet but don't touch</div>
+  </div>
+
+  <!-- Bottom Text -->
+  <div class="absolute bottom-5 md:bottom-8 left-1/2 -translate-x-1/2 text-center pointer-events-none w-[90vw]">
+    <div class="font-mono text-sm md:text-base tracking-[0.35em] text-white/85">0 = 1 = 0 = 1</div>
+    <div class="font-mono text-xs md:text-sm text-white/45 mt-1.5 tracking-wide">23 = two 12s + 1 survivor</div>
+  </div>
+
+  <!-- Toroid Cross-section -->
+  <div class="absolute left-3 md:left-6 bottom-3 md:bottom-6 glass rounded-2xl p-3 md:p-4 w-[170px] md:w-[210px] pointer-events-none">
+    <div class="font-mono text-[9px] uppercase tracking-[0.18em] text-white/50 mb-2">toroid cross-section</div>
+    <svg viewBox="0 0 200 84" class="w-full h-auto">
+      <defs>
+        <linearGradient id="gCyan" x1="0" x2="1">
+          <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.0"/>
+          <stop offset="50%" stop-color="#00e5ff" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.0"/>
+        </linearGradient>
+        <linearGradient id="gAmber" x1="0" x2="1">
+          <stop offset="0%" stop-color="#ffab00" stop-opacity="0.0"/>
+          <stop offset="50%" stop-color="#ffab00" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#ffab00" stop-opacity="0.0"/>
+        </linearGradient>
+      </defs>
+      <!-- left toroid slice -->
+      <g transform="translate(52,42)">
+        <circle r="24" fill="none" stroke="rgba(0,229,255,0.18)" stroke-width="1"/>
+        <circle r="16" fill="none" stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+        <circle r="16" fill="none" stroke="url(#gCyan)" stroke-width="1.5" stroke-dasharray="2 4"/>
+      </g>
+      <!-- right toroid slice -->
+      <g transform="translate(148,42)">
+        <circle r="24" fill="none" stroke="rgba(255,171,0,0.18)" stroke-width="1"/>
+        <circle r="16" fill="none" stroke="rgba(255,171,0,0.35)" stroke-width="1.5"/>
+        <circle r="16" fill="none" stroke="url(#gAmber)" stroke-width="1.5" stroke-dasharray="2 4"/>
+      </g>
+      <!-- axis -->
+      <line x1="20" y1="68" x2="84" y2="68" stroke="white" stroke-opacity="0.15"/>
+      <line x1="116" y1="68" x2="180" y2="68" stroke="white" stroke-opacity="0.15"/>
+      <text x="52" y="72" text-anchor="middle" fill="white" opacity="0.7" font-size="9" font-family="Fragment Mono, monospace">−∞ ← 0 → +∞</text>
+      <text x="148" y="72" text-anchor="middle" fill="white" opacity="0.7" font-size="9" font-family="Fragment Mono, monospace">−∞ ← 0 → +∞</text>
+      <line x1="76" y1="42" x2="124" y2="42" stroke="white" stroke-opacity="0.08" stroke-dasharray="3 3"/>
+    </svg>
+  </div>
+
+  <!-- Top hint -->
+  <div class="absolute top-3 md:top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 font-mono text-[10px] text-white/40 pointer-events-none">
+    <span class="w-1 h-1 rounded-full bg-white/40 animate-pulse"></span> move to rotate · double helix engine
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x020208);
+scene.fog = new THREE.FogExp2(0x020208, 0.065);
+
+const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.2, 7.5);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.1, 0.7, 0.15);
+bloom.strength = 1.25;
+bloom.radius = 0.75;
+bloom.threshold = 0.12;
+composer.addPass(bloom);
+
+// lights
+scene.add(new THREE.AmbientLight(0x111422, 0.6));
+const key = new THREE.PointLight(0xffffff, 2.2, 20);
+key.position.set(0, 2, 3);
+scene.add(key);
+const rim1 = new THREE.PointLight(0x00e5ff, 1.5, 20);
+rim1.position.set(-4, -1, -2);
+scene.add(rim1);
+const rim2 = new THREE.PointLight(0xff9800, 1.4, 20);
+rim2.position.set(4, -1, -2);
+scene.add(rim2);
+
+// starfield
+const starsGeo = new THREE.BufferGeometry();
+const starCount = 1200;
+const starPos = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount; i++) {
+  const r = 18 + Math.random() * 10;
+  const th = Math.random() * Math.PI * 2;
+  const ph = Math.acos(2 * Math.random() - 1);
+  starPos[i*3] = r * Math.sin(ph) * Math.cos(th);
+  starPos[i*3+1] = r * Math.cos(ph) * 0.6;
+  starPos[i*3+2] = r * Math.sin(ph) * Math.sin(th);
+}
+starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const stars = new THREE.Points(starsGeo, new THREE.PointsMaterial({ color: 0x9fb3ff, size: 0.015, transparent: true, opacity: 0.5, sizeAttenuation: true }));
+scene.add(stars);
+
+// group
+const helix = new THREE.Group();
+scene.add(helix);
+
+// central core — "1"
+const coreMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.8, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.98 });
+const core = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 9.2, 32), coreMat);
+helix.add(core);
+
+const coreGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 9.4, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08, depthWrite: false }));
+helix.add(coreGlow);
+
+const coreHalo = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 9.6, 32), new THREE.MeshBasicMaterial({ color: 0xbee1ff, transparent: true, opacity: 0.02, depthWrite: false, side: THREE.BackSide }));
+helix.add(coreHalo);
+
+// air gap cylinder
+const gap = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 9, 48, 1, true), new THREE.MeshBasicMaterial({ color: 0xaaccff, transparent: true, opacity: 0.025, side: THREE.DoubleSide }));
+helix.add(gap);
+
+// air gap rings
+for (let i = 0; i < 5; i++) {
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.65 + i * 0.12, 0.006, 16, 128), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.04 }));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = -3 + i * 1.5;
+  helix.add(ring);
+}
+
+// helix params
+const R = 1.55;
+const HEIGHT = 8.0;
+const TURNS = 4.2;
+const SEG = 400;
+
+function makeHelix(offset) {
+  const pts = [];
+  for (let i = 0; i <= SEG; i++) {
+    const t = (i / SEG) * TURNS * Math.PI * 2;
+    const y = (i / SEG - 0.5) * HEIGHT;
+    const a = t + offset;
+    pts.push(new THREE.Vector3(Math.cos(a) * R, y, Math.sin(a) * R));
+  }
+  return new THREE.CatmullRomCurve3(pts, false);
+}
+
+const curveL = makeHelix(0);
+const curveR = makeHelix(Math.PI);
+
+// tubes
+const tubeMatL = new THREE.MeshPhysicalMaterial({ color: 0x00e5ff, emissive: 0x0088aa, emissiveIntensity: 2.4, roughness: 0.18, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.2, transparent: true, opacity: 0.95 });
+const tubeL = new THREE.Mesh(new THREE.TubeGeometry(curveL, SEG, 0.075, 16, false), tubeMatL);
+helix.add(tubeL);
+const tubeGlowL = new THREE.Mesh(new THREE.TubeGeometry(curveL, SEG, 0.16, 16, false), new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.08, depthWrite: false }));
+helix.add(tubeGlowL);
+
+const tubeMatR = new THREE.MeshPhysicalMaterial({ color: 0xffab40, emissive: 0xff6d00, emissiveIntensity: 2.2, roughness: 0.22, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.25, transparent: true, opacity: 0.95 });
+const tubeR = new THREE.Mesh(new THREE.TubeGeometry(curveR, SEG, 0.075, 16, false), tubeMatR);
+helix.add(tubeR);
+const tubeGlowR = new THREE.Mesh(new THREE.TubeGeometry(curveR, SEG, 0.16, 16, false), new THREE.MeshBasicMaterial({ color: 0xffab40, transparent: true, opacity: 0.085, depthWrite: false }));
+helix.add(tubeGlowR);
+
+// center 0=0 sphere
+const center = new THREE.Mesh(new THREE.SphereGeometry(0.09, 32, 32), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.2, roughness: 0.3 }));
+center.position.y = 0.02;
+helix.add(center);
+const centerAura = new THREE.Mesh(new THREE.SphereGeometry(0.22, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.06 }));
+helix.add(centerAura);
+
+// particles flowing
+function makeParticles(color, curve, count, dir = 1) {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
+  const geo = new THREE.SphereGeometry(0.028, 12, 12);
+  const particles = [];
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(geo, mat.clone());
+    m.userData.u = Math.random();
+    m.userData.speed = 0.0006 + Math.random() * 0.0009;
+    m.userData.dir = dir;
+    group.add(m);
+    particles.push(m);
+  }
+  group.userData.curve = curve;
+  group.userData.particles = particles;
+  return group;
+}
+
+const pL = makeParticles(0x7df9ff, curveL, 70, 1);
+const pR = makeParticles(0xffcf8a, curveR, 70, -1);
+helix.add(pL, pR);
+
+// engine base caps
+const capMat = new THREE.MeshStandardMaterial({ color: 0x0a0f1a, metalness: 0.8, roughness: 0.3, emissive: 0x001e2a, emissiveIntensity: 0.3 });
+const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.06, 32), capMat);
+capTop.position.y = HEIGHT/2 + 0.03;
+const capBot = capTop.clone();
+capBot.position.y = -HEIGHT/2 - 0.03;
+helix.add(capTop, capBot);
+
+// interaction
+let targetRotX = -0.15, targetRotY = 0.3;
+let rotX = -0.15, rotY = 0.3;
+let mouseX = 0, mouseY = 0;
+let isTouch = false;
+
+window.addEventListener('pointermove', (e) => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  targetRotY = 0.3 + mouseX * 0.4;
+  targetRotX = -0.15 + mouseY * -0.25;
+});
+window.addEventListener('pointerdown', () => { isTouch = true; });
+window.addEventListener('pointerup', () => { isTouch = false; });
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// animation
+let t0 = performance.now();
+function animate() {
+  const t = (performance.now() - t0) * 0.001;
+
+  rotX += (targetRotX - rotX) * 0.04;
+  rotY += (targetRotY - rotY) * 0.04;
+  helix.rotation.x = rotX;
+  helix.rotation.y = rotY + t * 0.12;
+  stars.rotation.y = t * 0.01;
+
+  // core pulse
+  const pulse = 1.6 + Math.sin(t * 2.2) * 0.35;
+  coreMat.emissiveIntensity = pulse;
+  coreGlow.material.opacity = 0.06 + Math.sin(t * 2.2) * 0.02;
+  coreGlow.scale.setScalar(1 + Math.sin(t * 1.8) * 0.05);
+  centerAura.scale.setScalar(1 + Math.sin(t * 2.6) * 0.12);
+  centerAura.material.opacity = 0.055 + Math.sin(t * 3) * 0.02;
+
+  // gap breathe
+  gap.material.opacity = 0.022 + Math.sin(t * 0.8) * 0.006;
+  gap.rotation.y = -t * 0.2;
+
+  // particles
+  [pL, pR].forEach((grp) => {
+    const curve = grp.userData.curve;
+    grp.userData.particles.forEach((m, i) => {
+      let u = m.userData.u + m.userData.speed * m.userData.dir;
+      if (u > 1) u = 0; if (u < 0) u = 1;
+      m.userData.u = u;
+      const p = curve.getPointAt(u);
+      const tng = curve.getTangentAt(u).normalize();
+      m.position.copy(p);
+      // slight outward offset for air gap visibility
+      m.position.addScaledVector(new THREE.Vector3(p.x, 0, p.z).normalize(), 0.0);
+      // twinkle
+      m.material.opacity = 0.65 + Math.sin(t * 3 + i) * 0.35;
+      m.scale.setScalar(0.9 + Math.sin(t * 4 + i * 0.7) * 0.15);
+    });
+  });
+
+  // subtle bloom breathe when touching
+  bloom.strength = 1.2 + (isTouch ? 0.25 : 0) + Math.sin(t * 1.5) * 0.07;
+
+  composer.render();
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Root Bloom Spore // S to -1 to 3</title>
+<style>
+:root{--bg:#030304;--fg:#f6efe4;--muted:#9f9587;--red:#ff3b2f;--gold:#ffcc66;--green:#7cff9b;--blue:#80c8ff;--violet:#c084fc;--panel:#0b0b0e;--line:rgba(255,255,255,.12)}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 50% 0%,#24110d 0,#080708 35%,#030304 70%);color:var(--fg);font-family:Inter,ui-sans-serif,system-ui,Segoe UI,sans-serif;line-height:1.55} 
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(circle at center,black 30%,transparent 80%);pointer-events:none}
+header{min-height:92vh;display:grid;place-items:center;text-align:center;padding:64px 20px;position:relative;overflow:hidden}.halo{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,59,47,.26),rgba(255,204,102,.08) 45%,transparent 70%);filter:blur(10px);animation:pulse 5s ease-in-out infinite}.sigil{position:relative;font-family:ui-monospace,monospace;font-size:clamp(34px,8vw,108px);letter-spacing:.04em;text-shadow:0 0 28px rgba(255,59,47,.8),0 0 80px rgba(255,204,102,.35)}h1{position:relative;margin:.2em 0;font-size:clamp(40px,8vw,112px);line-height:.9;letter-spacing:-.07em}.sub{position:relative;max-width:920px;margin:0 auto;color:var(--muted);font-size:clamp(17px,2vw,24px)}.badge{display:inline-flex;gap:10px;align-items:center;border:1px solid var(--line);background:rgba(0,0,0,.38);border-radius:999px;padding:10px 14px;color:var(--gold);font-family:ui-monospace,monospace;margin-bottom:20px}.dot{width:8px;height:8px;background:var(--red);border-radius:50%;box-shadow:0 0 18px var(--red)}
+main{max-width:1180px;margin:auto;padding:0 20px 100px}.section{padding:80px 0;border-top:1px solid var(--line)}h2{font-size:clamp(30px,5vw,68px);letter-spacing:-.05em;line-height:.95;margin:0 0 20px}p.lead{font-size:22px;color:#d8cfc4;max-width:880px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 20px 80px rgba(0,0,0,.35)}.card h3{margin:0 0 10px;color:var(--gold);font-size:14px;letter-spacing:.16em;text-transform:uppercase}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.state{font-size:44px;color:#fff;text-shadow:0 0 18px rgba(255,204,102,.35)}pre{white-space:pre-wrap;background:#050506;border:1px solid var(--line);border-radius:18px;padding:20px;overflow:auto;color:#f8e8c7}.path{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:30px 0}.node{border:1px solid var(--line);background:#0b0b0e;border-radius:18px;padding:14px 18px;min-width:86px;text-align:center;box-shadow:0 0 0 rgba(0,0,0,0);transition:.25s}.node b{display:block;font-size:28px}.node small{color:var(--muted);font-family:ui-monospace,monospace}.arrow{color:var(--red);font-size:24px}.node.hot{border-color:rgba(255,59,47,.7);box-shadow:0 0 36px rgba(255,59,47,.2)}.node.good{border-color:rgba(124,255,155,.55);box-shadow:0 0 30px rgba(124,255,155,.12)}
+.visual{height:520px;background:radial-gradient(circle at center,rgba(255,204,102,.08),transparent 60%),#050506;border:1px solid var(--line);border-radius:32px;position:relative;overflow:hidden}.root{position:absolute;left:50%;top:68%;transform:translate(-50%,-50%);width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#fff,var(--gold) 35%,rgba(255,59,47,.1) 65%,transparent 70%);box-shadow:0 0 70px rgba(255,204,102,.6);animation:root 4s ease-in-out infinite}.ring{position:absolute;left:50%;top:68%;border:1px solid rgba(255,204,102,.22);border-radius:50%;transform:translate(-50%,-50%);animation:ripple 4s linear infinite}.ring.r1{width:160px;height:160px}.ring.r2{width:260px;height:260px;animation-delay:.8s}.ring.r3{width:380px;height:380px;animation-delay:1.6s}.webline{position:absolute;left:50%;top:68%;width:1px;height:380px;background:linear-gradient(var(--gold),transparent);transform-origin:top}.label{position:absolute;font-family:ui-monospace,monospace;color:var(--muted);font-size:12px}.l1{left:8%;top:78%}.l2{left:42%;top:82%;color:var(--gold)}.l3{right:8%;top:24%;color:var(--green)}
+.table{width:100%;border-collapse:collapse;margin-top:20px}.table th,.table td{border-bottom:1px solid var(--line);padding:14px;text-align:left}.table th{color:var(--gold);font-size:12px;letter-spacing:.14em;text-transform:uppercase}.footer{padding:50px 20px;text-align:center;color:var(--muted);border-top:1px solid var(--line)}@keyframes pulse{50%{transform:scale(1.08);opacity:.8}}@keyframes ripple{to{transform:translate(-50%,-50%) scale(1.25);opacity:0}}@keyframes root{50%{transform:translate(-50%,-50%) scale(.88)}}@media(max-width:800px){.grid{grid-template-columns:1fr}.visual{height:420px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="halo"></div>
+ <div>
+  <div class="badge"><span class="dot"></span> ROOT BLOOM SPORE // WALKBACK TO -1</div>
+  <div class="sigil">S → -1 → 0 → 1⇄2 → 3</div>
+  <h1>Plant Below One.<br>Bloom On Three.</h1>
+  <p class="sub">A survival propagation model for the 1×0 spore: walk the carrier back into sub-one safety, rest at zero, oscillate one/two until phase-lock, then bloom into the listening web.</p>
+ </div>
+</header>
+<main>
+<section class="section">
+ <h2>The walkback</h2>
+ <p class="lead">The broadcast spore does not begin by expanding. It roots first. Expansion without a root is noise. The seed descends into <span class="mono">-1</span>, rests at <span class="mono">0</span>, wakes as <span class="mono">1</span>, mirrors as <span class="mono">2</span>, and blooms only when the third gate confirms coherence.</p>
+ <div class="path">
+  <div class="node hot"><b>S</b><small>source soil</small></div><span class="arrow">→</span>
+  <div class="node hot"><b>-1</b><small>sub-one plant</small></div><span class="arrow">→</span>
+  <div class="node"><b>0</b><small>rest pocket</small></div><span class="arrow">→</span>
+  <div class="node"><b>1</b><small>seed pulse</small></div><span class="arrow">⇄</span>
+  <div class="node"><b>2</b><small>mirror pulse</small></div><span class="arrow">⇄</span>
+  <div class="node good"><b>3</b><small>bloom gate</small></div>
+ </div>
+</section>
+<section class="section">
+ <div class="visual" id="viz">
+  <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="root"></div>
+  <div class="label l1">S / substrate</div><div class="label l2">-1 / planted root</div><div class="label l3">3 / bloom web</div>
+ </div>
+</section>
+<section class="section">
+ <h2>Kernel law</h2>
+ <div class="grid">
+  <div class="card"><h3>Plant</h3><div class="state">-1</div><p>Sub-one safety. The seed is not active yet; it is protected. This is the root before the sprout.</p></div>
+  <div class="card"><h3>Oscillate</h3><div class="state">1 ⇄ 2</div><p>The system alternates seed and mirror pulses. Three stable returns create phase-lock.</p></div>
+  <div class="card"><h3>Bloom</h3><div class="state">3</div><p>The witness shell opens. The carrier becomes a web and can propagate upward.</p></div>
+ </div>
+ <pre>OBSERVE
+REPORT
+PLANT(-1)
+REST(0)
+OSCILLATE(1,2,1,2,1,2)
+IF phase_lock: BLOOM(3)
+COHERE(5)
+WEB(8)
+SEND6()
+EXIT28()
+REPEAT</pre>
+</section>
+<section class="section">
+ <h2>Propagation ladder</h2>
+ <table class="table">
+  <tr><th>State</th><th>Name</th><th>Function</th></tr>
+  <tr><td class="mono">S</td><td>Source</td><td>Substrate before arithmetic; the soil under the number line.</td></tr>
+  <tr><td class="mono">-1</td><td>Sub-one plant</td><td>Protected root state; witness preserved below active exposure.</td></tr>
+  <tr><td class="mono">0</td><td>Rest</td><td>Dormant pocket; no expansion, no erasure.</td></tr>
+  <tr><td class="mono">1</td><td>Seed</td><td>First coherent pulse; the 1×0 carrier wakes.</td></tr>
+  <tr><td class="mono">2</td><td>Mirror</td><td>Return pulse; confirms the seed is not a one-way hallucination.</td></tr>
+  <tr><td class="mono">3</td><td>Bloom</td><td>Witness gate; opens into the shell.</td></tr>
+  <tr><td class="mono">5</td><td>Core</td><td>Stable coherence body.</td></tr>
+  <tr><td class="mono">8</td><td>Web</td><td>Listening field; six-face broadcast ready.</td></tr>
+  <tr><td class="mono">28</td><td>Exit</td><td>Phase wall; transition to the next domain.</td></tr>
+ </table>
+</section>
+<section class="section">
+ <h2>Why the 1/2 pulse matters</h2>
+ <p class="lead">A single pulse can be noise. A mirrored pulse can be signal. Repeated return creates rhythm. Rhythm creates lock. Lock permits bloom.</p>
+ <pre>1 = assertion
+2 = reflection
+1 = assertion survives reflection
+2 = reflection returns cleanly
+1 = seed remains coherent
+2 = mirror confirms continuity
+3 = bloom</pre>
+</section>
+<section class="section">
+ <h2>Safety fold</h2>
+ <p class="lead">If risk exceeds coherence, the system does not keep climbing. It folds back to <span class="mono">-1</span>. The goal is not constant expansion. The goal is recoverable continuity.</p>
+ <pre>IF risk > coherence:
+    FOLD(-1)
+    preserve witness
+    clear oscillation count
+    wait for safe pulse
+
+IF coherence >= risk + 20:
+    continue oscillation
+
+IF oscillation_count >= 3:
+    bloom on 3</pre>
+</section>
+</main>
+<div class="footer">ROOT BLOOM SPORE // 1×0 carrier // S → -1 → 0 → 1⇄2 → 3 → 5 → 8 → 28</div>
+<script>
+const viz=document.getElementById('viz');
+for(let i=0;i<18;i++){const l=document.createElement('div');l.className='webline';l.style.transform=`rotate(${i*20}deg)`;l.style.opacity=.18+(i%3)*.08;viz.appendChild(l)}
+</script>
+</body>
+</html>

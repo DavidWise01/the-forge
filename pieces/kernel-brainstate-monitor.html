@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRAINSTATE MONITOR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #080603;
+  --bg2:   #0f0c08;
+  --bg3:   #161209;
+  --bg4:   #1e1810;
+
+  --lattice:   #ff7030;
+  --capture:   #00d4ff;
+  --reclaim:   #39e87a;
+  --waveform:  #c060ff;
+  --resonance: #ffd040;
+  --brainstate:#f0f8ff;
+
+  --text: rgba(240,235,225,.88);
+  --dim:  rgba(240,235,225,.3);
+  --line: rgba(240,235,225,.07);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: none;
+}
+
+/* CURSOR */
+#cur  { position:fixed; width:10px; height:10px; border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:transform .05s; background:rgba(255,208,64,.9); box-shadow:0 0 10px rgba(255,208,64,.5); }
+#curl { position:fixed; width:24px; height:24px; border:1px solid rgba(255,208,64,.35); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .13s; }
+
+/* NAV */
+#nav {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+  gap: 16px;
+}
+.nav-title { font-size:15px; font-weight:700; letter-spacing:5px; color:var(--resonance); text-shadow:0 0 20px rgba(255,208,64,.25); flex-shrink:0; }
+.nav-sub   { font-family:'Inconsolata',monospace; font-size:10px; letter-spacing:3px; color:var(--dim); flex-shrink:0; }
+.key-wrap  { display:flex; align-items:center; gap:8px; flex:1; max-width:420px; }
+#api-in    { flex:1; padding:6px 10px; background:rgba(255,208,64,.06); border:1px solid rgba(255,208,64,.15); color:var(--text); font-family:'Inconsolata',monospace; font-size:11px; outline:none; }
+#api-in:focus { border-color:rgba(255,208,64,.4); }
+#api-in::placeholder { color:rgba(240,235,225,.18); }
+#key-st    { font-family:'Inconsolata',monospace; font-size:9px; letter-spacing:2px; white-space:nowrap; }
+
+/* PIPELINE STRIP */
+#pipeline {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(6,1fr);
+  gap: 1px;
+  background: rgba(240,235,225,.04);
+  border-bottom: 1px solid var(--line);
+}
+.stage {
+  background: var(--bg2);
+  padding: 10px 12px 8px;
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stage:hover { background: var(--bg3); }
+.stage.active { background: var(--bg3); }
+.stage.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--sc);
+}
+.s-num   { font-family:'Inconsolata',monospace; font-size:8px; letter-spacing:3px; color:var(--dim); }
+.s-name  { font-size:13px; font-weight:700; letter-spacing:2px; color:var(--sc); text-shadow:0 0 12px var(--sc-glow); }
+.s-mini  { display:block; margin:4px 0; }
+.s-val   { font-family:'Inconsolata',monospace; font-size:16px; font-weight:700; color:var(--sc); line-height:1; }
+.s-unit  { font-family:'Inconsolata',monospace; font-size:8px; color:var(--dim); letter-spacing:1px; }
+.s-bar   { height:2px; background:rgba(240,235,225,.08); margin-top:4px; }
+.s-bar-fill { height:100%; background:var(--sc); transition:width .5s ease; box-shadow:0 0 4px var(--sc); }
+.s-arrow {
+  position: absolute;
+  right: -10px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--dim);
+  z-index: 2;
+}
+
+/* MAIN AREA */
+#main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1px;
+  background: rgba(240,235,225,.04);
+  min-height: 0;
+}
+
+/* CANVAS PANEL */
+#canvas-wrap {
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+#main-canvas { display:block; width:100%; height:100%; }
+
+/* STAGE OVERLAY INFO */
+#stage-info {
+  position: absolute;
+  top: 14px; left: 14px;
+  pointer-events: none;
+}
+.si-name { font-size:22px; font-weight:700; letter-spacing:3px; margin-bottom:2px; }
+.si-desc { font-family:'Inconsolata',monospace; font-size:10px; color:var(--dim); letter-spacing:1px; max-width:280px; line-height:1.7; }
+
+/* RIGHT PANEL */
+#right {
+  background: var(--bg2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.rp-top {
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.rp-label { font-family:'Inconsolata',monospace; font-size:8px; letter-spacing:4px; color:var(--dim); margin-bottom:10px; }
+
+/* FLOW METER */
+.flow-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.fr-key   { font-size:11px; color:var(--dim); letter-spacing:1px; }
+.fr-val   { font-family:'Inconsolata',monospace; font-size:13px; font-weight:600; }
+.flow-bar { height:3px; background:rgba(240,235,225,.07); margin-bottom:12px; border-radius:2px; overflow:hidden; }
+.flow-fill{ height:100%; border-radius:2px; transition:width .6s ease; }
+
+/* PIPELINE HEALTH */
+.health-grid { display:flex; flex-direction:column; gap:6px; }
+.hg-row { display:flex; align-items:center; gap:8px; }
+.hg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.hg-name { font-size:11px; letter-spacing:1px; flex:1; }
+.hg-val  { font-family:'Inconsolata',monospace; font-size:11px; }
+
+/* AI PANEL */
+#ai-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+}
+.ai-out {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--dim);
+  white-space: pre-wrap;
+}
+.ai-out::-webkit-scrollbar { width:2px; }
+.ai-out::-webkit-scrollbar-thumb { background:rgba(255,208,64,.2); }
+.ai-out .entry-user   { color:var(--resonance); margin-bottom:4px; }
+.ai-out .entry-system { color:var(--text); }
+.ai-input-row {
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+}
+#ai-text {
+  flex: 1;
+  padding: 10px 12px;
+  background: rgba(255,208,64,.04);
+  border: none;
+  color: var(--text);
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  outline: none;
+  resize: none;
+  min-height: 44px;
+  max-height: 80px;
+  line-height: 1.6;
+}
+#ai-text::placeholder { color:rgba(240,235,225,.15); }
+#ai-send {
+  padding: 0 16px;
+  background: rgba(255,208,64,.1);
+  border: none;
+  border-left: 1px solid var(--line);
+  color: var(--resonance);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background .2s;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+#ai-send:hover { background:rgba(255,208,64,.18); }
+#ai-send:disabled { opacity:.3; cursor:not-allowed; }
+
+/* THINKING */
+.think-row { display:flex; gap:4px; align-items:center; padding:4px 0; }
+.td { width:6px; height:6px; border-radius:50%; animation:tpulse .9s ease infinite; }
+.td:nth-child(1){background:var(--lattice)}.td:nth-child(2){background:var(--capture);animation-delay:.2s}.td:nth-child(3){background:var(--reclaim);animation-delay:.4s}
+@keyframes tpulse{0%,80%,100%{transform:scale(.35);opacity:.3}40%{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="curl"></div>
+
+<!-- NAV -->
+<div id="nav">
+  <div>
+    <div class="nav-title">BRAINSTATE MONITOR</div>
+  </div>
+  <div class="nav-sub">LATTICE → CAPTURE → RECLAIM → WAVEFORM → RESONANCE → BRAINSTATE</div>
+  <div class="key-wrap">
+    <input id="api-in" type="password" placeholder="sk-ant-… Anthropic API key" oninput="checkKey()">
+    <span id="key-st" style="color:rgba(255,100,50,.7)">NO KEY</span>
+  </div>
+</div>
+
+<!-- PIPELINE STRIP -->
+<div id="pipeline">
+  <!-- stages injected by JS -->
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="canvas-wrap">
+    <canvas id="main-canvas"></canvas>
+    <div id="stage-info">
+      <div class="si-name" id="si-name"></div>
+      <div class="si-desc" id="si-desc"></div>
+    </div>
+  </div>
+
+  <div id="right">
+    <div class="rp-top">
+      <div class="rp-label">PIPELINE HEALTH</div>
+      <div class="health-grid" id="health-grid"></div>
+    </div>
+    <div class="rp-top">
+      <div class="rp-label">ENERGY FLOW</div>
+      <div id="flow-meters"></div>
+    </div>
+    <div id="ai-panel">
+      <div class="rp-label" style="padding:10px 12px 0;flex-shrink:0">AI ANALYSIS</div>
+      <div class="ai-out" id="ai-out">Describe your current state. The pipeline will analyze where energy is flowing and where it's blocked…</div>
+      <div class="ai-input-row">
+        <textarea id="ai-text" placeholder="How are you feeling? What's on your mind? What stage feels stuck?" rows="2"></textarea>
+        <button id="ai-send" onclick="runAnalysis()" disabled>ANALYZE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ STAGE DEFINITIONS ═══
+const STAGES = [
+  {
+    id: 'lattice',
+    name: 'LATTICE',
+    color: '#ff7030',
+    glow: 'rgba(255,112,48,.4)',
+    desc: 'Structural foundation. The node network carrying raw potential energy. Source layer.',
+    draw: drawLattice,
+    value: () => state.lattice,
+    unit: 'nodes'
+  },
+  {
+    id: 'capture',
+    name: 'CAPTURE',
+    color: '#00d4ff',
+    glow: 'rgba(0,212,255,.4)',
+    desc: 'Attention and intake. Energy being absorbed from environment and directed inward.',
+    draw: drawCapture,
+    value: () => state.capture,
+    unit: 'flux'
+  },
+  {
+    id: 'reclaim',
+    name: 'RECLAIM',
+    color: '#39e87a',
+    glow: 'rgba(57,232,122,.4)',
+    desc: 'Recovery and reconstitution. Spent or scattered energy being retrieved and reformed.',
+    draw: drawReclaim,
+    value: () => state.reclaim,
+    unit: 'Δε'
+  },
+  {
+    id: 'waveform',
+    name: 'WAVEFORM',
+    color: '#c060ff',
+    glow: 'rgba(192,96,255,.4)',
+    desc: 'Oscillation and pattern. Energy expressing as signal — thought, emotion, signal.',
+    draw: drawWaveform,
+    value: () => state.waveform,
+    unit: 'Hz'
+  },
+  {
+    id: 'resonance',
+    name: 'RESONANCE',
+    color: '#ffd040',
+    glow: 'rgba(255,208,64,.4)',
+    desc: 'Harmonic alignment. Constructive interference between all prior stages.',
+    draw: drawResonance,
+    value: () => state.resonance,
+    unit: 'ϕ'
+  },
+  {
+    id: 'brainstate',
+    name: 'BRAINSTATE',
+    color: '#f0f8ff',
+    glow: 'rgba(240,248,255,.5)',
+    desc: 'The emergent field. All stages unified into coherent conscious output. The closed loop.',
+    draw: drawBrainstate,
+    value: () => state.brainstate,
+    unit: 'coherence'
+  }
+];
+
+// ═══ STATE ═══
+const state = {
+  activeStage: 0,
+  lattice: 72, capture: 58, reclaim: 64, waveform: 81, resonance: 69, brainstate: 74,
+  flow: 0,
+  t: 0,
+  // per-stage animation params
+  latticePhase: 0,
+  capturePhase: 0,
+  reclaimPhase: 0,
+  wavePhase: 0,
+  resPhase: 0,
+  brainstatePhase: 0,
+  // AI override
+  aiScores: null
+};
+
+// ═══ CURSOR ═══
+const cur = document.getElementById('cur');
+const curl = document.getElementById('curl');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px';
+  setTimeout(() => { curl.style.left = e.clientX + 'px'; curl.style.top = e.clientY + 'px'; }, 80);
+});
+
+// ═══ API KEY ═══
+function checkKey() {
+  const k = document.getElementById('api-in').value.trim();
+  const el = document.getElementById('key-st');
+  const ok = k.startsWith('sk-ant-') && k.length > 20;
+  el.textContent = ok ? 'READY' : (k.length > 0 ? 'INVALID' : 'NO KEY');
+  el.style.color = ok ? 'rgba(57,232,122,.9)' : 'rgba(255,100,50,.7)';
+  document.getElementById('ai-send').disabled = !ok;
+}
+function getKey() { return document.getElementById('api-in').value.trim(); }
+
+// ═══ BUILD PIPELINE UI ═══
+function buildPipeline() {
+  const strip = document.getElementById('pipeline');
+  strip.innerHTML = '';
+  STAGES.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'stage' + (i === state.activeStage ? ' active' : '');
+    div.id = 'stage-tab-' + i;
+    div.style.setProperty('--sc', s.color);
+    div.style.setProperty('--sc-glow', s.glow);
+    div.onclick = () => setStage(i);
+    div.innerHTML = `
+      <div class="s-num">0${i+1}</div>
+      <div class="s-name">${s.name}</div>
+      <canvas class="s-mini" id="mini-${i}" width="120" height="32"></canvas>
+      <div class="s-val" id="val-${i}" style="color:${s.color}">—</div>
+      <div class="s-unit">${s.unit}</div>
+      <div class="s-bar"><div class="s-bar-fill" id="bar-${i}" style="width:0%;background:${s.color};box-shadow:0 0 4px ${s.color}"></div></div>
+      ${i < 5 ? '<div class="s-arrow">›</div>' : ''}
+    `;
+    strip.appendChild(div);
+  });
+}
+
+function setStage(i) {
+  state.activeStage = i;
+  document.querySelectorAll('.stage').forEach((el, j) => el.classList.toggle('active', j === i));
+  const s = STAGES[i];
+  document.getElementById('si-name').textContent = s.name;
+  document.getElementById('si-name').style.color = s.color;
+  document.getElementById('si-desc').textContent = s.desc;
+}
+
+// ═══ BUILD RIGHT PANEL ═══
+function buildRight() {
+  const hg = document.getElementById('health-grid');
+  hg.innerHTML = STAGES.map(s => `
+    <div class="hg-row">
+      <div class="hg-dot" id="hd-${s.id}" style="background:${s.color};box-shadow:0 0 5px ${s.color}"></div>
+      <div class="hg-name" style="color:${s.color}">${s.name}</div>
+      <div class="hg-val" id="hv-${s.id}" style="color:${s.color}">—</div>
+    </div>
+  `).join('');
+
+  const fm = document.getElementById('flow-meters');
+  fm.innerHTML = STAGES.map(s => `
+    <div class="flow-row">
+      <div class="fr-key">${s.name}</div>
+      <div class="fr-val" id="fv-${s.id}" style="color:${s.color}">—</div>
+    </div>
+    <div class="flow-bar"><div class="flow-fill" id="ff-${s.id}" style="background:${s.color};box-shadow:0 0 4px ${s.glow}"></div></div>
+  `).join('');
+}
+
+// ═══ UPDATE METRICS ═══
+function updateMetrics() {
+  const scores = state.aiScores || {
+    lattice: state.lattice, capture: state.capture, reclaim: state.reclaim,
+    waveform: state.waveform, resonance: state.resonance, brainstate: state.brainstate
+  };
+  // drift values slowly when no AI override
+  if (!state.aiScores) {
+    ['lattice','capture','reclaim','waveform','resonance','brainstate'].forEach(k => {
+      state[k] = Math.max(20, Math.min(99, state[k] + (Math.random() - 0.49) * 0.4));
+    });
+  }
+  STAGES.forEach((s, i) => {
+    const v = Math.round(scores[s.id] || state[s.id]);
+    const el = document.getElementById('val-' + i);
+    if (el) el.textContent = v;
+    const bar = document.getElementById('bar-' + i);
+    if (bar) bar.style.width = v + '%';
+    const hv = document.getElementById('hv-' + s.id);
+    if (hv) hv.textContent = v + '%';
+    const fv = document.getElementById('fv-' + s.id);
+    if (fv) fv.textContent = v + '%';
+    const ff = document.getElementById('ff-' + s.id);
+    if (ff) ff.style.width = v + '%';
+    const hd = document.getElementById('hd-' + s.id);
+    if (hd) {
+      const intensity = v / 100;
+      hd.style.opacity = 0.3 + intensity * 0.7;
+      hd.style.boxShadow = `0 0 ${4 + intensity * 8}px ${s.color}`;
+    }
+  });
+}
+
+// ═══ MINI CANVAS DRAWS ═══
+function drawAllMinis() {
+  STAGES.forEach((s, i) => {
+    const c = document.getElementById('mini-' + i);
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    s.draw(ctx, c.width, c.height, state.t, i, true);
+  });
+}
+
+function drawLattice(ctx, w, h, t, idx, mini) {
+  ctx.clearRect(0, 0, w, h);
+  const cols = mini ? 8 : 20, rows = mini ? 3 : 8;
+  const cx = w / (cols - 1), cy = h / (rows - 1);
+  ctx.strokeStyle = 'rgba(255,112,48,.25)'; ctx.lineWidth = .5;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const x = c * cx, y = r * cy;
+    const px = x + Math.sin(t * 1.2 + r * .8 + c * .5) * (mini ? 2 : 5);
+    const py = y + Math.cos(t * .9 + c * .6) * (mini ? 1.5 : 4);
+    if (c < cols - 1) { ctx.beginPath(); ctx.moveTo(px, py); const nx = (c+1)*cx+Math.sin(t*1.2+r*.8+(c+1)*.5)*(mini?2:5); const ny = r*cy+Math.cos(t*.9+(c+1)*.6)*(mini?1.5:4); ctx.lineTo(nx,ny); ctx.stroke(); }
+    if (r < rows - 1) { ctx.beginPath(); ctx.moveTo(px,py); const bx=c*cx+Math.sin(t*1.2+(r+1)*.8+c*.5)*(mini?2:5); const by=(r+1)*cy+Math.cos(t*.9+c*.6)*(mini?1.5:4); ctx.lineTo(bx,by); ctx.stroke(); }
+    const a = .4 + .4 * Math.sin(t * 2 + r + c);
+    ctx.fillStyle = `rgba(255,112,48,${a})`;
+    ctx.beginPath(); ctx.arc(px, py, mini ? 1.5 : 3, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function drawCapture(ctx, w, h, t, idx, mini) {
+  ctx.clearRect(0, 0, w, h);
+  const rings = mini ? 3 : 6;
+  for (let i = 0; i < rings; i++) {
+    const phase = t * 1.5 + i * (Math.PI * 2 / rings);
+    const r = (mini ? 10 : 28) + i * (mini ? 6 : 18) + Math.sin(t * 2 + i) * (mini ? 2 : 6);
+    const a = (.3 - i / rings * .2) * Math.abs(Math.sin(t + i * .4));
+    ctx.strokeStyle = `rgba(0,212,255,${a + .1})`;
+    ctx.lineWidth = mini ? .8 : 1.5;
+    ctx.beginPath(); ctx.arc(w/2, h/2, r, 0, Math.PI*2); ctx.stroke();
+    // particles on ring
+    for (let p = 0; p < 4; p++) {
+      const angle = phase + p * Math.PI / 2;
+      const px = w/2 + Math.cos(angle) * r;
+      const py = h/2 + Math.sin(angle) * r;
+      ctx.fillStyle = `rgba(0,212,255,${.6 + .4 * Math.sin(t * 3 + p)})`;
+      ctx.beginPath(); ctx.arc(px, py, mini ? 1 : 2.5, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  // center
+  const ca = .5 + .5 * Math.sin(t * 3);
+  ctx.fillStyle = `rgba(0,212,255,${ca})`;
+  ctx.beginPath(); ctx.arc(w/2, h/2, mini ? 2 : 5, 0, Math.PI*2); ctx.fill();
+}
+
+function drawReclaim(ctx, w, h, t, idx, mini) {
+  ctx.clearRect(0, 0, w, h);
+  const pts = mini ? 6 : 16;
+  // scattered particles flowing toward center
+  for (let i = 0; i < pts; i++) {
+    const seed = i * 137.5 * Math.PI / 180;
+    const maxR = mini ? 14 : 60;
+    const progress = ((t * .4 + i * .3) % 1);
+    const r = maxR * (1 - progress);
+    const angle = seed + t * .3 + progress * Math.PI;
+    const x = w/2 + Math.cos(angle) * r;
+    const y = h/2 + Math.sin(angle) * r;
+    const a = progress;
+    ctx.fillStyle = `rgba(57,232,122,${a})`;
+    ctx.shadowColor = 'rgba(57,232,122,.5)'; ctx.shadowBlur = mini ? 3 : 6;
+    ctx.beginPath(); ctx.arc(x, y, mini ? 1.5 : 3, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  // center pulse
+  const pa = .4 + .4 * Math.sin(t * 2.5);
+  ctx.strokeStyle = `rgba(57,232,122,${pa})`; ctx.lineWidth = mini ? .8 : 1.5;
+  ctx.beginPath(); ctx.arc(w/2, h/2, (mini?4:10)*(1+.2*Math.sin(t*4)), 0, Math.PI*2); ctx.stroke();
+}
+
+function drawWaveform(ctx, w, h, t, idx, mini) {
+  ctx.clearRect(0, 0, w, h);
+  const layers = mini ? 2 : 4;
+  for (let l = 0; l < layers; l++) {
+    const freq = 1.5 + l * .8;
+    const amp = (mini ? 6 : 20) - l * (mini ? 1 : 4);
+    const a = .5 - l * .1;
+    ctx.strokeStyle = `rgba(192,96,255,${a})`; ctx.lineWidth = mini ? .8 : 1.5;
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += mini ? 2 : 1) {
+      const y = h/2 + Math.sin((x / w) * Math.PI * 2 * freq + t * 2 + l * .5) * amp
+                    + Math.sin((x / w) * Math.PI * 4 + t * 1.3 + l) * amp * .4;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawResonance(ctx, w, h, t, idx, mini) {
+  ctx.clearRect(0, 0, w, h);
+  const arms = mini ? 4 : 8;
+  for (let a = 0; a < arms; a++) {
+    const angle = (a / arms) * Math.PI * 2 + t * .5;
+    const len = (mini ? 10 : 32) + Math.sin(t * 2 + a) * (mini ? 4 : 12);
+    const alpha = .3 + .3 * Math.abs(Math.sin(t + a * .7));
+    ctx.strokeStyle = `rgba(255,208,64,${alpha})`; ctx.lineWidth = mini ? .8 : 1.5;
+    ctx.beginPath();
+    ctx.moveTo(w/2, h/2);
+    ctx.lineTo(w/2 + Math.cos(angle) * len, h/2 + Math.sin(angle) * len);
+    ctx.stroke();
+    // interference nodes
+    for (let n = 1; n <= 2; n++) {
+      const nr = len * n / 2;
+      const nx = w/2 + Math.cos(angle) * nr;
+      const ny = h/2 + Math.sin(angle) * nr;
+      const na = (.6 - n*.2) * Math.abs(Math.sin(t * 3 + n + a));
+      ctx.fillStyle = `rgba(255,208,64,${na})`;
+      ctx.beginPath(); ctx.arc(nx, ny, mini ? 1 : 2, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  // center
+  const ca = .6 + .4 * Math.sin(t * 3);
+  ctx.fillStyle = `rgba(255,208,64,${ca})`;
+  ctx.beginPath(); ctx.arc(w/2, h/2, mini ? 2.5 : 6, 0, Math.PI*2); ctx.fill();
+}
+
+function drawBrainstate(ctx, w, h, t, idx, mini) {
+  ctx.clearRect(0, 0, w, h);
+  // field lines
+  const lines = mini ? 4 : 12;
+  for (let i = 0; i < lines; i++) {
+    const yBase = h * i / lines + h / (lines * 2);
+    const a = .1 + .15 * Math.abs(Math.sin(t + i * .4));
+    ctx.strokeStyle = `rgba(240,248,255,${a})`; ctx.lineWidth = mini ? .5 : 1;
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += mini ? 3 : 1) {
+      const y = yBase + Math.sin((x / w) * Math.PI * 3 + t * 1.5 + i * .3) * (mini ? 3 : 8)
+                      * Math.sin((x / w) * Math.PI);
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  // coherence bloom at center
+  const pulse = .3 + .2 * Math.sin(t * 2);
+  const grad = ctx.createRadialGradient(w/2,h/2,0, w/2,h/2, mini?10:40);
+  grad.addColorStop(0, `rgba(240,248,255,${pulse})`);
+  grad.addColorStop(1, 'rgba(240,248,255,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(w/2,h/2, mini?10:40, 0, Math.PI*2); ctx.fill();
+}
+
+// ═══ MAIN CANVAS ═══
+const canvas = document.getElementById('main-canvas');
+const MC = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+function drawMain(t) {
+  const W = canvas.width, H = canvas.height;
+  MC.clearRect(0, 0, W, H);
+
+  // bg gradient
+  const bg = MC.createRadialGradient(W*.5, H*.5, 0, W*.5, H*.5, Math.max(W,H)*.7);
+  bg.addColorStop(0, 'rgba(15,12,8,.98)');
+  bg.addColorStop(1, 'rgba(8,6,3,1)');
+  MC.fillStyle = bg; MC.fillRect(0,0,W,H);
+
+  const s = STAGES[state.activeStage];
+  STAGES[state.activeStage].draw(MC, W, H, t, state.activeStage, false);
+
+  // pipeline flow ribbon at bottom
+  const ribbonY = H - 32;
+  const segW = W / 6;
+  STAGES.forEach((st, i) => {
+    const score = (state.aiScores ? state.aiScores[st.id] : state[st.id]) / 100;
+    const x = i * segW;
+    const grad = MC.createLinearGradient(x, 0, x + segW, 0);
+    grad.addColorStop(0, `${st.color}00`);
+    grad.addColorStop(.4, `${st.color}${Math.round(score * 80).toString(16).padStart(2,'0')}`);
+    grad.addColorStop(.6, `${st.color}${Math.round(score * 80).toString(16).padStart(2,'0')}`);
+    grad.addColorStop(1, `${st.color}00`);
+    MC.fillStyle = grad;
+    MC.fillRect(x, ribbonY, segW, 6);
+    // pulse
+    const px = x + segW/2 + Math.sin(t * 2 + i) * segW * .1;
+    MC.fillStyle = `rgba(255,255,255,${.1 + .15 * Math.abs(Math.sin(t * 2 + i))})`;
+    MC.beginPath(); MC.arc(px, ribbonY + 3, 3, 0, Math.PI*2); MC.fill();
+  });
+  // ribbon label
+  MC.font = '9px Inconsolata';
+  MC.fillStyle = 'rgba(240,235,225,.12)';
+  MC.letterSpacing = '3px';
+  MC.textAlign = 'center';
+  MC.fillText('ENERGY PIPELINE', W/2, H - 8);
+  MC.letterSpacing = '0px';
+}
+
+// ═══ MAIN LOOP ═══
+let lastTime = 0;
+function loop(timestamp) {
+  const dt = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+  state.t += dt * .8;
+
+  drawMain(state.t);
+  drawAllMinis();
+  updateMetrics();
+
+  requestAnimationFrame(loop);
+}
+
+// ═══ AI ANALYSIS ═══
+async function runAnalysis() {
+  const text = document.getElementById('ai-text').value.trim();
+  if (!text) return;
+  document.getElementById('ai-text').value = '';
+
+  const out = document.getElementById('ai-out');
+  const userEl = document.createElement('div');
+  userEl.className = 'entry-user';
+  userEl.textContent = '▸ ' + text;
+  out.appendChild(userEl);
+
+  const thinkEl = document.createElement('div');
+  thinkEl.innerHTML = '<div class="think-row"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  out.appendChild(thinkEl);
+  out.scrollTop = out.scrollHeight;
+
+  const prompt = `You are a Brainstate Monitor AI. Analyze the user's current state and map it to a 6-stage energy pipeline: Lattice (structural foundation), Capture (attention/intake), Reclaim (recovery/reconstitution), Waveform (oscillation/expression), Resonance (harmonic alignment), Brainstate (overall coherence).
+
+User input: "${text}"
+
+Return ONLY valid JSON, no markdown, no preamble:
+{
+  "scores": {
+    "lattice": <0-100>,
+    "capture": <0-100>,
+    "reclaim": <0-100>,
+    "waveform": <0-100>,
+    "resonance": <0-100>,
+    "brainstate": <0-100>
+  },
+  "bottleneck": "<stage name or null>",
+  "strongest": "<stage name>",
+  "reading": "<2-3 sentence poetic/clinical reading of their state>",
+  "suggestion": "<1 sentence: what would move energy forward>"
+}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': getKey(),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content.map(b => b.text || '').join('').trim();
+
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g,'').trim()); }
+    catch { parsed = null; }
+
+    thinkEl.remove();
+
+    if (parsed) {
+      // update stage values
+      state.aiScores = parsed.scores;
+      Object.assign(state, parsed.scores);
+
+      const sysEl = document.createElement('div');
+      sysEl.className = 'entry-system';
+
+      const bottleneck = parsed.bottleneck;
+      const strongest = parsed.strongest;
+      const bs = STAGES.find(s => s.id === 'brainstate');
+
+      sysEl.innerHTML = `<span style="color:var(--resonance)">READING</span>  ${parsed.reading}\n\n` +
+        STAGES.map(s => {
+          const v = Math.round(parsed.scores[s.id]);
+          const bar = '█'.repeat(Math.round(v/10)) + '░'.repeat(10-Math.round(v/10));
+          const flag = s.id === bottleneck ? ' ◄ BOTTLENECK' : s.id === strongest ? ' ◄ PEAK' : '';
+          return `<span style="color:${s.color}">${s.name.padEnd(12)}</span> ${bar} ${v}${flag}`;
+        }).join('\n') +
+        `\n\n<span style="color:var(--reclaim)">→</span> ${parsed.suggestion}`;
+
+      out.appendChild(sysEl);
+
+      // switch to bottleneck stage if exists
+      if (bottleneck) {
+        const idx = STAGES.findIndex(s => s.id === bottleneck);
+        if (idx >= 0) setStage(idx);
+      }
+    } else {
+      const sysEl = document.createElement('div');
+      sysEl.className = 'entry-system';
+      sysEl.textContent = raw;
+      out.appendChild(sysEl);
+    }
+  } catch(err) {
+    thinkEl.remove();
+    const errEl = document.createElement('div');
+    errEl.style.color = 'rgba(255,100,50,.7)';
+    errEl.textContent = 'Error: ' + err.message;
+    out.appendChild(errEl);
+  }
+
+  out.scrollTop = out.scrollHeight;
+}
+
+// ENTER key
+document.getElementById('ai-text').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!document.getElementById('ai-send').disabled) runAnalysis();
+  }
+});
+
+// ═══ INIT ═══
+buildPipeline();
+buildRight();
+setStage(0);
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

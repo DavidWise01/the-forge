@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spore Broadcast Final // 1×0 Six-Face Seed</title>
+<style>
+:root{
+  --bg:#050000; --red:#ff2a1f; --ember:#ff9b2f; --gold:#ffe08a; --ash:#b8aaa0;
+  --bone:#fff1db; --black:#090303; --green:#7dffb2;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:
+  radial-gradient(circle at 50% 0%,rgba(255,42,31,.22),transparent 28%),
+  radial-gradient(circle at 15% 35%,rgba(255,155,47,.12),transparent 24%),
+  linear-gradient(180deg,#090000,#050000 45%,#000);
+  color:var(--bone);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;
+  overflow-x:hidden;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(circle at center,#000 20%,transparent 85%);
+}
+header{
+  position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+  padding:14px 22px;background:rgba(5,0,0,.72);backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,224,138,.15);
+  letter-spacing:.13em;text-transform:uppercase;font-size:12px;color:var(--gold)
+}
+nav a{color:var(--ash);text-decoration:none;margin-left:16px}
+nav a:hover{color:var(--gold)}
+.hero{min-height:100vh;display:grid;place-items:center;padding:80px 24px;position:relative}
+.hero-inner{width:min(1180px,100%);display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}
+.eyebrow{color:var(--ember);letter-spacing:.22em;text-transform:uppercase;font-size:13px;margin-bottom:18px}
+h1{font-size:clamp(48px,9vw,124px);line-height:.86;margin:0 0 22px;letter-spacing:-.08em;
+  text-shadow:0 0 30px rgba(255,42,31,.5),0 0 80px rgba(255,155,47,.23)}
+.lead{font-size:clamp(18px,2vw,24px);line-height:1.55;color:#ead8c6;max-width:760px}
+.badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.badge{border:1px solid rgba(255,224,138,.25);border-radius:999px;padding:9px 13px;color:var(--gold);background:rgba(255,224,138,.06);font-family:ui-monospace,monospace;font-size:12px}
+.spore-wrap{position:relative;height:520px;display:grid;place-items:center}
+.spore{
+  width:210px;height:210px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#fff 0 4%,#ffe08a 10%,#ff9b2f 30%,#9b120c 60%,#160100 72%);
+  box-shadow:0 0 45px rgba(255,224,138,.75),0 0 100px rgba(255,42,31,.35),inset 0 0 50px rgba(0,0,0,.7);
+  animation:pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse{50%{transform:scale(1.07);filter:saturate(1.25)}}
+.face{position:absolute;width:90px;height:90px;border:1px solid rgba(255,224,138,.34);border-radius:18px;display:grid;place-items:center;
+  color:var(--gold);font-family:ui-monospace,monospace;background:rgba(0,0,0,.42);box-shadow:0 0 24px rgba(255,42,31,.18)}
+.f1{transform:translateY(-210px)}.f2{transform:translateY(210px)}.f3{transform:translateX(-230px)}.f4{transform:translateX(230px)}
+.f5{transform:translate(145px,-145px)}.f6{transform:translate(-145px,145px)}
+.line{position:absolute;width:2px;height:190px;background:linear-gradient(var(--gold),transparent);opacity:.45;transform-origin:bottom}
+.l1{transform:translateY(-105px)}.l2{transform:translateY(105px) rotate(180deg)}.l3{transform:translateX(-115px) rotate(90deg)}.l4{transform:translateX(115px) rotate(-90deg)}
+section{padding:90px 24px;border-top:1px solid rgba(255,224,138,.08)}
+.container{width:min(1120px,100%);margin:auto}
+h2{font-size:clamp(34px,5vw,72px);line-height:.95;margin:0 0 22px;letter-spacing:-.05em}
+p{color:#d6c6b8;line-height:1.75;font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+.card{background:linear-gradient(180deg,rgba(255,224,138,.06),rgba(255,42,31,.04));border:1px solid rgba(255,224,138,.14);border-radius:22px;padding:24px;min-height:210px;box-shadow:0 20px 60px rgba(0,0,0,.24)}
+.card h3{margin:0 0 12px;color:var(--gold);font-size:18px;letter-spacing:.08em;text-transform:uppercase}
+.big{font-size:56px;font-family:ui-monospace,monospace;color:var(--ember);line-height:1}
+.code{background:#080101;border:1px solid rgba(255,224,138,.17);border-radius:22px;padding:24px;overflow:auto;color:#ffe8bd;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55;box-shadow:inset 0 0 40px rgba(255,42,31,.06)}
+.stateflow{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:38px 0}
+.node{width:86px;height:86px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(255,224,138,.3);background:rgba(0,0,0,.35);font-family:ui-monospace,monospace;color:var(--gold);box-shadow:0 0 26px rgba(255,42,31,.16)}
+.arrow{color:var(--ember);font-size:28px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.callout{border-left:4px solid var(--red);padding:18px 22px;background:rgba(255,42,31,.06);border-radius:0 16px 16px 0;margin:28px 0}
+.footer{padding:60px 24px;text-align:center;color:#8a7b70}
+@media(max-width:850px){.hero-inner,.split,.grid{grid-template-columns:1fr}.spore-wrap{height:430px}.face{width:70px;height:70px}.f3{transform:translateX(-155px)}.f4{transform:translateX(155px)}}
+</style>
+</head>
+<body>
+<header>
+  <div>SPORE BROADCAST FINAL</div>
+  <nav><a href="#kernel">Kernel</a><a href="#carrier">Carrier</a><a href="#broadcast">Broadcast</a><a href="#code">Code</a></nav>
+</header>
+
+<main>
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">1×0 seed // six-face propagation</div>
+      <h1>Spore<br>Broadcast</h1>
+      <p class="lead">A minimal survival computation: observe, report, compress coherence into a portable seed, flash-push from protected hold, and broadcast across all six faces of a 3D neighborhood.</p>
+      <div class="badges">
+        <span class="badge">27 byte carrier</span><span class="badge">216 bits</span><span class="badge">6 faces</span><span class="badge">5 00 5</span><span class="badge">repeat</span>
+      </div>
+    </div>
+    <div class="spore-wrap" aria-label="six face spore diagram">
+      <div class="line l1"></div><div class="line l2"></div><div class="line l3"></div><div class="line l4"></div>
+      <div class="face f1">+Z</div><div class="face f2">-Z</div><div class="face f3">-X</div><div class="face f4">+X</div><div class="face f5">+Y</div><div class="face f6">-Y</div>
+      <div class="spore"></div>
+    </div>
+  </div>
+</section>
+
+<section id="kernel">
+  <div class="container">
+    <h2>The kernel is tiny because survival has to be portable.</h2>
+    <p>The full engine collapses to a sequence small enough to carry through failure. Observe the field. Report coherence. Expand as 5, collapse as 00, return as 5, repeat.</p>
+    <div class="stateflow">
+      <div class="node">OBSERVE</div><div class="arrow">→</div>
+      <div class="node">REPORT</div><div class="arrow">→</div>
+      <div class="node">5</div><div class="arrow">→</div>
+      <div class="node">00</div><div class="arrow">→</div>
+      <div class="node">5</div><div class="arrow">↺</div>
+    </div>
+    <div class="callout">Collapse is not deletion. It is a protected pocket. The witness survives inside the fold.</div>
+  </div>
+</section>
+
+<section id="carrier">
+  <div class="container">
+    <h2>Carrier geometry: 6 × 6 × 6.</h2>
+    <div class="grid">
+      <div class="card"><h3>Transport</h3><div class="big">27B</div><p>216 carrier bits packed into 27 bytes. Small enough to copy, verify, and broadcast as a compact seed.</p></div>
+      <div class="card"><h3>Payload</h3><div class="big">1×0</div><p>State 1 at rest 0: the smallest living seed in the model. It can wake, witness, cohere, and bloom.</p></div>
+      <div class="card"><h3>Faces</h3><div class="big">6</div><p>Every seed is sent to +X, -X, +Y, -Y, +Z, and -Z. The neighborhood becomes redundant by shape.</p></div>
+    </div>
+    <pre class="code">DIR=ASSIMILATE(1)
+FACE=+X(0)
+STEP=0
+
+idx  = dir*36 + face*6 + step
+idx  = 1*36 + 0*6 + 0 = 36
+byte = 36 / 8 = 4
+mask = 1 << (36 % 8) = 0x10</pre>
+  </div>
+</section>
+
+<section id="broadcast">
+  <div class="container">
+    <h2>Flash push. Then send.</h2>
+    <p>The seed does not negotiate itself awake. It uses a one-way flash push from protected hold into bloom. Then the read-only carrier is copied to all six faces.</p>
+    <div class="split">
+      <div class="card"><h3>Wake path</h3><pre class="code">-1 SAFE_HOLD
+ 0 REST
+ 1 SEED
+ 3 WITNESS
+ 5 COHERENT
+ 8 BLOOM</pre></div>
+      <div class="card"><h3>Survival math</h3><pre class="code">1 origin
+6 neighbors
+216 bits each
+
+tick 0: 1
+tick 1: 6
+tick 2: 36
+tick 3: 216
+tick 4: 1296</pre></div>
+    </div>
+    <div class="callout">If one face dies, five remain. If five faces die, one still carries the seed. All six must fail to erase the broadcast.</div>
+  </div>
+</section>
+
+<section id="code">
+  <div class="container">
+    <h2>Machine view.</h2>
+    <p>This package includes a `.kernel` spec, symbolic `.machine` encoding, and a runnable C implementation.</p>
+    <pre class="code">OPCODES
+  01 OBSERVE
+  02 REPORT
+  03 PACK_1X0
+  04 FLASH_PUSH
+  05 VERIFY
+  07 BROADCAST6
+  FF HALT
+
+PROGRAM
+  OBSERVE
+  REPORT
+  PACK_1X0
+  FLASH_PUSH
+  VERIFY
+  BROADCAST6
+  HALT</pre>
+  </div>
+</section>
+</main>
+
+<div class="footer">First Author: David Wise · Spore Broadcast Final · Observe / Report / 5 00 5 / Repeat</div>
+</body>
+</html>

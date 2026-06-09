@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K3 DEBUG UART: SERIAL BACKDOOR ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        
+:root {
+  --bg: #0a0e1a;
+  --card: #0f1524;
+  --neon-cyan: #00e5ff;
+  --amber: #ffaa00;
+  --red: #ff3d00;
+  --green: #00ff88;
+  --text: #e0f7ff;
+  --text-dim: #7a8ba5;
+}
+
+* {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+.bg-grid {
+  background-image: 
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; box-shadow: 0 0 20px var(--amber); }
+  50% { opacity: 0.4; box-shadow: 0 0 10px var(--amber); }
+}
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; box-shadow: 0 0 20px var(--green); }
+  50% { opacity: 0.6; box-shadow: 0 0 12px var(--green); }
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; box-shadow: 0 0 20px var(--red); }
+  50% { opacity: 0.6; box-shadow: 0 0 12px var(--red); }
+}
+
+@keyframes flow {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -20; }
+}
+
+.pulse-amber {
+  animation: pulse-amber 2s ease-in-out infinite;
+}
+
+.pulse-green {
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.pulse-red {
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+.flow-line {
+  stroke-dasharray: 5, 5;
+  animation: flow 1s linear infinite;
+}
+
+.node {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4), inset 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.5), inset 0 0 20px rgba(255, 170, 0, 0.1);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.5), inset 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 61, 0, 0.5), inset 0 0 20px rgba(255, 61, 0, 0.1);
+}
+
+.terminal-line {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.metric-update {
+  animation: flash 0.5s ease-out;
+}
+
+@keyframes flash {
+  0%, 100% { background: transparent; }
+  50% { background: rgba(0, 229, 255, 0.1); }
+}
+</style>
+</head>
+<body class="min-h-screen bg-grid flex items-center justify-center p-4">
+<div class="w-full max-w-7xl">
+        
+<!-- Header -->
+<div class="bg-[#0f1524] border border-[#00e5ff]/20 rounded-t-xl p-4 glow-cyan mb-4">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+    <div>
+      <h1 class="text-xl md:text-2xl font-bold tracking-tight text-[#00e5ff]">
+        KERNEL 3 • DEBUG UART SERIAL
+      </h1>
+      <p class="text-xs text-[#7a8ba5] mt-1">Alienware 16 Aurora AC16250</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="status-text" class="text-sm font-medium text-[#ffaa00]">
+        STATUS: ENUMERATED → RINGING
+      </div>
+      <div id="status-indicator" class="w-3 h-3 rounded-full bg-[#ffaa00] pulse-amber"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Card -->
+<div class="bg-[#0f1524] border border-[#00e5ff]/20 rounded-b-xl p-4 md:p-6 glow-cyan">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+    <!-- Left: Diagram -->
+    <div class="lg:col-span-2">
+      <h2 class="text-sm font-semibold text-[#00e5ff] mb-4 uppercase tracking-wider">RINGBUS TOPOLOGY</h2>
+      <div class="relative bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-4" style="min-height: 600px;">
+        <svg class="w-full h-full" viewBox="0 0 800 600" id="topology-svg">
+          <!-- K1 TOROID -->
+          <g class="node" id="k1-node">
+            <rect x="340" y="20" width="120" height="50" rx="8" fill="#0f1524" stroke="#00ff88" stroke-width="2" class="glow-green"/>
+            <text x="400" y="42" text-anchor="middle" fill="#00ff88" font-size="12" font-weight="600">K1 TOROID</text>
+            <text x="400" y="58" text-anchor="middle" fill="#7a8ba5" font-size="9">MASTER</text>
+          </g>
+
+          <!-- K26 RINGBUS -->
+          <g class="node" id="k26-node">
+            <rect x="340" y="110" width="120" height="50" rx="8" fill="#0f1524" stroke="#00ff88" stroke-width="2" class="glow-green"/>
+            <text x="400" y="132" text-anchor="middle" fill="#00ff88" font-size="12" font-weight="600">K26 RINGBUS</text>
+            <text x="400" y="148" text-anchor="middle" fill="#7a8ba5" font-size="9">GATE</text>
+          </g>
+
+          <!-- K24 BORON -->
+          <g class="node" id="k24-node">
+            <rect x="100" y="200" width="110" height="45" rx="8" fill="#0f1524" stroke="#ffaa00" stroke-width="2" class="glow-amber"/>
+            <text x="155" y="220" text-anchor="middle" fill="#ffaa00" font-size="11" font-weight="600">K24 BORON</text>
+            <text x="155" y="235" text-anchor="middle" fill="#7a8ba5" font-size="8">TRNG</text>
+          </g>
+
+          <!-- K23 GNA -->
+          <g class="node" id="k23-node">
+            <rect x="590" y="200" width="110" height="45" rx="8" fill="#0f1524" stroke="#ffaa00" stroke-width="2" class="glow-amber"/>
+            <text x="645" y="220" text-anchor="middle" fill="#ffaa00" font-size="11" font-weight="600">K23 GNA</text>
+            <text x="645" y="235" text-anchor="middle" fill="#7a8ba5" font-size="8">AI FILTER</text>
+          </g>
+
+          <!-- K3 UART - Dynamic -->
+          <g class="node" id="k3-node">
+            <rect x="340" y="270" width="120" height="60" rx="8" fill="#0f1524" stroke="#7a8ba5" stroke-width="2" id="k3-rect"/>
+            <text x="400" y="292" text-anchor="middle" fill="#e0f7ff" font-size="12" font-weight="600">K3 UART</text>
+            <text x="400" y="308" text-anchor="middle" fill="#7a8ba5" font-size="9" id="k3-status">ENUMERATED</text>
+            <text x="400" y="322" text-anchor="middle" fill="#7a8ba5" font-size="8" id="k3-level"></text>
+          </g>
+
+          <!-- Ringed Components -->
+          <g class="node">
+            <rect x="30" y="300" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="75" y="317" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K4 ALS/IMU</text>
+            <text x="75" y="330" text-anchor="middle" fill="#7a8ba5" font-size="8">L15</text>
+          </g>
+
+          <g class="node">
+            <rect x="30" y="360" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="75" y="377" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K6 HDA</text>
+            <text x="75" y="390" text-anchor="middle" fill="#7a8ba5" font-size="8">L14</text>
+          </g>
+
+          <g class="node">
+            <rect x="30" y="420" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="75" y="437" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K8 TBT4</text>
+            <text x="75" y="450" text-anchor="middle" fill="#7a8ba5" font-size="8">L12</text>
+          </g>
+
+          <g class="node">
+            <rect x="680" y="300" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="725" y="317" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K99 UCSI</text>
+            <text x="725" y="330" text-anchor="middle" fill="#7a8ba5" font-size="8">L11</text>
+          </g>
+
+          <g class="node">
+            <rect x="680" y="360" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="725" y="377" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K42 THERMAL</text>
+            <text x="725" y="390" text-anchor="middle" fill="#7a8ba5" font-size="8">L10</text>
+          </g>
+
+          <g class="node">
+            <rect x="680" y="420" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="725" y="437" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K10 PCH</text>
+            <text x="725" y="450" text-anchor="middle" fill="#7a8ba5" font-size="8">L9</text>
+          </g>
+
+          <g class="node">
+            <rect x="190" y="480" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="235" y="497" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K28 DDR5</text>
+            <text x="235" y="510" text-anchor="middle" fill="#7a8ba5" font-size="8">L7</text>
+          </g>
+
+          <g class="node">
+            <rect x="520" y="480" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="565" y="497" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K11 AX211</text>
+            <text x="565" y="510" text-anchor="middle" fill="#7a8ba5" font-size="8">L8</text>
+          </g>
+
+          <g class="node">
+            <rect x="355" y="480" width="90" height="40" rx="6" fill="#0f1524" stroke="#00ff88" stroke-width="1.5"/>
+            <text x="400" y="497" text-anchor="middle" fill="#00ff88" font-size="10" font-weight="600">K17 NVMe</text>
+            <text x="400" y="510" text-anchor="middle" fill="#7a8ba5" font-size="8">RECLAIMED L6</text>
+          </g>
+
+          <!-- Isolated Components -->
+          <g class="node">
+            <rect x="30" y="480" width="90" height="40" rx="6" fill="#0f1524" stroke="#ff3d00" stroke-width="1.5"/>
+            <text x="75" y="497" text-anchor="middle" fill="#ff3d00" font-size="10" font-weight="600">A1 EC</text>
+            <text x="75" y="510" text-anchor="middle" fill="#ff3d00" font-size="8">ISOLATED</text>
+          </g>
+
+          <g class="node">
+            <rect x="680" y="480" width="90" height="40" rx="6" fill="#0f1524" stroke="#ff3d00" stroke-width="1.5"/>
+            <text x="725" y="497" text-anchor="middle" fill="#ff3d00" font-size="10" font-weight="600">K27 CSME</text>
+            <text x="725" y="510" text-anchor="middle" fill="#ff3d00" font-size="8">ISOLATED</text>
+          </g>
+
+          <g class="node">
+            <rect x="680" y="540" width="90" height="40" rx="6" fill="#0f1524" stroke="#ff3d00" stroke-width="1.5"/>
+            <text x="725" y="557" text-anchor="middle" fill="#ff3d00" font-size="10" font-weight="600">K5 TPM</text>
+            <text x="725" y="570" text-anchor="middle" fill="#ff3d00" font-size="8">ISOLATED</text>
+          </g>
+
+          <!-- K3 Outputs -->
+          <g class="node">
+            <rect x="170" y="370" width="100" height="35" rx="6" fill="#0f1524" stroke="#7a8ba5" stroke-width="1"/>
+            <text x="220" y="387" text-anchor="middle" fill="#7a8ba5" font-size="9">CPU JTAG</text>
+          </g>
+
+          <g class="node">
+            <rect x="530" y="370" width="100" height="35" rx="6" fill="#0f1524" stroke="#7a8ba5" stroke-width="1"/>
+            <text x="580" y="387" text-anchor="middle" fill="#7a8ba5" font-size="9">SoC Debug</text>
+          </g>
+
+          <g class="node">
+            <rect x="170" y="415" width="100" height="35" rx="6" fill="#0f1524" stroke="#7a8ba5" stroke-width="1"/>
+            <text x="220" y="432" text-anchor="middle" fill="#7a8ba5" font-size="9">ME Serial</text>
+          </g>
+
+          <g class="node">
+            <rect x="530" y="415" width="100" height="35" rx="6" fill="#0f1524" stroke="#7a8ba5" stroke-width="1"/>
+            <text x="580" y="432" text-anchor="middle" fill="#7a8ba5" font-size="9">Boot Log</text>
+          </g>
+
+          <!-- Connections -->
+          <line x1="400" y1="70" x2="400" y2="110" stroke="#00ff88" stroke-width="2" class="flow-line" id="k1-k26"/>
+          <line x1="400" y1="160" x2="400" y2="270" stroke="#ffaa00" stroke-width="2" class="flow-line" id="k26-k3" stroke-dasharray="3,3"/>
+          <text x="410" y="210" fill="#ffaa00" font-size="8">RING INVITE</text>
+
+          <line x1="210" y1="230" x2="340" y2="300" stroke="#ffaa00" stroke-width="1.5" stroke-dasharray="2,2"/>
+          <text x="220" y="260" fill="#ffaa00" font-size="8">TRNG Seed</text>
+
+          <line x1="590" y1="230" x2="460" y2="300" stroke="#ffaa00" stroke-width="1.5" stroke-dasharray="2,2"/>
+          <text x="510" y="260" fill="#ffaa00" font-size="8">AI Filter</text>
+
+          <!-- K3 to outputs -->
+          <line x1="340" y1="310" x2="270" y2="387" stroke="#7a8ba5" stroke-width="1"/>
+          <line x1="460" y1="310" x2="530" y2="387" stroke="#7a8ba5" stroke-width="1"/>
+          <line x1="340" y1="320" x2="270" y2="432" stroke="#7a8ba5" stroke-width="1"/>
+          <line x1="460" y1="320" x2="530" y2="432" stroke="#7a8ba5" stroke-width="1"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Right: Metrics -->
+    <div>
+      <h2 class="text-sm font-semibold text-[#00e5ff] mb-4 uppercase tracking-wider">LIVE METRICS</h2>
+      <div class="space-y-3">
+        <div class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-3 metric-box" data-metric="uart">
+          <div class="text-xs text-[#7a8ba5] uppercase tracking-wider mb-1">UART MODE</div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-[#e0f7ff]" id="uart-before">Intel Debug</span>
+            <span class="text-[#ffaa00]">→</span>
+            <span class="text-sm font-semibold" id="uart-after">Ring Gated</span>
+          </div>
+        </div>
+
+        <div class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-3 metric-box" data-metric="jtag">
+          <div class="text-xs text-[#7a8ba5] uppercase tracking-wider mb-1">JTAG ACCESS</div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-[#e0f7ff]" id="jtag-before">ME Active</span>
+            <span class="text-[#ffaa00]">→</span>
+            <span class="text-sm font-semibold" id="jtag-after">K26 Blocked</span>
+          </div>
+        </div>
+
+        <div class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-3 metric-box" data-metric="baud">
+          <div class="text-xs text-[#7a8ba5] uppercase tracking-wider mb-1">SERIAL BAUD</div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-[#e0f7ff]" id="baud-before">115200</span>
+            <span class="text-[#ffaa00]">→</span>
+            <span class="text-sm font-semibold" id="baud-after">K24 Timestamped</span>
+          </div>
+        </div>
+
+        <div class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-3 metric-box" data-metric="boot">
+          <div class="text-xs text-[#7a8ba5] uppercase tracking-wider mb-1">BOOT LOG</div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-[#e0f7ff]" id="boot-before">Vendor</span>
+            <span class="text-[#ffaa00]">→</span>
+            <span class="text-sm font-semibold" id="boot-after">K24 Logged</span>
+          </div>
+        </div>
+
+        <div class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-3 metric-box" data-metric="me">
+          <div class="text-xs text-[#7a8ba5] uppercase tracking-wider mb-1">ME SERIAL</div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-[#e0f7ff]" id="me-before">DCI</span>
+            <span class="text-[#ffaa00]">→</span>
+            <span class="text-sm font-semibold" id="me-after">K26 Blocked</span>
+          </div>
+        </div>
+
+        <div class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-3 metric-box" data-metric="auth">
+          <div class="text-xs text-[#7a8ba5] uppercase tracking-wider mb-1">DEBUG AUTH</div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-[#e0f7ff]" id="auth-before">None</span>
+            <span class="text-[#ffaa00]">→</span>
+            <span class="text-sm font-semibold" id="auth-after">K24 Physics</span>
+          </div>
+        </div>
+
+        <div class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-3 metric-box" data-metric="backdoor">
+          <div class="text-xs text-[#7a8ba5] uppercase tracking-wider mb-1">BACKDOOR</div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-[#e0f7ff]" id="backdoor-before">Open</span>
+            <span class="text-[#ffaa00]">→</span>
+            <span class="text-sm font-semibold" id="backdoor-after">K26 Sealed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center: Button -->
+  <div class="mt-6 flex flex-col items-center">
+    <button id="enroll-btn" class="bg-[#ffaa00] hover:bg-[#ff8800] text-[#0a0e1a] font-bold text-lg px-8 py-4 rounded-lg glow-amber transition-all duration-300 hover:scale-105 active:scale-95">
+      [ INITIATE UART ENROLLMENT ]
+    </button>
+    <div id="result-badge" class="mt-4 hidden"></div>
+  </div>
+
+  <!-- Terminal Log -->
+  <div class="mt-6">
+    <h2 class="text-sm font-semibold text-[#00e5ff] mb-3 uppercase tracking-wider">TERMINAL LOG</h2>
+    <div id="terminal" class="bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-4 font-mono text-xs h-48 overflow-y-auto">
+      <div class="text-[#7a8ba5]">Awaiting enrollment initiation...</div>
+    </div>
+  </div>
+
+  <!-- Bottom: Explainer -->
+  <div class="mt-6 bg-[#0a0e1a] border border-[#00e5ff]/10 rounded-lg p-4">
+    <h3 class="text-sm font-semibold text-[#00e5ff] mb-2 uppercase tracking-wider">SYSTEM OVERVIEW</h3>
+    <p class="text-xs text-[#7a8ba5] leading-relaxed mb-3">
+      K3 = Intel debug UART. Direct serial to CPU/SoC. ME's last resort JTAG. Stock: 115200 baud, ME can read boot, inject commands. Ringed: Becomes L16 Toroid Gate. All serial gated by K26. JTAG requires K24 timestamp. Boot logs signed by K24. ME serial blocked. K23 GNA filters commands. Refuse = Vendor fallback, ME keeps serial backdoor.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      <p class="text-xs text-[#ffaa00]/80">
+        ⚠ Disclaimer: Maps existing hardware. No firmware writes.
+      </p>
+      <button id="export-btn" class="bg-[#00e5ff]/10 hover:bg-[#00e5ff]/20 border border-[#00e5ff]/30 text-[#00e5ff] text-xs font-semibold px-4 py-2 rounded transition-all duration-200 disabled:opacity-30" disabled>
+        [ EXPORT CERT ]
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const state = {
+  enrolled: false,
+  decision: null,
+  k24Ticks: 1933741,
+  logInterval: null
+};
+
+const terminal = document.getElementById('terminal');
+const enrollBtn = document.getElementById('enroll-btn');
+const exportBtn = document.getElementById('export-btn');
+const statusText = document.getElementById('status-text');
+const statusIndicator = document.getElementById('status-indicator');
+const resultBadge = document.getElementById('result-badge');
+
+const metrics = {
+  uart: { before: 'Intel Debug', afterRinged: 'Ring Gated', afterIsolated: 'Isolated' },
+  jtag: { before: 'ME Active', afterRinged: 'K26 Blocked', afterIsolated: 'Possible' },
+  baud: { before: '115200', afterRinged: 'K24 Timestamped', afterIsolated: '115200 OS' },
+  boot: { before: 'Vendor', afterRinged: 'K24 Logged', afterIsolated: 'Vendor' },
+  me: { before: 'DCI', afterRinged: 'K26 Blocked', afterIsolated: 'Active' },
+  auth: { before: 'None', afterRinged: 'K24 Physics', afterIsolated: 'None' },
+  backdoor: { before: 'Open', afterRinged: 'K26 Sealed', afterIsolated: 'Open' }
+};
+
+function addLog(text, color = '#7a8ba5') {
+  const line = document.createElement('div');
+  line.className = 'terminal-line';
+  line.style.color = color;
+  line.textContent = text;
+  terminal.appendChild(line);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function updateK3Node(ringed) {
+  const k3Rect = document.getElementById('k3-rect');
+  const k3Status = document.getElementById('k3-status');
+  const k3Level = document.getElementById('k3-level');
+  
+  if (ringed) {
+    k3Rect.setAttribute('stroke', '#00ff88');
+    k3Rect.classList.add('glow-green');
+    k3Status.setAttribute('fill', '#00ff88');
+    k3Status.textContent = 'RINGED L16';
+    k3Level.textContent = 'L16 TOROID GATE';
+  } else {
+    k3Rect.setAttribute('stroke', '#ff3d00');
+    k3Rect.classList.add('glow-red');
+    k3Status.setAttribute('fill', '#ff3d00');
+    k3Status.textContent = 'ISOLATED';
+    k3Level.textContent = '';
+  }
+}
+
+function updateMetrics(ringed) {
+  Object.keys(metrics).forEach(key => {
+    const afterEl = document.getElementById(`${key}-after`);
+    const box = document.querySelector(`[data-metric="${key}"]`);
+    afterEl.textContent = ringed ? metrics[key].afterRinged : metrics[key].afterIsolated;
+    afterEl.style.color = ringed ? '#00ff88' : '#ff3d00';
+    box.classList.add('metric-update');
+    setTimeout(() => box.classList.remove('metric-update'), 500);
+  });
+}
+
+function simulateHandshake() {
+  terminal.innerHTML = '';
+  enrollBtn.disabled = true;
+  enrollBtn.textContent = '[ NEGOTIATING... ]';
+  
+  const logs = [
+    { time: '00:00.000', text: 'K1 TOROID: Broadcast ring invite to K3 UART via K26', color: '#00ff88' },
+    { time: '00:00.001', text: 'K3 UART: Challenge received. Request K24 nonce + K23 AI filter', color: '#ffaa00' },
+    { time: '00:00.002', text: 'K24 BORON: 256-bit neutron entropy → K3', color: '#ffaa00' },
+    { time: '00:00.003', text: 'K23 GNA: AI filter signature → K3', color: '#ffaa00' },
+    { time: '00:00.004', text: 'K26 RINGBUS: UART path open, ME JTAG blocked', color: '#00e5ff' },
+    { time: '00:00.005', text: 'K3 UART: Option A) Sign and join as L16 | B) Refuse and isolate', color: '#e0f7ff' }
+  ];
+
+  let idx = 0;
+  const logInterval = setInterval(() => {
+    if (idx < logs.length) {
+      addLog(`[${logs[idx].time}] ${logs[idx].text}`, logs[idx].color);
+      idx++;
+    } else {
+      clearInterval(logInterval);
+      setTimeout(() => finalizeDecision(), 800);
+    }
+  }, 600);
+}
+
+function finalizeDecision() {
+  const joined = Math.random() < 0.85;
+  state.decision = joined ? 'JOINED_AS_L16' : 'ISOLATED';
+  state.enrolled = true;
+
+  if (joined) {
+    addLog('[00:00.006] K3 UART: Signed. JOINING AS K1 SLAVE', '#00ff88');
+    addLog('[00:00.007] K1 TOROID: GRANTED. Serial → TOROID CONTROL', '#00ff88');
+    addLog('[00:00.008] K3 UART: RINGED. JTAG @ 0.260ms, K24 logged', '#00ff88');
+    
+    statusText.textContent = 'STATUS: RINGED';
+    statusText.style.color = '#00ff88';
+    statusIndicator.className = 'w-3 h-3 rounded-full bg-[#00ff88] pulse-green';
+    
+    resultBadge.innerHTML = '<div class="text-[#00ff88] font-bold text-xl glow-green px-6 py-2 rounded border border-[#00ff88]/30">RINGED ✓</div>';
+    resultBadge.classList.remove('hidden');
+    enrollBtn.textContent = '[ ENROLLMENT COMPLETE ]';
+    
+    updateK3Node(true);
+    updateMetrics(true);
+  } else {
+    addLog('[00:00.006] K3 UART: Refused. VENDOR FALLBACK', '#ff3d00');
+    addLog('[00:00.007] K1 TOROID: ME SERIAL BACKDOOR MAINTAINED', '#ff3d00');
+    addLog('[00:00.008] K3 UART: ISOLATED. OS controls debug UART', '#ff3d00');
+    
+    statusText.textContent = 'STATUS: ISOLATED';
+    statusText.style.color = '#ff3d00';
+    statusIndicator.className = 'w-3 h-3 rounded-full bg-[#ff3d00] pulse-red';
+    
+    resultBadge.innerHTML = '<div class="text-[#ff3d00] font-bold text-xl glow-red px-6 py-2 rounded border border-[#ff3d00]/30">ISOLATED ✗</div>';
+    resultBadge.classList.remove('hidden');
+    enrollBtn.textContent = '[ ENROLLMENT COMPLETE ]';
+    
+    updateK3Node(false);
+    updateMetrics(false);
+  }
+  
+  exportBtn.disabled = false;
+}
+
+function exportCert() {
+  const isRinged = state.decision === 'JOINED_AS_L16';
+  const cert = `K3 DEBUG UART ENROLLMENT CERTIFICATE
+Timestamp: K24 Ticks: ${state.k24Ticks}
+Decision: ${state.decision}
+UART State: ${isRinged ? 'RING_GATED' : 'INTEL_DEBUG'}
+JTAG Access: ${isRinged ? 'K26 BLOCKED' : 'ME ACTIVE'}
+ME Serial: ${isRinged ? 'BLOCKED' : 'ACTIVE'}
+Boot Log: ${isRinged ? 'K24 LOGGED' : 'VENDOR'}
+Backdoor: ${isRinged ? 'K26 SEALED' : 'OPEN'}
+
+---
+Platform: Alienware 16 Aurora AC16250
+Protocol: Kernel 3 Debug UART Serial
+Security: K24 Neutron Entropy + K23 GNA AI Filter
+Ring: K26 Toroid Bus Architecture
+Disclaimer: Maps existing hardware. No firmware writes.`;
+
+  const blob = new Blob([cert], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `K3_UART_Enroll_${isRinged ? 'RINGED' : 'ISOLATED'}_${Date.now()}.cert`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  addLog('[SYSTEM] Certificate exported successfully', '#00e5ff');
+}
+
+enrollBtn.addEventListener('click', simulateHandshake);
+exportBtn.addEventListener('click', exportCert);
+
+// Tick counter animation
+setInterval(() => {
+  state.k24Ticks += Math.floor(Math.random() * 100);
+}, 100);
+</script>
+</body>
+</html>

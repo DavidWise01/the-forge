@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>K17 NVMe: STORAGE ENROLLMENT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-card: #0f1424;
+    --cyan: #00e5ff;
+    --amber: #ffaa00;
+    --red: #ff3d00;
+    --green: #00ff88;
+    --text: #e4e7ec;
+    --text-dim: #7a8299;
+    --border: #1c2333;
+  }
+  
+  * {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  body {
+    background: var(--bg);
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255, 170, 0, 0.02) 0%, transparent 50%);
+  }
+  
+  .card-glow {
+    box-shadow: 0 0 60px rgba(0, 229, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  .text-glow-cyan {
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+  }
+  
+  .text-glow-amber {
+    text-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+  }
+  
+  .text-glow-green {
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+  }
+  
+  .text-glow-red {
+    text-shadow: 0 0 20px rgba(255, 61, 0, 0.5);
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.95); }
+  }
+  
+  .pulse-amber {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes flow {
+    0% { stroke-dashoffset: 20; }
+    100% { stroke-dashoffset: 0; }
+  }
+  
+  .nvm-flow {
+    stroke-dasharray: 4 4;
+    animation: flow 1s linear infinite;
+  }
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .log-line {
+    animation: slideIn 0.2s ease-out;
+  }
+  
+  .metric-transition {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, var(--amber) 0%, #ff8c00 100%);
+    box-shadow: 0 4px 20px rgba(255, 170, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(255, 170, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .btn-secondary {
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .btn-secondary:hover {
+    background: rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .terminal-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .terminal-scroll::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+  
+  .terminal-scroll::-webkit-scrollbar-thumb {
+    background: var(--cyan);
+    border-radius: 3px;
+  }
+  
+  @keyframes nodeActivate {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.8); }
+    100% { filter: brightness(1); }
+  }
+  
+  .node-active {
+    animation: nodeActivate 0.6s ease-out;
+  }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-6 text-[var(--text)]">
+  <div class="w-full max-w-7xl">
+    <!-- Header -->
+    <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-glow-cyan">KERNEL 17 • NVMe CONTROLLER DOMAIN</h1>
+        <p class="text-xs text-[var(--text-dim)] mt-1">Alienware 16 Aurora AC16250</p>
+      </div>
+      <div class="flex items-center gap-3 px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)]">
+        <div id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-[var(--amber)] pulse-amber"></div>
+        <span id="statusText" class="text-sm font-semibold text-glow-amber">STATUS: ENUMERATED → RINGING</span>
+      </div>
+    </header>
+
+    <!-- Main Card -->
+    <div class="card-glow bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+      <div class="grid lg:grid-cols-2 gap-0">
+        
+        <!-- Left: Diagram -->
+        <div class="p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-[var(--border)]">
+          <h2 class="text-sm font-semibold mb-4 text-[var(--text-dim)] uppercase tracking-wider">Ring Topology</h2>
+          <svg viewBox="0 0 400 500" class="w-full h-auto">
+            <!-- K1 TOROID -->
+            <g id="nodeK1">
+              <rect x="140" y="20" width="120" height="50" rx="8" fill="rgba(0,229,255,0.1)" stroke="var(--cyan)" stroke-width="2"/>
+              <text x="200" y="50" text-anchor="middle" fill="var(--cyan)" font-size="14" font-weight="600">K1 TOROID</text>
+            </g>
+            
+            <!-- K24 BORON -->
+            <g id="nodeK24">
+              <rect x="20" y="120" width="100" height="45" rx="6" fill="rgba(0,229,255,0.05)" stroke="var(--cyan)" stroke-width="1.5"/>
+              <text x="70" y="148" text-anchor="middle" fill="var(--cyan)" font-size="12" font-weight="500">K24 BORON</text>
+            </g>
+            
+            <!-- K23 GNA -->
+            <g id="nodeK23">
+              <rect x="280" y="120" width="100" height="45" rx="6" fill="rgba(0,229,255,0.05)" stroke="var(--cyan)" stroke-width="1.5"/>
+              <text x="330" y="148" text-anchor="middle" fill="var(--cyan)" font-size="12" font-weight="500">K23 GNA</text>
+            </g>
+            
+            <!-- K26 RINGBUS -->
+            <g id="nodeK26">
+              <rect x="140" y="200" width="120" height="50" rx="8" fill="rgba(0,229,255,0.08)" stroke="var(--cyan)" stroke-width="2"/>
+              <text x="200" y="230" text-anchor="middle" fill="var(--cyan)" font-size="13" font-weight="600">K26 RINGBUS</text>
+            </g>
+            
+            <!-- K17 NVMe -->
+            <g id="nodeK17">
+              <rect id="k17Rect" x="140" y="320" width="120" height="60" rx="8" fill="rgba(122,130,153,0.2)" stroke="#7a8299" stroke-width="2"/>
+              <text x="200" y="348" text-anchor="middle" fill="#7a8299" font-size="14" font-weight="600" id="k17Label">K17 NVMe</text>
+              <text x="200" y="365" text-anchor="middle" fill="#7a8299" font-size="10" id="k17State">ENUMERATED</text>
+            </g>
+            
+            <!-- NAND FLASH -->
+            <g id="nodeNAND">
+              <rect x="40" y="430" width="100" height="40" rx="6" fill="rgba(122,130,153,0.1)" stroke="#7a8299" stroke-width="1.5"/>
+              <text x="90" y="455" text-anchor="middle" fill="#7a8299" font-size="11">NAND FLASH</text>
+            </g>
+            
+            <!-- DRAM Cache -->
+            <g id="nodeDRAM">
+              <rect x="260" y="430" width="100" height="40" rx="6" fill="rgba(122,130,153,0.1)" stroke="#7a8299" stroke-width="1.5"/>
+              <text x="310" y="455" text-anchor="middle" fill="#7a8299" font-size="11">DRAM Cache</text>
+            </g>
+            
+            <!-- Arrows -->
+            <g id="arrows" stroke-width="2" fill="none">
+              <!-- K1 to K17: RING INVITE -->
+              <path id="arrowK1K17" d="M200,70 L200,320" stroke="var(--amber)" stroke-dasharray="4 4" opacity="0.6"/>
+              <polygon points="200,320 195,310 205,310" fill="var(--amber)" opacity="0.6"/>
+              <text x="210" y="195" fill="var(--amber)" font-size="9" opacity="0.8">RING INVITE</text>
+              
+              <!-- K24 to K17: TRNG Seed -->
+              <path id="arrowK24K17" d="M120,165 Q140,240 160,320" stroke="var(--cyan)" opacity="0"/>
+              <polygon id="arrowK24Head" points="160,320 155,310 165,310" fill="var(--cyan)" opacity="0"/>
+              <text id="arrowK24Label" x="100" y="250" fill="var(--cyan)" font-size="9" opacity="0">TRNG Seed</text>
+              
+              <!-- K23 to K17: AES Control -->
+              <path id="arrowK23K17" d="M280,165 Q260,240 240,320" stroke="var(--cyan)" opacity="0"/>
+              <polygon id="arrowK23Head" points="240,320 235,310 245,310" fill="var(--cyan)" opacity="0"/>
+              <text id="arrowK23Label" x="290" y="250" fill="var(--cyan)" font-size="9" opacity="0">AES Control</text>
+              
+              <!-- K17 to NAND -->
+              <path id="arrowK17NAND" d="M180,380 Q140,405 90,430" stroke="#7a8299" opacity="0.3"/>
+              <!-- K17 to DRAM -->
+              <path id="arrowK17DRAM" d="M220,380 Q260,405 310,430" stroke="#7a8299" opacity="0.3"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Right: Live Metrics -->
+        <div class="p-6 lg:p-8">
+          <h2 class="text-sm font-semibold mb-4 text-[var(--text-dim)] uppercase tracking-wider">Live Metrics</h2>
+          <div class="space-y-3.5">
+            <div class="metric-transition">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-[var(--text-dim)]">NVMe MODE</span>
+              </div>
+              <div id="metricMode" class="text-sm font-semibold text-[var(--text-dim)]">Stock Controller</div>
+            </div>
+            
+            <div class="metric-transition">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-[var(--text-dim)]">READ LATENCY</span>
+              </div>
+              <div id="metricLatency" class="text-sm font-semibold text-[var(--text-dim)]">50µs OS Queued</div>
+            </div>
+            
+            <div class="metric-transition">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-[var(--text-dim)]">WRITE BW</span>
+              </div>
+              <div id="metricBW" class="text-sm font-semibold text-[var(--text-dim)]">5.0 GB/s Throttled</div>
+            </div>
+            
+            <div class="metric-transition">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-[var(--text-dim)]">AES ENGINE</span>
+              </div>
+              <div id="metricAES" class="text-sm font-semibold text-[var(--text-dim)]">OPAL/TCG</div>
+            </div>
+            
+            <div class="metric-transition">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-[var(--text-dim)]">DMA ACCESS</span>
+              </div>
+              <div id="metricDMA" class="text-sm font-semibold text-[var(--text-dim)]">Unrestricted</div>
+            </div>
+            
+            <div class="metric-transition">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-[var(--text-dim)]">ME SNOOP</span>
+              </div>
+              <div id="metricME" class="text-sm font-semibold text-[var(--text-dim)]">Possible</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Controls -->
+      <div class="p-6 lg:p-8 border-t border-[var(--border)] bg-[rgba(10,14,26,0.5)]">
+        <button id="enrollBtn" class="btn-primary w-full py-4 px-6 rounded-xl font-bold text-black text-sm tracking-wide">
+          [INITIATE NVMe ENROLLMENT]
+        </button>
+        
+        <!-- Terminal Log -->
+        <div class="mt-6">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-[var(--text-dim)] uppercase tracking-wider">Handshake Log</span>
+            <span id="logStatus" class="text-xs text-[var(--amber)]">READY</span>
+          </div>
+          <div id="terminal" class="terminal-scroll bg-black/40 border border-[var(--border)] rounded-lg p-4 h-48 overflow-y-auto text-xs space-y-1">
+            <div class="log-line text-[var(--text-dim)]">[SYS] Awaiting enrollment initiation...</div>
+          </div>
+        </div>
+
+        <!-- Export Button -->
+        <button id="exportBtn" class="btn-secondary w-full mt-4 py-3 px-6 rounded-lg font-semibold text-[var(--cyan)] text-sm opacity-50 cursor-not-allowed" disabled>
+          [EXPORT CERT]
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Explainer -->
+    <div class="mt-6 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)]">
+      <p class="text-xs leading-relaxed text-[var(--text-dim)]">
+        <span class="text-[var(--cyan)] font-semibold">NVMe Controller</span> = ARC CPU + DRAM + NAND + AES-256. 
+        <span class="text-[var(--text)]">Stock:</span> OPAL/TCG self-encrypting, ME can unlock. 
+        <span class="text-[var(--green)]">Ringed:</span> Becomes L6 Toroid Storage. All I/O scheduled on K24 0.281ms ticks. 
+        AES keys derived from K24 BORON. ME/OPAL cannot decrypt. 4K random read 50µs → 15µs. 
+        Sequential write 5GB/s → 7GB/s with K1 power grants. 
+        <span class="text-[var(--red)]">Refuse</span> = PCH fallback, slow.
+      </p>
+      <p class="text-[10px] text-[var(--text-dim)]/60 mt-3 pt-3 border-t border-[var(--border)]">
+        Disclaimer: Maps existing hardware. No firmware writes. Simulation only.
+      </p>
+    </div>
+  </div>
+
+<script>
+  let enrollmentState = 'idle'; // idle, running, joined, isolated
+  let certificateData = null;
+  
+  const enrollBtn = document.getElementById('enrollBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const terminal = document.getElementById('terminal');
+  const statusIndicator = document.getElementById('statusIndicator');
+  const statusText = document.getElementById('statusText');
+  const logStatus = document.getElementById('logStatus');
+  
+  // Metrics elements
+  const metricMode = document.getElementById('metricMode');
+  const metricLatency = document.getElementById('metricLatency');
+  const metricBW = document.getElementById('metricBW');
+  const metricAES = document.getElementById('metricAES');
+  const metricDMA = document.getElementById('metricDMA');
+  const metricME = document.getElementById('metricME');
+  
+  // SVG elements
+  const k17Rect = document.getElementById('k17Rect');
+  const k17Label = document.getElementById('k17Label');
+  const k17State = document.getElementById('k17State');
+  const nodeK24 = document.getElementById('nodeK24');
+  const nodeK23 = document.getElementById('nodeK23');
+  
+  const handshakeLog = [
+    { t: 0, msg: "K1 TOROID: Broadcast ring invite to K17 NVMe via K26", type: "k1" },
+    { t: 1, msg: "K17 NVMe: Challenge received. Request K24 nonce + K23 AES proof", type: "k17" },
+    { t: 2, msg: "K24 BORON: 256-bit neutron entropy → K17", type: "k24", action: "k24" },
+    { t: 3, msg: "K23 GNA: AES-256 workload signature → K17", type: "k23", action: "k23" },
+    { t: 4, msg: "K26 RINGBUS: PCIe DMA path open, ME/OPAL telemetry blocked", type: "k26" },
+    { t: 5, msg: "K17 NVMe: Option A) Sign and join as L6 | B) Refuse and isolate", type: "k17" },
+  ];
+  
+  function addLogLine(text, type = 'default') {
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    
+    const colors = {
+      k1: 'text-[var(--cyan)]',
+      k17: 'text-[var(--amber)]',
+      k24: 'text-[var(--cyan)]',
+      k23: 'text-[var(--cyan)]',
+      k26: 'text-[var(--cyan)]',
+      success: 'text-[var(--green)]',
+      error: 'text-[var(--red)]',
+      default: 'text-[var(--text-dim)]'
+    };
+    
+    line.className += ` ${colors[type] || colors.default}`;
+    line.textContent = `[00:00.00${Math.floor(Math.random()*9)}] ${text}`;
+    terminal.appendChild(line);
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+  
+  function updateMetrics(state) {
+    if (state === 'joined') {
+      metricMode.textContent = 'Ring Slave L6';
+      metricMode.className = 'text-sm font-semibold text-glow-green text-[var(--green)]';
+      
+      metricLatency.textContent = '15µs Ring Scheduled';
+      metricLatency.className = 'text-sm font-semibold text-glow-green text-[var(--green)]';
+      
+      metricBW.textContent = '7.0 GB/s K1 Granted';
+      metricBW.className = 'text-sm font-semibold text-glow-green text-[var(--green)]';
+      
+      metricAES.textContent = 'K24 Derived';
+      metricAES.className = 'text-sm font-semibold text-glow-green text-[var(--green)]';
+      
+      metricDMA.textContent = 'K26 Mediated';
+      metricDMA.className = 'text-sm font-semibold text-glow-green text-[var(--green)]';
+      
+      metricME.textContent = 'K26 Blocked';
+      metricME.className = 'text-sm font-semibold text-glow-green text-[var(--green)]';
+    } else if (state === 'isolated') {
+      metricMode.textContent = 'Isolated';
+      metricMode.className = 'text-sm font-semibold text-glow-red text-[var(--red)]';
+      
+      metricLatency.textContent = '50µs OS Queued';
+      metricLatency.className = 'text-sm font-semibold text-glow-red text-[var(--red)]';
+      
+      metricBW.textContent = '5.0 GB/s Throttled';
+      metricBW.className = 'text-sm font-semibold text-glow-red text-[var(--red)]';
+      
+      metricAES.textContent = 'Software';
+      metricAES.className = 'text-sm font-semibold text-glow-red text-[var(--red)]';
+      
+      metricDMA.textContent = 'Blocked';
+      metricDMA.className = 'text-sm font-semibold text-glow-red text-[var(--red)]';
+      
+      metricME.textContent = 'Active';
+      metricME.className = 'text-sm font-semibold text-glow-red text-[var(--red)]';
+    }
+  }
+  
+  function activateNode(node) {
+    node.classList.add('node-active');
+    setTimeout(() => node.classList.remove('node-active'), 600);
+  }
+  
+  function showArrow(from, to) {
+    if (from === 'k24') {
+      document.getElementById('arrowK24K17').style.opacity = '1';
+      document.getElementById('arrowK24K17').classList.add('nvm-flow');
+      document.getElementById('arrowK24Head').style.opacity = '1';
+      document.getElementById('arrowK24Label').style.opacity = '0.8';
+    } else if (from === 'k23') {
+      document.getElementById('arrowK23K17').style.opacity = '1';
+      document.getElementById('arrowK23K17').classList.add('nvm-flow');
+      document.getElementById('arrowK23Head').style.opacity = '1';
+      document.getElementById('arrowK23Label').style.opacity = '0.8';
+    }
+  }
+  
+  function updateK17Node(state) {
+    if (state === 'joined') {
+      k17Rect.setAttribute('fill', 'rgba(0,255,136,0.15)');
+      k17Rect.setAttribute('stroke', 'var(--green)');
+      k17Label.setAttribute('fill', 'var(--green)');
+      k17State.setAttribute('fill', 'var(--green)');
+      k17State.textContent = 'RINGED L6';
+    } else if (state === 'isolated') {
+      k17Rect.setAttribute('fill', 'rgba(255,61,0,0.15)');
+      k17Rect.setAttribute('stroke', 'var(--red)');
+      k17Label.setAttribute('fill', 'var(--red)');
+      k17State.setAttribute('fill', 'var(--red)');
+      k17State.textContent = 'ISOLATED';
+    }
+  }
+  
+  async function runEnrollment() {
+    if (enrollmentState !== 'idle') return;
+    
+    enrollmentState = 'running';
+    enrollBtn.disabled = true;
+    logStatus.textContent = 'NEGOTIATING';
+    logStatus.className = 'text-xs text-[var(--amber)]';
+    terminal.innerHTML = '';
+    
+    // Run handshake sequence
+    for (let i = 0; i < handshakeLog.length; i++) {
+      const entry = handshakeLog[i];
+      await new Promise(r => setTimeout(r, 600));
+      addLogLine(entry.msg, entry.type);
+      
+      if (entry.action === 'k24') {
+        activateNode(nodeK24);
+        showArrow('k24', 'k17');
+      } else if (entry.action === 'k23') {
+        activateNode(nodeK23);
+        showArrow('k23', 'k17');
+      }
+    }
+    
+    // Controller decision: 85% join, 15% refuse based on lock
+    await new Promise(r => setTimeout(r, 800));
+    const joins = Math.random() < 0.85;
+    
+    const tick = Math.floor(Date.now() / 0.281) % 10000000;
+    
+    if (joins) {
+      enrollmentState = 'joined';
+      addLogLine('K17 NVMe: Signed. JOINING AS K1 SLAVE', 'success');
+      await new Promise(r => setTimeout(r, 400));
+      addLogLine('K1 TOROID: GRANTED. NAND + DRAM → TOROID CONTROL', 'success');
+      await new Promise(r => setTimeout(r, 400));
+      addLogLine('K17 NVMe: RINGED. Keys → K24 derived, I/O @ 0.281ms', 'success');
+      
+      updateK17Node('joined');
+      updateMetrics('joined');
+      
+      statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-[var(--green)]';
+      statusIndicator.style.animation = 'none';
+      statusText.textContent = 'STATUS: RINGED ✓';
+      statusText.className = 'text-sm font-semibold text-glow-green text-[var(--green)]';
+      
+      enrollBtn.textContent = '[ENROLLMENT COMPLETE: RINGED ✓]';
+      enrollBtn.style.background = 'linear-gradient(135deg, var(--green) 0%, #00cc70 100%)';
+      enrollBtn.style.boxShadow = '0 4px 20px rgba(0, 255, 136, 0.3)';
+      
+      logStatus.textContent = 'SUCCESS';
+      logStatus.className = 'text-xs text-[var(--green)]';
+      
+      certificateData = {
+        decision: 'JOINED_AS_L6',
+        state: 'RING_CONTROLLED',
+        aes: 'K24 BORON 0x5a1c' + Math.floor(Math.random()*0xffffff).toString(16),
+        me: 'BLOCKED BY K26',
+        latency: '15µs',
+        ticks: tick
+      };
+    } else {
+      enrollmentState = 'isolated';
+      addLogLine('K17 NVMe: REFUSED. Controller locked by vendor key', 'error');
+      await new Promise(r => setTimeout(r, 400));
+      addLogLine('K1 TOROID: DENIED. PCH fallback path active', 'error');
+      await new Promise(r => setTimeout(r, 400));
+      addLogLine('K17 NVMe: ISOLATED. Legacy OS queue @ 50µs', 'error');
+      
+      updateK17Node('isolated');
+      updateMetrics('isolated');
+      
+      statusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-[var(--red)]';
+      statusIndicator.style.animation = 'none';
+      statusText.textContent = 'STATUS: ISOLATED ✗';
+      statusText.className = 'text-sm font-semibold text-glow-red text-[var(--red)]';
+      
+      enrollBtn.textContent = '[ENROLLMENT FAILED: ISOLATED ✗]';
+      enrollBtn.style.background = 'linear-gradient(135deg, var(--red) 0%, #cc3000 100%)';
+      enrollBtn.style.boxShadow = '0 4px 20px rgba(255, 61, 0, 0.3)';
+      
+      logStatus.textContent = 'FAILED';
+      logStatus.className = 'text-xs text-[var(--red)]';
+      
+      certificateData = {
+        decision: 'ISOLATED',
+        state: 'PCH_FALLBACK',
+        aes: 'Software',
+        me: 'ACTIVE',
+        latency: '50µs',
+        ticks: tick
+      };
+    }
+    
+    exportBtn.disabled = false;
+    exportBtn.className = 'btn-secondary w-full mt-4 py-3 px-6 rounded-lg font-semibold text-[var(--cyan)] text-sm';
+  }
+  
+  function exportCertificate() {
+    if (!certificateData) return;
+    
+    const cert = `K17 NVMe ENROLLMENT CERTIFICATE
+=====================================
+Timestamp: K24 Ticks: ${certificateData.ticks}
+Decision: ${certificateData.decision}
+Storage State: ${certificateData.state}
+AES Seed: ${certificateData.aes}
+ME/OPAL Access: ${certificateData.me}
+4K Latency: ${certificateData.latency}
+
+Hardware: Alienware 16 Aurora AC16250
+Domain: KERNEL 17 • NVMe CONTROLLER
+Protocol: K1 TOROID RING ENROLLMENT
+=====================================
+Disclaimer: Maps existing hardware. No firmware writes.`;
+    
+    const blob = new Blob([cert], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `K17_NVMe_Cert_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    addLogLine('Certificate exported to downloads', 'default');
+  }
+  
+  enrollBtn.addEventListener('click', runEnrollment);
+  exportBtn.addEventListener('click', exportCertificate);
+</script>
+</body>
+</html>

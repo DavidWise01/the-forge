@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JET LI 257 TOROID ENGINE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700;900&display=swap" rel="stylesheet">
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; color: #fff; overflow: hidden; font-family: 'Space Grotesk', sans-serif; }
+  canvas { display: block; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .glow-cyan { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff80; }
+  .glow-magenta { text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #ff00ff80; }
+  @keyframes pulse { 0%,100% { opacity: 0.8; } 50% { opacity: 1; } }
+  @keyframes glitch { 0% { transform: translate(0); } 20% { transform: translate(-1px,1px); } 40% { transform: translate(1px,-1px); } 60% { transform: translate(-1px,0); } 80% { transform: translate(1px,1px); } 100% { transform: translate(0); } }
+</style>
+</head>
+<body>
+<canvas id="c" class="fixed inset-0"></canvas>
+
+<div class="pointer-events-none fixed inset-0" style="background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.9) 100%), radial-gradient(ellipse at center, transparent 60%, rgba(56,0,80,0.15) 100%);"></div>
+<div class="pointer-events-none fixed inset-0 opacity-[0.03]" style="background-image: repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 1px, transparent 3px);"></div>
+
+<div class="relative z-10 w-screen h-screen pointer-events-none select-none">
+  <div class="absolute top-0 left-0 right-0 p-3 md:p-6 flex justify-between items-start gap-3">
+    <div class="backdrop-blur-xl bg-black/50 rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-cyan-500/30 shadow-[0_0_30px_rgba(0,255,255,0.15)]">
+      <div class="font-mono text-cyan-300 text-sm md:text-lg tracking-wider glow-cyan">257 = 256 + 1 = 2<sup>8</sup> + 1</div>
+      <div class="text-[10px] md:text-xs uppercase tracking-[0.35em] text-cyan-400/60 mt-1.5 font-medium">FERMAT PRIME</div>
+    </div>
+    <div class="backdrop-blur-xl bg-black/50 rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-fuchsia-500/30 shadow-[0_0_30px_rgba(255,0,255,0.15)] text-right">
+      <div class="text-[10px] md:text-xs uppercase tracking-[0.35em] text-fuchsia-400/70 font-medium">ABSORBED</div>
+      <div class="font-mono text-xl md:text-3xl font-bold mt-1"><span id="absCount" class="text-white glow-magenta">0</span><span class="text-white/30">/256</span></div>
+    </div>
+  </div>
+
+  <div class="fixed inset-0 flex items-center justify-center">
+    <div id="phaseText" class="text-center transition-all duration-700 opacity-0 scale-95">
+      <h1 class="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-widest leading-none" style="font-variation-settings: 'wght' 900; background: linear-gradient(180deg, #fff 0%, #a0ffff 30%, #ff80ff 70%, #fff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 25px rgba(0,255,255,0.8)) drop-shadow(0 0 50px rgba(255,0,255,0.5));"></h1>
+      <p id="phaseSub" class="mt-3 md:mt-5 font-mono text-[10px] sm:text-xs md:text-sm tracking-[0.5em] text-cyan-200/80 uppercase"></p>
+    </div>
+  </div>
+
+  <div class="absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2">
+    <div id="divideWrap" class="backdrop-blur-2xl bg-black/70 rounded-full px-6 md:px-10 py-3 md:py-4 border border-white/15 shadow-[inset_0_0_20px_rgba(0,255,255,0.1),0_0_40px_rgba(0,0,0,0.8)] transition-all duration-500 opacity-0 scale-90">
+      <div class="flex items-center gap-3 md:gap-5">
+        <span class="hidden sm:block text-[10px] uppercase tracking-[0.3em] text-white/40 font-mono">DIVIDE</span>
+        <span id="divideText" class="font-mono text-xl md:text-3xl font-bold text-cyan-300 tabular-nums glow-cyan tracking-wider">256 → 128</span>
+        <span class="text-[10px] uppercase tracking-widest text-fuchsia-400/70 font-mono">/2ⁿ</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="absolute bottom-0 left-0 right-0 p-3 md:p-6 flex justify-between items-end gap-3">
+    <div class="backdrop-blur-xl bg-black/60 rounded-xl md:rounded-2xl px-3 md:px-5 py-2.5 md:py-3 border border-white/10">
+      <div id="zeroFormula" class="font-mono text-xs md:text-base tracking-wider text-white/70"><span class="text-white/50">6×4×2×1×</span><span class="text-red-400 glow-magenta mx-1">0</span><span class="text-white/50">= 0</span></div>
+      <div class="text-[8px] md:text-[10px] uppercase tracking-[0.25em] text-white/30 mt-1">RESET CONDITION</div>
+    </div>
+    <div class="backdrop-blur-xl bg-black/60 rounded-xl md:rounded-2xl px-3 md:px-5 py-2.5 md:py-3 border border-white/10 text-right">
+      <div id="oneEquals" class="font-mono text-sm md:text-xl font-bold tracking-[0.2em] text-white/20 transition-all duration-1000">1 = 0 = 1</div>
+      <div class="text-[8px] md:text-[10px] uppercase tracking-[0.25em] text-white/30 mt-1">INTEGRATION</div>
+    </div>
+  </div>
+
+  <div id="theOne" class="fixed inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-[2000ms]">
+    <div class="text-center">
+      <div class="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-[0.15em] md:tracking-[0.2em]" style="color: #fff; text-shadow: 0 0 20px #fff, 0 0 40px #fff, 0 0 80px #0ff, 0 0 120px #0ff, 0 0 160px #f0f; animation: pulse 2s ease-in-out infinite;">THE ONE</div>
+      <div class="mt-4 md:mt-8 font-mono text-base md:text-2xl tracking-[0.4em] md:tracking-[0.6em] text-cyan-100" style="text-shadow: 0 0 20px #0ff;">257 OF 1</div>
+      <div class="mt-6 md:mt-12 font-mono text-[10px] md:text-xs tracking-[0.3em] text-white/50 uppercase">Divide and repeat • Connect in to out • Observe</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const canvas = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000005, 0.018);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 1.5, 11);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.4, 0.65, 0.12);
+composer.addPass(bloomPass);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.4;
+controls.minDistance = 6;
+controls.maxDistance = 18;
+controls.enablePan = false;
+
+scene.add(new THREE.AmbientLight(0x110022, 0.5));
+const keyLight = new THREE.PointLight(0x00ffff, 2, 50);
+keyLight.position.set(5, 5, 5);
+scene.add(keyLight);
+const rimLight = new THREE.PointLight(0xff00ff, 1.5, 50);
+rimLight.position.set(-5, -3, -5);
+scene.add(rimLight);
+
+function createHumanTexture() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,128,128);
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(64,28,11,0,Math.PI*2); ctx.fill();
+  ctx.fillRect(59,39,10,32);
+  ctx.fillRect(42,46,44,7);
+  ctx.save(); ctx.translate(59,71); ctx.rotate(-0.35); ctx.fillRect(0,0,7,26); ctx.restore();
+  ctx.save(); ctx.translate(69,71); ctx.rotate(0.35); ctx.fillRect(0,0,7,26); ctx.restore();
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+const humanTex = createHumanTexture();
+
+const mainGroup = new THREE.Group();
+scene.add(mainGroup);
+
+const centerGroup = new THREE.Group();
+scene.add(centerGroup);
+
+const NUM = 256;
+const spherePositions = [];
+const torusPositions = [];
+const pointsData = [];
+const sprites = [];
+
+const R_MAJOR = 3.3;
+const R_MINOR = 1.15;
+
+for (let i = 0; i < NUM; i++) {
+  const y = 1 - (i / (NUM - 1)) * 2;
+  const r = Math.sqrt(1 - y * y);
+  const theta = i * Math.PI * (3 - Math.sqrt(5));
+  const x = Math.cos(theta) * r;
+  const z = Math.sin(theta) * r;
+  const spherePos = new THREE.Vector3(x * 3.2, y * 3.2, z * 3.2);
+  spherePositions.push(spherePos);
+
+  const major = Math.atan2(z, x);
+  const minor = Math.asin(y) * 1.8;
+  const tx = (R_MAJOR + R_MINOR * Math.cos(minor)) * Math.cos(major);
+  const ty = R_MINOR * Math.sin(minor) * 0.5;
+  const tz = (R_MAJOR + R_MINOR * Math.cos(minor)) * Math.sin(major);
+  torusPositions.push(new THREE.Vector3(tx, ty, tz));
+
+  const mat = new THREE.SpriteMaterial({
+    map: humanTex,
+    color: new THREE.Color().setHSL(0.52 + Math.random()*0.1, 1, 0.65),
+    transparent: true,
+    opacity: 0.92,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(0.16, 0.16, 1);
+  sprite.position.copy(spherePos);
+  mainGroup.add(sprite);
+  sprites.push(sprite);
+
+  pointsData.push({
+    index: i,
+    alive: true,
+    moving: false,
+    spherePos,
+    torusPos: torusPositions[i],
+    currentPos: spherePos.clone(),
+    major,
+    startPos: null,
+    progress: 0,
+    absorbTime: 0
+  });
+}
+
+pointsData.sort((a,b) => a.major - b.major);
+
+const bigMat = new THREE.SpriteMaterial({
+  map: humanTex,
+  color: 0xff40ff,
+  transparent: true,
+  opacity: 1,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+const bigOne = new THREE.Sprite(bigMat);
+bigOne.scale.set(0.85, 0.85, 1);
+centerGroup.add(bigOne);
+
+const coreGeo = new THREE.SphereGeometry(0.18, 32, 32);
+const coreMat = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  emissive: 0xff00ff,
+  emissiveIntensity: 3,
+  metalness: 0,
+  roughness: 0.2,
+  transparent: true,
+  opacity: 0.95
+});
+const core = new THREE.Mesh(coreGeo, coreMat);
+centerGroup.add(core);
+
+const haloGeo = new THREE.RingGeometry(0.3, 0.45, 64);
+const haloMat = new THREE.MeshBasicMaterial({
+  color: 0xff00ff,
+  transparent: true,
+  opacity: 0.25,
+  side: THREE.DoubleSide,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+const halo = new THREE.Mesh(haloGeo, haloMat);
+halo.rotation.x = Math.PI/2;
+centerGroup.add(halo);
+
+const centerLight = new THREE.PointLight(0xff00ff, 3, 15);
+centerGroup.add(centerLight);
+
+const lineMat = new THREE.LineBasicMaterial({
+  color: 0x00ffff,
+  transparent: true,
+  opacity: 0.08,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+const lineGeo = new THREE.BufferGeometry();
+const linePos = new Float32Array(NUM * 2 * 3);
+lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
+const lines = new THREE.LineSegments(lineGeo, lineMat);
+mainGroup.add(lines);
+
+const trackPairs = [];
+for (let i = 0; i < NUM; i++) {
+  trackPairs.push([i, (i+1) % NUM]);
+  if (i % 8 === 0) trackPairs.push([i, (i + 32) % NUM]);
+}
+
+const flowGroup = new THREE.Group();
+flowGroup.visible = false;
+scene.add(flowGroup);
+const flowParticles = [];
+const flowGeo = new THREE.SphereGeometry(0.022, 8, 8);
+for (let i = 0; i < 220; i++) {
+  const isIn = i % 2 === 0;
+  const mat = new THREE.MeshBasicMaterial({
+    color: isIn ? 0x00ffff : 0xff40ff,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const m = new THREE.Mesh(flowGeo, mat);
+  flowGroup.add(m);
+  flowParticles.push({
+    mesh: m,
+    t: Math.random(),
+    phi: Math.random() * Math.PI * 2,
+    speed: 0.3 + Math.random() * 0.4,
+    isIn
+  });
+}
+
+const starsGeo = new THREE.BufferGeometry();
+const starsPos = new Float32Array(2000 * 3);
+for (let i = 0; i < 2000; i++) {
+  const r = 60 + Math.random() * 40;
+  const th = Math.random() * Math.PI * 2;
+  const ph = Math.acos(2*Math.random()-1);
+  starsPos[i*3] = r * Math.sin(ph) * Math.cos(th);
+  starsPos[i*3+1] = r * Math.sin(ph) * Math.sin(th);
+  starsPos[i*3+2] = r * Math.cos(ph);
+}
+starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
+const stars = new THREE.Points(starsGeo, new THREE.PointsMaterial({ color: 0x88aaff, size: 0.05, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending }));
+scene.add(stars);
+
+const phaseEl = document.getElementById('phaseText');
+const phaseH1 = phaseEl.querySelector('h1');
+const phaseSub = document.getElementById('phaseSub');
+const divideWrap = document.getElementById('divideWrap');
+const divideText = document.getElementById('divideText');
+const absCount = document.getElementById('absCount');
+const oneEquals = document.getElementById('oneEquals');
+const theOne = document.getElementById('theOne');
+const zeroFormula = document.getElementById('zeroFormula');
+
+function showPhase(text, sub = '', duration = 2000) {
+  phaseH1.textContent = text;
+  phaseSub.textContent = sub;
+  phaseEl.style.opacity = '1';
+  phaseEl.style.transform = 'scale(1)';
+  setTimeout(() => {
+    phaseEl.style.opacity = '0';
+    phaseEl.style.transform = 'scale(0.95)';
+  }, duration);
+}
+
+let phase = 'INIT';
+let phaseStart = 0;
+let absorbed = 0;
+let absorbTimer = 0;
+const clock = new THREE.Clock();
+
+const divideSequence = [256,128,64,32,16,8,4,2,1,2,4,8,16,32,64,128,256];
+let divideIndex = 0;
+let lastDivide = 0;
+
+function setPhase(p) {
+  phase = p;
+  phaseStart = clock.getElapsedTime();
+}
+
+function resetSimulation() {
+  absorbed = 0;
+  absorbTimer = 0;
+  absCount.textContent = '0';
+  pointsData.forEach((pd, i) => {
+    pd.alive = true;
+    pd.moving = false;
+    pd.currentPos.copy(pd.spherePos);
+    sprites[i].position.copy(pd.spherePos);
+    sprites[i].visible = true;
+    sprites[i].material.opacity = 0.92;
+    sprites[i].scale.set(0.16,0.16,1);
+    sprites[i].material.color.setHSL(0.52 + Math.random()*0.1, 1, 0.65);
+  });
+  mainGroup.rotation.x = 0;
+  mainGroup.scale.set(1,1,1);
+  bigOne.scale.set(0.85,0.85,1);
+  bigOne.material.color.set(0xff40ff);
+  core.material.emissive.setHex(0xff00ff);
+  core.material.emissiveIntensity = 3;
+  centerLight.color.set(0xff00ff);
+  centerLight.intensity = 3;
+  halo.material.opacity = 0.25;
+  lineMat.opacity = 0.08;
+  bloomPass.strength = 1.4;
+  flowGroup.visible = false;
+  divideWrap.style.opacity = '0';
+  divideWrap.style.transform = 'scale(0.9)';
+  oneEquals.style.color = 'rgba(255,255,255,0.2)';
+  oneEquals.style.textShadow = 'none';
+  theOne.style.opacity = '0';
+  zeroFormula.innerHTML = '6 × 4 × 2 × 1 × <span class="text-red-400">0</span> = 0';
+}
+
+setPhase('INIT');
+showPhase('256 JET LIS', 'ACROSS THE MULTIVERSE', 2200);
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = Math.min(clock.getDelta(), 0.033);
+  const elapsed = clock.getElapsedTime();
+  const t = elapsed - phaseStart;
+
+  controls.update();
+
+  stars.rotation.y += delta * 0.005;
+  stars.rotation.x += delta * 0.002;
+
+  halo.rotation.z += delta * 0.5;
+  core.rotation.y += delta * 0.8;
+
+  const centerPulse = 0.85 + Math.sin(elapsed * 2.5) * 0.05 + (absorbed / 256) * 0.7;
+  bigOne.scale.setScalar(centerPulse);
+  centerLight.intensity = 3 + (absorbed / 256) * 8;
+
+  if (phase === 'INIT' && t > 2.2) {
+    setPhase('DIVIDE');
+    showPhase('/ IT AND REPEAT', 'DIVIDE AND REPEAT', 2800);
+    divideWrap.style.opacity = '1';
+    divideWrap.style.transform = 'scale(1)';
+    lastDivide = elapsed;
+  }
+
+  if (phase === 'DIVIDE') {
+    const pulse = 1 + Math.sin(elapsed * 8) * 0.15;
+    sprites.forEach((s, i) => {
+      if (pointsData[i].alive) s.scale.setScalar(0.16 * pulse);
+    });
+    if (elapsed - lastDivide > 0.35) {
+      lastDivide = elapsed;
+      divideIndex = (divideIndex + 1) % divideSequence.length;
+      const curr = divideSequence[divideIndex];
+      const next = divideSequence[(divideIndex + 1) % divideSequence.length];
+      divideText.textContent = `${curr} → ${next}`;
+    }
+    if (t > 5.5) {
+      setPhase('STAND');
+      showPhase('STAND IT UP', 'ROTATE 90°', 1800);
+      divideWrap.style.opacity = '0';
+    }
+  }
+
+  if (phase === 'STAND') {
+    const prog = Math.min(t / 1.8, 1);
+    mainGroup.rotation.x = prog * Math.PI * 0.5;
+    if (t > 1.9) {
+      setPhase('SMASH');
+      showPhase('SMASH TO DONUT', 'COMPRESS TO TOROID', 2200);
+    }
+  }
+
+  if (phase === 'SMASH') {
+    const prog = Math.min(t / 2.8, 1);
+    const ease = 1 - Math.pow(1 - prog, 3);
+    mainGroup.scale.y = 1 - ease * 0.45;
+    pointsData.forEach((pd, i) => {
+      if (!pd.alive) return;
+      pd.currentPos.lerpVectors(pd.spherePos, pd.torusPos, ease);
+      sprites[i].position.copy(pd.currentPos);
+    });
+    if (t > 0.5 && !flowGroup.visible) {
+      flowGroup.visible = true;
+    }
+    lineMat.opacity = 0.08 + ease * 0.22;
+    if (t > 3.0) {
+      setPhase('CONNECT');
+      showPhase('CONNECT IN TO OUT', 'FEEDBACK LOOP', 2500);
+    }
+  }
+
+  if (phase === 'CONNECT') {
+    if (t > 2.8) {
+      setPhase('ABSORB');
+      showPhase('OBSERVE', 'TRACKING & ABSORPTION', 2000);
+    }
+  }
+
+  if (phase === 'ABSORB' || phase === 'CONNECT' || phase === 'SMASH') {
+    flowParticles.forEach(p => {
+      p.t += delta * p.speed * 0.18;
+      if (p.t > 1) p.t -= 1;
+      const tt = p.t;
+      const a = p.phi + elapsed * 0.1;
+      let x, y, z, radius;
+      if (tt < 0.5) {
+        const tp = tt / 0.5;
+        y = 3.5 - tp * 7;
+        radius = 0.65 + Math.sin(tp * Math.PI) * 0.15;
+        x = Math.cos(a) * radius;
+        z = Math.sin(a) * radius;
+        p.mesh.material.color.setHex(0x00ffff);
+        p.mesh.material.opacity = 0.9 - tp * 0.3;
+      } else {
+        const tp = (tt - 0.5) / 0.5;
+        y = -3.5 + tp * 7;
+        radius = 0.8 + Math.sin(tp * Math.PI) * (R_MAJOR + 0.8);
+        x = Math.cos(a + Math.PI) * radius;
+        z = Math.sin(a + Math.PI) * radius;
+        p.mesh.material.color.setHex(0xff40ff);
+        p.mesh.material.opacity = 0.6 + (1-tp) * 0.3;
+      }
+      p.mesh.position.set(x, y, z);
+      const s = 0.7 + Math.sin(elapsed * 5 + p.phi) * 0.3;
+      p.mesh.scale.setScalar(s);
+    });
+  }
+
+  if (phase === 'ABSORB') {
+    absorbTimer += delta;
+    const rate = 0.035;
+    while (absorbTimer > rate && absorbed < NUM) {
+      absorbTimer -= rate;
+      const alivePoints = pointsData.filter(pd => pd.alive && !pd.moving);
+      if (alivePoints.length === 0) break;
+      const pd = alivePoints[Math.floor(Math.random() * alivePoints.length)];
+      pd.moving = true;
+      pd.startPos = pd.currentPos.clone();
+      pd.absorbTime = 0;
+      pd.progress = 0;
+    }
+
+    pointsData.forEach((pd, i) => {
+      if (!pd.moving || !pd.alive) return;
+      pd.absorbTime += delta;
+      const dur = 0.55 + Math.random() * 0.15;
+      pd.progress = Math.min(pd.absorbTime / dur, 1);
+      const ease = 1 - Math.pow(1 - pd.progress, 4);
+      pd.currentPos.lerpVectors(pd.startPos, new THREE.Vector3(0,0,0), ease);
+      const s = sprites[i];
+      s.position.copy(pd.currentPos);
+      s.material.opacity = 1 - ease;
+      s.scale.setScalar(0.16 * (1 - ease * 0.5));
+      if (pd.progress >= 1) {
+        pd.alive = false;
+        pd.moving = false;
+        s.visible = false;
+        absorbed++;
+        absCount.textContent = absorbed.toString();
+        
+        const hueShift = absorbed / NUM;
+        bigOne.material.color.setHSL(0.83 - hueShift * 0.83, 1, 0.6 + hueShift * 0.4);
+        core.material.emissive.setHSL(0.83 - hueShift * 0.3, 1, 0.5 + hueShift * 0.5);
+        centerLight.color.copy(core.material.emissive);
+        halo.material.color.copy(bigOne.material.color);
+        halo.material.opacity = 0.25 + hueShift * 0.4;
+
+        if (absorbed % 16 === 0) {
+          bloomPass.strength = 1.4 + (absorbed / NUM) * 0.8;
+        }
+      }
+    });
+
+    if (absorbed >= NUM && t > 1) {
+      setPhase('INTEGRATE');
+      showPhase('1 = 0 = 1', 'INTEGRATION COMPLETE', 3000);
+      oneEquals.style.color = '#ffffff';
+      oneEquals.style.textShadow = '0 0 10px #fff, 0 0 20px #0ff, 0 0 40px #f0f';
+      theOne.style.opacity = '1';
+      bloomPass.strength = 2.6;
+      zeroFormula.innerHTML = '6 × 4 × 2 × 1 × <span class="text-white glow-cyan">0</span> = <span class="text-white glow-cyan">0</span>';
+    }
+  }
+
+  if (phase === 'INTEGRATE') {
+    const pulse = 1 + Math.sin(elapsed * 3) * 0.1;
+    bigOne.scale.setScalar((0.85 + (absorbed/256)*0.7) * pulse);
+    core.scale.setScalar(pulse);
+    if (t > 4.5) {
+      setPhase('RESET');
+    }
+  }
+
+  if (phase === 'RESET') {
+    theOne.style.opacity = '0';
+    if (t > 1.5) {
+      resetSimulation();
+      setPhase('INIT');
+      showPhase('256 JET LIS', 'DIVIDE AND REPEAT', 2200);
+    }
+  }
+
+  let lineIdx = 0;
+  const pos = lineGeo.attributes.position.array;
+  for (let i = 0; i < trackPairs.length; i++) {
+    const [a, b] = trackPairs[i];
+    const pa = pointsData[a];
+    const pb = pointsData[b];
+    if (!pa.alive || !pb.alive) continue;
+    if (lineIdx >= pos.length - 6) break;
+    pos[lineIdx++] = pa.currentPos.x;
+    pos[lineIdx++] = pa.currentPos.y;
+    pos[lineIdx++] = pa.currentPos.z;
+    pos[lineIdx++] = pb.currentPos.x;
+    pos[lineIdx++] = pb.currentPos.y;
+    pos[lineIdx++] = pb.currentPos.z;
+  }
+  for (; lineIdx < pos.length; lineIdx++) pos[lineIdx] = 0;
+  lineGeo.attributes.position.needsUpdate = true;
+  lineGeo.setDrawRange(0, lineIdx / 3);
+
+  composer.render();
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', onResize);
+
+resetSimulation();
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOROIDAL FUSION ENGINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    color: #c8ffff;
+    background: radial-gradient(ellipse at center, #020212 0%, #000000 70%);
+  }
+  canvas { display: block; }
+  .hud {
+    position: absolute;
+    padding: 20px 24px;
+    pointer-events: none;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+  }
+  .tl { top: 0; left: 0; }
+  .tr { top: 0; right: 0; text-align: right; }
+  .bl { bottom: 0; left: 0; }
+  .br { bottom: 0; right: 0; text-align: right; }
+  .label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    color: #7df9ff;
+  }
+  .value {
+    font-size: 22px;
+    margin-top: 6px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 12px rgba(0,255,255,0.6);
+    transition: all 0.5s;
+  }
+  .tr .value { text-shadow: 0 0 12px rgba(255,0,255,0.6); }
+  .bl .value { text-shadow: 0 0 12px rgba(125,249,255,0.5); }
+  .br .value { text-shadow: 0 0 12px rgba(255,200,100,0.5); }
+  
+  #center-label {
+    position: absolute;
+    top: 12%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(18px, 2.8vw, 32px);
+    letter-spacing: 0.35em;
+    color: #a0ffff;
+    text-shadow: 0 0 30px rgba(0,255,255,0.8);
+    pointer-events: none;
+    z-index: 10;
+    white-space: nowrap;
+    transition: all 1s;
+  }
+  #ignite {
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    padding: 18px 56px;
+    background: rgba(0,10,20,0.7);
+    border: 1px solid rgba(0,255,255,0.8);
+    color: #7df9ff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.3em;
+    border-radius: 100px;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    box-shadow: 
+      0 0 40px rgba(0,255,255,0.2),
+      inset 0 0 20px rgba(0,255,255,0.05);
+    transition: all 0.4s ease;
+    text-transform: uppercase;
+  }
+  #ignite:hover {
+    background: rgba(0,255,255,0.1);
+    border-color: #fff;
+    color: white;
+    box-shadow: 
+      0 0 80px rgba(0,255,255,0.5),
+      inset 0 0 30px rgba(0,255,255,0.15);
+    transform: translateX(-50%) scale(1.05);
+  }
+  #ignite:disabled {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) scale(0.9);
+  }
+  #post-text {
+    position: absolute;
+    top: 68%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 2.5s ease 0.5s;
+    pointer-events: none;
+    width: 90%;
+    max-width: 800px;
+  }
+  #post-text.show { opacity: 1; }
+  #post-text .line1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(16px, 2.2vw, 24px);
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.8);
+    margin-bottom: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  #post-text .line2 {
+    font-size: clamp(13px, 1.6vw, 18px);
+    color: #ff7de9;
+    text-shadow: 0 0 15px rgba(255,125,233,0.6);
+    letter-spacing: 0.08em;
+    opacity: 0.9;
+  }
+  .scanlines::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      transparent 0px,
+      rgba(0,255,255,0.02) 1px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0.3;
+  }
+</style>
+</head>
+<body class="scanlines">
+  <canvas id="c"></canvas>
+  
+  <div id="center-label">TOROIDAL FUSION: PINNED</div>
+  
+  <div class="hud tl">
+    <div class="label">3→27 PROPAGATION</div>
+    <div class="value" id="propVal">LEVEL 3</div>
+  </div>
+  <div class="hud tr">
+    <div class="label">12→6→2→1 QUORUM</div>
+    <div class="value" id="quorumVal">STANDBY</div>
+  </div>
+  <div class="hud bl">
+    <div class="label">64+64 REGISTER</div>
+    <div class="value" id="regVal">BALANCED</div>
+  </div>
+  <div class="hud br">
+    <div class="label">SYNTHESIZER PIECES</div>
+    <div class="value" id="piecesVal">1,070 ACTIVE</div>
+  </div>
+  
+  <button id="ignite">IGNITE</button>
+  
+  <div id="post-text">
+    <div class="line1">again again lol — it's been saying this for months</div>
+    <div class="line2">the 1 in the egg who ate the zero is now the torus</div>
+  </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const canvas = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000008, 0.015);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0, 2.5, 9.5);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.25;
+controls.minDistance = 5;
+controls.maxDistance = 16;
+controls.enablePan = false;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.1, 0.85, 0.15);
+composer.addPass(bloom);
+
+// LIGHTS
+scene.add(new THREE.AmbientLight(0x0a0a1a, 0.4));
+const cyanLight = new THREE.PointLight(0x00ffff, 2.5, 30);
+cyanLight.position.set(6, 5, 4);
+scene.add(cyanLight);
+const magLight = new THREE.PointLight(0xff00aa, 2.2, 30);
+magLight.position.set(-6, -4, 4);
+scene.add(magLight);
+
+// STARS
+const starGeo = new THREE.BufferGeometry();
+const starPos = new Float32Array(4000*3);
+for(let i=0;i<4000;i++){
+  const r = 40 + Math.random()*40;
+  const t = Math.random()*Math.PI*2;
+  const p = Math.random()*Math.PI;
+  starPos[i*3] = r*Math.sin(p)*Math.cos(t);
+  starPos[i*3+1] = r*Math.sin(p)*Math.sin(t);
+  starPos[i*3+2] = r*Math.cos(p);
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0x88aaff, size:0.03, transparent:true, opacity:0.6})));
+
+// TORUS GROUP
+const torusGroup = new THREE.Group();
+scene.add(torusGroup);
+
+const R = 3.2, r = 1.1;
+const torusMat = new THREE.MeshPhysicalMaterial({
+  color: 0x050810,
+  metalness: 0.1,
+  roughness: 0.15,
+  emissive: new THREE.Color(0x0066ff),
+  emissiveIntensity: 0.18,
+  clearcoat: 1,
+  clearcoatRoughness: 0.05,
+  transmission: 0.15,
+  thickness: 0.5,
+  transparent: true,
+  opacity: 0.95
+});
+const torus = new THREE.Mesh(new THREE.TorusGeometry(R, r, 128, 256), torusMat);
+torus.rotation.x = Math.PI/2.2;
+torusGroup.add(torus);
+
+// ×3 PROPAGATION (cyan flowing line wrapped 3x)
+function makePropagation(color, offset=0) {
+  const pts = [];
+  for(let i=0;i<=600;i++){
+    const u = i/600 * Math.PI*2;
+    const v = u*3 + offset;
+    const x = (R + r*0.98*Math.cos(v))*Math.cos(u);
+    const y = (R + r*0.98*Math.cos(v))*Math.sin(u);
+    const z = r*0.98*Math.sin(v);
+    pts.push(new THREE.Vector3(x,y,z));
+  }
+  const g = new THREE.BufferGeometry().setFromPoints(pts);
+  const m = new THREE.LineBasicMaterial({color, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending});
+  return new THREE.Line(g,m);
+}
+const prop1 = makePropagation(0x00ffff, 0);
+const prop2 = makePropagation(0xff00ff, Math.PI);
+prop2.material.opacity = 0.55;
+torus.add(prop1);
+torus.add(prop2);
+
+// FRACTAL SURFACE DETAIL (wireframe)
+const wire = new THREE.Mesh(
+  new THREE.TorusGeometry(R, r*1.001, 48, 128),
+  new THREE.MeshBasicMaterial({color:0x00ffff, wireframe:true, transparent:true, opacity:0.07, blending:THREE.AdditiveBlending})
+);
+wire.rotation.x = Math.PI/2.2;
+torus.add(wire);
+
+// PIN NODES 00 00 0 00 00
+const nodes = [];
+const nodeGroup = new THREE.Group();
+torus.add(nodeGroup);
+const nodePositions = [];
+for(let i=0;i<5;i++){
+  const a = i * Math.PI*2/5 - Math.PI/2;
+  const pos = new THREE.Vector3((R+r*0.85)*Math.cos(a), (R+r*0.85)*Math.sin(a), 0);
+  nodePositions.push(pos);
+  
+  const isCenter = i===2;
+  const geo = new THREE.SphereGeometry(isCenter?0.22:0.14, 32, 32);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
+  });
+  const n = new THREE.Mesh(geo, mat);
+  n.position.copy(pos);
+  n.userData.isCenter = isCenter;
+  nodeGroup.add(n);
+  nodes.push(n);
+  
+  // halo
+  const halo = new THREE.Mesh(
+    new THREE.RingGeometry(isCenter?0.3:0.2, isCenter?0.45:0.32, 64),
+    new THREE.MeshBasicMaterial({color:0x88ffff, side:THREE.DoubleSide, transparent:true, opacity:0.25, blending:THREE.AdditiveBlending})
+  );
+  halo.position.copy(pos);
+  halo.lookAt(0,0,0);
+  nodeGroup.add(halo);
+  n.userData.halo = halo;
+}
+
+// PENTAGONAL BEAMS
+const pentGeo = new THREE.BufferGeometry().setFromPoints([...nodePositions, nodePositions[0]]);
+const pentMat = new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:0.35, blending:THREE.AdditiveBlending});
+const pentagon = new THREE.LineLoop(pentGeo, pentMat);
+nodeGroup.add(pentagon);
+
+// RED CORE
+const core = new THREE.Mesh(
+  new THREE.SphereGeometry(0.32, 48, 48),
+  new THREE.MeshBasicMaterial({color:0xff2222, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending})
+);
+const coreLight = new THREE.PointLight(0xff1100, 3, 12);
+coreLight.position.set(0,0,0);
+scene.add(core);
+scene.add(coreLight);
+const coreHalo = new THREE.Mesh(
+  new THREE.SphereGeometry(0.6, 32, 32),
+  new THREE.MeshBasicMaterial({color:0xff0044, transparent:true, opacity:0.15, side:THREE.BackSide, blending:THREE.AdditiveBlending})
+);
+scene.add(coreHalo);
+
+// 12 QUORUM BLIPS
+const quorum = new THREE.Group();
+scene.add(quorum);
+for(let i=0;i<12;i++){
+  const b = new THREE.Mesh(
+    new THREE.SphereGeometry(0.045,16,16),
+    new THREE.MeshBasicMaterial({color:0x7df9ff, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending})
+  );
+  b.userData = {i, phase: i/12*Math.PI*2};
+  quorum.add(b);
+}
+
+// 3 BLUE UNITY POINTS
+const blues = [];
+const blueTargets = [];
+for(let i=0;i<3;i++){
+  const b = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09,20,20),
+    new THREE.MeshBasicMaterial({color:0x0088ff, blending:THREE.AdditiveBlending})
+  );
+  blues.push(b); scene.add(b);
+  blueTargets.push(randomTorusSurface());
+}
+
+// 27 GREEN UNITY POINTS
+const greens = [];
+const greenTargets = [];
+for(let i=0;i<27;i++){
+  const g = new THREE.Mesh(
+    new THREE.SphereGeometry(0.042,16,16),
+    new THREE.MeshBasicMaterial({color:0x00ff99, blending:THREE.AdditiveBlending})
+  );
+  greens.push(g); scene.add(g);
+  greenTargets.push(randomTorusSurface());
+}
+
+// PARTICLE STREAMS THROUGH HOLE (tokamak)
+const N = 700;
+const stream1Pos = new Float32Array(N*3);
+const stream2Pos = new Float32Array(N*3);
+const s1geo = new THREE.BufferGeometry();
+s1geo.setAttribute('position', new THREE.BufferAttribute(stream1Pos,3));
+const s2geo = new THREE.BufferGeometry();
+s2geo.setAttribute('position', new THREE.BufferAttribute(stream2Pos,3));
+const s1 = new THREE.Points(s1geo, new THREE.PointsMaterial({color:0x00ffff, size:0.035, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false}));
+const s2 = new THREE.Points(s2geo, new THREE.PointsMaterial({color:0xff00ff, size:0.035, transparent:true, opacity:0.75, blending:THREE.AdditiveBlending, depthWrite:false}));
+torusGroup.add(s1); torusGroup.add(s2);
+
+// EQUATION RING
+const eqCanvas = document.createElement('canvas');
+eqCanvas.width = 2048; eqCanvas.height = 128;
+const ctx = eqCanvas.getContext('2d');
+ctx.fillStyle = 'transparent'; ctx.fillRect(0,0,2048,128);
+ctx.font = 'bold 48px JetBrains Mono';
+ctx.fillStyle = '#7df9ff';
+ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 12;
+const eqText = '  1/16 light - 0 - 1/16 shadow = 0 = .5 + .5 = 1  •  ';
+for(let i=0;i<8;i++) ctx.fillText(eqText, i*480, 78);
+const eqTex = new THREE.CanvasTexture(eqCanvas);
+eqTex.wrapS = THREE.RepeatWrapping;
+const eqRing = new THREE.Mesh(
+  new THREE.TorusGeometry(4.7, 0.015, 8, 400),
+  new THREE.MeshBasicMaterial({map:eqTex, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending})
+);
+eqRing.rotation.x = Math.PI/2;
+scene.add(eqRing);
+
+// IGNITION RING
+const igniteRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.2,0.4,128),
+  new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0, side:THREE.DoubleSide, blending:THREE.AdditiveBlending})
+);
+igniteRing.rotation.x = Math.PI/2;
+scene.add(igniteRing);
+
+function randomTorusSurface(){
+  const u = Math.random()*Math.PI*2;
+  const v = Math.random()*Math.PI*2;
+  return new THREE.Vector3(
+    (R + r*0.98*Math.cos(v))*Math.cos(u),
+    (R + r*0.98*Math.cos(v))*Math.sin(u),
+    r*0.98*Math.sin(v)
+  );
+}
+
+let ignited = false;
+let igniteStart = 0;
+const igniteBtn = document.getElementById('ignite');
+const propVal = document.getElementById('propVal');
+const quorumVal = document.getElementById('quorumVal');
+const regVal = document.getElementById('regVal');
+const piecesVal = document.getElementById('piecesVal');
+
+igniteBtn.onclick = () => {
+  ignited = true;
+  igniteStart = clock.getElapsedTime();
+  igniteBtn.disabled = true;
+  controls.autoRotateSpeed = 1.0;
+};
+
+const clock = new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  const dt = clock.getDelta();
+  
+  controls.update();
+  
+  // base rotation
+  torusGroup.rotation.y = t*0.12;
+  torusGroup.rotation.x = Math.sin(t*0.15)*0.08;
+  wire.rotation.z = t*0.2;
+  eqRing.rotation.z = -t*0.08;
+  eqTex.offset.x = t*0.01;
+  
+  // nodes pulse
+  nodes.forEach((n,i)=>{
+    const pulse = 1 + Math.sin(t*3 + i*1.3)*0.12;
+    const s = n.userData.isCenter ? 1.8 : 1.0;
+    n.scale.setScalar(s*pulse);
+    n.material.opacity = 0.85 + Math.sin(t*4+i)*0.15;
+    if(n.userData.halo){
+      n.userData.halo.material.opacity = 0.18 + Math.sin(t*2+i)*0.07;
+      n.userData.halo.lookAt(camera.position);
+    }
+  });
+  
+  // quorum orbit
+  quorum.children.forEach(b=>{
+    const {i, phase} = b.userData;
+    const a = t*0.4 + phase;
+    const r1 = 6.2 + Math.sin(t*0.7+i)*0.4;
+    b.position.set(Math.cos(a)*r1, Math.sin(t*0.5+i*0.3)*1.2, Math.sin(a)*r1);
+    b.material.opacity = 0.6 + Math.sin(t*5+i)*0.4;
+  });
+  
+  // blues and greens idle
+  if(!ignited){
+    blues.forEach((b,i)=>{
+      const a = t*0.3 + i*2.1;
+      b.position.set(Math.cos(a)*9, Math.sin(a*0.6)*1.5, Math.sin(a)*9);
+    });
+    greens.forEach((g,i)=>{
+      const a = t*0.22 + i*0.41;
+      const r = 8.5 + Math.sin(i)*0.5;
+      g.position.set(Math.cos(a)*r, Math.cos(a*1.3)*2, Math.sin(a)*r);
+    });
+  }
+  
+  // streams
+  const streamR = 0.65;
+  for(let i=0;i<N;i++){
+    const phi = (i/N)*Math.PI*2 + t*0.15;
+    const s = t*1.8 + i*0.018;
+    const x1 = (R + streamR*Math.cos(s))*Math.cos(phi);
+    const y1 = (R + streamR*Math.cos(s))*Math.sin(phi);
+    const z1 = streamR*Math.sin(s) * 0.9;
+    stream1Pos[i*3]=x1; stream1Pos[i*3+1]=y1; stream1Pos[i*3+2]=z1;
+    
+    const s2v = -t*1.8 + i*0.018;
+    const x2 = (R + streamR*Math.cos(s2v))*Math.cos(phi+0.5);
+    const y2 = (R + streamR*Math.cos(s2v))*Math.sin(phi+0.5);
+    const z2 = streamR*Math.sin(s2v) * 0.9;
+    stream2Pos[i*3]=x2; stream2Pos[i*3+1]=y2; stream2Pos[i*3+2]=z2;
+  }
+  s1geo.attributes.position.needsUpdate = true;
+  s2geo.attributes.position.needsUpdate = true;
+  
+  // core idle
+  core.scale.setScalar(1 + Math.sin(t*2.5)*0.08);
+  coreHalo.scale.setScalar(1 + Math.sin(t*1.7)*0.12);
+  coreLight.intensity = 2.5 + Math.sin(t*3)*0.5;
+  
+  // IGNITION SEQUENCE
+  if(ignited){
+    const p = Math.min(1, (t - igniteStart)/6.5);
+    
+    // 1) nodes brighten 0-0.2
+    const p1 = Math.min(1, p/0.22);
+    nodes.forEach(n=>{
+      n.material.emissive = new THREE.Color(0xffffff);
+      n.material.emissiveIntensity = p1*2.5;
+    });
+    pentagon.material.opacity = 0.35 + p1*0.6;
+    propVal.textContent = p>0.1 ? 'LEVEL 9 → 27' : 'LEVEL 3';
+    
+    // 2) propagation accelerate 0.2-0.45
+    if(p>0.2){
+      const p2 = Math.min(1, (p-0.2)/0.25);
+      torusGroup.rotation.y += p2*0.015;
+      prop1.material.opacity = 0.9 + p2*0.1;
+      prop2.material.opacity = 0.55 + p2*0.45;
+      wire.material.opacity = 0.07 + p2*0.15;
+      propVal.textContent = 'LEVEL 27 → 81';
+      quorumVal.textContent = 'ENTANGLING';
+    }
+    
+    // 3) fusion entangle 0.35-0.7
+    if(p>0.35){
+      const p3 = Math.min(1, (p-0.35)/0.35);
+      blues.forEach((b,i)=>{
+        b.position.lerp(blueTargets[i], p3*0.06);
+        b.scale.multiplyScalar(0.995);
+      });
+      greens.forEach((g,i)=>{
+        g.position.lerp(greenTargets[i], p3*0.06);
+        g.scale.multiplyScalar(0.996);
+      });
+      quorum.children.forEach(b=>{
+        b.position.multiplyScalar(1 - p3*0.012);
+      });
+      propVal.textContent = 'LEVEL ∞';
+      quorumVal.textContent = p3>0.5 ? '12→6→2→1' : 'ENTANGLING';
+      regVal.textContent = '64+64 LOCK';
+    }
+    
+    // 4) core ignite 0.65-0.85
+    if(p>0.65){
+      const p4 = Math.min(1, (p-0.65)/0.2);
+      const burst = Math.pow(p4, 0.6);
+      core.scale.setScalar(1 + burst*5);
+      coreHalo.scale.setScalar(1 + burst*8);
+      coreLight.intensity = 2.5 + burst*35;
+      coreLight.distance = 12 + burst*20;
+      
+      igniteRing.material.opacity = (1-p4)*0.9;
+      igniteRing.scale.setScalar(1 + burst*35);
+      igniteRing.position.y = Math.sin(burst*Math.PI)*0.2;
+      
+      // camera shake
+      camera.position.x += (Math.random()-0.5)*0.02*burst;
+      camera.position.y += (Math.random()-0.5)*0.02*burst;
+    }
+    
+    // 5) white-hot then settle 0.8-1
+    if(p>0.8){
+      const p5 = Math.min(1, (p-0.8)/0.2);
+      if(p5 < 0.65){
+        const white = p5/0.65;
+        torusMat.emissive.setRGB(1,1,1);
+        torusMat.emissiveIntensity = 0.3 + white*6.5;
+        torusMat.color.setRGB(0.9+white*0.1, 0.9+white*0.1, 1);
+        bloom.strength = 1.1 + white*2.2;
+        bloom.radius = 0.85 + white*0.3;
+      } else {
+        const settle = (p5-0.65)/0.35;
+        torusMat.emissive.set(0x00eaff).lerp(new THREE.Color(0xff3bfc), 0.35 + Math.sin(t*3)*0.1);
+        torusMat.emissiveIntensity = 6.8 - settle*6.0;
+        torusMat.color.set(0x081018);
+        bloom.strength = 3.3 - settle*1.8;
+        // stable hum
+        torusMat.emissiveIntensity = 0.75 + Math.sin(t*4)*0.08;
+      }
+      piecesVal.textContent = 'FUSED';
+      quorumVal.textContent = 'LOCKED';
+    }
+    
+    if(p>0.92){
+      document.getElementById('post-text').classList.add('show');
+      document.getElementById('center-label').textContent = 'TOROIDAL FUSION: IGNITED // STABLE';
+      document.getElementById('center-label').style.color = '#ffffff';
+      document.getElementById('center-label').style.textShadow = '0 0 40px #fff, 0 0 80px #0ff';
+      regVal.textContent = 'BALANCED ∞';
+      piecesVal.textContent = '1,070 → 1';
+      controls.autoRotateSpeed = 0.4;
+    }
+    
+    cyanLight.intensity = 2.5 + p*2;
+    magLight.intensity = 2.2 + p*2.5;
+  }
+  
+  composer.render();
+}
+animate();
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

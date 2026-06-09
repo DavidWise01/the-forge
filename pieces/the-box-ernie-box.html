@@ -1,0 +1,20 @@
+; CENTER = 0
+; IP = spiral_start
+
+; The cube is pre-loaded with the 0-9 spiral pattern:
+; 0,1,3,5,6,7,4,8,9 repeated 24 times across all 216 cells
+; (27 phases × 8 steps = 216, with opcode 9 jumping back to 0)
+
+while(true) {
+  IP → spiral[0]     ; always starts at START (0)
+  
+  ; follow the path:
+  spiral[1] → LOAD        ; (skipped if VM1 not used)
+  spiral[3] → READ
+  spiral[5] → PROC        ; ACC ⊕ CUBE[IP]
+  spiral[6] → WAIT → CENTER++   ; increment center on every WAIT
+  spiral[7] → WRITE
+  spiral[4] → LOCK
+  spiral[8] → UNLOCK
+  spiral[9] → STOP → spiral[0]  ; jump back to START
+}

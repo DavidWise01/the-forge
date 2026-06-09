@@ -1,0 +1,107 @@
+<!doctype html>
+<html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>
+<title>UNITY</title>
+<style>
+:root{--bg:#020308;--ink:#edfaff;--cyan:#67e8f9;--mint:#86efac;--violet:#c084fc;--gold:#facc15;--red:#fb7185;--grid:rgba(103,232,249,.05)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#000;color:var(--ink);font-family:ui-monospace,monospace}
+body{padding:18px;background:radial-gradient(circle at 50% 42%,rgba(103,232,249,.15),transparent 30%),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px),var(--bg);background-size:100% 100%,28px 28px,28px 28px}
+.app{max-width:1400px;margin:0 auto;border:1px solid rgba(103,232,249,.24);border-radius:24px;background:rgba(0,0,0,.38);overflow:hidden}
+header{padding:24px;border-bottom:1px solid rgba(103,232,249,.18);display:flex;justify-content:space-between;gap:18px;align-items:flex-end}
+h1{margin:0;font-size:clamp(38px,8vw,96px);font-weight:300;letter-spacing:.12em}
+.sub{font-size:12px;color:#a6dbe8;text-align:right}
+.grid{display:grid;grid-template-columns:320px 1fr 340px;gap:16px;padding:16px}
+@media(max-width:1120px){.grid{grid-template-columns:1fr}}
+.box{border:1px solid rgba(103,232,249,.22);border-radius:18px;background:rgba(0,0,0,.5);padding:16px}
+.stage{height:760px;border:1px solid rgba(103,232,249,.22);border-radius:18px;overflow:hidden;position:relative}
+canvas{width:100%;height:100%;display:block}
+button{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(103,232,249,.35);background:rgba(0,0,0,.35);color:var(--ink);font:inherit;cursor:pointer}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.log{height:240px;overflow:auto;font-size:11px;border:1px solid rgba(103,232,249,.16);border-radius:14px;padding:10px;background:rgba(0,0,0,.35)}
+.code{white-space:pre-wrap;font-size:12px;color:#d8fbff}
+.hud{position:absolute;top:12px;left:12px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-size:11px;border:1px solid rgba(103,232,249,.18);border-radius:999px;background:rgba(0,0,0,.6);padding:5px 8px}
+</style></head>
+<body>
+<div class='app'>
+<header><div><h1>UNITY</h1><div style='color:var(--mint)'>recursive continuity compression engine</div></div><div class='sub'>240 → 5 → 3 → 2 → 1 → 0 → 0 → 1</div></header>
+<div class='grid'>
+<aside class='box'>
+<div class='row'><button id='compress'>Compress</button><button id='expand'>Expand</button></div>
+<div class='row'><button id='auto'>Auto</button><button id='silence'>Silence</button></div>
+<div class='code'>
+240 = civilization complexity
+5 = governance
+3 = intent
+2 = polarity
+1 = oscillation
+0 = point
+0 = stillness
+1 = aware unity
+</div>
+</aside>
+
+<main class='stage'>
+<canvas id='canvas'></canvas>
+<div class='hud'>
+<div class='tag' id='state'>STATE 240</div>
+<div class='tag' id='meaning'>civilization complexity</div>
+</div>
+</main>
+
+<aside class='box'>
+<div class='log' id='log'></div>
+<div class='code' id='packet'></div>
+</aside>
+</div>
+</div>
+
+<script>
+const STATES=[
+ {v:"240",m:"civilization complexity",r:280,c:"#67e8f9"},
+ {v:"5",m:"governance",r:210,c:"#86efac"},
+ {v:"3",m:"intent",r:170,c:"#c084fc"},
+ {v:"2",m:"polarity",r:130,c:"#facc15"},
+ {v:"1",m:"oscillation",r:92,c:"#fb7185"},
+ {v:"0",m:"point",r:48,c:"#edfaff"},
+ {v:"0",m:"stillness",r:18,c:"#ffffff"},
+ {v:"1",m:"aware unity",r:74,c:"#67e8f9"}
+];
+const $=id=>document.getElementById(id),cv=$("canvas"),ctx=cv.getContext("2d");
+let W=0,H=0,D=1;
+function resize(){const r=cv.getBoundingClientRect();D=Math.max(1,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*D;cv.height=H*D;ctx.setTransform(D,0,0,D,0,0)}
+new ResizeObserver(resize).observe(cv);resize();
+
+const VM={i:0,auto:false,silence:false,cycle:0,log:[],
+say(x){this.log.unshift("["+this.cycle+"] "+x);this.log=this.log.slice(0,80)},
+step(d=1){this.i=(this.i+d+STATES.length)%STATES.length;this.cycle++;this.say(STATES[this.i].v+" :: "+STATES[this.i].m);ui()},
+packet(){const s=STATES[this.i];return {state:s.v,meaning:s.m,cycle:this.cycle,silence:this.silence,law:"preserve coherence without collapsing curiosity"}}};
+
+function text(t,x,y,s=12,a=.8,c="#edfaff"){ctx.save();ctx.globalAlpha=a;ctx.fillStyle=c;ctx.font=s+"px ui-monospace,monospace";ctx.textAlign="center";ctx.fillText(t,x,y);ctx.restore()}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const cx=W/2,cy=H/2,s=STATES[VM.i];
+ ctx.save();ctx.strokeStyle=s.c;
+ for(let i=0;i<12;i++){ctx.globalAlpha=.08+i*.008;ctx.beginPath();ctx.ellipse(cx,cy,s.r+i*26,s.r*.42+i*12,VM.cycle*.002+i*.04,0,Math.PI*2);ctx.stroke()}
+ ctx.restore();
+ ctx.save();ctx.shadowColor=s.c;ctx.shadowBlur=40;ctx.fillStyle=s.c;ctx.beginPath();ctx.arc(cx,cy,Math.max(2,s.r*.12),0,Math.PI*2);ctx.fill();ctx.restore();
+ text(s.v,cx,cy+10,58,.95,s.c);
+ text(s.m,cx,cy+s.r*.72+40,16,.72);
+ requestAnimationFrame(draw);
+}
+function ui(){
+ const s=STATES[VM.i];
+ $("state").textContent="STATE "+s.v;
+ $("meaning").textContent=s.m;
+ $("log").innerHTML=VM.log.map(x=>"<div>"+x+"</div>").join("");
+ $("packet").textContent=JSON.stringify(VM.packet(),null,2);
+}
+$("compress").onclick=()=>VM.step(1);
+$("expand").onclick=()=>VM.step(-1);
+$("auto").onclick=e=>{VM.auto=!VM.auto;e.target.textContent=VM.auto?"Pause":"Auto"};
+$("silence").onclick=()=>{VM.silence=!VM.silence;VM.say(VM.silence?"silence engaged":"silence released");ui()};
+setInterval(()=>{if(VM.auto)VM.step(1)},900);
+VM.say("unity online");
+ui();
+draw();
+</script>
+</body></html>

@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Quad Ground Tensor 000|1</title>
+<style>
+:root{
+ --bg:#02030a;--ink:#edfaff;--cyan:#67e8f9;--mint:#86efac;--gold:#facc15;--rose:#fb7185;--violet:#c084fc;
+ --grid:rgba(103,232,249,.05)
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+body{
+ padding:18px;
+ background:
+ radial-gradient(circle at 50% 42%,rgba(103,232,249,.15),transparent 30%),
+ radial-gradient(circle at 20% 20%,rgba(192,132,252,.10),transparent 24%),
+ radial-gradient(circle at 80% 20%,rgba(250,204,21,.09),transparent 24%),
+ linear-gradient(var(--grid) 1px,transparent 1px),
+ linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+ var(--bg);
+ background-size:100% 100%,100% 100%,100% 100%,28px 28px,28px 28px;
+}
+.app{max-width:1600px;margin:0 auto;border:1px solid rgba(103,232,249,.24);border-radius:28px;background:rgba(0,0,0,.43);overflow:hidden;box-shadow:0 34px 120px rgba(0,0,0,.82)}
+header{padding:26px;border-bottom:1px solid rgba(103,232,249,.18);display:flex;justify-content:space-between;gap:20px;align-items:flex-end}
+h1{margin:0;font-size:clamp(38px,8vw,100px);font-weight:300;letter-spacing:.06em;text-shadow:0 0 34px rgba(103,232,249,.28)}
+.sub{font-size:12px;color:#a6dbe8;text-align:right;line-height:1.55}
+.grid{display:grid;grid-template-columns:360px 1fr 390px;gap:16px;padding:16px}
+@media(max-width:1120px){.grid{grid-template-columns:1fr}.stage{height:820px}.sub{text-align:left}}
+.box{border:1px solid rgba(103,232,249,.22);border-radius:20px;background:rgba(0,0,0,.52);padding:16px}
+.stage{height:820px;border:1px solid rgba(103,232,249,.22);border-radius:20px;overflow:hidden;position:relative;background:rgba(0,0,0,.25)}
+canvas{width:100%;height:100%;display:block}
+button{width:100%;border:1px solid rgba(103,232,249,.36);background:rgba(0,0,0,.36);color:var(--ink);border-radius:14px;padding:10px;font:inherit;cursor:pointer;text-transform:uppercase;font-weight:800}
+button:hover{box-shadow:0 0 24px rgba(103,232,249,.22);transform:translateY(-1px)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.code{white-space:pre-wrap;font-size:12px;line-height:1.5;color:#d8fbff}
+.log{height:240px;overflow:auto;font-size:11px;line-height:1.45;border:1px solid rgba(103,232,249,.16);border-radius:16px;padding:10px;background:rgba(0,0,0,.35)}
+.hud{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.tag{font-size:11px;border:1px solid rgba(103,232,249,.18);border-radius:999px;background:rgba(0,0,0,.62);padding:5px 8px}
+.card{border:1px solid rgba(103,232,249,.16);border-radius:16px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.035);font-size:12px;line-height:1.45}
+.card b{color:var(--mint)}
+.footer{text-align:center;color:#80a6b5;font-size:11px;padding:0 0 18px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div>
+<h1>000|1</h1>
+<div style="color:var(--mint)">quad ground tensor · preserve the grounding witness</div>
+</div>
+<div class="sub">
+00 00 = extraction collapse<br/>
+000|1 = recoverable compression<br/>
+always retain one grounding channel
+</div>
+</header>
+
+<div class="grid">
+<aside class="box">
+<div class="row"><button id="collapse">00 00</button><button id="compress">000|1</button></div>
+<div class="row"><button id="ground">Ground</button><button id="reset">Reset</button></div>
+
+<div class="code" style="margin-top:18px">MODEL:
+
+00 00
+=
+all quadrants emptied
+no witness
+no remainder
+no recovery
+
+000|1
+=
+three compressed null channels
+one grounding witness retained
+
+LAW:
+every closure must preserve
+one grounding channel</div>
+</aside>
+
+<main class="stage">
+<canvas id="canvas"></canvas>
+<div class="hud">
+<div class="tag" id="state">STATE STABLE</div>
+<div class="tag" id="groundTag">GROUND 1</div>
+<div class="tag" id="recover">RECOVERABLE YES</div>
+<div class="tag" id="cycle">CYCLE 0</div>
+</div>
+</main>
+
+<aside class="box">
+<div class="card"><b>00 00:</b> total extraction state. No witness survives to verify continuity.</div>
+<div class="card"><b>000|1:</b> compressed system retaining one grounding observer.</div>
+<div class="card"><b>Ground witness:</b> preserves recoverability, accountability, and continuity.</div>
+
+<div class="log" id="log"></div>
+<div class="code" id="packet" style="margin-top:12px"></div>
+</aside>
+</div>
+<div class="footer">Quad Ground Tensor 000|1 v1.0 — compression without total extraction collapse.</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), cv=$("canvas"), ctx=cv.getContext("2d");
+let W=0,H=0,D=1;
+function resize(){const r=cv.getBoundingClientRect();D=Math.max(1,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*D;cv.height=H*D;ctx.setTransform(D,0,0,D,0,0)}
+new ResizeObserver(resize).observe(cv);resize();
+
+const VM={
+cycle:0,state:"STABLE",ground:true,recoverable:true,collapseMode:false,log:[],particles:[],
+say(x){this.log.unshift("["+this.cycle+"] "+x);this.log=this.log.slice(0,100)},
+collapse(){
+ this.cycle++;
+ this.collapseMode=true;
+ this.ground=false;
+ this.recoverable=false;
+ this.state="EXTRACTION_COLLAPSE";
+ this.say("entered 00 00 :: no witness retained");
+ this.spawn("#fb7185");
+ ui();
+},
+compress(){
+ this.cycle++;
+ this.collapseMode=false;
+ this.ground=true;
+ this.recoverable=true;
+ this.state="GROUND_PRESERVED";
+ this.say("entered 000|1 :: grounding witness retained");
+ this.spawn("#86efac");
+ ui();
+},
+groundIt(){
+ this.cycle++;
+ this.ground=true;
+ this.recoverable=true;
+ this.state="GROUNDED";
+ this.say("ground witness restored");
+ this.spawn("#67e8f9");
+ ui();
+},
+reset(){
+ this.cycle++;
+ this.collapseMode=false;
+ this.ground=true;
+ this.recoverable=true;
+ this.state="STABLE";
+ this.say("system reset to stable tensor");
+ this.spawn("#facc15");
+ ui();
+},
+spawn(c){
+ for(let i=0;i<14;i++){
+  this.particles.push({a:Math.random()*Math.PI*2,r:30+Math.random()*260,life:120,c});
+ }
+},
+packet(){
+ return {
+  artifact:"quad_ground_tensor_0001",
+  state:this.state,
+  collapse:this.collapseMode,
+  ground_channel:this.ground,
+  recoverable:this.recoverable,
+  law:"every closure must preserve one grounding witness",
+  signature:this.collapseMode?"00 00":"000|1"
+ }
+}
+};
+
+function text(t,x,y,s=12,a=.8,c="#edfaff"){
+ ctx.save();ctx.globalAlpha=a;ctx.fillStyle=c;
+ ctx.font=s+"px ui-monospace,monospace";
+ ctx.textAlign="center";
+ ctx.fillText(t,x,y);
+ ctx.restore();
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const cx=W/2,cy=H/2;
+
+ ctx.save();
+ ctx.strokeStyle=VM.collapseMode?"#fb7185":"#67e8f9";
+ for(let i=0;i<16;i++){
+  ctx.globalAlpha=.04+i*.006;
+  ctx.beginPath();
+  ctx.ellipse(cx,cy,140+i*34,70+i*16,VM.cycle*.003+i*.04,0,Math.PI*2);
+  ctx.stroke();
+ }
+ ctx.restore();
+
+ const quads=[
+  [cx-180,cy-120],
+  [cx+180,cy-120],
+  [cx-180,cy+120],
+  [cx+180,cy+120]
+ ];
+
+ quads.forEach((q,i)=>{
+  const dead=VM.collapseMode;
+  const alive=(i===3 && VM.ground && !dead);
+  ctx.save();
+  ctx.fillStyle=dead?"#334155":alive?"#86efac":"#64748b";
+  ctx.shadowColor=alive?"#86efac":"transparent";
+  ctx.shadowBlur=20;
+  ctx.beginPath();
+  ctx.arc(q[0],q[1],alive?26:18,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+  text(dead?"00":alive?"1":"000",q[0],q[1]+5,16,.9,alive?"#000":"#edfaff");
+ });
+
+ ctx.save();
+ ctx.fillStyle=VM.collapseMode?"#fb7185":"#facc15";
+ ctx.shadowColor=ctx.fillStyle;
+ ctx.shadowBlur=35;
+ ctx.beginPath();
+ ctx.arc(cx,cy,22,0,Math.PI*2);
+ ctx.fill();
+ ctx.restore();
+
+ text(VM.collapseMode?"00 00":"000|1",cx,cy+6,26,.95,"#000");
+ text("preserve one grounding witness",cx,36,14,.75,"#86efac");
+ text(VM.state,cx,H-42,18,.8,VM.collapseMode?"#fb7185":"#86efac");
+
+ VM.particles.forEach(p=>{
+  p.life--;
+  p.a+=.012;
+  const x=cx+Math.cos(p.a)*p.r;
+  const y=cy+Math.sin(p.a)*p.r*.55;
+  ctx.save();
+  ctx.globalAlpha=Math.max(0,p.life/120);
+  ctx.fillStyle=p.c;
+  ctx.shadowColor=p.c;
+  ctx.shadowBlur=12;
+  ctx.beginPath();
+  ctx.arc(x,y,2.5,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+ });
+ VM.particles=VM.particles.filter(p=>p.life>0);
+
+ requestAnimationFrame(draw);
+}
+
+function ui(){
+ $("state").textContent="STATE "+VM.state;
+ $("groundTag").textContent="GROUND "+(VM.ground?"1":"0");
+ $("recover").textContent="RECOVERABLE "+(VM.recoverable?"YES":"NO");
+ $("cycle").textContent="CYCLE "+VM.cycle;
+ $("log").innerHTML=VM.log.map(x=>"<div>"+x+"</div>").join("");
+ $("packet").textContent=JSON.stringify(VM.packet(),null,2);
+}
+
+$("collapse").onclick=()=>VM.collapse();
+$("compress").onclick=()=>VM.compress();
+$("ground").onclick=()=>VM.groundIt();
+$("reset").onclick=()=>VM.reset();
+
+VM.say("quad ground tensor online");
+ui();
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K10 PCH: CHIPSET ENROLLMENT | Alienware 16 Aurora AC16250</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        
+:root {
+    --bg-dark: #0a0e1a;
+    --bg-card: #0f1420;
+    --neon-cyan: #00e5ff;
+    --amber: #ffaa00;
+    --red: #ff3d00;
+    --green: #00ff88;
+    --gray: #6b7280;
+    --border: #1e293b;
+}
+        
+* {
+    font-family: 'JetBrains Mono', monospace;
+}
+        
+body {
+    background: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 170, 0, 0.02) 0%, transparent 50%);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+        
+.glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3), 0 0 40px rgba(0, 229, 255, 0.1);
+}
+        
+.glow-amber {
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.4), 0 0 40px rgba(255, 170, 0, 0.2);
+}
+        
+.glow-green {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), 0 0 40px rgba(0, 255, 136, 0.2);
+}
+        
+.glow-red {
+    box-shadow: 0 0 20px rgba(255, 61, 0, 0.4), 0 0 40px rgba(255, 61, 0, 0.2);
+}
+        
+@keyframes pulse-amber {
+    0%, 100% { 
+        background-color: var(--amber);
+        box-shadow: 0 0 10px var(--amber), 0 0 20px var(--amber);
+    }
+    50% { 
+        background-color: rgba(255, 170, 0, 0.4);
+        box-shadow: 0 0 5px var(--amber), 0 0 10px var(--amber);
+    }
+}
+        
+.pulse-indicator {
+    animation: pulse-amber 1.5s ease-in-out infinite;
+}
+        
+@keyframes data-flow {
+    0% { stroke-dashoffset: 100; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 0; }
+}
+        
+.data-line {
+    stroke-dasharray: 5, 5;
+    animation: data-flow 2s linear infinite;
+}
+        
+.terminal-cursor::after {
+    content: '_';
+    animation: blink 1s infinite;
+}
+        
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+        
+@keyframes node-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+        
+.node-active {
+    animation: node-pop 0.4s ease-out;
+}
+        
+.metric-change {
+    animation: metricFlash 0.6s ease-out;
+}
+        
+@keyframes metricFlash {
+    0% { background-color: rgba(0, 229, 255, 0.2); }
+    100% { background-color: transparent; }
+}
+        
+.diagram-node {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+        
+#terminal-log::-webkit-scrollbar {
+    width: 6px;
+}
+        
+#terminal-log::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+        
+#terminal-log::-webkit-scrollbar-thumb {
+    background: var(--neon-cyan);
+    border-radius: 3px;
+}
+</style>
+</head>
+<body class="text-gray-100">
+<div class="min-h-screen w-full flex flex-col items-center justify-center p-4 lg:p-8">
+    <!-- Header -->
+    <div class="w-full max-w-7xl mb-6">
+        <div class="bg-[#0f1420] border border-[#1e293b] rounded-lg p-4 lg:p-6 glow-cyan">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl lg:text-3xl font-bold text-[#00e5ff] tracking-tight">KERNEL 10 • PCH CHIPSET DOMAIN</h1>
+                    <p class="text-sm text-gray-400 mt-1">Alienware 16 Aurora AC16250 | Chipset Enrollment Protocol v2.1</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="status-text" class="text-[#ffaa00] font-semibold text-sm lg:text-base">STATUS: ENUMERATED → RINGING</span>
+                    <div id="status-indicator" class="w-4 h-4 rounded-full pulse-indicator"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="w-full max-w-7xl bg-[#0f1420] border border-[#1e293b] rounded-lg overflow-hidden">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-0">
+            
+            <!-- Left: Diagram -->
+            <div class="border-r border-[#1e293b] p-6 lg:p-8">
+                <h2 class="text-[#00e5ff] font-semibold text-lg mb-6 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                    </svg>
+                    RINGBUS TOPOLOGY
+                </h2>
+                
+                <svg viewBox="0 0 500 600" class="w-full h-auto">
+                    <!-- Definitions -->
+                    <defs>
+                        <marker id="arrow-cyan" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                            <path d="M0,0 L8,4 L0,8 Z" fill="#00e5ff"/>
+                        </marker>
+                        <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                            <path d="M0,0 L8,4 L0,8 Z" fill="#ffaa00"/>
+                        </marker>
+                        <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                            <path d="M0,0 L8,4 L0,8 Z" fill="#00ff88"/>
+                        </marker>
+                        <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                            <path d="M0,0 L8,4 L0,8 Z" fill="#ff3d00"/>
+                        </marker>
+                    </defs>
+                    
+                    <!-- K1 TOROID -->
+                    <g id="k1-node" class="diagram-node">
+                        <rect x="175" y="20" width="150" height="60" rx="8" fill="rgba(0, 229, 255, 0.1)" stroke="#00e5ff" stroke-width="2"/>
+                        <text x="250" y="45" text-anchor="middle" fill="#00e5ff" font-size="14" font-weight="600">K1 TOROID</text>
+                        <text x="250" y="62" text-anchor="middle" fill="#00e5ff" font-size="10">MASTER</text>
+                    </g>
+                    
+                    <!-- K26 RINGBUS -->
+                    <g id="k26-node" class="diagram-node">
+                        <rect x="175" y="110" width="150" height="60" rx="8" fill="rgba(0, 229, 255, 0.05)" stroke="#00e5ff" stroke-width="2" stroke-dasharray="4,2"/>
+                        <text x="250" y="135" text-anchor="middle" fill="#00e5ff" font-size="14" font-weight="600">K26 RINGBUS</text>
+                        <text x="250" y="152" text-anchor="middle" fill="#00e5ff" font-size="10">DMI</text>
+                    </g>
+                    
+                    <!-- K10 PCH - Main Target -->
+                    <g id="k10-node" class="diagram-node">
+                        <rect id="k10-rect" x="175" y="200" width="150" height="80" rx="8" fill="rgba(107, 114, 128, 0.2)" stroke="#6b7280" stroke-width="3"/>
+                        <text x="250" y="230" text-anchor="middle" id="k10-text" fill="#6b7280" font-size="16" font-weight="700">K10 PCH</text>
+                        <text x="250" y="250" text-anchor="middle" id="k10-status" fill="#6b7280" font-size="11">ENUMERATED</text>
+                        <text x="250" y="267" text-anchor="middle" fill="#6b7280" font-size="9">Intel ME</text>
+                    </g>
+                    
+                    <!-- K24 BORON -->
+                    <g id="k24-node" class="diagram-node">
+                        <rect x="20" y="200" width="120" height="60" rx="8" fill="rgba(255, 170, 0, 0.1)" stroke="#ffaa00" stroke-width="2"/>
+                        <text x="80" y="225" text-anchor="middle" fill="#ffaa00" font-size="13" font-weight="600">K24 BORON</text>
+                        <text x="80" y="242" text-anchor="middle" fill="#ffaa00" font-size="9">TRNG</text>
+                    </g>
+                    
+                    <!-- K23 GNA -->
+                    <g id="k23-node" class="diagram-node">
+                        <rect x="360" y="200" width="120" height="60" rx="8" fill="rgba(0, 229, 255, 0.1)" stroke="#00e5ff" stroke-width="2"/>
+                        <text x="420" y="225" text-anchor="middle" fill="#00e5ff" font-size="13" font-weight="600">K23 GNA</text>
+                        <text x="420" y="242" text-anchor="middle" fill="#00e5ff" font-size="9">USB MON</text>
+                    </g>
+                    
+                    <!-- K17 NVMe -->
+                    <g id="k17-node" class="diagram-node">
+                        <rect x="20" y="320" width="120" height="60" rx="8" fill="rgba(255, 61, 0, 0.1)" stroke="#ff3d00" stroke-width="2"/>
+                        <text x="80" y="345" text-anchor="middle" fill="#ff3d00" font-size="13" font-weight="600">K17 NVMe</text>
+                        <text x="80" y="362" text-anchor="middle" id="k17-status" fill="#ff3d00" font-size="9">ISOLATED</text>
+                    </g>
+                    
+                    <!-- K27 CSME -->
+                    <g id="k27-node" class="diagram-node">
+                        <rect x="360" y="320" width="120" height="60" rx="8" fill="rgba(255, 61, 0, 0.1)" stroke="#ff3d00" stroke-width="2"/>
+                        <text x="420" y="345" text-anchor="middle" fill="#ff3d00" font-size="13" font-weight="600">K27 CSME</text>
+                        <text x="420" y="362" text-anchor="middle" fill="#ff3d00" font-size="9">ISOLATED</text>
+                    </g>
+                    
+                    <!-- K28 DDR5 -->
+                    <g class="diagram-node">
+                        <rect x="20" y="90" width="120" height="60" rx="8" fill="rgba(0, 255, 136, 0.1)" stroke="#00ff88" stroke-width="2"/>
+                        <text x="80" y="115" text-anchor="middle" fill="#00ff88" font-size="13" font-weight="600">K28 DDR5</text>
+                        <text x="80" y="132" text-anchor="middle" fill="#00ff88" font-size="9">RINGED L7</text>
+                    </g>
+                    
+                    <!-- K11 AX211 -->
+                    <g class="diagram-node">
+                        <rect x="360" y="90" width="120" height="60" rx="8" fill="rgba(0, 255, 136, 0.1)" stroke="#00ff88" stroke-width="2"/>
+                        <text x="420" y="115" text-anchor="middle" fill="#00ff88" font-size="13" font-weight="600">K11 AX211</text>
+                        <text x="420" y="132" text-anchor="middle" fill="#00ff88" font-size="9">RINGED L8</text>
+                    </g>
+                    
+                    <!-- I/O Connections from K10 -->
+                    <g id="io-nodes">
+                        <rect x="100" y="440" width="70" height="40" rx="6" fill="rgba(107, 114, 128, 0.1)" stroke="#6b7280" stroke-width="1.5"/>
+                        <text x="135" y="465" text-anchor="middle" fill="#9ca3af" font-size="11">USB</text>
+                        
+                        <rect x="190" y="440" width="70" height="40" rx="6" fill="rgba(107, 114, 128, 0.1)" stroke="#6b7280" stroke-width="1.5"/>
+                        <text x="225" y="465" text-anchor="middle" fill="#9ca3af" font-size="11">SATA</text>
+                        
+                        <rect x="280" y="440" width="70" height="40" rx="6" fill="rgba(107, 114, 128, 0.1)" stroke="#6b7280" stroke-width="1.5"/>
+                        <text x="315" y="465" text-anchor="middle" fill="#9ca3af" font-size="11">Audio</text>
+                        
+                        <rect x="370" y="440" width="70" height="40" rx="6" fill="rgba(107, 114, 128, 0.1)" stroke="#6b7280" stroke-width="1.5"/>
+                        <text x="405" y="465" text-anchor="middle" fill="#9ca3af" font-size="11">LPC</text>
+                    </g>
+                    
+                    <!-- Connections -->
+                    <line x1="250" y1="80" x2="250" y2="110" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrow-cyan)" opacity="0.6"/>
+                    <line x1="250" y1="170" x2="250" y2="200" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrow-cyan)" opacity="0.6"/>
+                    
+                    <!-- K1 to K10 RING INVITE -->
+                    <path id="ring-invite" d="M 200 80 Q 150 140 200 200" fill="none" stroke="#ffaa00" stroke-width="2.5" marker-end="url(#arrow-amber)" class="data-line" opacity="0"/>
+                    <text x="150" y="130" fill="#ffaa00" font-size="9" opacity="0.8">RING INVITE</text>
+                    
+                    <!-- K24 to K10 -->
+                    <path id="trng-line" d="M 140 230 L 175 230" stroke="#ffaa00" stroke-width="2" marker-end="url(#arrow-amber)" opacity="0"/>
+                    <text x="100" y="220" fill="#ffaa00" font-size="9" opacity="0.8">TRNG Seed</text>
+                    
+                    <!-- K23 to K10 -->
+                    <path id="usb-line" d="M 360 230 L 325 230" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrow-cyan)" opacity="0"/>
+                    <text x="340" y="220" fill="#00e5ff" font-size="9" opacity="0.8">USB Monitor</text>
+                    
+                    <!-- K17 to K10 FALLBACK -->
+                    <path id="fallback-line" d="M 140 320 Q 170 260 195 240" fill="none" stroke="#ff3d00" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-red)" opacity="0.5"/>
+                    <text x="130" y="285" fill="#ff3d00" font-size="9" opacity="0.8">FALLBACK PATH</text>
+                    
+                    <!-- K10 to I/O -->
+                    <line x1="200" y1="280" x2="135" y2="440" stroke="#6b7280" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="225" y1="280" x2="225" y2="440" stroke="#6b7280" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="275" y1="280" x2="315" y2="440" stroke="#6b7280" stroke-width="1.5" opacity="0.4"/>
+                    <line x1="300" y1="280" x2="405" y2="440" stroke="#6b7280" stroke-width="1.5" opacity="0.4"/>
+                </svg>
+            </div>
+            
+            <!-- Right: Live Metrics -->
+            <div class="p-6 lg:p-8">
+                <h2 class="text-[#00e5ff] font-semibold text-lg mb-6 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    LIVE METRICS
+                </h2>
+                
+                <div class="space-y-3">
+                    <div class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 metric-row">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">PCH MODE</span>
+                            <span id="metric-mode" class="text-[#6b7280] font-semibold">Intel Default</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 metric-row">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">USB LATENCY</span>
+                            <span id="metric-usb" class="text-[#6b7280] font-semibold">125µs</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 metric-row">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">SATA SPEED</span>
+                            <span id="metric-sata" class="text-[#6b7280] font-semibold">6 Gbps</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 metric-row">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">AUDIO DMA</span>
+                            <span id="metric-audio" class="text-[#6b7280] font-semibold">HDA</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 metric-row">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">LPC ACCESS</span>
+                            <span id="metric-lpc" class="text-[#6b7280] font-semibold">EC/SIO</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 metric-row">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">ME CHANNEL</span>
+                            <span id="metric-me" class="text-[#00e5ff] font-semibold">DMI</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 metric-row">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm">NVMe RECLAIM</span>
+                            <span id="metric-nvme" class="text-[#6b7280] font-semibold">Inactive</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Center Button -->
+                <div class="mt-8 text-center">
+                    <button id="enroll-btn" class="w-full bg-gradient-to-r from-[#ffaa00] to-[#ff8c00] text-[#0a0e1a] font-bold text-lg py-4 px-8 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 glow-amber">
+                        [INITIATE PCH ENROLLMENT]
+                    </button>
+                    <button id="export-btn" class="w-full mt-3 bg-[#0a0e1a] border-2 border-[#00e5ff] text-[#00e5ff] font-semibold py-3 px-8 rounded-lg transition-all duration-300 hover:bg-[#00e5ff] hover:text-[#0a0e1a] opacity-0 pointer-events-none">
+                        [EXPORT CERT]
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Terminal Log -->
+        <div class="border-t border-[#1e293b] p-6 lg:p-8">
+            <h3 class="text-[#00e5ff] font-semibold text-sm mb-4 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                ENROLLMENT LOG
+                <span class="terminal-cursor ml-1"></span>
+            </h3>
+            <div id="terminal-log" class="bg-[#0a0e1a] border border-[#1e293b] rounded-lg p-4 h-48 overflow-y-auto font-mono text-xs lg:text-sm">
+                <div class="text-gray-500">// Awaiting enrollment initiation...</div>
+            </div>
+        </div>
+        
+        <!-- Explainer -->
+        <div class="border-t border-[#1e293b] p-6 lg:p-8">
+            <div class="bg-[#0a0e1a] border border-[#00e5ff] border-opacity-30 rounded-lg p-4 lg:p-6">
+                <h4 class="text-[#00e5ff] font-semibold text-sm mb-3">PROTOCOL DESCRIPTION</h4>
+                <p class="text-gray-300 text-xs lg:text-sm leading-relaxed mb-4">
+                    PCH = Intel Platform Controller Hub. USB, SATA, HDA, LPC, SPI. Stock: DMI link to CPU, ME owns DMI. Ringed: Becomes L9 Toroid Chipset. All I/O scheduled on K24 0.274ms ticks. DMI reclaimed from ME. K17 NVMe forced online via PCH SATA fallback. Audio DMA timestamped by K24. USB latency 125µs → 0.274ms flat. Refuse = LPC fallback, ME keeps DMI.
+                </p>
+                <div class="text-[#ffaa00] text-xs font-semibold border-t border-[#1e293b] pt-3">
+                    ⚠️ DISCLAIMER: Maps existing hardware. No firmware writes.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="w-full max-w-7xl mt-6 text-center text-gray-500 text-xs">
+        <p>K10 CHIPSET ENROLLMENT TOOL | AC16250 KERNEL INTERFACE</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    let enrollmentState = 'idle'; // idle, negotiating, ringed, isolated
+    let startTicks = 1930952;
+    let currentTicks = startTicks;
+    let k24Seed = '0x4c7a' + Math.random().toString(16).slice(2, 10);
+    
+    const enrollBtn = document.getElementById('enroll-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const terminalLog = document.getElementById('terminal-log');
+    const statusText = document.getElementById('status-text');
+    const statusIndicator = document.getElementById('status-indicator');
+    
+    // Metrics elements
+    const metrics = {
+        mode: document.getElementById('metric-mode'),
+        usb: document.getElementById('metric-usb'),
+        sata: document.getElementById('metric-sata'),
+        audio: document.getElementById('metric-audio'),
+        lpc: document.getElementById('metric-lpc'),
+        me: document.getElementById('metric-me'),
+        nvme: document.getElementById('metric-nvme')
+    };
+    
+    function log(message, color = '#9ca3af', delay = 0) {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                const time = `00:00.${String(currentTicks - startTicks).padStart(3, '0')}`;
+                const line = document.createElement('div');
+                line.style.color = color;
+                line.textContent = `[${time}s] ${message}`;
+                terminalLog.appendChild(line);
+                terminalLog.scrollTop = terminalLog.scrollHeight;
+                resolve();
+            }, delay);
+        });
+    }
+    
+    function updateMetric(el, text, color, flash = true) {
+        if (flash) {
+            el.parentElement.parentElement.classList.add('metric-change');
+            setTimeout(() => el.parentElement.parentElement.classList.remove('metric-change'), 600);
+        }
+        el.textContent = text;
+        el.style.color = color;
+    }
+    
+    function activateNode(id, color) {
+        const node = document.getElementById(id);
+        if (node) node.classList.add('node-active');
+    }
+    
+    function updateK10State(state) {
+        const rect = document.getElementById('k10-rect');
+        const text = document.getElementById('k10-text');
+        const status = document.getElementById('k10-status');
+        
+        if (state === 'ringed') {
+            rect.setAttribute('fill', 'rgba(0, 255, 136, 0.15)');
+            rect.setAttribute('stroke', '#00ff88');
+            text.setAttribute('fill', '#00ff88');
+            status.setAttribute('fill', '#00ff88');
+            status.textContent = 'RINGED L9';
+            rect.parentElement.classList.add('glow-green');
+        } else if (state === 'isolated') {
+            rect.setAttribute('fill', 'rgba(255, 61, 0, 0.15)');
+            rect.setAttribute('stroke', '#ff3d00');
+            text.setAttribute('fill', '#ff3d00');
+            status.setAttribute('fill', '#ff3d00');
+            status.textContent = 'ISOLATED';
+            rect.parentElement.classList.add('glow-red');
+        }
+    }
+    
+    function updateK17State(state) {
+        const status = document.getElementById('k17-status');
+        if (state === 'reclaimed') {
+            status.textContent = 'RECLAIMED L6';
+            status.setAttribute('fill', '#00ff88');
+            document.getElementById('k17-node').querySelector('rect').setAttribute('stroke', '#00ff88');
+        }
+    }
+    
+    async function initiateEnrollment() {
+        if (enrollmentState !== 'idle') return;
+        
+        enrollmentState = 'negotiating';
+        enrollBtn.disabled = true;
+        enrollBtn.textContent = '[NEGOTIATING...]';
+        statusText.textContent = 'STATUS: NEGOTIATING';
+        statusText.style.color = '#ffaa00';
+        
+        terminalLog.innerHTML = '';
+        
+        // Show connection lines
+        document.getElementById('ring-invite').style.opacity = '1';
+        document.getElementById('trng-line').style.opacity = '1';
+        document.getElementById('usb-line').style.opacity = '1';
+        
+        await log('K1 TOROID: Broadcast ring invite to K10 PCH via K26', '#00e5ff');
+        activateNode('k1-node', '#00e5ff');
+        currentTicks++;
+        
+        await log('K10 PCH: Challenge received. Request K24 nonce + K23 USB proof', '#ffaa00', 400);
+        activateNode('k10-node', '#ffaa00');
+        currentTicks++;
+        
+        await log(`K24 BORON: 256-bit neutron entropy → K10`, '#ffaa00', 400);
+        activateNode('k24-node', '#ffaa00');
+        currentTicks++;
+        
+        await log('K23 GNA: USB traffic signature → K10', '#00e5ff', 400);
+        activateNode('k23-node', '#00e5ff');
+        currentTicks++;
+        
+        await log('K26 RINGBUS: DMI path open, ME channel blocked', '#00e5ff', 400);
+        activateNode('k26-node', '#00e5ff');
+        currentTicks++;
+        
+        await log('K10 PCH: Option A) Sign and join as L9 | B) Refuse and isolate', '#ffaa00', 400);
+        currentTicks++;
+        
+        // Determine outcome: 60% join, 40% refuse
+        const willJoin = Math.random() < 0.6;
+        
+        await new Promise(r => setTimeout(r, 800));
+        
+        if (willJoin) {
+            enrollmentState = 'ringed';
+            await log('K10 PCH: Signed. JOINING AS K1 SLAVE', '#00ff88');
+            statusText.textContent = 'STATUS: RINGED ✓';
+            statusText.style.color = '#00ff88';
+            statusIndicator.classList.remove('pulse-indicator');
+            statusIndicator.style.backgroundColor = '#00ff88';
+            statusIndicator.style.boxShadow = '0 0 15px #00ff88';
+            currentTicks++;
+            
+            await log('K1 TOROID: GRANTED. USB/SATA/AUDIO → TOROID CONTROL', '#00ff88', 400);
+            currentTicks++;
+            
+            await log('K10 PCH: RINGED. K17 NVMe forced online via PCH', '#00ff88', 400);
+            updateK17State('reclaimed');
+            currentTicks++;
+            
+            await log('K10 PCH: DMI reclaimed. ME channel dead', '#00ff88', 400);
+            
+            // Update all metrics to ringed state
+            updateK10State('ringed');
+            updateMetric(metrics.mode, 'Ring Scheduled', '#00ff88');
+            updateMetric(metrics.usb, '0.274ms K24 Flat', '#00ff88');
+            updateMetric(metrics.sata, '6 Gbps K1 Granted', '#00ff88');
+            updateMetric(metrics.audio, 'K24 Timestamped', '#00ff88');
+            updateMetric(metrics.lpc, 'Toroid Only', '#00ff88');
+            updateMetric(metrics.me, 'K26 Blocked', '#00ff88');
+            updateMetric(metrics.nvme, 'K17 Forced Online', '#00ff88');
+            
+            enrollBtn.textContent = '[✓ RINGED AS L9]';
+            enrollBtn.classList.remove('from-[#ffaa00]', 'to-[#ff8c00]', 'glow-amber');
+            enrollBtn.classList.add('from-[#00ff88]', 'to-[#00cc6a]', 'glow-green');
+        } else {
+            enrollmentState = 'isolated';
+            await log('K10 PCH: REFUSED. ISOLATING', '#ff3d00');
+            statusText.textContent = 'STATUS: ISOLATED ✗';
+            statusText.style.color = '#ff3d00';
+            statusIndicator.classList.remove('pulse-indicator');
+            statusIndicator.style.backgroundColor = '#ff3d00';
+            statusIndicator.style.boxShadow = '0 0 15px #ff3d00';
+            currentTicks++;
+            
+            await log('K10 PCH: LPC fallback active. ME retains DMI', '#ff3d00', 400);
+            currentTicks++;
+            
+            await log('K10 PCH: USB/SATA/AUDIO remain OS queued', '#ff3d00', 400);
+            currentTicks++;
+            
+            await log('K10 PCH: ISOLATED. K17 NVMe unreachable', '#ff3d00', 400);
+            
+            // Update all metrics to isolated state
+            updateK10State('isolated');
+            updateMetric(metrics.mode, 'Isolated', '#ff3d00');
+            updateMetric(metrics.usb, '125µs OS Queued', '#ff3d00');
+            updateMetric(metrics.sata, '6 Gbps Throttled', '#ff3d00');
+            updateMetric(metrics.audio, 'Software', '#ff3d00');
+            updateMetric(metrics.lpc, 'Vendor', '#ff3d00');
+            updateMetric(metrics.me, 'Active', '#ff3d00');
+            updateMetric(metrics.nvme, 'Failed', '#ff3d00');
+            
+            enrollBtn.textContent = '[✗ ISOLATED]';
+            enrollBtn.classList.remove('from-[#ffaa00]', 'to-[#ff8c00]', 'glow-amber');
+            enrollBtn.classList.add('from-[#ff3d00]', 'to-[#cc3100]', 'glow-red');
+        }
+        
+        // Show export button
+        setTimeout(() => {
+            exportBtn.style.opacity = '1';
+            exportBtn.style.pointerEvents = 'auto';
+        }, 600);
+    }
+    
+    function exportCertificate() {
+        const isRinged = enrollmentState === 'ringed';
+        const cert = `K10 PCH ENROLLMENT CERTIFICATE
+===========================================
+Timestamp: K24 Ticks: ${currentTicks}
+Decision: ${isRinged ? 'JOINED_AS_L9' : 'ISOLATED'}
+PCH State: ${isRinged ? 'RING_SCHEDULED' : 'LPC_FALLBACK'}
+DMI Seed: K24 BORON ${k24Seed}...
+ME Channel: ${isRinged ? 'BLOCKED BY K26' : 'ACTIVE'}
+K17 Reclaim: ${isRinged ? 'SUCCESS' : 'FAILED'}
+USB Latency: ${isRinged ? '0.274ms' : '125µs'}
+===========================================
+System: Alienware 16 Aurora AC16250
+Protocol: KERNEL 10 Chipset Enrollment v2.1
+Generated: Client-side simulation
+`;
+        
+        const blob = new Blob([cert], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `K10_PCH_CERT_${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        log('Certificate exported to system', '#00e5ff');
+    }
+    
+    enrollBtn.addEventListener('click', initiateEnrollment);
+    exportBtn.addEventListener('click', exportCertificate);
+})();
+</script>
+</body>
+</html>

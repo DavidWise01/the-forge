@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Swarm OS Local - Ollama Edition</title>
+<style>
+body { margin:0; background:#0a0a0a; color:#e0e0e0; font-family:system-ui; display:flex; height:100vh }
+#left { width:300px; border-right:1px solid #333; padding:15px; overflow-y:auto }
+#center { flex:1; display:flex; flex-direction:column }
+#chat { flex:1; overflow-y:auto; padding:20px }
+#right { width:320px; border-left:1px solid #333; padding:15px }
+.lattice { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; margin-top:10px }
+.cell { aspect-ratio:1; background:#1a1a1a; border-radius:3px; transition:all 0.3s; position:relative }
+.cell.active { background:#3b82f6; box-shadow:0 0 10px #3b82f6 }
+.cell.consensus { background:#10b981 }
+.cell.challenge { background:#f59e0b }
+input { width:100%; padding:12px; background:#1a1a1a; border:1px solid #333; color:#fff; border-radius:6px; margin-top:10px }
+button { padding:8px 16px; background:#3b82f6; border:none; color:white; border-radius:4px; cursor:pointer; margin:5px 2px }
+.msg { margin:10px 0; padding:10px; background:#141414; border-radius:6px; border-left:3px solid #3b82f6 }
+.status { font-size:12px; color:#888; margin:5px 0 }
+</style>
+</head>
+<body>
+<div id="left">
+  <h3>Swarm OS Local</h3>
+  <div class="status" id="status">Connecting...</div>
+  <button onclick="checkHealth()">Check Ollama</button>
+  <button onclick="seedData()">Seed Demo Data</button>
+  <h4 style="margin-top:20px">Consensus</h4>
+  <div id="consensus"></div>
+</div>
+
+<div id="center">
+  <div id="chat"></div>
+  <div style="padding:15px; border-top:1px solid #333">
+    <input id="input" placeholder="Ask the swarm..." onkeydown="if(event.key==='Enter')ask()">
+  </div>
+</div>
+
+<div id="right">
+  <h4>100-Agent Lattice</h4>
+  <div class="lattice" id="lattice"></div>
+  <div class="status" id="stats" style="margin-top:15px"></div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let lattice = [];
+
+// init lattice
+const latticeEl = document.getElementById('lattice');
+for(let i=0;i<100;i++){
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.id = 'cell-'+i;
+  latticeEl.appendChild(cell);
+  lattice.push(cell);
+}
+
+async function checkHealth(){
+  try{
+    const r = await fetch(API+'/health');
+    const h = await r.json();
+    document.getElementById('status').innerHTML = 
+      `Ollama: ${h.ollama}<br>Models: ${h.models?.join(', ') || 'none'}<br>LLM: ${h.llm_model}`;
+  }catch(e){
+    document.getElementById('status').textContent = 'Backend not running. Start: python swarm_backend.py';
+  }
+}
+
+async function seedData(){
+  const facts = [
+    ['Socrates','taught','Plato'],
+    ['Plato','taught','Aristotle'],
+    ['Aristotle','wrote','Logic'],
+    ['David','values','coherence'],
+    ['HOLD','means','pause and integrate']
+  ];
+  for(const [s,p,o] of facts){
+    await fetch(API+'/store', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({subject:s, predicate:p, object:o, agent_id: Math.floor(Math.random()*100)})
+    });
+  }
+  addMsg('system', 'Seeded 5 facts across swarm');
+}
+
+async function ask(){
+  const q = document.getElementById('input').value;
+  if(!q) return;
+  document.getElementById('input').value = '';
+  addMsg('user', q);
+  
+  // animate lattice
+  lattice.forEach(c => c.className='cell');
+  
+  try{
+    const r = await fetch(API+'/debate', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({query:q, rounds:3})
+    });
+    const data = await r.json();
+    
+    // visualize debate
+    animateDebate(data.debate_trace);
+    
+    addMsg('swarm', data.answer);
+    
+    // show consensus
+    document.getElementById('consensus').innerHTML = data.consensus.map(c => 
+      `<div style="font-size:12px;margin:5px 0">${c.subject} → ${c.predicate} → ${c.object} <span style="color:#888">(${c.votes} votes)</span></div>`
+    ).join('');
+    
+    document.getElementById('stats').textContent = `${data.total_messages} messages exchanged`;
+    
+  }catch(e){
+    addMsg('error', 'Backend error. Is it running?');
+  }
+}
+
+function animateDebate(trace){
+  trace.forEach((round, idx) => {
+    setTimeout(() => {
+      Object.entries(round.agents).forEach(([id, data]) => {
+        const cell = lattice[parseInt(id)];
+        if(data.confidence > 0.7) cell.className = 'cell consensus';
+        else if(data.confidence > 0.5) cell.className = 'cell active';
+        else cell.className = 'cell challenge';
+      });
+    }, idx * 300);
+  });
+}
+
+function addMsg(role, text){
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<strong>${role}:</strong> ${text}`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+checkHealth();
+</script>
+</body>
+</html>

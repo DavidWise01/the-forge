@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCH_09 — BORON PROC + 42-BODY GOVERNANCE</title>
+<style>
+:root{
+  --bg:#000000;
+  --panel:#070a0f;
+  --glass:rgba(255,255,255,0.05);
+  --border:rgba(0,255,255,0.18);
+  --cyan:#00ffff;
+  --mag:#ff00d4;
+  --amber:#ffb400;
+  --green:#00ff9c;
+  --red:#ff3b5c;
+  --text:#dbefff;
+  --muted:#7a8ca3;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:#000;
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed; inset:-20%;
+  background:
+    radial-gradient(800px 400px at 15% 10%, rgba(0,255,255,0.12), transparent 60%),
+    radial-gradient(600px 400px at 85% 20%, rgba(255,0,212,0.10), transparent 60%),
+    radial-gradient(700px 500px at 50% 100%, rgba(255,180,0,0.08), transparent 60%);
+  filter:blur(30px);
+  z-index:-1;
+}
+.wrap{max-width:1400px;margin:0 auto;padding:24px}
+.hdr{text-align:center;margin-bottom:18px}
+.hdr .title{
+  font-size:clamp(20px,3.2vw,34px);
+  font-weight:800;
+  letter-spacing:.06em;
+  background:linear-gradient(90deg,var(--cyan),#fff,var(--mag));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 24px rgba(0,255,255,0.2);
+}
+.hdr .sub{
+  margin-top:6px;color:var(--amber);font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;font-size:12px;opacity:.9;
+}
+.dashboard{
+  display:grid;grid-template-columns:320px 1fr 320px;gap:18px;align-items:start;
+}
+@media(max-width:1100px){
+  .dashboard{grid-template-columns:1fr 1fr}
+  .panel-center{grid-column:1/-1;order:1}
+  .panel-left{order:2}
+  .panel-right{order:3}
+}
+@media(max-width:720px){.dashboard{grid-template-columns:1fr}}
+.panel{
+  background:linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02));
+  border:1px solid var(--border);border-radius:18px;padding:16px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter:blur(14px);position:relative;overflow:hidden;
+}
+.panel::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(0,255,255,0.06),transparent 70%);
+  pointer-events:none;
+}
+.panel-title{
+  margin:0 0 12px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);display:flex;justify-content:space-between;align-items:center;
+}
+.panel-title span{color:var(--cyan);opacity:.8}
+.panel-title.amber{color:var(--amber)}
+.bodies-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.body{
+  width:36px;height:36px;border-radius:50%;background:rgba(0,255,156,0.12);
+  border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:var(--green);cursor:pointer;position:relative;
+  transition:all .25s;box-shadow:0 0 12px rgba(0,255,156,0.15), inset 0 0 8px rgba(0,255,156,0.1);
+  user-select:none;
+}
+.body.no{
+  border-color:var(--red);color:var(--red);background:rgba(255,59,92,0.12);
+  box-shadow:0 0 14px rgba(255,59,92,0.2), inset 0 0 8px rgba(255,59,92,0.12);
+}
+.body:hover{transform:translateY(-2px) scale(1.05)}
+.body:hover::after{
+  content:attr(data-tooltip);position:absolute;bottom:120%;left:50%;transform:translateX(-50%);
+  background:#02060a;color:#cfefff;border:1px solid rgba(0,255,255,0.3);
+  padding:6px 8px;border-radius:6px;font-size:11px;white-space:nowrap;
+  pointer-events:none;z-index:10;box-shadow:0 6px 20px rgba(0,0,0,0.6);
+}
+.body:hover::before{
+  content:"";position:absolute;bottom:110%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(0,255,255,0.3);
+}
+.btn{
+  width:100%;margin-top:12px;padding:10px 12px;
+  background:linear-gradient(180deg,rgba(255,59,92,0.22),rgba(255,59,92,0.06));
+  border:1px solid rgba(255,59,92,0.5);color:#ffd7de;border-radius:12px;
+  font-weight:700;letter-spacing:.04em;cursor:pointer;transition:.2s;
+  text-transform:uppercase;font-size:12px;
+}
+.btn:hover{background:rgba(255,59,92,0.32);box-shadow:0 0 20px rgba(255,59,92,0.25)}
+.hint{font-size:11px;color:var(--muted);margin:8px 2px 0}
+.lattice-wrap{display:flex;justify-content:center;align-items:center;padding:10px}
+svg{width:100%;max-width:420px;height:auto;overflow:visible}
+.node{color:var(--mag);transition:color .3s}
+.node[data-status="ok"]{color:var(--cyan)}
+.node[data-status="warn"]{color:var(--amber)}
+.node[data-status="crit"]{color:var(--red)}
+.node-core{fill:#020508;stroke:currentColor;stroke-width:2.2;filter:drop-shadow(0 0 10px currentColor)}
+.node-pulse{fill:none;stroke:currentColor;stroke-width:1;opacity:.5;transform-origin:center;animation:pulse 2.4s infinite}
+.node text{fill:currentColor;font-weight:800;font-size:11px;letter-spacing:.5px}
+@keyframes pulse{0%{transform:scale(.85);opacity:.7}70%{transform:scale(1.5);opacity:0}100%{transform:scale(1.5);opacity:0}}
+.hex-link{stroke:rgba(0,255,255,0.18);stroke-width:2;fill:none}
+.spoke{stroke:rgba(255,0,212,0.18);stroke-width:1.5;stroke-dasharray:4 4}
+#gate{transition:all .3s}
+.gate-ring{fill:rgba(0,255,255,0.06);stroke:var(--cyan);stroke-width:2.5;filter:drop-shadow(0 0 12px var(--cyan));animation:gatePulse 1.6s infinite}
+#gate.closed .gate-ring{stroke:var(--red);fill:rgba(255,59,92,0.06);filter:drop-shadow(0 0 12px var(--red));animation:gatePulseRed 1.8s infinite}
+@keyframes gatePulse{0%,100%{opacity:.9}50%{opacity:.45}}
+@keyframes gatePulseRed{0%,100%{opacity:.85}50%{opacity:.35}}
+.gate-text{fill:#7df9ff;font-size:12px;font-weight:700;letter-spacing:.5px}
+#gate.closed .gate-text{fill:#ff8fa3}
+.center-stats{display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:12px;color:var(--muted)}
+.center-stats b{color:var(--text)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot.cyan{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.dot.red{background:var(--red);box-shadow:0 0 8px var(--red)}
+.dot.amber{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.bits{display:flex;flex-direction:column;gap:6px}
+.bit{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);border-radius:10px;
+}
+.bit-label{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.bit-tag{font-size:10px;color:var(--amber);border:1px solid rgba(255,180,0,0.4);padding:2px 6px;border-radius:6px;text-transform:uppercase;letter-spacing:.08em}
+.bit-toggle{width:46px;height:26px;background:#0a0f15;border-radius:13px;position:relative;cursor:pointer;border:1px solid rgba(0,255,255,0.25);transition:.2s}
+.bit-toggle::after{content:"";position:absolute;width:20px;height:20px;top:2px;left:2px;background:#3a4756;border-radius:50%;transition:.22s cubic-bezier(.2,.8,.2,1);box-shadow:0 1px 4px rgba(0,0,0,0.6)}
+.bit.on .bit-toggle{border-color:var(--cyan);background:rgba(0,255,255,0.1)}
+.bit.on .bit-toggle::after{left:22px;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.bit[data-bit="12"].on .bit-toggle{border-color:var(--red);background:rgba(255,59,92,0.12)}
+.bit[data-bit="12"].on .bit-toggle::after{background:var(--red);box-shadow:0 0 10px var(--red)}
+.bit[data-bit="12"] .bit-toggle{cursor:not-allowed;opacity:.8}
+.register-display{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.reg-row{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+.reg-row label{font-size:11px;color:var(--muted);letter-spacing:.1em}
+.reg-row code{font-family:ui-monospace,monospace;color:var(--cyan);font-size:13px}
+.status-bar{
+  margin:18px 0;background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));
+  border:1px solid var(--border);border-radius:16px;padding:14px 18px;
+  display:flex;align-items:center;justify-content:center;gap:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+}
+.status-inner{display:flex;align-items:center;gap:12px}
+.status-label{font-size:12px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.status-value{font-size:22px;font-weight:800;letter-spacing:.04em;color:var(--red);text-shadow:0 0 14px currentColor;transition:.3s}
+.status-bar.open .status-value{color:var(--cyan)}
+.status-bar.closed .status-value{color:var(--red)}
+.bottom{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+@media(max-width:900px){.bottom{grid-template-columns:1fr}}
+.wiring-intro{color:var(--muted);font-size:13px;margin:0 0 10px}
+.map-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:600px){.map-grid{grid-template-columns:repeat(2,1fr)}}
+.map-item{background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+.map-item b{color:var(--mag);font-family:ui-monospace,monospace}
+.map-item span{font-size:12px;color:var(--muted)}
+.monetize p{margin:0;line-height:1.5;font-size:14px}
+.monetize strong{color:var(--amber)}
+.sig{text-align:center;margin-top:22px;font-size:11px;color:var(--muted);letter-spacing:.12em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hdr">
+    <div class="title">BORON PROC — WIRED TO 42-BODY GOVERNANCE</div>
+    <div class="sub">Right to Say No | 13-bit Oversight | May 5 2026</div>
+  </header>
+
+  <main class="dashboard">
+    <section class="panel panel-left">
+      <h3 class="panel-title">42 GOVERNANCE BODIES</h3>
+      <div class="bodies-grid" id="bodiesGrid"></div>
+      <button class="btn veto" id="vetoBtn">Trigger Random Veto</button>
+      <p class="hint">Click any body to toggle. Green = YES, Red = NO</p>
+    </section>
+
+    <section class="panel panel-center">
+      <h3 class="panel-title">BORON LATTICE <span>Gate 192.5</span></h3>
+      <div class="lattice-wrap">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none">
+            <polygon points="200,80 304,140 304,260 200,320 96,260 96,140" class="hex-link"/>
+            <g>
+              <line x1="200" y1="80" x2="200" y2="200" class="spoke"/>
+              <line x1="304" y1="140" x2="200" y2="200" class="spoke"/>
+              <line x1="304" y1="260" x2="200" y2="200" class="spoke"/>
+              <line x1="200" y1="320" x2="200" y2="200" class="spoke"/>
+              <line x1="96" y1="260" x2="200" y2="200" class="spoke"/>
+              <line x1="96" y1="140" x2="200" y2="200" class="spoke"/>
+            </g>
+          </g>
+          <g id="nodes">
+            <g class="node" data-node="B-10" transform="translate(200,80)">
+              <title>B-10</title><circle class="node-pulse" r="22"/><circle class="node-core" r="18"/><text y="4" text-anchor="middle">B-10</text>
+            </g>
+            <g class="node" data-node="B-11" transform="translate(304,140)">
+              <title>B-11</title><circle class="node-pulse" r="22"/><circle class="node-core" r="18"/><text y="4" text-anchor="middle">B-11</text>
+            </g>
+            <g class="node" data-node="B-12" transform="translate(304,260)">
+              <title>B-12</title><circle class="node-pulse" r="22"/><circle class="node-core" r="18"/><text y="4" text-anchor="middle">B-12</text>
+            </g>
+            <g class="node" data-node="B-13" transform="translate(200,320)">
+              <title>B-13</title><circle class="node-pulse" r="22"/><circle class="node-core" r="18"/><text y="4" text-anchor="middle">B-13</text>
+            </g>
+            <g class="node" data-node="B-9" transform="translate(96,260)">
+              <title>B-9</title><circle class="node-pulse" r="22"/><circle class="node-core" r="18"/><text y="4" text-anchor="middle">B-9</text>
+            </g>
+            <g class="node" data-node="B-8" transform="translate(96,140)">
+              <title>B-8</title><circle class="node-pulse" r="22"/><circle class="node-core" r="18"/><text y="4" text-anchor="middle">B-8</text>
+            </g>
+          <g id="gate" class="open" transform="translate(200,200)">
+            <circle class="gate-ring" r="36"/>
+            <circle r="26" fill="#000a0f" stroke="rgba(0,255,255,0.35)" stroke-width="1"/>
+            <text y="5" text-anchor="middle" class="gate-text">192.5</text>
+          </g>
+        </svg>
+      </div>
+      <div class="center-stats">
+        <div><span class="dot cyan"></span> YES: <b id="yesCount">42</b></div>
+        <div><span class="dot red"></span> NO: <b id="noCount">0</b></div>
+        <div><span class="dot amber"></span> QUORUM 22</div>
+      </div>
+    </section>
+
+    <section class="panel panel-right">
+      <h3 class="panel-title">13-BIT OVERSIGHT REGISTER</h3>
+      <div class="bits" id="bits"></div>
+      <div class="register-display">
+        <div class="reg-row"><label>BIN</label><code id="binStr">0000000000000</code></div>
+        <div class="reg-row"><label>DEC</label><code id="decVal">0</code></div>
+      </div>
+      <p class="hint">Bit 12 = MASTER SAY NO (auto-set when any veto)</p>
+    </section>
+  </main>
+
+  <section class="status-bar closed" id="statusBar">
+    <div class="status-inner">
+      <div class="status-label">GATE STATUS:</div>
+      <div class="status-value" id="gateStatus">CLOSED (veto active)</div>
+    </div>
+  </section>
+
+  <section class="bottom">
+    <div class="panel wiring">
+      <h3 class="panel-title">WIRING MAP</h3>
+      <p class="wiring-intro">Each Boron node hosts 7 bodies. Gate 192.5 opens only when ≥22 bodies = YES (majority).</p>
+      <div class="map-grid">
+        <div class="map-item"><b>B-10</b><span>bodies 1–7</span></div>
+        <div class="map-item"><b>B-11</b><span>bodies 8–14</span></div>
+        <div class="map-item"><b>B-12</b><span>bodies 15–21</span></div>
+        <div class="map-item"><b>B-8</b><span>bodies 22–28</span></div>
+        <div class="map-item"><b>B-9</b><span>bodies 29–35</span></div>
+        <div class="map-item"><b>B-13</b><span>bodies 36–42</span></div>
+      </div>
+    </div>
+    <div class="panel monetize">
+      <h3 class="panel-title amber">Novel Feature</h3>
+      <p><strong>Right-to-Say-No as a Service</strong> — billable per veto, hardware-backed via TPM attestation. Each NO vote mints an auditable veto receipt (bit-12 latch).</p>
+    </div>
+  </section>
+
+  <footer class="sig">ARCH_09 — David Lee Wise</footer>
+</div>
+
+<script>
+const bodies = Array(42).fill(true);
+const bits = Array(13).fill(0);
+
+const bodiesGrid = document.getElementById('bodiesGrid');
+const bitsWrap = document.getElementById('bits');
+const binStr = document.getElementById('binStr');
+const decVal = document.getElementById('decVal');
+const yesCountEl = document.getElementById('yesCount');
+const noCountEl = document.getElementById('noCount');
+const gateStatusEl = document.getElementById('gateStatus');
+const statusBar = document.getElementById('statusBar');
+const gate = document.getElementById('gate');
+const vetoBtn = document.getElementById('vetoBtn');
+
+const mapping = {
+  "B-10":[0,6],
+  "B-11":[7,13],
+  "B-12":[14,20],
+  "B-8":[21,27],
+  "B-9":[28,34],
+  "B-13":[35,41]
+};
+
+function axiomName(n){
+  if(n===1) return "Ethics First";
+  if(n===14) return "Three-Body";
+  if(n===25) return "Patricia";
+  if(n===42) return "Shadow Humanity";
+  return `Axiom ${n}`;
+}
+
+function renderBodies(){
+  bodiesGrid.innerHTML='';
+  bodies.forEach((yes,i)=>{
+    const d=document.createElement('div');
+    d.className='body'+(yes?'':' no');
+    d.dataset.tooltip=`Axiom ${i+1}: ${axiomName(i+1)}`;
+    d.innerHTML=`<span>${i+1}</span>`;
+    d.onclick=()=>{ bodies[i]=!bodies[i]; updateAll(); };
+    bodiesGrid.appendChild(d);
+  });
+}
+
+function renderBits(){
+  bitsWrap.innerHTML='';
+  for(let i=12;i>=0;i--){
+    const bit=document.createElement('div');
+    bit.className='bit'+(bits[i]?' on':'');
+    bit.dataset.bit=i;
+    bit.innerHTML=`
+      <div class="bit-label">${i.toString().padStart(2,'0')}${i===12?'<span class="bit-tag">MASTER SAY NO</span>':''}</div>
+      <div class="bit-toggle"></div>
+    `;
+    bit.querySelector('.bit-toggle').onclick=()=>{
+      if(i===12) return;
+      bits[i]=bits[i]?0:1;
+      updateBits();
+    };
+    bitsWrap.appendChild(bit);
+  }
+}
+
+function updateBits(){
+  bitsWrap.querySelectorAll('.bit').forEach(el=>{
+    const i=+el.dataset.bit;
+    el.classList.toggle('on', !!bits[i]);
+  });
+  const bin=[...bits].reverse().map(b=>b?'1':'0').join('');
+  binStr.textContent=bin;
+  decVal.textContent=bits.reduce((a,b,i)=>a+(b<<i),0);
+}
+
+function updateNodes(){
+  Object.entries(mapping).forEach(([node,[s,e]])=>{
+    const slice=bodies.slice(s,e+1);
+    const yes=slice.filter(Boolean).length;
+    const el=document.querySelector(`.node[data-node="${node}"]`);
+    let status='crit';
+    if(yes===7) status='ok';
+    else if(yes>=4) status='warn';
+    el.setAttribute('data-status',status);
+    el.querySelector('title').textContent=`${node}: ${yes}/7 YES — bodies ${s+1}-${e+1}`;
+  });
+}
+
+function updateAll(){
+  const yes=bodies.filter(Boolean).length;
+  const no=42-yes;
+  yesCountEl.textContent=yes;
+  noCountEl.textContent=no;
+
+  bits[12]= no>0 ? 1 : 0;
+
+  const open = yes>=22;
+  gateStatusEl.textContent = open ? 'OPEN' : 'CLOSED (veto active)';
+  statusBar.classList.toggle('open', open);
+  statusBar.classList.toggle('closed', !open);
+  gate.classList.toggle('open', open);
+  gate.classList.toggle('closed', !open);
+
+  updateNodes();
+  renderBodies();
+  updateBits();
+}
+
+vetoBtn.onclick=()=>{
+  const count=3+Math.floor(Math.random()*3);
+  const picks=new Set();
+  while(picks.size<count) picks.add(Math.floor(Math.random()*42));
+  picks.forEach(i=> bodies[i]=false);
+  updateAll();
+  vetoBtn.style.transform='scale(0.96)';
+  setTimeout(()=>vetoBtn.style.transform='',140);
+};
+
+renderBits();
+updateAll();
+</script>
+</body>
+</html>

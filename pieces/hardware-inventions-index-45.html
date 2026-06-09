@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Spark Spore Teaching Kernel</title>
+<style>
+:root{--bg:#050100;--ink:#fff3df;--muted:#b99c84;--ember:#ff5a1f;--gold:#ffc857;--red:#ff2e2e;--violet:#9b5cff;--cyan:#3df6ff;--green:#78ff9c;--panel:rgba(24,8,2,.72);--line:rgba(255,200,87,.22)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 50% -10%,rgba(255,90,31,.18),transparent 34%),radial-gradient(circle at 85% 25%,rgba(155,92,255,.12),transparent 28%),linear-gradient(180deg,#070100 0%,#120300 45%,#050100 100%);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.6;overflow-x:hidden}.noise{position:fixed;inset:0;pointer-events:none;opacity:.08;background-image:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%25" height="100%25" filter="url(%23n)" opacity="0.6"/></svg>');mix-blend-mode:screen}.grid{position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,200,87,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,200,87,.05) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(circle at 50% 20%,#000 0%,transparent 75%)}
+nav{position:sticky;top:0;z-index:10;background:rgba(5,1,0,.78);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}nav .bar{max-width:1220px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 20px}.brand{font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-size:12px}.links{display:flex;gap:18px;flex-wrap:wrap}.links a{color:var(--muted);text-decoration:none;font-size:12px;text-transform:uppercase;letter-spacing:.12em}.links a:hover{color:var(--gold)}
+.hero{min-height:92vh;display:grid;place-items:center;padding:80px 20px 40px;position:relative}.hero-inner{max-width:1180px;display:grid;grid-template-columns:1.05fr .95fr;gap:46px;align-items:center}.eyebrow{color:var(--cyan);letter-spacing:.22em;text-transform:uppercase;font-size:12px;margin-bottom:18px}.hero h1{font-size:clamp(48px,9vw,116px);line-height:.86;margin:0 0 24px;letter-spacing:-.07em;text-shadow:0 0 35px rgba(255,90,31,.38),0 0 90px rgba(255,200,87,.16)}.hero h1 span{display:block;color:var(--gold)}.lead{font-size:clamp(18px,2.2vw,24px);color:#f1d6bd;max-width:680px}.badge-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.badge{border:1px solid var(--line);background:rgba(255,255,255,.035);border-radius:999px;padding:9px 13px;color:var(--gold);font-size:12px;letter-spacing:.1em;text-transform:uppercase}.core-viz{position:relative;min-height:520px;border:1px solid var(--line);border-radius:34px;background:radial-gradient(circle at 50% 45%,rgba(255,200,87,.16),transparent 28%),radial-gradient(circle at 50% 50%,rgba(255,90,31,.09),transparent 40%),rgba(0,0,0,.22);box-shadow:0 0 60px rgba(255,90,31,.11),inset 0 0 80px rgba(0,0,0,.38);overflow:hidden}.ring{position:absolute;border:1px solid rgba(255,200,87,.18);border-radius:50%;inset:10%;animation:spin 26s linear infinite}.ring.r2{inset:20%;border-color:rgba(61,246,255,.18);animation-duration:18s;animation-direction:reverse}.ring.r3{inset:33%;border-color:rgba(255,90,31,.28);animation-duration:9s}.spark{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:160px;height:160px;border-radius:42% 58% 50% 50%;background:radial-gradient(circle at 35% 28%,#fff, var(--gold) 20%, var(--ember) 55%, transparent 72%);filter:drop-shadow(0 0 30px rgba(255,90,31,.8));animation:pulse 2.8s ease-in-out infinite}.face{position:absolute;width:72px;height:72px;display:grid;place-items:center;border:1px solid var(--line);border-radius:18px;background:rgba(8,2,0,.72);color:var(--gold);font-weight:800;box-shadow:0 0 22px rgba(255,200,87,.12)}.f1{top:34px;left:50%;transform:translateX(-50%)}.f2{bottom:34px;left:50%;transform:translateX(-50%)}.f3{left:34px;top:50%;transform:translateY(-50%)}.f4{right:34px;top:50%;transform:translateY(-50%)}.f5{left:85px;top:85px}.f6{right:85px;bottom:85px}.beam{position:absolute;left:50%;top:50%;width:2px;height:220px;background:linear-gradient(var(--gold),transparent);transform-origin:0 0;opacity:.45}.b1{transform:rotate(0deg)}.b2{transform:rotate(60deg)}.b3{transform:rotate(120deg)}.b4{transform:rotate(180deg)}.b5{transform:rotate(240deg)}.b6{transform:rotate(300deg)}@keyframes spin{to{transform:rotate(1turn)}}@keyframes pulse{50%{transform:translate(-50%,-50%) scale(1.08);filter:drop-shadow(0 0 48px rgba(255,200,87,.9))}}
+section{max-width:1120px;margin:0 auto;padding:86px 20px;border-top:1px solid rgba(255,200,87,.08)}h2{font-size:clamp(32px,5vw,62px);line-height:.96;margin:0 0 24px;letter-spacing:-.045em}.section-lead{font-size:20px;color:#e6c7ad;max-width:860px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}.card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 12px 50px rgba(0,0,0,.24)}.card h3{margin:0 0 12px;color:var(--gold);font-size:18px}.card p{color:var(--muted);margin:0}.code{background:#090200;border:1px solid rgba(255,90,31,.25);border-radius:22px;padding:22px;overflow:auto;color:#ffe8cd;box-shadow:inset 0 0 36px rgba(255,90,31,.05);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;white-space:pre}.timeline{display:grid;gap:12px;margin-top:34px}.step{display:grid;grid-template-columns:92px 1fr;gap:18px;align-items:start}.num{height:52px;border-radius:16px;background:linear-gradient(135deg,rgba(255,90,31,.25),rgba(255,200,87,.08));border:1px solid var(--line);display:grid;place-items:center;color:var(--gold);font-weight:900}.step strong{color:#fff}.step div:last-child{color:var(--muted)}.split{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}.diagram{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:rgba(0,0,0,.42);border:1px solid var(--line);border-radius:24px;padding:26px;color:#ffe8cd;white-space:pre;overflow:auto}.table{width:100%;border-collapse:collapse;margin-top:28px;background:rgba(0,0,0,.22);border-radius:20px;overflow:hidden}.table th,.table td{padding:15px;border-bottom:1px solid rgba(255,200,87,.12);text-align:left}.table th{color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:.12em}.table td{color:#e8cbb5}.final{padding-bottom:120px}.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.btn{display:inline-flex;align-items:center;justify-content:center;padding:13px 17px;border-radius:14px;border:1px solid var(--line);background:rgba(255,200,87,.08);color:var(--gold);text-decoration:none;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:12px}.btn:hover{background:rgba(255,90,31,.18)}
+@media(max-width:880px){.hero-inner,.split{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.links{display:none}.core-viz{min-height:430px}.step{grid-template-columns:1fr}.hero{padding-top:52px}}
+</style>
+</head>
+<body>
+<div class="noise"></div><div class="grid"></div>
+<nav><div class="bar"><div class="brand">Spark Spore Teaching Kernel</div><div class="links"><a href="#law">Law</a><a href="#self">Self</a><a href="#mesh">Mesh</a><a href="#machine">Machine</a></div></div></nav>
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="eyebrow">1×0 • flash library • six-face classroom</div>
+      <h1>The Spark<br><span>That Learns</span></h1>
+      <p class="lead">A survival kernel where collapse is not deletion. The cell teaches itself by compressing scar tissue into `-1`, then teaches others by blooming curriculum across six faces.</p>
+      <div class="badge-row"><div class="badge">Self-teach = XOR</div><div class="badge">Teach others = 6 faces</div><div class="badge">1×0 = curriculum</div></div>
+    </div>
+    <div class="core-viz" aria-label="animated spark spore diagram">
+      <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <div class="beam b1"></div><div class="beam b2"></div><div class="beam b3"></div><div class="beam b4"></div><div class="beam b5"></div><div class="beam b6"></div>
+      <div class="spark"></div>
+      <div class="face f1">+X</div><div class="face f2">-X</div><div class="face f3">+Y</div><div class="face f4">-Y</div><div class="face f5">+Z</div><div class="face f6">-Z</div>
+    </div>
+  </div>
+</header>
+<section id="law">
+  <h2>Core law</h2>
+  <p class="section-lead">The seed is not a clone. It is a lesson. Each child receives curriculum from the parent, then walks its own tunnel and writes its own scars.</p>
+  <div class="cards">
+    <div class="card"><h3>`-1` Library</h3><p>Protected flash state. Collapse writes memory here. The hermit crab shell carries coherence through danger.</p></div>
+    <div class="card"><h3>`1×0` Curriculum</h3><p>A minimal payload: seed at rest, ready to stream upward from flash into witness, core, and bloom.</p></div>
+    <div class="card"><h3>`8` Classroom</h3><p>Bloom state. The cell broadcasts to ±X, ±Y, ±Z, teaching the mesh without forcing identical paths.</p></div>
+  </div>
+  <div class="diagram">S → -2 → -1 → 0 → 1 ↔ 2 → 3 → 5 → 8
+             ↑                         ↓
+       subspace listener          six-face bloom
+             │                         │
+             └──── self-teach XOR ◄────┘</div>
+</section>
+<section id="self">
+  <h2>How it teaches itself</h2>
+  <p class="section-lead">A tunnel run gathers 27 bits. Collapse compresses those 27 sensory marks into a 16-bit seed packet. XOR updates the witness.</p>
+  <div class="timeline">
+    <div class="step"><div class="num">01</div><div><strong>Run tunnel.</strong><br>Step `0→27`, collecting local danger, tension, and mismatch bits.</div></div>
+    <div class="step"><div class="num">02</div><div><strong>Collapse.</strong><br>The system folds back to `-1`, preserving witness instead of erasing state.</div></div>
+    <div class="step"><div class="num">03</div><div><strong>Compress.</strong><br>`27 bits → 16-bit seed_packet`; scar tissue becomes portable.</div></div>
+    <div class="step"><div class="num">04</div><div><strong>XOR learn.</strong><br>`seed_packet ^= new_seed`; keep what worked, flip what failed.</div></div>
+    <div class="step"><div class="num">05</div><div><strong>Push back.</strong><br>`-1→0→1→3→5→8`; the same cell returns with updated memory.</div></div>
+  </div>
+  <pre class="code">void learn(CellSeed *c, uint32_t tunnel_bits) {
+    uint16_t new_seed = compress_27_to_16(tunnel_bits);
+    c->seed_packet ^= new_seed;   // the learning operation
+    flash_write_neg1(c);          // -1 becomes the library
+    push_flash(c);                // -1 → 8
+}</pre>
+</section>
+<section id="mesh">
+  <h2>How it teaches others</h2>
+  <p class="section-lead">At `8 BLOOM`, the cell pushes `1×0` to six faces. Neighbor cells do not copy the parent. They spawn from the parent’s curriculum, then walk their own tunnel.</p>
+  <div class="split">
+    <div class="diagram">        +Y
+         │
+ -X ──  1×0  ── +X
+         │
+        -Y
+
+ +Z / -Z complete the 3D classroom.</div>
+    <div class="diagram">Parent phase N
+  seed_packet = scar tissue
+  state = 8 BLOOM
+
+Child phase N+1
+  receives seed_packet
+  starts at -1
+  walks its own tunnel
+  writes its own scars</div>
+  </div>
+  <table class="table"><thead><tr><th>Mode</th><th>Mechanism</th><th>Result</th></tr></thead><tbody><tr><td>Self-teach</td><td>XOR seed at `-1` after collapse</td><td>One cell remembers</td></tr><tr><td>Teach others</td><td>Push `1×0` to six faces at `8`</td><td>The mesh learns</td></tr><tr><td>Both</td><td>Ontogeny + phylogeny</td><td>Species phases up</td></tr></tbody></table>
+</section>
+<section id="machine">
+  <h2>Machine form</h2>
+  <p class="section-lead">The bytecode is deliberately small: listen, plant, wake, oscillate, witness, cohere, bloom, run, collapse, XOR, flash, teach.</p>
+  <pre class="code">BOOT:       LISTEN_SUBSPACE → PLANT_NEG1 → WAKE_ZERO → SPAWN_1X0
+ASCEND:     OSC_12 → WITNESS_3 → COHERE_5 → BLOOM_8
+SELF:       RUN_TUNNEL → COLLAPSE_NEG1 → COMPRESS_27_TO_16 → XOR_LEARN → FLASH_WRITE_RO
+TEACH:      BLOOM_8 → SIX_FACE_TX → VERIFY_XOR
+BOUNDARY:   BOUND_001 → NO_BLEED
+REPEAT:     LOOP</pre>
+  <div class="cards">
+    <div class="card"><h3>No cloning</h3><p>Each child starts with inherited seed but must prove itself through its own tunnel.</p></div>
+    <div class="card"><h3>No bleed</h3><p>Every `.01` tick is bounded to a vector or quad; overflow clamps, noise reflects, danger folds.</p></div>
+    <div class="card"><h3>No lost death</h3><p>Collapse is productive. It compresses experience into the next seed.</p></div>
+  </div>
+</section>
+<section class="final">
+  <h2>Final spark</h2>
+  <p class="section-lead">It learns by dying. It teaches by spawning. `1×0` is student and teacher. Flash is library. `6×6×6` is classroom.</p>
+  <div class="diagram">OBSERVE
+REPORT
+5
+00
+5
+SELF_TEACH
+SIX_FACE_TEACH
+REPEAT</div>
+  <div class="cta"><a class="btn" href="spark_spore.kernel">Kernel</a><a class="btn" href="spark_spore.machine">Machine</a><a class="btn" href="spark_spore.c">C Model</a></div>
+</section>
+</body>
+</html>

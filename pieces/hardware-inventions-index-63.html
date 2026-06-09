@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>One Seed Propagator</title>
+<style>
+:root{--bg:#02030a;--ink:#edfaff;--cyan:#67e8f9;--mint:#86efac;--gold:#facc15;--violet:#c084fc;--rose:#fb7185;--grid:rgba(103,232,249,.05)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:var(--ink);font-family:ui-monospace,monospace}
+body{padding:18px;background:radial-gradient(circle at 50% 42%,rgba(103,232,249,.14),transparent 30%),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px),var(--bg);background-size:100% 100%,28px 28px,28px 28px}
+.app{max-width:1500px;margin:0 auto;border:1px solid rgba(103,232,249,.24);border-radius:28px;background:rgba(0,0,0,.42);overflow:hidden;box-shadow:0 34px 120px rgba(0,0,0,.82)}
+header{padding:26px;border-bottom:1px solid rgba(103,232,249,.18);display:flex;justify-content:space-between;gap:18px;align-items:flex-end}
+h1{margin:0;font-size:clamp(40px,8vw,112px);font-weight:300;letter-spacing:.08em}
+.sub{font-size:12px;color:#a6dbe8;text-align:right;line-height:1.5}
+.grid{display:grid;grid-template-columns:340px 1fr 380px;gap:16px;padding:16px}
+@media(max-width:1120px){.grid{grid-template-columns:1fr}.stage{height:820px}.sub{text-align:left}}
+.box{border:1px solid rgba(103,232,249,.22);border-radius:20px;background:rgba(0,0,0,.52);padding:16px}
+.stage{height:820px;border:1px solid rgba(103,232,249,.22);border-radius:20px;overflow:hidden;position:relative}
+canvas{width:100%;height:100%;display:block}
+button{width:100%;border:1px solid rgba(103,232,249,.36);background:rgba(0,0,0,.36);color:var(--ink);border-radius:14px;padding:11px;font:inherit;cursor:pointer;text-transform:uppercase;font-weight:800}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.code{white-space:pre-wrap;font-size:12px;line-height:1.5;color:#d8fbff}
+.log{height:280px;overflow:auto;font-size:11px;line-height:1.45;border:1px solid rgba(103,232,249,.16);border-radius:16px;padding:10px;background:rgba(0,0,0,.35)}
+.hud{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.tag{font-size:11px;border:1px solid rgba(103,232,249,.18);border-radius:999px;background:rgba(0,0,0,.62);padding:5px 8px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div><h1>SEED</h1><div style="color:var(--mint)">one point · push · propagate · return</div></div>
+<div class="sub">. → push → trace → prune → return → .<br/>one seed, bounded propagation</div>
+</header>
+<div class="grid">
+<aside class="box">
+<div class="row"><button id="push">Push</button><button id="auto">Auto</button></div>
+<div class="row"><button id="branch">Branch</button><button id="prune">Prune</button></div>
+<div class="row"><button id="return">Return</button><button id="reset">Reset</button></div>
+<div class="code" style="margin-top:18px">LAW:
+one seed may propagate
+only by leaving a witness
+and returning to coherence
+
+CYCLE:
+seed
+push
+branch
+witness
+prune
+return
+repeat
+
+SIGNATURE:
+. → )) → trace → (( → .</div>
+</aside>
+
+<main class="stage">
+<canvas id="canvas"></canvas>
+<div class="hud">
+<div class="tag" id="cycle">CYCLE 0</div>
+<div class="tag" id="state">STATE seed</div>
+<div class="tag" id="count">TRACES 0</div>
+<div class="tag" id="witness">WITNESS --------</div>
+</div>
+</main>
+
+<aside class="box">
+<div class="log" id="log"></div>
+<div class="code" id="packet" style="margin-top:12px"></div>
+</aside>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),cv=$("canvas"),ctx=cv.getContext("2d");
+let W=0,H=0,D=1;
+function resize(){const r=cv.getBoundingClientRect();D=Math.max(1,devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*D;cv.height=H*D;ctx.setTransform(D,0,0,D,0,0)}
+new ResizeObserver(resize).observe(cv);resize();
+
+const VM={
+cycle:0,auto:false,state:"seed",witness:"--------",traces:[],log:[],seed:{x:.5,y:.5},
+hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(16).padStart(8,"0")},
+say(x){this.log.unshift("["+this.cycle+"] "+x);this.log=this.log.slice(0,100)},
+push(){
+ this.cycle++;this.state="push";
+ const a=Math.random()*Math.PI*2;
+ this.traces.push({x:.5,y:.5,a,r:10,life:220,depth:0,c:"#67e8f9"});
+ this.audit();
+ this.say("seed pushed outward");
+ ui();
+},
+branch(){
+ this.cycle++;this.state="branch";
+ const n=this.traces.length||1;
+ for(let i=0;i<Math.min(12,n+2);i++){
+   const a=i/Math.max(1,n+2)*Math.PI*2+this.cycle*.1;
+   this.traces.push({x:.5,y:.5,a,r:20+Math.random()*80,life:180,depth:1,c:"#facc15"});
+ }
+ this.audit();this.say("seed branched with witness traces");ui();
+},
+prune(){
+ this.cycle++;this.state="prune";
+ const before=this.traces.length;
+ this.traces=this.traces.filter((_,i)=>i%3===0);
+ this.audit();
+ this.say("pruned "+(before-this.traces.length)+" excess traces");
+ ui();
+},
+returnSeed(){
+ this.cycle++;this.state="return";
+ this.traces.forEach(t=>{t.returning=true;t.c="#86efac"});
+ this.audit();
+ this.say("all traces returning to seed");
+ ui();
+},
+reset(){
+ this.cycle++;this.state="seed";this.traces=[];this.audit();this.say("reset to one seed");ui();
+},
+audit(){
+ this.witness=this.hash(JSON.stringify(this.traces).slice(-2048)+this.cycle+this.state);
+},
+packet(){
+ return{artifact:"one_seed_propagator",seed:".",state:this.state,cycle:this.cycle,traces:this.traces.length,witness:this.witness,law:"propagate only by witness and return"};
+}
+};
+
+function text(t,x,y,s=12,a=.8,c="#edfaff"){ctx.save();ctx.globalAlpha=a;ctx.fillStyle=c;ctx.font=s+"px ui-monospace,monospace";ctx.textAlign="center";ctx.fillText(t,x,y);ctx.restore()}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const cx=W/2,cy=H/2;
+ ctx.save();ctx.strokeStyle="#67e8f9";
+ for(let i=0;i<12;i++){ctx.globalAlpha=.04+i*.006;ctx.beginPath();ctx.ellipse(cx,cy,70+i*38,34+i*18,VM.cycle*.002+i*.04,0,Math.PI*2);ctx.stroke()}
+ ctx.restore();
+
+ VM.traces.forEach(t=>{
+   if(t.returning)t.r*=.985; else t.r+=1.2+t.depth*.4;
+   t.life--;
+   const x=cx+Math.cos(t.a)*t.r;
+   const y=cy+Math.sin(t.a)*t.r*.55;
+   ctx.save();ctx.globalAlpha=Math.max(0,t.life/220);ctx.strokeStyle=t.c;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(x,y);ctx.stroke();ctx.fillStyle=t.c;ctx.shadowColor=t.c;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,2.8,0,Math.PI*2);ctx.fill();ctx.restore();
+ });
+ VM.traces=VM.traces.filter(t=>t.life>0 && t.r>3).slice(-600);
+
+ ctx.save();ctx.fillStyle="#edfaff";ctx.shadowColor="#67e8f9";ctx.shadowBlur=40;ctx.beginPath();ctx.arc(cx,cy,9+Math.sin(VM.cycle*.1)*2,0,Math.PI*2);ctx.fill();ctx.restore();
+ text(".",cx,cy+12,86,.95,"#67e8f9");
+ text(". → push → trace → prune → return → .",cx,36,14,.75,"#86efac");
+ text(VM.state,cx,H-42,18,.8,"#facc15");
+ requestAnimationFrame(draw);
+}
+function ui(){
+ $("cycle").textContent="CYCLE "+VM.cycle;
+ $("state").textContent="STATE "+VM.state;
+ $("count").textContent="TRACES "+VM.traces.length;
+ $("witness").textContent="WITNESS "+VM.witness;
+ $("log").innerHTML=VM.log.map(x=>"<div>"+x+"</div>").join("");
+ $("packet").textContent=JSON.stringify(VM.packet(),null,2);
+}
+$("push").onclick=()=>VM.push();
+$("auto").onclick=e=>{VM.auto=!VM.auto;e.target.textContent=VM.auto?"Pause":"Auto"};
+$("branch").onclick=()=>VM.branch();
+$("prune").onclick=()=>VM.prune();
+$("return").onclick=()=>VM.returnSeed();
+$("reset").onclick=()=>VM.reset();
+setInterval(()=>{if(VM.auto){const ops=[()=>VM.push(),()=>VM.branch(),()=>VM.prune(),()=>VM.returnSeed()];ops[VM.cycle%ops.length]()}},950);
+VM.say("one seed online");VM.audit();ui();draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Three Body Optimizer (Standalone)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 1rem; }
+    input, textarea { width: 100%; font-family: inherit; font-size: 1rem; }
+    label { display: block; margin-top: 1rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    pre { background: #f4f4f4; padding: 0.75rem; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useMemo, useState } = React;
+
+    function parseArray(input) {
+      return input
+        .split(/[\s,]+/)
+        .map((t) => parseFloat(t))
+        .filter((v) => !Number.isNaN(v));
+    }
+
+    function formatArray(arr) {
+      return '[' + arr.map((v) => v.toFixed(6)).join(', ') + ']';
+    }
+
+    function muonScaling(grad) {
+      const NS_A = 3.4445;
+      const NS_B = -4.7750;
+      const NS_C = 2.0315;
+      return NS_A * grad * grad + NS_B * grad + NS_C;
+    }
+
+    function muonStep(weights, grads, momentum, { lr, momentumCoeff, steps }) {
+      const w = weights.slice();
+      const m = momentum.slice();
+
+      for (let step = 0; step < steps; step += 1) {
+        for (let i = 0; i < w.length; i += 1) {
+          const scaled = muonScaling(grads[i]);
+          m[i] = momentumCoeff * m[i] + (1 - momentumCoeff) * scaled;
+          w[i] -= lr * m[i];
+        }
+      }
+
+      return { weights: w, momentum: m };
+    }
+
+    function adamwStep(weights, grads, m, v, { lr }) {
+      const beta1 = 0.9;
+      const beta2 = 0.999;
+      const eps = 1e-8;
+      const weightDecay = 0.01;
+
+      const w = weights.slice();
+      const mNew = m.slice();
+      const vNew = v.slice();
+
+      for (let i = 0; i < w.length; i += 1) {
+        const g = grads[i];
+        mNew[i] = beta1 * mNew[i] + (1 - beta1) * g;
+        vNew[i] = beta2 * vNew[i] + (1 - beta2) * g * g;
+
+        const update = mNew[i] / (Math.sqrt(vNew[i]) + eps) + weightDecay * w[i];
+        w[i] -= lr * update;
+      }
+
+      return { weights: w, m: mNew, v: vNew };
+    }
+
+    function TabButton({ active, onClick, children }) {
+      return (
+        <button
+          style={{
+            marginRight: 8,
+            padding: '0.5rem 1rem',
+            border: active ? '2px solid #333' : '1px solid #aaa',
+            background: active ? '#eee' : '#fff',
+          }}
+          onClick={onClick}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    function App() {
+      const [tab, setTab] = useState('muon');
+      const [weights, setWeights] = useState('1 2 -1 0.5');
+      const [grads, setGrads] = useState('0.1 -0.2 0.3 -0.4');
+      const [momentum, setMomentum] = useState('0 0 0 0');
+      const [lr, setLr] = useState(0.1);
+      const [momCoeff, setMomCoeff] = useState(0.9);
+      const [steps, setSteps] = useState(1);
+      const [results, setResults] = useState(null);
+
+      const parsedWeights = useMemo(() => parseArray(weights), [weights]);
+      const parsedGrads = useMemo(() => parseArray(grads), [grads]);
+      const parsedMomentum = useMemo(() => parseArray(momentum), [momentum]);
+
+      const handleRun = () => {
+        if (tab === 'muon') {
+          const out = muonStep(parsedWeights, parsedGrads, parsedMomentum, {
+            lr,
+            momentumCoeff: momCoeff,
+            steps,
+          });
+          setResults({
+            weights: out.weights,
+            momentum: out.momentum,
+            title: 'Muon Step Result',
+          });
+        } else {
+          const m0 = parsedMomentum;
+          const v0 = parsedMomentum.map(() => 0);
+          const out = adamwStep(parsedWeights, parsedGrads, m0, v0, { lr });
+          setResults({
+            weights: out.weights,
+            m: out.m,
+            v: out.v,
+            title: 'AdamW Step Result',
+          });
+        }
+      };
+
+      return (
+        <div>
+          <h1>Three Body Optimizer (Standalone)</h1>
+
+          <div style={{ marginBottom: 16 }}>
+            <TabButton active={tab === 'muon'} onClick={() => setTab('muon')}>
+              Muon (matrix)
+            </TabButton>
+            <TabButton active={tab === 'adamw'} onClick={() => setTab('adamw')}>
+              AdamW (vector)
+            </TabButton>
+          </div>
+
+          <label>
+            Weights (comma/space separated)
+            <textarea
+              rows={2}
+              value={weights}
+              onChange={(e) => setWeights(e.target.value)}
+            />
+          </label>
+
+          <label>
+            Gradients (comma/space separated)
+            <textarea
+              rows={2}
+              value={grads}
+              onChange={(e) => setGrads(e.target.value)}
+            />
+          </label>
+
+          <label>
+            Momentum (initial, comma/space separated)
+            <textarea
+              rows={2}
+              value={momentum}
+              onChange={(e) => setMomentum(e.target.value)}
+            />
+          </label>
+
+          <label>
+            Learning rate
+            <input
+              type="number"
+              step="0.0001"
+              value={lr}
+              onChange={(e) => setLr(parseFloat(e.target.value))}
+            />
+          </label>
+
+          {tab === 'muon' && (
+            <>
+              <label>
+                Momentum coefficient
+                <input
+                  type="number"
+                  step="0.01"
+                  value={momCoeff}
+                  onChange={(e) => setMomCoeff(parseFloat(e.target.value))}
+                />
+              </label>
+              <label>
+                Steps
+                <input
+                  type="number"
+                  step="1"
+                  min="1"
+                  value={steps}
+                  onChange={(e) => setSteps(parseInt(e.target.value, 10))}
+                />
+              </label>
+            </>
+          )}
+
+          <button onClick={handleRun} style={{ marginTop: 16, padding: '0.5rem 1rem' }}>
+            Run
+          </button>
+
+          {results && (
+            <div style={{ marginTop: 24 }}>
+              <h2>{results.title}</h2>
+              <pre>{formatArray(results.weights)}</pre>
+              {results.momentum && <pre>momentum: {formatArray(results.momentum)}</pre>}
+              {results.m && <pre>m: {formatArray(results.m)}</pre>}
+              {results.v && <pre>v: {formatArray(results.v)}</pre>}
+            </div>
+          )}
+
+          <p style={{ marginTop: 36, fontSize: '0.9rem', color: '#555' }}>
+            This standalone page runs entirely in the browser; no build step required.
+          </p>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

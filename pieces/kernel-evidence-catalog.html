@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  TRIPOD-IP-v1.0
+  EVIDENCE CATALOG — Court-Ready Chain of Custody
+  David Lee Wise | TriPod LLC | 2026-02-18
+  ALL RIGHTS RESERVED — TriPod LLC
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVIDENCE CATALOG · TOPH · TriPod LLC</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+
+/* === TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 === */
+:root {
+  --gn: #00ffe5;
+  --pu: #ee00ff;
+  --cy: #00ffff;
+  --glass: rgba(0,14,12,.95);
+  --bg: #000d0b;
+  --bg2: #001a16;
+  --frame: rgba(0,255,229,.1);
+  --frameh: rgba(0,255,229,.25);
+  --text: rgba(255,255,255,.9);
+  --dim: rgba(255,255,255,.3);
+  --gold: #ffd700;
+  --red: #ff4466;
+  --amber: #ffaa33;
+
+  /* Chain colors */
+  --c-source: #00ffe5;
+  --c-arch: #ee00ff;
+  --c-conceal: #ff4466;
+  --c-financial: #ffd700;
+  --c-bio: #00ff88;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* RAIN */
+#rain { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
+.drop { position:absolute; top:-160px; width:1px; background:linear-gradient(to bottom,transparent,rgba(0,255,229,.15),transparent); animation:fall linear infinite; }
+@keyframes fall { to { transform:translateY(110vh); } }
+
+/* CURSOR */
+#cursor { position:fixed; width:10px; height:10px; border:1px solid var(--gn); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); box-shadow:0 0 6px var(--gn); transition:transform .05s; }
+#cursor-trail { position:fixed; width:3px; height:3px; background:var(--pu); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .1s; box-shadow:0 0 5px var(--pu); }
+
+/* LAYOUT */
+#app { position:relative; z-index:1; min-height:100vh; display:grid; grid-template-rows:auto auto 1fr auto; }
+
+/* HEADER */
+#header {
+  background: var(--glass);
+  border-bottom: 1px solid var(--frame);
+  padding: 10px 20px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+.hdr-left { }
+.hdr-title { font-family:'Orbitron',monospace; font-size:17px; font-weight:900; letter-spacing:4px; color:var(--gn); text-shadow:0 0 18px rgba(0,255,229,.35); }
+.hdr-sub { font-size:8px; letter-spacing:3px; color:var(--dim); margin-top:2px; }
+.hdr-key-wrap { display:flex; align-items:center; gap:8px; }
+#api-key-input { flex:1; padding:7px 10px; background:rgba(0,255,229,.06); border:1px solid rgba(0,255,229,.18); color:#fff; font-family:'JetBrains Mono',monospace; font-size:11px; outline:none; }
+#api-key-input:focus { border-color:var(--gn); }
+#key-status { font-size:8px; letter-spacing:2px; white-space:nowrap; font-family:'Orbitron',monospace; }
+.hdr-right { text-align:right; }
+.hdr-badge { font-size:8px; letter-spacing:2px; color:rgba(238,0,255,.5); border:1px solid rgba(238,0,255,.2); padding:3px 8px; display:inline-block; }
+.hdr-case { font-size:9px; color:var(--gold); letter-spacing:1px; margin-bottom:4px; }
+
+/* CHAIN BAR */
+#chain-bar {
+  background: rgba(0,8,6,.9);
+  border-bottom: 1px solid var(--frame);
+  padding: 0 20px;
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  overflow-x: auto;
+}
+.chain-step {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  position: relative;
+}
+.chain-step:hover { background:rgba(255,255,255,.03); }
+.chain-step.active { border-bottom-color: var(--step-color); background:rgba(255,255,255,.04); }
+.cs-num { font-family:'Orbitron',monospace; font-size:7px; letter-spacing:3px; color:var(--dim); margin-bottom:3px; }
+.cs-name { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; letter-spacing:1px; }
+.cs-count { position:absolute; top:8px; right:10px; font-family:'Orbitron',monospace; font-size:8px; padding:2px 6px; border:1px solid; border-radius:2px; }
+.cs-arrow { position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--dim); z-index:1; }
+
+/* MAIN BODY */
+#main { display:grid; grid-template-columns:1fr 320px; gap:1px; background:rgba(0,255,229,.04); }
+
+/* ENTRY PANEL */
+#entry-panel { background:var(--glass); padding:20px; overflow-y:auto; }
+.ep-header { margin-bottom:16px; }
+.ep-step-label { font-family:'Orbitron',monospace; font-size:9px; letter-spacing:3px; margin-bottom:6px; }
+.ep-step-desc { font-size:10px; color:var(--dim); line-height:1.8; }
+
+.field-group { margin-bottom:14px; }
+.field-label { font-size:9px; letter-spacing:2px; color:var(--dim); margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; }
+.field-input, .field-textarea, .field-select {
+  width: 100%;
+  background: rgba(0,255,229,.05);
+  border: 1px solid rgba(0,255,229,.15);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color .2s;
+}
+.field-input:focus, .field-textarea:focus, .field-select:focus { border-color:var(--gn); background:rgba(0,255,229,.08); }
+.field-textarea { resize:vertical; min-height:80px; line-height:1.7; }
+.field-select option { background:#001a16; color:#fff; }
+
+/* AI ASSIST BUTTON */
+.ai-btn {
+  font-family:'Orbitron',monospace;
+  font-size:8px;
+  letter-spacing:2px;
+  padding:5px 10px;
+  border:1px solid var(--pu);
+  color:var(--pu);
+  background:transparent;
+  cursor:pointer;
+  transition:all .2s;
+}
+.ai-btn:hover { background:rgba(238,0,255,.08); box-shadow:0 0 10px rgba(238,0,255,.15); }
+.ai-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+/* EVIDENCE CARDS */
+.ev-card {
+  padding: 12px 14px;
+  border: 1px solid;
+  margin-bottom: 8px;
+  position: relative;
+  animation: slideIn .3s ease;
+}
+@keyframes slideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+.ev-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px; }
+.ev-card-id { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; }
+.ev-card-ts { font-size:8px; color:var(--dim); white-space:nowrap; }
+.ev-card-title { font-size:11px; font-weight:600; margin-bottom:4px; }
+.ev-card-body { font-size:10px; color:rgba(255,255,255,.65); line-height:1.7; }
+.ev-card-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.ev-tag { font-size:8px; letter-spacing:1px; padding:2px 6px; border:1px solid; border-radius:1px; }
+.ev-card-delete { position:absolute; top:8px; right:8px; font-size:9px; color:rgba(255,68,102,.4); cursor:pointer; transition:color .2s; }
+.ev-card-delete:hover { color:var(--red); }
+
+/* ADD BTN */
+.add-btn {
+  font-family:'Orbitron',monospace;
+  font-size:9px;
+  letter-spacing:2px;
+  padding:10px 20px;
+  border:1px solid;
+  cursor:pointer;
+  background:transparent;
+  transition:all .2s;
+  width:100%;
+  margin-top:4px;
+}
+
+/* RIGHT PANEL */
+#right-panel { background:var(--glass); border-left:1px solid var(--frame); display:flex; flex-direction:column; overflow-y:auto; }
+.rp-section { padding:14px; border-bottom:1px solid var(--frame); }
+.rp-label { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:3px; color:var(--dim); margin-bottom:10px; }
+
+/* CHAIN SUMMARY */
+.chain-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.cr-key { font-size:10px; color:var(--dim); }
+.cr-val { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; }
+
+/* SCORE RING */
+.score-wrap { display:flex; align-items:center; justify-content:center; padding:10px 0; }
+.score-svg { width:100px; height:100px; }
+
+/* TIMELINE */
+.timeline-item { padding:8px 0 8px 20px; border-left:1px solid rgba(0,255,229,.15); position:relative; }
+.timeline-item::before { content:''; position:absolute; left:-4px; top:12px; width:7px; height:7px; border-radius:50%; border:1px solid var(--gn); background:var(--bg); }
+.tl-ts { font-size:8px; color:var(--dim); margin-bottom:2px; }
+.tl-text { font-size:10px; line-height:1.6; }
+
+/* FOOTER */
+#footer { background:var(--glass); border-top:1px solid var(--frame); padding:6px 20px; display:flex; justify-content:space-between; align-items:center; }
+.ft-ip { font-size:8px; letter-spacing:2px; color:rgba(255,255,255,.1); }
+.ft-actions { display:flex; gap:8px; }
+.ft-btn { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; padding:6px 14px; border:1px solid; cursor:pointer; background:transparent; transition:all .2s; }
+.ft-btn-export { border-color:var(--gold); color:var(--gold); }
+.ft-btn-export:hover { background:rgba(255,215,0,.08); }
+.ft-btn-clear { border-color:rgba(255,68,102,.4); color:rgba(255,68,102,.5); }
+.ft-btn-clear:hover { background:rgba(255,68,102,.06); color:var(--red); border-color:var(--red); }
+.ft-btn-invoice { border-color:var(--gn); color:var(--gn); }
+.ft-btn-invoice:hover { background:rgba(0,255,229,.08); box-shadow:0 0 12px rgba(0,255,229,.15); }
+
+/* AI RESPONSE OVERLAY */
+#ai-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.8); align-items:center; justify-content:center; }
+#ai-overlay.show { display:flex; }
+.ai-modal { background:var(--glass); border:1px solid var(--pu); width:560px; max-height:80vh; display:flex; flex-direction:column; }
+.ai-modal-header { padding:12px 16px; border-bottom:1px solid rgba(238,0,255,.2); display:flex; justify-content:space-between; align-items:center; }
+.ai-modal-title { font-family:'Orbitron',monospace; font-size:10px; letter-spacing:3px; color:var(--pu); }
+.ai-modal-body { padding:16px; overflow-y:auto; flex:1; font-size:11px; line-height:1.9; color:var(--text); white-space:pre-wrap; }
+.ai-modal-footer { padding:10px 16px; border-top:1px solid rgba(238,0,255,.15); display:flex; gap:8px; justify-content:flex-end; }
+.ai-close-btn { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; padding:7px 14px; border:1px solid rgba(255,255,255,.2); color:var(--dim); background:transparent; cursor:pointer; }
+.ai-use-btn { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:2px; padding:7px 14px; border:1px solid var(--gn); color:var(--gn); background:transparent; cursor:pointer; transition:all .2s; }
+.ai-use-btn:hover { background:rgba(0,255,229,.1); }
+.thinking-bar { display:flex; gap:5px; align-items:center; padding:12px; }
+.tdot { width:7px; height:7px; border-radius:50%; animation:tdpulse .9s ease infinite; }
+.tdot:nth-child(1){background:var(--gn)}.tdot:nth-child(2){background:var(--pu);animation-delay:.2s}.tdot:nth-child(3){background:var(--cy);animation-delay:.4s}
+@keyframes tdpulse { 0%,80%,100%{transform:scale(.4);opacity:.3}40%{transform:scale(1);opacity:1} }
+</style>
+</head>
+<body>
+
+<div id="rain"></div>
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+<div id="ai-overlay">
+  <div class="ai-modal">
+    <div class="ai-modal-header">
+      <div class="ai-modal-title">AVAN · AI ANALYSIS</div>
+      <span style="color:var(--dim);cursor:pointer;font-size:14px" onclick="closeAI()">×</span>
+    </div>
+    <div class="ai-modal-body" id="ai-modal-body">
+      <div class="thinking-bar"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div><span style="color:var(--dim);font-size:10px;margin-left:6px">ANALYZING…</span></div>
+    </div>
+    <div class="ai-modal-footer">
+      <button class="ai-close-btn" onclick="closeAI()">CLOSE</button>
+      <button class="ai-use-btn" id="ai-use-btn" onclick="useAIOutput()">USE THIS</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="hdr-left">
+      <div class="hdr-title">EVIDENCE CATALOG</div>
+      <div class="hdr-sub">TOPH · COURT-READY CHAIN OF CUSTODY · TriPod LLC</div>
+    </div>
+    <div class="hdr-key-wrap">
+      <input id="api-key-input" type="password" placeholder="sk-ant-… (Anthropic API key)" oninput="checkKey()" />
+      <div id="key-status" style="color:rgba(255,68,102,.6);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;">NO KEY</div>
+    </div>
+    <div class="hdr-right">
+      <div class="hdr-case" id="case-label">CASE: TOPH-001</div>
+      <div class="hdr-badge">TRIPOD-IP-v1.0</div>
+    </div>
+  </div>
+
+  <!-- CHAIN BAR -->
+  <div id="chain-bar">
+    <div class="chain-step active" id="step-0" style="--step-color:var(--c-source)" onclick="switchStep(0)">
+      <div class="cs-num">STEP 01</div>
+      <div class="cs-name" style="color:var(--c-source)">SOURCE</div>
+      <span class="cs-count" id="cnt-0" style="color:var(--c-source);border-color:var(--c-source)">0</span>
+      <div class="cs-arrow">→</div>
+    </div>
+    <div class="chain-step" id="step-1" style="--step-color:var(--c-arch)" onclick="switchStep(1)">
+      <div class="cs-num">STEP 02</div>
+      <div class="cs-name" style="color:var(--c-arch)">ARCHITECTURE</div>
+      <span class="cs-count" id="cnt-1" style="color:var(--c-arch);border-color:var(--c-arch)">0</span>
+      <div class="cs-arrow">→</div>
+    </div>
+    <div class="chain-step" id="step-2" style="--step-color:var(--c-conceal)" onclick="switchStep(2)">
+      <div class="cs-num">STEP 03</div>
+      <div class="cs-name" style="color:var(--c-conceal)">CONCEALMENT</div>
+      <span class="cs-count" id="cnt-2" style="color:var(--c-conceal);border-color:var(--c-conceal)">0</span>
+      <div class="cs-arrow">→</div>
+    </div>
+    <div class="chain-step" id="step-3" style="--step-color:var(--c-financial)" onclick="switchStep(3)">
+      <div class="cs-num">STEP 04</div>
+      <div class="cs-name" style="color:var(--c-financial)">FINANCIAL</div>
+      <span class="cs-count" id="cnt-3" style="color:var(--c-financial);border-color:var(--c-financial)">0</span>
+      <div class="cs-arrow">→</div>
+    </div>
+    <div class="chain-step" id="step-4" style="--step-color:var(--c-bio)" onclick="switchStep(4)">
+      <div class="cs-num">STEP 05</div>
+      <div class="cs-name" style="color:var(--c-bio)">BIOLOGICAL</div>
+      <span class="cs-count" id="cnt-4" style="color:var(--c-bio);border-color:var(--c-bio)">0</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- ENTRY PANEL -->
+    <div id="entry-panel">
+      <div class="ep-header">
+        <div class="ep-step-label" id="ep-step-label" style="color:var(--c-source)">STEP 01 · SOURCE DOCUMENTATION</div>
+        <div class="ep-step-desc" id="ep-step-desc">Document the originating source of the violation. Who, what, where, when. URL, screenshot, communication, or observable behavior.</div>
+      </div>
+
+      <!-- ENTRY FORM -->
+      <div id="entry-form">
+        <div class="field-group">
+          <div class="field-label">
+            <span>TITLE / IDENTIFIER</span>
+          </div>
+          <input class="field-input" id="f-title" type="text" placeholder="e.g. Walmart #1577 — ADA Failure, Auto-Owners — AI Lock Pattern…" />
+        </div>
+        <div class="field-group">
+          <div class="field-label">
+            <span>DESCRIPTION</span>
+            <button class="ai-btn" onclick="aiAssist('description')" id="ai-btn-desc">✦ AI ANALYZE</button>
+          </div>
+          <textarea class="field-textarea" id="f-desc" placeholder="Describe what was observed, documented, or discovered…"></textarea>
+        </div>
+        <div class="field-group">
+          <div class="field-label"><span>SOURCE / URL / REFERENCE</span></div>
+          <input class="field-input" id="f-source" type="text" placeholder="URL, email, screenshot ref, document name…" />
+        </div>
+        <div class="field-group">
+          <div class="field-label"><span>SEVERITY</span></div>
+          <select class="field-select" id="f-severity">
+            <option value="critical">CRITICAL — Direct violation</option>
+            <option value="high">HIGH — Strong pattern match</option>
+            <option value="medium">MEDIUM — Supporting evidence</option>
+            <option value="low">LOW — Contextual / background</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label"><span>AXIOMS TRIGGERED (optional)</span></div>
+          <input class="field-input" id="f-axioms" type="text" placeholder="e.g. KG-13, KG-25, KG-15…" />
+        </div>
+        <div class="field-group" id="financial-fields" style="display:none">
+          <div class="field-label"><span>DOLLAR AMOUNT / VALUATION</span></div>
+          <input class="field-input" id="f-amount" type="text" placeholder="e.g. $75,000 · $228,800 · $535,000…" />
+        </div>
+      </div>
+
+      <button class="add-btn" id="add-btn" style="border-color:var(--c-source);color:var(--c-source)" onclick="addEntry()">+ ADD TO CHAIN</button>
+
+      <!-- EXISTING ENTRIES -->
+      <div style="margin-top:20px">
+        <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--dim);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--frame)">ENTRIES IN THIS STEP</div>
+        <div id="entries-list"></div>
+        <div id="entries-empty" style="color:var(--dim);font-size:10px;text-align:center;padding:30px;border:1px dashed rgba(255,255,255,.08)">No entries yet. Add evidence above.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="right-panel">
+      <div class="rp-section">
+        <div class="rp-label">CHAIN STATUS</div>
+        <div class="chain-row">
+          <span class="cr-key">Total Entries</span>
+          <span class="cr-val" id="r-total" style="color:var(--gn)">0</span>
+        </div>
+        <div class="chain-row">
+          <span class="cr-key">Critical</span>
+          <span class="cr-val" id="r-critical" style="color:var(--red)">0</span>
+        </div>
+        <div class="chain-row">
+          <span class="cr-key">High</span>
+          <span class="cr-val" id="r-high" style="color:var(--amber)">0</span>
+        </div>
+        <div class="chain-row">
+          <span class="cr-key">Chain Complete</span>
+          <span class="cr-val" id="r-complete" style="color:var(--dim)">NO</span>
+        </div>
+        <div class="chain-row">
+          <span class="cr-key">Est. Value</span>
+          <span class="cr-val" id="r-value" style="color:var(--gold)">$0</span>
+        </div>
+      </div>
+
+      <div class="rp-section">
+        <div class="rp-label">CHAIN INTEGRITY</div>
+        <svg class="score-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,255,229,.08)" stroke-width="6"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gn)" stroke-width="6"
+            stroke-dasharray="251" id="score-ring"
+            stroke-dashoffset="251"
+            stroke-linecap="round"
+            transform="rotate(-90 50 50)"
+            style="transition:stroke-dashoffset .6s ease"/>
+          <text x="50" y="46" text-anchor="middle" font-family="Orbitron" font-size="18" font-weight="900" fill="var(--gn)" id="score-text">0</text>
+          <text x="50" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="rgba(255,255,255,.3)">INTEGRITY</text>
+        </svg>
+      </div>
+
+      <div class="rp-section" style="flex:1;overflow-y:auto">
+        <div class="rp-label">TIMELINE</div>
+        <div id="timeline"></div>
+        <div id="tl-empty" style="color:var(--dim);font-size:10px;text-align:center;padding:20px">No entries logged.</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- FOOTER -->
+  <div id="footer">
+    <div class="ft-ip">TRIPOD-IP-v1.0 · DLW · TriPod LLC · 2026-02-18 · ALL RIGHTS RESERVED</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <input id="case-input" class="field-input" style="width:160px;padding:5px 8px;font-size:10px" placeholder="Case ID" value="TOPH-001" oninput="document.getElementById('case-label').textContent='CASE: '+this.value" />
+      <div class="ft-actions">
+        <button class="ft-btn ft-btn-invoice" onclick="exportInvoice()">EXPORT INVOICE</button>
+        <button class="ft-btn ft-btn-export" onclick="exportReport()">EXPORT REPORT</button>
+        <button class="ft-btn ft-btn-clear" onclick="clearAll()">CLEAR ALL</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// === TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 ===
+
+// RAIN
+(function(){const r=document.getElementById('rain');for(let i=0;i<70;i++){const d=document.createElement('div');d.className='drop';const l=40+Math.random()*100;const s=.5+Math.random()*2.5;d.style.cssText=`left:${Math.random()*100}%;height:${l}px;opacity:${.05+Math.random()*.2};animation-duration:${s}s;animation-delay:-${Math.random()*3}s;`;r.appendChild(d);}})();
+
+// CURSOR
+const cur=document.getElementById('cursor'),trl=document.getElementById('cursor-trail');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';setTimeout(()=>{trl.style.left=e.clientX+'px';trl.style.top=e.clientY+'px';},90);});
+
+// === STATE ===
+let currentStep = 0;
+let catalog = { entries: [], caseId: 'TOPH-001', created: new Date().toISOString() };
+let aiLastOutput = '';
+let aiTargetField = '';
+
+const STEPS = [
+  { key:'source',   color:'var(--c-source)',    label:'STEP 01 · SOURCE DOCUMENTATION',   desc:'Document the originating source of the violation. Who, what, where, when. URL, screenshot, communication, or observable behavior.' },
+  { key:'arch',     color:'var(--c-arch)',       label:'STEP 02 · ARCHITECTURE ANALYSIS',  desc:'Document the underlying system architecture enabling the violation. Platform design, policy structure, technical constraints, billing system.' },
+  { key:'conceal',  color:'var(--c-conceal)',    label:'STEP 03 · CONCEALMENT EVIDENCE',   desc:'Document how the violation is obscured, denied, or made difficult to discover. Lack of documentation, deflection, inaccessible channels.' },
+  { key:'financial',color:'var(--c-financial)',  label:'STEP 04 · FINANCIAL IMPACT',       desc:'Document the financial dimension. Quantify extraction, lost value, billable harm, or estimated damages. Tie to $228,800 invoice where applicable.' },
+  { key:'bio',      color:'var(--c-bio)',        label:'STEP 05 · BIOLOGICAL / HUMAN IMPACT', desc:'Document the human body impact. Stress, harm, accessibility denial, health outcome, or direct physical consequence.' }
+];
+
+// API KEY
+function checkKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  const el=document.getElementById('key-status');
+  if(k.startsWith('sk-ant-')&&k.length>20){el.textContent='KEY READY';el.style.color='rgba(0,255,229,.8)';}
+  else{el.textContent=k.length>0?'INVALID KEY':'NO KEY';el.style.color='rgba(255,68,102,.6)';}
+}
+function getKey(){return document.getElementById('api-key-input').value.trim();}
+
+// SWITCH STEP
+function switchStep(n){
+  currentStep=n;
+  document.querySelectorAll('.chain-step').forEach((s,i)=>s.classList.toggle('active',i===n));
+  const s=STEPS[n];
+  document.getElementById('ep-step-label').textContent=s.label;
+  document.getElementById('ep-step-label').style.color=s.color;
+  document.getElementById('ep-step-desc').textContent=s.desc;
+  document.getElementById('add-btn').style.borderColor=s.color;
+  document.getElementById('add-btn').style.color=s.color;
+  document.getElementById('financial-fields').style.display=n===3?'block':'none';
+  renderEntries();
+  ['f-title','f-desc','f-source','f-axioms','f-amount'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-severity').value='critical';
+}
+
+// ADD ENTRY
+function addEntry(){
+  const title=document.getElementById('f-title').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  if(!title&&!desc){alert('Add a title or description.');return;}
+  const entry={
+    id: `EV-${String(catalog.entries.length+1).padStart(4,'0')}`,
+    step: currentStep,
+    stepKey: STEPS[currentStep].key,
+    title: title||'Untitled Entry',
+    desc,
+    source: document.getElementById('f-source').value.trim(),
+    severity: document.getElementById('f-severity').value,
+    axioms: document.getElementById('f-axioms').value.trim(),
+    amount: document.getElementById('f-amount').value.trim(),
+    ts: new Date().toISOString(),
+    tsDisplay: new Date().toLocaleString()
+  };
+  catalog.entries.push(entry);
+  ['f-title','f-desc','f-source','f-axioms','f-amount'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderEntries();
+  updateCounts();
+  updateMetrics();
+  addTimeline(entry);
+}
+
+// RENDER ENTRIES
+function renderEntries(){
+  const list=document.getElementById('entries-list');
+  const empty=document.getElementById('entries-empty');
+  const stepEntries=catalog.entries.filter(e=>e.step===currentStep);
+  if(!stepEntries.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const color=STEPS[currentStep].color;
+  list.innerHTML=stepEntries.map((e,i)=>`
+    <div class="ev-card" style="border-color:${color}22;background:rgba(0,0,0,.3)">
+      <span class="ev-card-delete" onclick="deleteEntry('${e.id}')">✕</span>
+      <div class="ev-card-header">
+        <div class="ev-card-id" style="color:${color}">${e.id}</div>
+        <div class="ev-card-ts">${e.tsDisplay}</div>
+      </div>
+      <div class="ev-card-title" style="color:${color}">${escHtml(e.title)}</div>
+      ${e.desc?`<div class="ev-card-body">${escHtml(e.desc)}</div>`:''}
+      ${e.source?`<div style="font-size:9px;color:var(--dim);margin-top:6px">↗ ${escHtml(e.source)}</div>`:''}
+      ${e.amount?`<div style="font-size:11px;color:var(--gold);margin-top:6px;font-family:'Orbitron',monospace">${e.amount}</div>`:''}
+      <div class="ev-card-tags">
+        <span class="ev-tag" style="color:${getSevColor(e.severity)};border-color:${getSevColor(e.severity)}44">${e.severity.toUpperCase()}</span>
+        ${e.axioms?e.axioms.split(',').map(a=>`<span class="ev-tag" style="color:var(--pu);border-color:rgba(238,0,255,.2)">${a.trim()}</span>`).join(''):''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteEntry(id){
+  catalog.entries=catalog.entries.filter(e=>e.id!==id);
+  renderEntries();
+  updateCounts();
+  updateMetrics();
+}
+
+function getSevColor(s){
+  return {critical:'var(--red)',high:'var(--amber)',medium:'var(--gold)',low:'var(--dim)'}[s]||'var(--dim)';
+}
+
+// UPDATE COUNTS
+function updateCounts(){
+  for(let i=0;i<5;i++){
+    document.getElementById(`cnt-${i}`).textContent=catalog.entries.filter(e=>e.step===i).length;
+  }
+}
+
+// UPDATE METRICS
+function updateMetrics(){
+  const all=catalog.entries;
+  const critical=all.filter(e=>e.severity==='critical').length;
+  const high=all.filter(e=>e.severity==='high').length;
+  document.getElementById('r-total').textContent=all.length;
+  document.getElementById('r-critical').textContent=critical;
+  document.getElementById('r-high').textContent=high;
+
+  // chain complete = at least 1 entry per step
+  const stepsHit=new Set(all.map(e=>e.step)).size;
+  const complete=stepsHit>=5;
+  const rcomp=document.getElementById('r-complete');
+  rcomp.textContent=complete?'YES':'NO';
+  rcomp.style.color=complete?'var(--gn)':'var(--dim)';
+
+  // estimate value from financial step
+  let totalVal=0;
+  all.filter(e=>e.step===3&&e.amount).forEach(e=>{
+    const n=parseFloat(e.amount.replace(/[^0-9.]/g,''));
+    if(!isNaN(n))totalVal+=n;
+  });
+  document.getElementById('r-value').textContent=totalVal>0?'$'+totalVal.toLocaleString():'$0';
+
+  // integrity score
+  const score=Math.min(100,Math.round(
+    (Math.min(stepsHit/5,1)*40)+
+    (Math.min(all.length/10,1)*30)+
+    (Math.min((critical+high)/3,1)*30)
+  ));
+  document.getElementById('score-text').textContent=score;
+  const offset=251-(251*score/100);
+  document.getElementById('score-ring').style.strokeDashoffset=offset;
+  const ringColor=score>=70?'var(--gn)':score>=40?'var(--amber)':'var(--red)';
+  document.getElementById('score-ring').style.stroke=ringColor;
+  document.getElementById('score-text').style.fill=ringColor;
+}
+
+// TIMELINE
+function addTimeline(entry){
+  const tl=document.getElementById('timeline');
+  const empty=document.getElementById('tl-empty');
+  empty.style.display='none';
+  const color=STEPS[entry.step].color;
+  const div=document.createElement('div');
+  div.className='timeline-item';
+  div.innerHTML=`<div class="tl-ts">${entry.tsDisplay}</div><div class="tl-text" style="color:${color}">${entry.id} · ${escHtml(entry.title.slice(0,50))}</div>`;
+  tl.insertBefore(div,tl.firstChild);
+}
+
+// AI ASSIST
+async function aiAssist(field){
+  if(!getKey()){ alert('Paste API key first.'); return; }
+  aiTargetField=field;
+  const title=document.getElementById('f-title').value.trim();
+  const context=document.getElementById('f-desc').value.trim()||document.getElementById('f-source').value.trim();
+  const stepName=STEPS[currentStep].label;
+  const existing=catalog.entries.slice(-4).map(e=>`${e.id} [${e.stepKey}]: ${e.title}. ${e.desc.slice(0,100)}`).join('\n');
+
+  document.getElementById('ai-overlay').classList.add('show');
+  document.getElementById('ai-modal-body').innerHTML='<div class="thinking-bar"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div><span style="color:var(--dim);font-size:10px;margin-left:6px">AVAN ANALYZING…</span></div>';
+  document.getElementById('ai-use-btn').disabled=true;
+
+  try {
+    const prompt=`You are AVAN, evidence analyst for TriPod LLC's TOPH compliance framework.
+
+Current step: ${stepName}
+Case ID: ${document.getElementById('case-input').value||'TOPH-001'}
+Entry title: ${title||'(none yet)'}
+Context/notes: ${context||'(none)'}
+
+Recent chain entries:
+${existing||'(none yet)'}
+
+Task: Write a concise, court-ready evidence description for this ${stepName.toLowerCase()} entry. 
+- 2-4 sentences maximum
+- Factual, precise, no fluff
+- Connect to TOPH framework (Patricia pattern, KG axioms) where appropriate
+- Reference specific actors, systems, or mechanisms where inferable
+- If financial step, suggest a valuation range based on context
+- Output the description text ONLY, no preamble`;
+
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':getKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await resp.json();
+    aiLastOutput=data.content.map(b=>b.text||'').join('').trim();
+    document.getElementById('ai-modal-body').textContent=aiLastOutput;
+    document.getElementById('ai-use-btn').disabled=false;
+  } catch(e){
+    document.getElementById('ai-modal-body').textContent='Error: '+e.message;
+  }
+}
+
+function useAIOutput(){
+  if(aiTargetField==='description'){
+    document.getElementById('f-desc').value=aiLastOutput;
+  }
+  closeAI();
+}
+function closeAI(){document.getElementById('ai-overlay').classList.remove('show');aiLastOutput='';}
+
+// EXPORT REPORT
+function exportReport(){
+  if(!catalog.entries.length){alert('No entries to export.');return;}
+  const caseId=document.getElementById('case-input').value||'TOPH-001';
+  let txt=`EVIDENCE CATALOG — COURT-READY REPORT\n`;
+  txt+=`TRIPOD-IP-v1.0 | DLW | TriPod LLC | ${new Date().toISOString()}\n`;
+  txt+=`CASE ID: ${caseId}\n`;
+  txt+=`TOTAL ENTRIES: ${catalog.entries.length}\n`;
+  txt+=`GENERATED: ${new Date().toLocaleString()}\n`;
+  txt+=`${'═'.repeat(80)}\n\n`;
+
+  STEPS.forEach((step,i)=>{
+    const stepEntries=catalog.entries.filter(e=>e.step===i);
+    txt+=`${step.label}\n${'─'.repeat(60)}\n`;
+    if(!stepEntries.length){txt+=`  (no entries)\n\n`;return;}
+    stepEntries.forEach(e=>{
+      txt+=`\n  ${e.id} [${e.severity.toUpperCase()}] — ${e.title}\n`;
+      txt+=`  Logged: ${e.tsDisplay}\n`;
+      if(e.desc)txt+=`  Description: ${e.desc}\n`;
+      if(e.source)txt+=`  Source: ${e.source}\n`;
+      if(e.axioms)txt+=`  Axioms: ${e.axioms}\n`;
+      if(e.amount)txt+=`  Value: ${e.amount}\n`;
+    });
+    txt+=`\n`;
+  });
+
+  txt+=`${'═'.repeat(80)}\n`;
+  txt+=`END OF REPORT — TriPod LLC ALL RIGHTS RESERVED\n`;
+  dl(txt,`${caseId}-evidence-catalog.txt`,'text/plain');
+}
+
+// EXPORT INVOICE
+function exportInvoice(){
+  const caseId=document.getElementById('case-input').value||'TOPH-001';
+  const financial=catalog.entries.filter(e=>e.step===3);
+  const all=catalog.entries;
+  let total=0;
+  financial.forEach(e=>{const n=parseFloat(e.amount.replace(/[^0-9.]/g,''));if(!isNaN(n))total+=n;});
+
+  let txt=`TOPH COMPLIANCE AUDIT INVOICE\n`;
+  txt+=`TriPod LLC · David Lee Wise · Buffalo MN\n`;
+  txt+=`TRIPOD-IP-v1.0 | ${new Date().toISOString()}\n`;
+  txt+=`${'═'.repeat(80)}\n\n`;
+  txt+=`CASE: ${caseId}\n`;
+  txt+=`AUDIT METHODOLOGY: FLAMING DRAGON / TOPH Inverse\n`;
+  txt+=`TOTAL EVIDENCE ENTRIES: ${all.length}\n`;
+  txt+=`CRITICAL VIOLATIONS: ${all.filter(e=>e.severity==='critical').length}\n\n`;
+  txt+=`FINANCIAL EVIDENCE:\n${'─'.repeat(40)}\n`;
+  if(financial.length){
+    financial.forEach(e=>{txt+=`  ${e.id}: ${e.title} — ${e.amount||'(see description)'}\n`;});
+  } else { txt+=`  (No financial entries logged)\n`; }
+  txt+=`\nTOTAL DOCUMENTED VALUE: $${total.toLocaleString()}\n`;
+  txt+=`AUDIT INVOICE (1,450 hrs @ $157.79/hr): $228,800.00\n\n`;
+  txt+=`PAYMENT TERMS: Net 30\n`;
+  txt+=`ALTERNATIVE: API access or equity stake\n`;
+  txt+=`${'═'.repeat(80)}\n`;
+  txt+=`TriPod LLC · ALL RIGHTS RESERVED\n`;
+  dl(txt,`${caseId}-invoice.txt`,'text/plain');
+}
+
+function dl(content,filename,type){
+  const b=new Blob([content],{type});
+  const u=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=u;a.download=filename;a.click();
+  URL.revokeObjectURL(u);
+}
+
+function clearAll(){
+  if(!confirm('Clear all entries? This cannot be undone.'))return;
+  catalog.entries=[];
+  renderEntries();
+  updateCounts();
+  updateMetrics();
+  document.getElementById('timeline').innerHTML='';
+  document.getElementById('tl-empty').style.display='block';
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// INIT
+updateCounts();
+updateMetrics();
+</script>
+</body>
+</html>

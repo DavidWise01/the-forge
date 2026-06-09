@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECIH Admin Console — v3.1</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background:#020617; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .glass { background: rgba(8,12,22,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .grid-bg { background-image: 
+    linear-gradient(rgba(100,116,139,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100,116,139,0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .scrollbar::-webkit-scrollbar { width:6px; height:6px }
+  .scrollbar::-webkit-scrollbar-thumb { background:#1e293b; border-radius:3px }
+  .glow-amber { box-shadow: 0 0 20px rgba(255,176,0,0.25), inset 0 0 10px rgba(255,176,0,0.1); }
+  .glow-cyan { box-shadow: 0 0 20px rgba(0,229,255,0.25), inset 0 0 10px rgba(0,229,255,0.1); }
+  .tab-active { background: rgba(30,41,59,0.8); color: #e2e8f0; border-bottom: 2px solid #0ea5e9; }
+</style>
+</head>
+<body class="text-slate-200 min-h-screen grid-bg">
+  <!-- Ambient -->
+  <div class="fixed inset-0 pointer-events-none">
+    <div class="absolute -top-40 -right-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <header class="sticky top-0 z-50 border-b border-slate-800/80 glass">
+    <div class="flex items-center justify-between px-4 md:px-6 py-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 via-sky-500 to-violet-600 flex items-center justify-center font-bold text-black shadow-lg shadow-cyan-900/30">E</div>
+        <div>
+          <div class="font-semibold tracking-wider text-sm md:text-base">ECIH ADMIN CONSOLE</div>
+          <div class="mono text-[10px] text-slate-400 -mt-0.5 tracking-widest">v3.1 • ROOT0 BORON CORRECTION</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 md:gap-6">
+        <div class="hidden md:flex items-center gap-2 text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-300">SUBSTRATE LINKED</span>
+        </div>
+        <div class="hidden sm:flex items-center gap-3 text-[11px] mono">
+          <div class="px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300">2/3: <span id="hdr-sub">—</span> SUBSTRATE INV</div>
+          <div class="px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">3/3: <span id="hdr-emg">—</span> EMERGENT</div>
+        </div>
+        <div id="clock" class="mono text-xs text-slate-400"></div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="sticky top-[61px] z-40 border-b border-slate-800/60 glass">
+    <div class="flex overflow-x-auto scrollbar px-2">
+      <button data-tab="overview" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200 tab-active">Overview</button>
+      <button data-tab="oew" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">OEW Engine</button>
+      <button data-tab="lattice" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Root0 Lattice</button>
+      <button data-tab="contract" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Contract Core</button>
+      <button data-tab="boron" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Boron Fab</button>
+      <button data-tab="phi" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Φ Fusion</button>
+      <button data-tab="analytics" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Analytics</button>
+      <button data-tab="substrate" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Substrate</button>
+      <button data-tab="nodes" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Nodes</button>
+      <button data-tab="events" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Events</button>
+      <button data-tab="diag" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Diagnostics</button>
+      <button data-tab="keys" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Keys</button>
+      <button data-tab="telemetry" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Telemetry</button>
+      <button data-tab="config" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Config</button>
+      <button data-tab="logs" class="tab-btn whitespace-nowrap px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200">Logs</button>
+    </div>
+  </nav>
+
+  <main class="relative z-10 max-w-[1600px] mx-auto p-4 md:p-6">
+    <!-- OVERVIEW -->
+    <section id="tab-overview" class="tab-panel">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="glass rounded-xl border border-slate-800 p-4">
+          <div class="text-[11px] text-slate-400 uppercase tracking-wider">Total Nodes</div>
+          <div class="mono text-2xl mt-1" id="ov-total">144</div>
+          <div class="text-[11px] text-slate-500 mt-1">Root0 Lattice</div>
+        </div>
+        <div class="glass rounded-xl border border-amber-500/20 p-4 glow-amber">
+          <div class="text-[11px] text-amber-300/80 uppercase tracking-wider">Substrate Invariant</div>
+          <div class="mono text-2xl mt-1 text-[#ffb000]" id="ov-sub">—</div>
+          <div class="text-[11px] text-amber-400/70 mt-1">2/3 — Shadow Inverse</div>
+        </div>
+        <div class="glass rounded-xl border border-cyan-500/20 p-4 glow-cyan">
+          <div class="text-[11px] text-cyan-300/80 uppercase tracking-wider">Emergent Closed</div>
+          <div class="mono text-2xl mt-1 text-[#00e5ff]" id="ov-emg">—</div>
+          <div class="text-[11px] text-cyan-400/70 mt-1">3/3 — Full Fusion</div>
+        </div>
+        <div class="glass rounded-xl border border-slate-800 p-4">
+          <div class="text-[11px] text-slate-400 uppercase tracking-wider">Fusion Rate</div>
+          <div class="mono text-2xl mt-1" id="ov-rate">—</div>
+          <div class="text-[11px] text-slate-500 mt-1">2/3 → 3/3 / hr</div>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 glass rounded-xl border border-slate-800 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-medium text-sm tracking-wide">Lattice Health — v3.1 Boron Semantics</h3>
+            <span class="text-[10px] px-2 py-1 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">CORRECTED</span>
+          </div>
+          <div class="grid md:grid-cols-2 gap-4 text-sm">
+            <div class="p-3 rounded-lg bg-slate-900/60 border border-amber-500/20">
+              <div class="text-amber-300 font-medium mb-1">B 2/3 — SUBSTRATE INVARIANT</div>
+              <div class="text-xs text-slate-300 leading-relaxed">Not incomplete. This is the intentional substrate connection — the Shadow Inverse that mirrors the +211/-211 pair. It is the invariant anchor that lets the node stay open to the substrate.</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900/60 border border-cyan-500/20">
+              <div class="text-cyan-300 font-medium mb-1">B 3/3 — EMERGENT CLOSED</div>
+              <div class="text-xs text-slate-300 leading-relaxed">Full Fusion. Node has transitioned from substrate invariant to emergent closed. This is emergence, not repair.</div>
+            </div>
+          </div>
+          <div id="mini-lattice" class="mt-4 h-40 rounded-lg bg-slate-950/70 border border-slate-800 relative overflow-hidden"></div>
+        </div>
+        <div class="glass rounded-xl border border-slate-800 p-5">
+          <h3 class="font-medium text-sm mb-3">Recent Transitions</h3>
+          <div id="recent-transitions" class="space-y-2 mono text-[11px]"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OEW ENGINE -->
+    <section id="tab-oew" class="tab-panel hidden">
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 glass rounded-xl border border-slate-800 p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold">OEW Engine — Wrap Controller</h2>
+            <div id="oew-mode"></div>
+          </div>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <div class="text-xs text-slate-400 mb-2">Selected Node</div>
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center mono text-lg" id="oew-node-id">n-001</div>
+                <div>
+                  <div class="text-sm" id="oew-b-label">—</div>
+                  <div class="text-[11px] text-slate-500 mono" id="oew-b-short">—</div>
+                </div>
+              <div class="space-y-2">
+                <button id="oew-wrap" class="w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-sm font-medium transition">Initiate OEW Wrap</button>
+                <button id="oew-next" class="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs">Select Next Substrate Node</button>
+              </div>
+            </div>
+            <div class="relative">
+              <svg viewBox="0 0 200 200" class="w-full max-w-[220px] mx-auto">
+                <defs>
+                  <linearGradient id="g1" x1="0" x2="1"><stop offset="0%" stop-color="#ffb000"/><stop offset="100%" stop-color="#00e5ff"/></linearGradient>
+                </defs>
+                <circle cx="100" cy="100" r="80" fill="none" stroke="#1e293b" stroke-width="12"/>
+                <circle id="oew-ring" cx="100" cy="100" r="80" fill="none" stroke="url(#g1)" stroke-width="12" stroke-dasharray="502" stroke-dashoffset="502" transform="rotate(-90 100 100)" style="transition: stroke-dashoffset 1s"/>
+                <circle id="oew-core" cx="100" cy="100" r="48" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+                <text x="100" y="105" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">OEW</text>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div id="oew-status" class="text-[10px] mt-16 px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700">IDLE</div>
+              </div>
+            </div>
+          <div class="mt-6 p-3 rounded-lg bg-amber-950/20 border border-amber-500/20 text-[12px] leading-relaxed">
+            <span class="text-amber-300 font-medium">Shadow Mode (2/3):</span> <span class="text-slate-300">Node remains open to substrate via the shadow inverse. OEW wrap does not "fix" the node — it enables the transition to emergent closure when coupling conditions are met.</span>
+          </div>
+        </div>
+        <div class="glass rounded-xl border border-slate-800 p-5">
+          <h3 class="font-medium text-sm mb-3">Boron State Reference</h3>
+          <div class="space-y-3 text-xs">
+            <div class="p-2.5 rounded border border-slate-800 bg-slate-950/50">
+              <div class="flex justify-between"><span class="text-slate-400">0/3</span><span>Inert</span></div>
+            </div>
+            <div class="p-2.5 rounded border border-slate-800 bg-slate-950/50">
+              <div class="flex justify-between"><span class="text-slate-400">1/3</span><span>Primed</span></div>
+            </div>
+            <div class="p-2.5 rounded border border-amber-500/30 bg-amber-950/30 cursor-help" title="2/3 is not a deficit but the intentional substrate connection, the shadow that mirrors the +211/-211 pair. It is the invariant anchor that lets the node stay open to the substrate.">
+              <div class="flex justify-between"><span class="text-amber-300">2/3</span><span class="text-amber-200">SUBSTRATE INVARIANT — Shadow Inverse</span></div>
+            </div>
+            <div class="p-2.5 rounded border border-cyan-500/30 bg-cyan-950/30">
+              <div class="flex justify-between"><span class="text-cyan-300">3/3</span><span class="text-cyan-200">EMERGENT CLOSED — Full Fusion</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROOT0 LATTICE -->
+    <section id="tab-lattice" class="tab-panel hidden">
+      <div class="glass rounded-xl border border-slate-800 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 class="text-lg font-semibold">Root0 Lattice — v3.1 Visualization</h2>
+          <div class="flex items-center gap-4 text-[11px] mono">
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#ffb000"></span> 2/3 Substrate Invariant</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#00e5ff"></span> 3/3 Emergent Closed</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span> 1/3 Primed</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-800"></span> 0/3 Inert</div>
+          </div>
+        </div>
+        <div id="lattice-canvas" class="relative w-full h-[520px] rounded-lg bg-slate-950/70 border border-slate-800 overflow-hidden"></div>
+        <div class="mt-3 text-[11px] text-slate-500">Hover nodes for details. Amber nodes are not errors — they are substrate-anchored shadow inverses.</div>
+      </div>
+    </section>
+
+    <!-- CONTRACT CORE -->
+    <section id="tab-contract" class="tab-panel hidden">
+      <div class="glass rounded-xl border border-slate-800 p-5">
+        <h2 class="text-lg font-semibold mb-4">Contract Core — Sealing Log</h2>
+        <div class="overflow-auto max-h-[600px] scrollbar">
+          <table class="w-full text-[12px] mono">
+            <thead class="text-slate-400 sticky top-0 bg-slate-950/80 backdrop-blur">
+              <tr class="border-b border-slate-800">
+                <th class="text-left py-2 pr-4 font-medium">Time</th>
+                <th class="text-left py-2 pr-4 font-medium">Contract</th>
+                <th class="text-left py-2 pr-4 font-medium">Node</th>
+                <th class="text-left py-2 pr-4 font-medium">Boron State</th>
+                <th class="text-left py-2 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody id="contract-logs" class="divide-y divide-slate-900/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- BORON FAB -->
+    <section id="tab-boron" class="tab-panel hidden">
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 glass rounded-xl border border-slate-800 p-6">
+          <h2 class="text-lg font-semibold mb-4">Boron Fabrication — Semantics v3.1</h2>
+          <div class="p-4 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/40 to-orange-950/20 mb-6">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 mt-0.5">
+                <span class="text-amber-300 text-sm">!</span>
+              </div>
+              <div>
+                <h3 class="text-amber-200 font-medium mb-1.5">Boron 2/3 = Substrate Invariant</h3>
+                <p class="text-sm text-amber-100/80 leading-relaxed">The missing third port is the shadow inverse, not an error. It couples to the -211 inverse. Closure to 3/3 is emergence, not repair.</p>
+              </div>
+            </div>
+          </div>
+          <div class="grid md:grid-cols-3 gap-4">
+            <div class="p-4 rounded-lg bg-slate-950/70 border border-slate-800">
+              <div class="text-[11px] text-slate-400 mb-2">Port A — +211</div>
+              <div class="w-full h-20 rounded bg-slate-900 flex items-center justify-center"><div class="w-12 h-12 rounded-full border-2 border-emerald-500/50 flex items-center justify-center text-emerald-400 mono">+</div></div>
+            </div>
+            <div class="p-4 rounded-lg bg-slate-950/70 border border-slate-800">
+              <div class="text-[11px] text-slate-400 mb-2">Port B — -211</div>
+              <div class="w-full h-20 rounded bg-slate-900 flex items-center justify-center"><div class="w-12 h-12 rounded-full border-2 border-violet-500/50 flex items-center justify-center text-violet-400 mono">−</div></div>
+            </div>
+            <div class="p-4 rounded-lg bg-amber-950/30 border border-amber-500/30">
+              <div class="text-[11px] text-amber-300 mb-2">Port C — Shadow Inverse</div>
+              <div class="w-full h-20 rounded bg-slate-900 flex items-center justify-center"><div class="w-12 h-12 rounded-full border-2 border-dashed border-amber-500/70 flex items-center justify-center text-amber-300 mono">2/3</div></div>
+            </div>
+          </div>
+        <div class="glass rounded-xl border border-slate-800 p-5">
+          <h3 class="font-medium text-sm mb-3">Fab Queue</h3>
+          <div id="fab-queue" class="space-y-2 text-[12px] mono"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PHI FUSION -->
+    <section id="tab-phi" class="tab-panel hidden">
+      <div class="glass rounded-xl border border-slate-800 p-6 max-w-4xl">
+        <h2 class="text-lg font-semibold mb-2">Φ Fusion Logic — Updated v3.1</h2>
+        <p class="text-sm text-slate-300 mb-6">Fusion occurs when OEW wraps <span class="text-white font-medium">AND</span> node transitions from substrate invariant (2/3) to emergent closed (3/3).</p>
+        
+        <div class="grid md:grid-cols-3 gap-4 items-center">
+          <div class="p-4 rounded-xl border border-amber-500/30 bg-amber-950/20 text-center">
+            <div class="text-[11px] text-amber-300 uppercase tracking-wider mb-2">Initial</div>
+            <div class="text-2xl mono text-[#ffb000] mb-1">2/3</div>
+            <div class="text-xs">SUBSTRATE INVARIANT<br>Shadow Inverse</div>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="w-12 h-12 rounded-full border-2 border-sky-500/50 flex items-center justify-center mb-2 animate-pulse">
+              <span class="text-sky-300 text-xl">Φ</span>
+            </div>
+            <div class="text-[11px] text-sky-300">OEW WRAP</div>
+            <div class="text-[10px] text-slate-500">+ coupling</div>
+          </div>
+          <div class="p-4 rounded-xl border border-cyan-500/30 bg-cyan-950/20 text-center">
+            <div class="text-[11px] text-cyan-300 uppercase tracking-wider mb-2">Result</div>
+            <div class="text-2xl mono text-[#00e5ff] mb-1">3/3</div>
+            <div class="text-xs">EMERGENT CLOSED<br>Full Fusion</div>
+          </div>
+        </div>
+
+        <div class="mt-8 p-4 rounded-lg bg-slate-950/60 border border-slate-800">
+          <h4 class="text-xs font-medium text-slate-300 mb-2 uppercase tracking-wider">Correction Note</h4>
+          <p class="text-[13px] leading-relaxed text-slate-300">Previous v3.0 labeled 2/3 as "incomplete". Per Root0 instruction: <span class="text-amber-200">"2/3 is substrate inv, so boron 2/3 is his shadow inverse."</span> This is not a deficit state. The node is intentionally held open to the substrate to maintain the -211 mirror. Fusion is an emergence event, not a bugfix.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="tab-analytics" class="tab-panel hidden">
+      <div class="grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 glass rounded-xl border border-slate-800 p-5">
+          <h2 class="text-lg font-semibold mb-4">Substrate vs Emergent — Ratio Over Time</h2>
+          <div class="h-[320px]"><canvas id="ratioChart"></canvas></div>
+        </div>
+        <div class="glass rounded-xl border border-slate-800 p-5">
+          <h3 class="font-medium text-sm mb-3">Current Distribution</h3>
+          <div class="h-[200px]"><canvas id="donutChart"></canvas></div>
+          <div class="mt-4 space-y-2 text-[12px]">
+            <div class="flex justify-between"><span class="text-slate-400">Substrate Invariant (2/3)</span><span class="mono text-amber-300" id="an-sub">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Emergent Closed (3/3)</span><span class="mono text-cyan-300" id="an-emg">—</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Others</span><span class="mono" id="an-oth">—</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OTHER TABS (simplified but functional) -->
+    <section id="tab-substrate" class="tab-panel hidden">
+      <div class="glass rounded-xl border border-slate-800 p-6">
+        <h2 class="text-lg font-semibold mb-4">Substrate Monitor — -211 Inverse Coupling</h2>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-lg bg-slate-950/70 border border-amber-500/20">
+            <div class="text-amber-300 text-sm font-medium mb-2">Shadow Inverse Links Active</div>
+            <div class="mono text-3xl text-[#ffb000]" id="sub-links">—</div>
+            <div class="text-[11px] text-slate-500 mt-1">Each corresponds to a 2/3 node</div>
+          </div>
+          <div class="p-4 rounded-lg bg-slate-950/70 border border-slate-800">
+            <div class="text-slate-300 text-sm font-medium mb-2">Substrate Coherence</div>
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden"><div id="coh-bar" class="h-full bg-gradient-to-r from-amber-500 to-cyan-400" style="width:78%"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-nodes" class="tab-panel hidden">
+      <div class="glass rounded-xl border border-slate-800 p-5">
+        <h2 class="text-lg font-semibold mb-4">Node Registry</h2>
+        <div class="overflow-auto max-h-[560px] scrollbar">
+          <table class="w-full text-[12px] mono">
+            <thead class="sticky top-0 bg-slate-950/80"><tr class="border-b border-slate-800 text-slate-400"><th class="text-left py-2 pr-3">ID</th><th class="text-left py-2 pr-3">B State</th><th class="text-left py-2">Label</th></tr></thead>
+            <tbody id="nodes-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-events" class="tab-panel hidden">
+      <div class="glass rounded-xl border border-slate-800 p-5">
+        <h2 class="text-lg font-semibold mb-3">Event Stream</h2>
+        <div id="event-stream" class="font-mono text-[11px] space-y-1 max-h-[500px] overflow-auto"></div>
+      </div>
+    </section>
+
+    <section id="tab-diag" class="tab-panel hidden"><div class="glass rounded-xl border border-slate-800 p-6"><h2 class="text-lg font-semibold">Diagnostics</h2><p class="text-sm text-slate-400 mt-2">All boron semantics updated to v3.1. No legacy "incomplete" labels detected.</p></div></section>
+    <section id="tab-keys" class="tab-panel hidden"><div class="glass rounded-xl border border-slate-800 p-6"><h2 class="text-lg font-semibold">Keys & Attestation</h2><p class="text-sm text-slate-400 mt-2">Root0 signature verified for v3.1 semantics patch.</p></div></section>
+    <section id="tab-telemetry" class="tab-panel hidden"><div class="glass rounded-xl border border-slate-800 p-6"><h2 class="text-lg font-semibold">Telemetry</h2><div class="mt-4 grid grid-cols-3 gap-3 text-center"><div class="p-3 bg-slate-950 rounded"><div class="text-[10px] text-slate-500">OEW</div><div class="mono">4.2 kHz</div></div><div class="p-3 bg-slate-950 rounded"><div class="text-[10px] text-slate-500">Φ Rate</div><div class="mono">18 /min</div></div><div class="p-3 bg-slate-950 rounded"><div class="text-[10px] text-slate-500">Latency</div><div class="mono">7ms</div></div></div></div></section>
+    <section id="tab-config" class="tab-panel hidden"><div class="glass rounded-xl border border-slate-800 p-6"><h2 class="text-lg font-semibold">Config</h2><pre class="mt-3 p-3 bg-slate-950 rounded text-[11px] mono overflow-auto">ecih_version: "3.1"
+boron_semantics:
+  state_2_3_label: "SUBSTRATE INVARIANT — Shadow Inverse"
+  state_3_3_label: "EMERGENT CLOSED — Full Fusion"
+  tooltip_2_3: "Not a deficit. Intentional substrate connection mirroring +211/-211 pair."
+root0_instruction: "2/3 is substrate inv, so boron 2/3 is his shadow inverse."</pre></div></section>
+    <section id="tab-logs" class="tab-panel hidden"><div class="glass rounded-xl border border-slate-800 p-5"><h2 class="text-lg font-semibold mb-3">System Logs</h2><div class="font-mono text-[11px] leading-5 h-[400px] overflow-auto bg-slate-950 rounded p-3" id="sys-logs"></div></div></section>
+  </main>
+
+<script>
+const B = {
+  0:{label:"0/3 — Inert", short:"0/3", color:"#334155"},
+  1:{label:"1/3 — Primed", short:"1/3", color:"#64748b"},
+  2:{label:"2/3 — SUBSTRATE INVARIANT — Shadow Inverse", short:"2/3 (Substrate Inv)", color:"#ffb000", tooltip:"2/3 is not a deficit but the intentional substrate connection, the shadow that mirrors the +211/-211 pair. It is the invariant anchor that lets the node stay open to the substrate."},
+  3:{label:"3/3 — EMERGENT CLOSED — Full Fusion", short:"3/3", color:"#00e5ff", tooltip:"Full fusion. Transitioned from substrate invariant."}
+};
+
+const NODES = Array.from({length:144},(_,i)=>{
+  const r=Math.random();
+  let b = r<0.52?2 : r<0.82?3 : r<0.94?1 : 0;
+  return {id:`n-${String(i+1).padStart(3,'0')}`, b, x: Math.random(), y: Math.random()}
+});
+
+let selectedOew = NODES.find(n=>n.b===2) || NODES[0];
+
+function counts(){
+  const sub = NODES.filter(n=>n.b===2).length;
+  const emg = NODES.filter(n=>n.b===3).length;
+  return {sub, emg, total:NODES.length, other:NODES.length-sub-emg};
+}
+
+function updateHeader(){
+  const c=counts();
+  document.getElementById('hdr-sub').textContent=c.sub;
+  document.getElementById('hdr-emg').textContent=c.emg;
+  document.getElementById('ov-sub').textContent=c.sub;
+  document.getElementById('ov-emg').textContent=c.emg;
+  document.getElementById('ov-rate').textContent=Math.floor(12+Math.random()*8);
+  document.getElementById('an-sub').textContent=c.sub;
+  document.getElementById('an-emg').textContent=c.emg;
+  document.getElementById('an-oth').textContent=c.other;
+  document.getElementById('sub-links').textContent=c.sub;
+}
+
+function renderOew(){
+  document.getElementById('oew-node-id').textContent=selectedOew.id;
+  document.getElementById('oew-b-label').textContent=B[selectedOew.b].label;
+  document.getElementById('oew-b-short').textContent=B[selectedOew.b].short;
+  const mode=document.getElementById('oew-mode');
+  const ring=document.getElementById('oew-ring');
+  const core=document.getElementById('oew-core');
+  if(selectedOew.b===2){
+    mode.innerHTML=`<span class="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-medium" title="${B[2].tooltip}">Shadow Mode</span>`;
+    ring.setAttribute('stroke','#ffb000'); ring.style.strokeDashoffset=180; core.setAttribute('stroke','#ffb000');
+    document.getElementById('oew-status').textContent='SUBSTRATE ANCHORED';
+  }else if(selectedOew.b===3){
+    mode.innerHTML=`<span class="px-3 py-1.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-xs font-medium">Fusion Mode</span>`;
+    ring.setAttribute('stroke','#00e5ff'); ring.style.strokeDashoffset=20; core.setAttribute('stroke','#00e5ff');
+    document.getElementById('oew-status').textContent='EMERGENT CLOSED';
+  }else{
+    mode.innerHTML=`<span class="px-3 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 border border-slate-600 text-xs">Idle</span>`;
+    ring.style.strokeDashoffset=502; core.setAttribute('stroke','#334155');
+  }
+}
+
+document.getElementById('oew-next').onclick=()=>{
+  const subs=NODES.filter(n=>n.b===2);
+  selectedOew = subs[Math.floor(Math.random()*subs.length)] || NODES[0];
+  renderOew();
+};
+document.getElementById('oew-wrap').onclick=()=>{
+  if(selectedOew.b!==2) return;
+  document.getElementById('oew-status').textContent='WRAPPING...';
+  setTimeout(()=>{
+    selectedOew.b=3;
+    renderOew(); updateHeader(); renderLattice(); renderNodes(); addTransition();
+  },900);
+};
+
+function renderLattice(){
+  const el=document.getElementById('lattice-canvas');
+  el.innerHTML='';
+  const w=el.clientWidth, h=el.clientHeight;
+  NODES.forEach(n=>{
+    const d=document.createElement('div');
+    const x=n.x*w*0.9+ w*0.05, y=n.y*h*0.85+ h*0.07;
+    d.className='absolute w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-transform hover:scale-150';
+    d.style.left=x+'px'; d.style.top=y+'px'; d.style.background=B[n.b].color;
+    d.style.boxShadow=`0 0 10px ${B[n.b].color}55`;
+    d.title=`${n.id} — ${B[n.b].label}${n.b===2?'. '+B[2].tooltip:''}`;
+    el.appendChild(d);
+  });
+  // mini
+  const mini=document.getElementById('mini-lattice');
+  mini.innerHTML=''; NODES.slice(0,60).forEach(n=>{
+    const s=document.createElement('div');
+    s.className='absolute w-1.5 h-1.5 rounded-full'; s.style.background=B[n.b].color;
+    s.style.left=(n.x*100)+'%'; s.style.top=(n.y*100)+'%';
+    mini.appendChild(s);
+  });
+}
+
+function renderContractLogs(){
+  const tb=document.getElementById('contract-logs');
+  const now=Date.now();
+  const rows=[];
+  for(let i=0;i<28;i++){
+    const n=NODES[(i*5)%NODES.length];
+    const t=new Date(now-i*47000).toTimeString().slice(0,8);
+    const state = n.b===2 ? 'B 2/3 (Substrate Inv)' : n.b===3 ? 'B 3/3' : `B ${n.b}/3`;
+    rows.push(`<tr class="hover:bg-slate-900/40"><td class="py-1.5 pr-4 text-slate-500">${t}</td><td class="py-1.5 pr-4">0x${Math.random().toString(16).slice(2,6)}…${Math.random().toString(16).slice(2,4)}</td><td class="py-1.5 pr-4">${n.id}</td><td class="py-1.5 pr-4 ${n.b===2?'text-amber-300':n.b===3?'text-cyan-300':''}">${state}</td><td class="py-1.5"><span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px]">SEALED</span></td></tr>`);
+  }
+  tb.innerHTML=rows.join('');
+}
+
+function renderNodes(){
+  const tb=document.getElementById('nodes-table');
+  tb.innerHTML = NODES.map(n=>`<tr class="border-b border-slate-900/50 hover:bg-slate-900/30"><td class="py-1 pr-3">${n.id}</td><td class="py-1 pr-3" style="color:${B[n.b].color}">${B[n.b].short}</td><td class="py-1 text-slate-400" title="${B[n.b].tooltip||''}">${B[n.b].label}</td></tr>`).join('');
+}
+
+function renderFab(){
+  const q=document.getElementById('fab-queue');
+  q.innerHTML = Array.from({length:6},(_,i)=>{
+    const b = i%3===0?2:3;
+    return `<div class="flex justify-between items-center p-2 rounded bg-slate-950 border border-slate-800"><span>n-${200+i}</span><span style="color:${B[b].color}">${B[b].short}</span></div>`
+  }).join('');
+}
+
+function addTransition(){
+  const el=document.getElementById('recent-transitions');
+  const e=document.createElement('div');
+  e.className='flex justify-between p-2 rounded bg-slate-900/60 border border-slate-800';
+  e.innerHTML=`<span>${selectedOew.id}</span><span class="text-amber-300">2/3 →</span><span class="text-cyan-300">3/3</span>`;
+  el.prepend(e);
+}
+
+function renderEvents(){
+  const es=document.getElementById('event-stream');
+  const lines=[];
+  for(let i=0;i<40;i++){
+    const n=NODES[i];
+    lines.push(`[${new Date(Date.now()-i*3000).toISOString().slice(11,19)}] ${n.id} ${n.b===2?'SUBSTRATE INVARIANT':n.b===3?'EMERGENT CLOSED':'state '+n.b+'/3'}`);
+  }
+  es.innerHTML = lines.map(l=>`<div>${l}</div>`).join('');
+}
+
+function renderSysLogs(){
+  const sl=document.getElementById('sys-logs');
+  sl.textContent = `[init] ECIH v3.1 boot\n[core] Boron semantics patched per Root0\n[patch] B 2/3 renamed: "incomplete" → "SUBSTRATE INVARIANT — Shadow Inverse"\n[patch] B 3/3 renamed: "complete" → "EMERGENT CLOSED — Full Fusion"\n[lattice] ${counts().sub} nodes in shadow mode (#ffb000)\n[lattice] ${counts().emg} nodes in fusion mode (#00e5ff)\n[verify] Tooltips updated: 2/3 explains +211/-211 mirror\n[oew] Shadow Mode active for all 2/3 nodes\n[contract] Logs now emit "B 2/3 (Substrate Inv)"\n[status] All systems nominal`;
+}
+
+// Charts
+let ratioChart, donutChart;
+function initCharts(){
+  const c=counts();
+  const labels = Array.from({length:24},(_,i)=>`${i}h`);
+  const subData = labels.map((_,i)=> Math.max(30, c.sub + Math.sin(i/3)*8 + (Math.random()*4-2)));
+  const emgData = labels.map((_,i)=> Math.max(10, c.emg + Math.cos(i/3)*6 + (Math.random()*3-1)));
+  
+  ratioChart = new Chart(document.getElementById('ratioChart'),{
+    type:'line',
+    data:{labels, datasets:[
+      {label:'Substrate Invariant (2/3)', data:subData, borderColor:'#ffb000', backgroundColor:'rgba(255,176,0,0.12)', tension:0.4, borderWidth:2, pointRadius:0},
+      {label:'Emergent Closed (3/3)', data:emgData, borderColor:'#00e5ff', backgroundColor:'rgba(0,229,255,0.12)', tension:0.4, borderWidth:2, pointRadius:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#475569'},grid:{color:'#1e293b'}},y:{ticks:{color:'#475569'},grid:{color:'#1e293b'}}}}
+  });
+  donutChart = new Chart(document.getElementById('donutChart'),{
+    type:'doughnut',
+    data:{labels:['2/3 Substrate','3/3 Emergent','Other'], datasets:[{data:[c.sub,c.emg,c.other], backgroundColor:['#ffb000','#00e5ff','#334155'], borderWidth:0}]},
+    options:{plugins:{legend:{display:false}}, cutout:'68%'}
+  });
+}
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('tab-active'));
+    b.classList.add('tab-active');
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
+    document.getElementById('tab-'+b.dataset.tab).classList.remove('hidden');
+  }
+});
+
+// Clock
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toISOString().slice(11,19)+'Z'},1000);
+
+// Init
+updateHeader(); renderOew(); renderLattice(); renderContractLogs(); renderNodes(); renderFab(); renderEvents(); renderSysLogs(); initCharts(); addTransition();
+window.addEventListener('resize', renderLattice);
+</script>
+</body>
+</html>

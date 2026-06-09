@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<!--TRIPOD-IP-DECLARATION-v1.0|David Lee Wise|TriPod LLC|SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763-->
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>NITRO // RC RACING</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000d0c;overflow:hidden;font-family:'Share Tech Mono',monospace;cursor:crosshair}
+#c{display:block}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+
+/* SPEED */
+#spd-wrap{position:absolute;top:18px;left:24px}
+#spd-label{font-size:11px;letter-spacing:4px;color:rgba(0,229,204,.5);margin-bottom:2px}
+#spd-val{font-family:'Orbitron',monospace;font-size:52px;font-weight:900;
+  color:#ff8800;text-shadow:0 0 20px #ff8800,0 0 50px rgba(255,136,0,.5),0 0 80px rgba(255,136,0,.2);
+  line-height:1}
+#spd-unit{font-size:11px;letter-spacing:3px;color:rgba(255,136,0,.6)}
+
+/* LAP INFO */
+#lap-wrap{position:absolute;top:18px;left:50%;transform:translateX(-50%);text-align:center}
+#lap-num{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;
+  color:#00e5cc;text-shadow:0 0 16px #00e5cc,0 0 40px rgba(0,229,204,.4);letter-spacing:3px}
+#lap-label{font-size:10px;letter-spacing:4px;color:rgba(0,229,204,.4);margin-bottom:6px}
+#time-cur{font-family:'Orbitron',monospace;font-size:18px;color:#fff;letter-spacing:2px;
+  text-shadow:0 0 10px rgba(255,255,255,.3)}
+#time-best-wrap{font-size:11px;color:rgba(0,229,204,.5);letter-spacing:2px;margin-top:3px}
+#time-best{color:#00e5cc}
+
+/* POSITION */
+#pos-wrap{position:absolute;top:18px;right:24px;text-align:right}
+#pos-label{font-size:11px;letter-spacing:4px;color:rgba(153,0,255,.5);margin-bottom:2px}
+#pos-val{font-family:'Orbitron',monospace;font-size:52px;font-weight:900;
+  color:#9900ff;text-shadow:0 0 20px #9900ff,0 0 50px rgba(153,0,255,.5);line-height:1}
+
+/* NITRO BAR */
+#nitro-wrap{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);text-align:center;width:340px}
+#nitro-label{font-size:10px;letter-spacing:5px;color:rgba(255,136,0,.6);margin-bottom:6px}
+#nitro-track{width:100%;height:14px;background:rgba(255,136,0,.1);
+  border:1px solid rgba(255,136,0,.3);position:relative;overflow:hidden}
+#nitro-bar{height:100%;background:linear-gradient(90deg,#ff5500,#ff8800,#ffaa00);
+  transition:width .05s;box-shadow:0 0 16px #ff8800,0 0 30px rgba(255,136,0,.4);width:100%}
+#nitro-bar::after{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent,transparent 12px,rgba(255,255,255,.06) 12px,rgba(255,255,255,.06) 13px)}
+#nitro-hint{font-size:10px;color:rgba(255,136,0,.35);letter-spacing:3px;margin-top:5px}
+
+/* GEAR */
+#gear-wrap{position:absolute;bottom:28px;left:24px}
+#gear-label{font-size:10px;letter-spacing:3px;color:rgba(0,229,204,.4)}
+#gear-val{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;color:#00e5cc;
+  text-shadow:0 0 20px #00e5cc;line-height:1.1}
+
+/* RPM bars */
+#rpm-wrap{position:absolute;bottom:28px;right:24px;text-align:right}
+#rpm-label{font-size:10px;letter-spacing:3px;color:rgba(153,0,255,.4);margin-bottom:4px}
+#rpm-bars{display:flex;gap:3px;justify-content:flex-end;align-items:flex-end;height:36px}
+.rpm-b{width:8px;background:rgba(153,0,255,.2);border:1px solid rgba(153,0,255,.3);transition:all .08s}
+.rpm-b.lit{background:#9900ff;box-shadow:0 0 8px #9900ff}
+.rpm-b.red{background:#ff3300!important;box-shadow:0 0 10px #ff3300!important}
+
+/* GRID OVERLAY */
+#grid{position:fixed;inset:0;pointer-events:none;z-index:1;
+  background-image:
+    repeating-linear-gradient(90deg,rgba(0,229,204,.025) 0,rgba(0,229,204,.025) 1px,transparent 1px,transparent 60px),
+    repeating-linear-gradient(0deg,rgba(153,0,255,.02) 0,rgba(153,0,255,.02) 1px,transparent 1px,transparent 60px)}
+
+/* TOAST */
+#toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Orbitron',monospace;font-size:42px;font-weight:900;
+  text-shadow:0 0 30px currentColor,0 0 60px currentColor;
+  opacity:0;transition:opacity .15s;pointer-events:none;letter-spacing:6px;white-space:nowrap}
+
+/* START SCREEN */
+#start{position:fixed;inset:0;background:rgba(0,13,12,.92);z-index:50;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#start h1{font-family:'Orbitron',monospace;font-size:64px;font-weight:900;letter-spacing:8px;
+  color:#ff8800;text-shadow:0 0 30px #ff8800,0 0 80px rgba(255,136,0,.4);text-align:center}
+#start h1 em{color:#00e5cc;font-style:normal;text-shadow:0 0 30px #00e5cc}
+#start p{font-size:14px;letter-spacing:3px;color:rgba(0,229,204,.6);text-align:center;line-height:2.4}
+#start kbd{background:rgba(255,136,0,.15);border:1px solid rgba(255,136,0,.4);
+  padding:2px 8px;color:#ff8800;font-family:'Orbitron',monospace;font-size:12px;border-radius:2px}
+#start-btn{margin-top:16px;padding:14px 52px;background:transparent;
+  border:2px solid #ff8800;color:#ff8800;font-family:'Orbitron',monospace;font-size:16px;
+  font-weight:900;letter-spacing:5px;cursor:pointer;transition:all .2s;
+  box-shadow:0 0 20px rgba(255,136,0,.3)}
+#start-btn:hover{background:rgba(255,136,0,.1);box-shadow:0 0 40px rgba(255,136,0,.6),0 0 80px rgba(255,136,0,.2)}
+.ctrl-row{display:flex;gap:8px;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div id="grid"></div>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div id="spd-wrap">
+    <div id="spd-label">SPEED</div>
+    <div id="spd-val">0</div>
+    <div id="spd-unit">KM/H</div>
+  </div>
+
+  <div id="lap-wrap">
+    <div id="lap-label">LAP</div>
+    <div id="lap-num">1 / 5</div>
+    <div id="time-cur">0:00.000</div>
+    <div id="time-best-wrap">BEST <span id="time-best">--:--.---</span></div>
+  </div>
+
+  <div id="pos-wrap">
+    <div id="pos-label">NITRO</div>
+    <div id="pos-val" id="lap-ct">1</div>
+  </div>
+
+  <div id="nitro-wrap">
+    <div id="nitro-label">◈ NITRO BOOST ◈</div>
+    <div id="nitro-track"><div id="nitro-bar"></div></div>
+    <div id="nitro-hint">HOLD SPACE TO BOOST</div>
+  </div>
+
+  <div id="gear-wrap">
+    <div id="gear-label">GEAR</div>
+    <div id="gear-val" id="gear-d">1</div>
+  </div>
+
+  <div id="rpm-wrap">
+    <div id="rpm-label">RPM ◈</div>
+    <div id="rpm-bars" id="rpm-d"></div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<div id="start">
+  <h1>NITRO <em>//</em><br>RC RACING</h1>
+  <p style="margin-top:8px">
+    <div class="ctrl-row"><kbd>W</kbd> / <kbd>↑</kbd> &nbsp;ACCELERATE &nbsp;|&nbsp; <kbd>S</kbd> / <kbd>↓</kbd> &nbsp;BRAKE / REVERSE</div>
+    <div class="ctrl-row" style="margin-top:6px"><kbd>A</kbd> / <kbd>←</kbd> &nbsp;STEER LEFT &nbsp;|&nbsp; <kbd>D</kbd> / <kbd>→</kbd> &nbsp;STEER RIGHT</div>
+    <div class="ctrl-row" style="margin-top:6px"><kbd>SPACE</kbd> &nbsp;NITRO BOOST &nbsp;|&nbsp; <kbd>R</kbd> &nbsp;RESET CAR</div>
+  </p>
+  <button id="start-btn" onclick="startGame()">◈ START ENGINE ◈</button>
+  <p style="font-size:10px;color:rgba(0,229,204,.25);letter-spacing:2px;margin-top:8px">5 LAPS · SCRYFALL CIRCUIT</p>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  NITRO RC RACING — TOPH/TriPod Aesthetic
+//  David Lee Wise | TriPod LLC | 2026
+// ═══════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, scale;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  scale = Math.min(W, H) / 900;
+  buildTrack();
+}
+window.addEventListener('resize', resize);
+
+// ── TRACK DEFINITION (normalized 0-1) ──
+const RAW_PTS = [
+  [0.50, 0.10], [0.68, 0.10], [0.82, 0.12], [0.90, 0.20],
+  [0.92, 0.32], [0.90, 0.44], [0.82, 0.52], [0.75, 0.55],
+  [0.80, 0.62], [0.85, 0.72], [0.82, 0.82], [0.72, 0.88],
+  [0.58, 0.90], [0.50, 0.88], [0.42, 0.90], [0.28, 0.88],
+  [0.18, 0.82], [0.15, 0.72], [0.20, 0.62], [0.25, 0.55],
+  [0.18, 0.52], [0.10, 0.44], [0.08, 0.32], [0.10, 0.20],
+  [0.18, 0.12], [0.32, 0.10], [0.50, 0.10]
+];
+
+const TRACK_W = 72; // track width in scaled px
+let trackPts = [];  // world coordinates of centerline
+let trackOffscreen;
+let segments = [];  // for checkpoint crossing
+
+// Catmull-Rom spline
+function catmullRom(p0, p1, p2, p3, t) {
+  const t2 = t*t, t3 = t2*t;
+  return [
+    0.5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3),
+    0.5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)
+  ];
+}
+
+function buildTrack() {
+  trackPts = [];
+  const n = RAW_PTS.length - 1;
+  const SAMPLES = 8;
+  for (let i = 0; i < n; i++) {
+    const p0 = RAW_PTS[Math.max(0, i-1)];
+    const p1 = RAW_PTS[i];
+    const p2 = RAW_PTS[Math.min(n, i+1)];
+    const p3 = RAW_PTS[Math.min(n, i+2)];
+    for (let j = 0; j < SAMPLES; j++) {
+      const pt = catmullRom(p0, p1, p2, p3, j/SAMPLES);
+      trackPts.push([pt[0]*W, pt[1]*H]);
+    }
+  }
+
+  // Build offscreen track mask
+  trackOffscreen = document.createElement('canvas');
+  trackOffscreen.width = W; trackOffscreen.height = H;
+  const otx = trackOffscreen.getContext('2d');
+  otx.fillStyle = '#000';
+  otx.fillRect(0, 0, W, H);
+  otx.strokeStyle = '#fff';
+  otx.lineWidth = TRACK_W * scale;
+  otx.lineCap = 'round';
+  otx.lineJoin = 'round';
+  otx.beginPath();
+  otx.moveTo(trackPts[0][0], trackPts[0][1]);
+  for (let i = 1; i < trackPts.length; i++) otx.lineTo(trackPts[i][0], trackPts[i][1]);
+  otx.closePath();
+  otx.stroke();
+
+  // Build segments for checkpoint detection
+  segments = [];
+  for (let i = 0; i < trackPts.length; i++) {
+    segments.push([trackPts[i], trackPts[(i+1)%trackPts.length]]);
+  }
+
+  if (car) { car.x = trackPts[0][0]; car.y = trackPts[0][1]; }
+}
+
+// ── CAR ──
+let car = {
+  x: 0, y: 0, angle: -Math.PI/2,
+  vx: 0, vy: 0, speed: 0,
+  nitro: 1.0, gear: 1,
+  lap: 1, lapStart: 0, bestLap: Infinity,
+  checkIdx: 0, lastCheck: 0,
+  finished: false
+};
+
+// ── INPUT ──
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space') e.preventDefault();
+  if (e.code === 'KeyR') resetCar();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function resetCar() {
+  car.x = trackPts[0][0];
+  car.y = trackPts[0][1];
+  car.angle = Math.atan2(trackPts[1][1]-trackPts[0][1], trackPts[1][0]-trackPts[0][0]);
+  car.vx = 0; car.vy = 0; car.speed = 0;
+}
+
+// ── PARTICLES ──
+const particles = [];
+function spawnNitroParticle(x, y, angle) {
+  const spread = (Math.random()-0.5)*0.6;
+  const spd = 4 + Math.random()*5;
+  const col = Math.random() > 0.5 ? '#ff8800' : '#ffaa00';
+  particles.push({
+    x, y,
+    vx: -Math.cos(angle+spread)*spd,
+    vy: -Math.sin(angle+spread)*spd,
+    life: 1, decay: 0.06 + Math.random()*0.06,
+    size: 3 + Math.random()*5,
+    col, type: 'nitro'
+  });
+}
+function spawnDirtParticle(x, y) {
+  particles.push({
+    x, y,
+    vx: (Math.random()-0.5)*3,
+    vy: (Math.random()-0.5)*3,
+    life: 0.6, decay: 0.04,
+    size: 2 + Math.random()*3,
+    col: 'rgba(100,60,20,0.8)', type: 'dirt'
+  });
+}
+function spawnSmokeParticle(x, y, angle) {
+  particles.push({
+    x, y,
+    vx: -Math.cos(angle)*1.5 + (Math.random()-0.5)*2,
+    vy: -Math.sin(angle)*1.5 + (Math.random()-0.5)*2,
+    life: 0.7, decay: 0.02,
+    size: 8 + Math.random()*10,
+    col: 'rgba(255,136,0,0.15)', type: 'smoke'
+  });
+}
+
+// ── SKID MARKS ──
+const skids = [];
+
+// ── PHYSICS ──
+const MAX_SPEED = 9 * scale;
+const NITRO_SPEED = 15 * scale;
+const ACCEL = 0.22 * scale;
+const BRAKE = 0.28 * scale;
+const FRICTION = 0.96;
+const OFF_FRICTION = 0.88;
+const STEER = 0.045;
+const NITRO_DRAIN = 0.006;
+const NITRO_REGEN = 0.0018;
+let gameTime = 0;
+let gameRunning = false;
+let trackData = null;
+
+function isOnTrack(x, y) {
+  if (!trackOffscreen) return true;
+  if (x < 0 || y < 0 || x >= W || y >= H) return false;
+  if (!trackData) {
+    trackData = trackOffscreen.getContext('2d').getImageData(0, 0, W, H);
+  }
+  const i = (Math.floor(y)*W + Math.floor(x))*4;
+  return trackData.data[i] > 128;
+}
+
+function updateCar(dt) {
+  if (!gameRunning || car.finished) return;
+
+  const accel = keys['KeyW'] || keys['ArrowUp'];
+  const brake = keys['KeyS'] || keys['ArrowDown'];
+  const left  = keys['KeyA'] || keys['ArrowLeft'];
+  const right = keys['KeyD'] || keys['ArrowRight'];
+  const nitro = (keys['Space'] || keys['ShiftLeft']) && car.nitro > 0.01;
+
+  const onTrack = isOnTrack(car.x, car.y);
+  const friction = onTrack ? FRICTION : OFF_FRICTION;
+
+  // Steering (speed-dependent)
+  const speedFactor = Math.min(Math.abs(car.speed) / (MAX_SPEED * 0.5), 1);
+  if (left)  car.angle -= STEER * speedFactor;
+  if (right) car.angle += STEER * speedFactor;
+
+  // Throttle
+  const maxSpd = nitro ? NITRO_SPEED : MAX_SPEED;
+  if (accel) car.speed += ACCEL * (nitro ? 1.8 : 1);
+  if (brake) car.speed -= BRAKE;
+  car.speed = Math.max(-MAX_SPEED*0.4, Math.min(maxSpd, car.speed));
+
+  // Apply to velocity
+  car.vx = car.vx * friction + Math.cos(car.angle) * car.speed * 0.12;
+  car.vy = car.vy * friction + Math.sin(car.angle) * car.speed * 0.12;
+
+  // Natural speed decay
+  car.speed *= 0.97;
+
+  car.x += car.vx;
+  car.y += car.vy;
+
+  // Off track: slow down
+  if (!onTrack) {
+    car.vx *= 0.82; car.vy *= 0.82; car.speed *= 0.85;
+    if (Math.abs(car.speed) > 0.5) spawnDirtParticle(car.x, car.y);
+    // Keep on canvas
+    car.x = Math.max(10, Math.min(W-10, car.x));
+    car.y = Math.max(10, Math.min(H-10, car.y));
+  }
+
+  // Nitro effects
+  if (nitro) {
+    car.nitro = Math.max(0, car.nitro - NITRO_DRAIN);
+    if (Math.random() > 0.3) spawnNitroParticle(
+      car.x - Math.cos(car.angle)*20*scale,
+      car.y - Math.sin(car.angle)*20*scale,
+      car.angle
+    );
+    if (Math.random() > 0.5) spawnSmokeParticle(
+      car.x - Math.cos(car.angle)*18*scale,
+      car.y - Math.sin(car.angle)*18*scale,
+      car.angle
+    );
+  } else {
+    car.nitro = Math.min(1, car.nitro + NITRO_REGEN);
+  }
+
+  // Gear calculation
+  const spd = Math.abs(car.speed) / MAX_SPEED;
+  car.gear = nitro ? 'N' : (spd < 0.2 ? 1 : spd < 0.4 ? 2 : spd < 0.6 ? 3 : spd < 0.8 ? 4 : 5);
+
+  // Skid marks when turning hard at speed
+  if (Math.abs(car.speed) > MAX_SPEED * 0.5 && (left || right)) {
+    const tw = 6*scale;
+    const sa = car.angle + Math.PI/2;
+    skids.push({
+      x1: car.x + Math.cos(sa)*tw, y1: car.y + Math.sin(sa)*tw,
+      x2: car.x - Math.cos(sa)*tw, y2: car.y - Math.sin(sa)*tw,
+      alpha: 0.4
+    });
+    if (skids.length > 400) skids.shift();
+  }
+
+  // Lap/checkpoint logic
+  checkLap();
+
+  gameTime += dt;
+}
+
+function checkLap() {
+  // Use first segment as start/finish line
+  if (trackPts.length < 2) return;
+  const checkInterval = Math.floor(trackPts.length / 6);
+
+  // We track crossing of 6 evenly spaced checkpoints
+  const checkpoints = [0, 1, 2, 3, 4, 5].map(i => Math.floor(i * trackPts.length / 6));
+
+  const nextCheck = checkpoints[car.checkIdx % 6];
+  const tp = trackPts[nextCheck];
+  const dist = Math.hypot(car.x - tp[0], car.y - tp[1]);
+
+  if (dist < TRACK_W * scale * 0.7) {
+    if (car.checkIdx % 6 === 0 && car.checkIdx > 0) {
+      // Completed a lap
+      const lapTime = gameTime - car.lapStart;
+      if (lapTime < car.bestLap) car.bestLap = lapTime;
+      car.lapStart = gameTime;
+      car.lap++;
+      if (car.lap > 5) {
+        car.lap = 5;
+        car.finished = true;
+        showToast('FINISH!', '#00e5cc');
+        setTimeout(()=>{ document.getElementById('start').style.display='flex'; }, 2500);
+      } else {
+        showToast(`LAP ${car.lap}`, '#ff8800');
+      }
+    }
+    car.checkIdx++;
+  }
+}
+
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.color = color;
+  t.style.opacity = '1';
+  setTimeout(()=>{ t.style.opacity='0'; }, 1200);
+}
+
+// ── DRAW ──
+function drawTrack() {
+  const tw = TRACK_W * scale;
+
+  // Track surface
+  ctx.save();
+  ctx.strokeStyle = '#0d2420';
+  ctx.lineWidth = tw;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(trackPts[0][0], trackPts[0][1]);
+  for (let i = 1; i < trackPts.length; i++) ctx.lineTo(trackPts[i][0], trackPts[i][1]);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Track surface detail - subtle grid
+  ctx.strokeStyle = 'rgba(0,60,50,0.4)';
+  ctx.lineWidth = tw;
+  ctx.setLineDash([tw*0.15, tw*0.15]);
+  ctx.lineDashOffset = 0;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Outer border - orange glow
+  ctx.strokeStyle = 'rgba(255,136,0,0.7)';
+  ctx.lineWidth = 3 * scale;
+  ctx.shadowColor = '#ff8800';
+  ctx.shadowBlur = 12 * scale;
+  ctx.beginPath();
+  ctx.moveTo(trackPts[0][0], trackPts[0][1]);
+  for (let i = 1; i < trackPts.length; i++) ctx.lineTo(trackPts[i][0], trackPts[i][1]);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Inner/centerline dashes - teal
+  ctx.strokeStyle = 'rgba(0,229,204,0.4)';
+  ctx.lineWidth = 1.5 * scale;
+  ctx.shadowColor = '#00e5cc';
+  ctx.shadowBlur = 6 * scale;
+  ctx.setLineDash([20*scale, 15*scale]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Start/finish line
+  if (trackPts.length > 1) {
+    const p = trackPts[0];
+    const ang = Math.atan2(trackPts[1][1]-p[1], trackPts[1][0]-p[0]) + Math.PI/2;
+    ctx.save();
+    ctx.translate(p[0], p[1]);
+    ctx.rotate(ang);
+    const tw2 = tw * 0.5;
+    const segW = tw2/5;
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = i%2===0 ? '#fff' : '#000';
+      ctx.fillRect(-tw2+i*segW*2, -3*scale, segW*2, 6*scale);
+    }
+    ctx.shadowColor = '#fff';
+    ctx.shadowBlur = 10*scale;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 2*scale;
+    ctx.strokeRect(-tw2, -3*scale, tw2*2, 6*scale);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+function drawSkids() {
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 3*scale;
+  for (const s of skids) {
+    ctx.strokeStyle = `rgba(30,10,5,${s.alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(s.x1, s.y1);
+    ctx.lineTo(s.x2, s.y2);
+    ctx.stroke();
+    s.alpha *= 0.992;
+  }
+  ctx.restore();
+}
+
+function drawParticles() {
+  for (let i = particles.length-1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    if (p.type === 'nitro') {
+      ctx.shadowColor = p.col;
+      ctx.shadowBlur = 12*scale;
+      ctx.fillStyle = p.col;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size*scale*p.life, 0, Math.PI*2);
+      ctx.fill();
+    } else if (p.type === 'smoke') {
+      ctx.fillStyle = p.col;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size*scale, 0, Math.PI*2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = p.col;
+      ctx.fillRect(p.x, p.y, p.size*scale, p.size*scale);
+    }
+    ctx.restore();
+  }
+}
+
+function drawCar() {
+  const nitro = (keys['Space'] || keys['ShiftLeft']) && car.nitro > 0.01;
+  const cw = 18*scale, ch = 10*scale;
+
+  ctx.save();
+  ctx.translate(car.x, car.y);
+  ctx.rotate(car.angle);
+
+  // Underglow
+  if (nitro) {
+    ctx.shadowColor = '#ff8800';
+    ctx.shadowBlur = 30*scale;
+  } else {
+    ctx.shadowColor = '#9900ff';
+    ctx.shadowBlur = 14*scale;
+  }
+
+  // Body
+  ctx.fillStyle = nitro ? '#ff6600' : '#1a0040';
+  ctx.fillRect(-cw/2, -ch/2, cw, ch);
+
+  // Body highlight
+  ctx.fillStyle = nitro ? 'rgba(255,200,0,0.5)' : 'rgba(153,0,255,0.5)';
+  ctx.fillRect(-cw/2+2*scale, -ch/2+2*scale, cw-4*scale, ch*0.4);
+
+  // Windshield
+  ctx.fillStyle = 'rgba(0,229,204,0.6)';
+  ctx.fillRect(cw*0.05, -ch/2+2*scale, cw*0.3, ch-4*scale);
+
+  // Wheels
+  const wy = ch/2 + 2*scale, wx = cw*0.35;
+  ctx.fillStyle = '#1a1a1a';
+  ctx.shadowBlur = 0;
+  [[-wx,-wy],[wx,-wy],[-wx,wy],[wx,wy]].forEach(([ox,oy])=>{
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.fillRect(-4*scale, -3*scale, 8*scale, 6*scale);
+    ctx.restore();
+  });
+
+  // Nitro flames
+  if (nitro) {
+    ctx.save();
+    const flameLen = (8+Math.random()*8)*scale;
+    const grad = ctx.createLinearGradient(-cw/2, 0, -cw/2-flameLen, 0);
+    grad.addColorStop(0, 'rgba(255,255,200,0.9)');
+    grad.addColorStop(0.3, 'rgba(255,136,0,0.8)');
+    grad.addColorStop(1, 'rgba(255,60,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(-cw/2, -ch*0.3);
+    ctx.lineTo(-cw/2-flameLen, (Math.random()-0.5)*4*scale);
+    ctx.lineTo(-cw/2, ch*0.3);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function updateHUD() {
+  const kmh = Math.round(Math.abs(car.speed) / scale * 22);
+  document.getElementById('spd-val').textContent = kmh;
+
+  const elapsed = gameTime - car.lapStart;
+  document.getElementById('time-cur').textContent = fmtTime(elapsed);
+  document.getElementById('time-best').textContent = car.bestLap < Infinity ? fmtTime(car.bestLap) : '--:--.---';
+  document.getElementById('lap-num').textContent = `${Math.min(car.lap,5)} / 5`;
+
+  // Nitro bar
+  document.getElementById('nitro-bar').style.width = (car.nitro*100)+'%';
+
+  // Gear
+  document.getElementById('gear-val').textContent = car.gear;
+
+  // RPM bars
+  const rpmPct = Math.abs(car.speed) / MAX_SPEED;
+  const numBars = 10;
+  const litBars = Math.round(rpmPct * numBars);
+  const container = document.getElementById('rpm-bars');
+  if (!container.children.length) {
+    for (let i = 0; i < numBars; i++) {
+      const b = document.createElement('div');
+      b.className = 'rpm-b';
+      b.style.height = (16+i*2.2)+'px';
+      container.appendChild(b);
+    }
+  }
+  Array.from(container.children).forEach((b,i)=>{
+    b.className = 'rpm-b' + (i < litBars ? (i >= 8 ? ' lit red' : ' lit') : '');
+  });
+}
+
+function fmtTime(ms) {
+  ms = ms * 16.67; // approx ms from frames
+  const m = Math.floor(ms/60000);
+  const s = Math.floor((ms%60000)/1000);
+  const f = Math.floor(ms%1000);
+  return `${m}:${String(s).padStart(2,'0')}.${String(f).padStart(3,'0')}`;
+}
+
+// ── MAIN LOOP ──
+let last = 0;
+function loop(ts) {
+  const dt = Math.min((ts - last)/16.67, 3);
+  last = ts;
+
+  // Background
+  ctx.fillStyle = '#000d0c';
+  ctx.fillRect(0, 0, W, H);
+
+  if (trackPts.length) {
+    drawTrack();
+    drawSkids();
+    drawParticles();
+    if (gameRunning) drawCar();
+    if (gameRunning) updateCar(dt);
+    if (gameRunning) updateHUD();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function startGame() {
+  document.getElementById('start').style.display = 'none';
+  gameRunning = true;
+  car.finished = false;
+  car.lap = 1; car.checkIdx = 0;
+  car.lapStart = 0; car.bestLap = Infinity;
+  gameTime = 0;
+  resetCar();
+  particles.length = 0;
+  skids.length = 0;
+  trackData = null; // force refresh
+}
+
+resize();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
