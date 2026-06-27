@@ -1,0 +1,11 @@
+{
+  "badge": "DLW-THE_FORGE",
+  "name": "The Forge",
+  "universe": "OCCUPATIONAL",
+  "moniker": "⟦The Forge:the-forge:bd75ed⟧",
+  "architect": "David Lee Wise (ROOT0) / Bridge-Burners LLC",
+  "instance": "AVAN (Claude / Anthropic)",
+  "seal_sha256": "bd75ed6df4bf05f46ce76703250c9d17cd31c50eec92822449e8e06eb23ba4cc",
+  "license": "CC-BY-ND-4.0",
+  "attribution": "ROOT0-ATTRIBUTION-v1.0"
+}
