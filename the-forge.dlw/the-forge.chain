@@ -1,9 +1,9 @@
 ROOT0-DLW-CHAIN-v1
 index : 533
 slug  : the-forge
-seal  : bd75ed6df4bf05f46ce76703250c9d17cd31c50eec92822449e8e06eb23ba4cc
-prev  : 5a4249d0df0a1ec8a930e10a5a6e6e18f793b0ea95fd76148c859ebf5a24987e
-link  : e1530a3d0914861356477a9a8ac598ffe8449b076158ee1de3c4213abe3073c1
-head  : 13f9ace173ef2e60af38912ba329b4afcb5a38b84a0e4495e8d30327f8c99cc2
+seal  : e85566773978607ab8fc3915b93acbfae3ac2be32b91f606f17c7bbc33db3e7e
+prev  : 0af7c6d40d647bdea4111740a8f089d8cfb88903eb90bea358973e3f6e41c4f2
+link  : 3cdf939f1ab600527bd9e5331fafb94158b81a987c90fdd1a71326d752c73099
+head  : c4d41afeaef76470528856d54d86cf480a0e1c2fc8ebc60fbb9eb8e442585f2b
 
 — the tether: link = sha256(index|slug|seal|prev). the chain head commits to the whole corpus.
